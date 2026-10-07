@@ -1,0 +1,36 @@
+# 에이전트 작업 규칙
+
+- 이 문서는 사용자가 규칙 변경을 요청했을 때만 수정한다.
+- README.md는 사용자가 수정을 요청했을 때만 변경한다.
+- 직접 작성하는 코드·문서·설정은 파일당 100줄 이하로 유지한다.
+  생성 파일·의존성 잠금 파일·바이너리는 제외하며 예외는 docs/development.md에 기록한다.
+- 작업을 10분 이내에 검증 가능한 단위로 나누고 진척·남은 작업을 짧게 보고한다.
+  긴 작업은 단위별로 이어서 수행하고, 위임은 사용자 요청이나 적용되는 지침에 따른다.
+- 기존 사용자 변경을 보존하고 요청 범위의 구현과 검증을 끝까지 수행한다.
+- 커밋을 제안하거나 자동으로 만들지 않는다. 사용자 요청 시에만 커밋한다.
+- push·배포 요청은 필요한 회고와 커밋을 포함한다. 대상·범위는 요청에서 확인한다.
+- main에 직접 push하지 않는다. 초기 원격 연결 이후 dev → main PR을 사용한다.
+- GitHub 이슈·댓글·PR·레포 설정 변경은 사용자 요청으로 허가된 범위에서 실행한다.
+  원격이 없거나 외부 기록이 허가되지 않은 경우 docs/tasks.md에 기록하고 작업을 계속한다.
+- memo 이슈는 사람 전용이다. 읽고 참고할 수 있지만 수정·생성·라벨 부착하지 않는다.
+- 작업 후 회고한다. 반복할 가치가 있는 절차는 .agents/skills/에,
+  레포 전용 결정·검증 결과·트러블슈팅은 docs/에 기록한다. 새로운 배움이 없으면 중복 기록하지 않는다.
+- 스킬은 다른 레포에서도 재사용할 수 있도록 작성하고 레포 값은 docs/에서 확인한다.
+- 연결된 레포의 변경도 작업 흐름에 포함하되 변경 주체·근거·검증 여부를 구분한다.
+- 시크릿·토큰·개인 사용량 원본은 커밋하거나 이슈·로그에 노출하지 않는다.
+- 완료 전 `python3 scripts/validate-repo.py`와 변경에 맞는 검증을 실행한다.
+  앱 빌드·테스트 명령은 docs/development.md를 따른다.
+
+## 필요한 문서와 스킬
+
+- 개발·검증: [docs/development.md](docs/development.md)
+- Git/GitHub 운영: [docs/github.md](docs/github.md), `github-workflow` 스킬
+- 스킬 작성·회고: [docs/skills.md](docs/skills.md), `skill-authoring` 스킬
+- 목표·버전 관리: [docs/roadmap.md](docs/roadmap.md), `semver-milestones` 스킬
+- 로컬 작업 기록: [docs/tasks.md](docs/tasks.md)
+
+스킬 원본은 `.agents/skills/`다. 작업에 맞는 아래 파일을 읽고 적용한다.
+
+- [github-workflow](.agents/skills/github-workflow/SKILL.md)
+- [skill-authoring](.agents/skills/skill-authoring/SKILL.md)
+- [semver-milestones](.agents/skills/semver-milestones/SKILL.md)

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { stripVTControlCharacters } from "node:util";
 import { type UsageResult } from "../src/app/usage-source.js";
 import { createSnapshot } from "../src/domain/usage.js";
 import { renderPretty, renderResults } from "../src/ui/cli/render.js";
@@ -33,7 +34,8 @@ test("ollama-pro pretty renders only the monthly row while keeping the table int
   assert.ok(!text.includes("weekly"));
   assert.ok(!text.includes("activity:last-4-weeks"));
   assert.ok(text.includes("(exp"));
-  assert.equal(new Set(lines.map((line) => line.length)).size, 1);
+  const widths = lines.map((line) => stripVTControlCharacters(line).length);
+  assert.equal(new Set(widths).size, 1);
 });
 
 test("ollama-pro without a monthly window keeps every window to avoid data loss", () => {

@@ -2,35 +2,11 @@ import Table from "cli-table3";
 import pc from "picocolors";
 import type { UsageResult } from "../../app/usage-source.js";
 import type { UsageWindow } from "../../domain/usage.js";
+import { displayWindows, show } from "./display.js";
+import { expectedSuffix } from "./expected.js";
+import { formatTimeLeft } from "./format.js";
 
-function value(metric: number | string | undefined): string {
-  return metric === undefined ? "unknown" : String(metric);
-}
-
-function renderWindow(window: UsageWindow): string {
-  const metrics = [
-    `used=${value(window.used)}`,
-    `remaining=${value(window.remaining)}`,
-    `limit=${value(window.limit)}`,
-    `percent=${value(window.percent)}`,
-    `reset=${value(window.resetAt)}`,
-  ];
-  return `  - ${window.id} [${window.unit}] ${metrics.join(" ")}`;
-}
-
-export function renderResult(result: UsageResult): string[] {
-  if ("snapshot" in result) {
-    const { provider, observedAt, windows } = result.snapshot;
-    const header = `${provider}: ok observed=${observedAt} windows=${windows.length}`;
-    if (windows.length === 0) return [`${header} (no usage windows reported)`];
-    return [header, ...windows.map((window) => renderWindow(window))];
-  }
-  return [`${result.provider}: error [${result.error.code}] ${result.error.message}`];
-}
-
-export function renderResults(results: readonly UsageResult[]): string[] {
-  return results.flatMap((result) => renderResult(result));
-}
+export { renderResult, renderResults } from "./display.js";
 
 export function formatResetTime(iso?: string): string {
   if (!iso) return "-";
@@ -46,7 +22,9 @@ export function formatResetTime(iso?: string): string {
 }
 
 export function formatUsage(window: UsageWindow): string {
-  const { percent, used, limit, remaining, unit } = window;
+  const { unit } = window;
+  const [percent, used, limit, remaining] = [window.percent, window.used, window.limit, window.remaining]
+    .map((m) => (m === undefined ? undefined : show(m)));
   if (percent !== undefined) {
     if (used !== undefined && limit !== undefined) return `${percent}% (${used}/${limit} ${unit})`;
     if (used !== undefined) return `${percent}% (${used} ${unit})`;
@@ -64,17 +42,21 @@ export function renderPretty(results: readonly UsageResult[]): string[] {
   const head = ["Provider", "Window", "Usage", "Reset (KST)", "Status"];
   const table = new Table({
     head: head.map((h: string) => colors.bold(h)),
-    colWidths: [13, 16, 22, 18, 22],
+    colWidths: [13, 16, 22, 27, 22],
     wordWrap: true,
     style: { head: [], border: [] },
   });
   for (const r of results) {
     if ("snapshot" in r) {
-      const { provider, windows } = r.snapshot;
+      const { provider, windows, observedAt } = r.snapshot;
+      const visible = displayWindows(provider, windows);
       const okText = colors.green("ok");
-      if (windows.length === 0) table.push([provider, "(none)", "-", "-", okText]);
-      else for (const w of windows) {
-        table.push([provider, w.id, formatUsage(w), formatResetTime(w.resetAt), okText]);
+      if (visible.length === 0) table.push([provider, "(none)", "-", "-", okText]);
+      else for (const w of visible) {
+        const left = formatTimeLeft(w.resetAt, observedAt);
+        const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
+        table.push([provider, w.id,
+          formatUsage(w) + expectedSuffix(w, visible, observedAt), reset, okText]);
       }
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);

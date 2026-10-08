@@ -4,24 +4,31 @@
 - 종료 규칙: 완료 기준을 충족한 issue는 close한다. 미완료는 open 유지 후 사유를 댓글로 남긴다. memo는 손대지 않는다.
 - 상세 목록과 근거는 이 표와 각 이슈 댓글을 따른다.
 
-## 0.1.0 (CLI MVP, #1–#29, #56–#61)
+## 0.1.0 (CLI MVP, #1–#12·#18–#28, #56–#61)
 
 | 이슈 | 상태 | 근거 또는 미완료 사유 |
 | --- | --- | --- |
 | #1, #2, #4–#12 | closed | 아키텍처·실행 기반·도메인·포트·수집·watch·CLI·HTTP. 완료 댓글에 파일·테스트 명시 |
-| #3 | open | 샘플 red→green 실행 기록 없음 |
-| #13–#17 | open | 계약 확인 미완료. 실측 한도·지원 버전·소진 fixture 근거 부족. 댓글 참조 |
+| #3 | closed | 샘플 red→green 실측 댓글 후 close |
 | #18–#21, #23, #24 | closed | 어댑터·조립·BDD. #18은 비공식 경로(사용자 승인), #19–21 계약 상세는 #14–#16 |
 | #22 | closed | 사용자 승인 GET 계약으로 완료 조건을 갱신하고 close. 근거는 이슈 본문 |
-| #25 | open | roadmap·issue-status 갱신 PR 머지 후 close 예정 |
+| #25 | closed | 문서 동기화 PR #62 병합 후 close |
 | #26, #27 | closed | 사람 조치 handle 완료(이전 검증 기록) |
+| #56 | open | 자동화 plan. #58 Wiki 검증 후 직접 close 예정 |
+| #57 | closed | 코드·CI 자동화. PR #62 병합 후 close |
+| #58 | open | Wiki 최종 게시. 게시 검증 후 직접 close 예정 |
+| #59 | closed | pretty CLI. PR #62 병합 후 close |
+| #60 | closed | README 중세 유럽 기사 갑옷 이미지. PR #62 병합 후 close |
+| #61 | closed | 버전 스크립트·SemVer 절차. PR #62 병합 후 close. tag·Release 없음 |
+
+## 0.1.1 (계약 보강, #13–#17·#29)
+
+- `0.1.1` milestone(#3)을 새로 만들고 0.1.0에서 이동했다(사용자 결정, 이슈마다 사유 댓글).
+
+| 이슈 | 상태 | 근거 또는 미완료 사유 |
+| --- | --- | --- |
+| #13–#17 | open | 계약 확인 미완료. 실측 한도·지원 버전·소진 fixture 근거 부족. 댓글 참조 |
 | #29 | open, handle·hold | 환경별 CLI 응답 차이 원인 미확정. 자동 경로는 GET으로 교체 |
-| #56 | open | 자동화 운영 plan. 하위 #57 code/CI, #58 Wiki |
-| #57 | open | 코드·CI 자동화 work. 후속 PR 머지 후 close |
-| #58 | open | Wiki 최종 게시. 머지 후 게시 뒤 직접 close |
-| #59 | open | pretty CLI 구현 진행 중(미freeze). PR Closes 대상 |
-| #60 | open | README 마스코트. PR Closes 대상 |
-| #61 | open | 버전 스크립트·SemVer 절차. PR Closes 대상 |
 
 ## 0.2.0 (웹·이력 확장, #30–#55)
 
@@ -30,12 +37,13 @@
 
 ## 마일스톤 상태
 
-- `0.1.0` (#1) open: 1–29, 56–61 매핑. package 버전은 `0.1.0` 유지.
+- `0.1.0` (#1) open: #1–#12·#18–#28, #56–#61 매핑. package 버전은 `0.1.0` 유지.
+  PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 close 예정(사용자 결정, 아직 미발행).
+- `0.1.1` (#3) open: #13–#17, #29 매핑. 0.1.0에서 이동(사용자 결정).
 - `0.2.0` (#2) open: 30–55 매핑. package 버전은 변경하지 않았다.
 - 닫힌 issue 포함 미매핑 없음을 확인했다.
 
-## 최종 PR 계획 (미병합)
+## PR #62 (병합)
 
-- 하나의 PR(dev → main)에 `Closes #25`, `#57`, `#59`, `#60`, `#61`을 넣는다. 병합 전 pull_request CI가 success여야 한다.
-- 병합 뒤 docs-only 기록 PR로 ci fast-pass를 원격에서 확인한다.
-- Wiki(#58) 게시 뒤 #58과 #56을 직접 close한다.
+- 병합 `1b3b027`. `Closes #25 #57 #59 #60 #61`로 위 이슈 5건이 closed 확인됐다.
+- 남은 작업: Wiki(#58) 게시와 그 검증 뒤 #58·#56을 직접 close. 이 Wiki 게시는 아직 수행 전이다.

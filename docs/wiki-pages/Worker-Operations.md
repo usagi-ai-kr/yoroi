@@ -30,7 +30,13 @@ pnpm --silent run dev watch --pretty
 pnpm --silent run dev watch --interval 30 --pretty
 ```
 
-표는 `Provider`, `Window`, `Usage`, `Reset (KST)`, `Status` 열을 사용합니다. 없는 값은 `-`, 오류는 `Status`에 표시하며 `--pretty`가 없으면 기존 진단 출력을 유지합니다. 표 렌더링에는 `cli-table3` 0.6.5와 `picocolors` 1.1.1을 사용합니다.
+표는 `Provider`, `Window`, `Usage`, `Reset (KST)`, `Status` 열을 사용합니다. `Reset (KST)` 값은 시각 뒤에 남은 시간을 `(6d 18h)`처럼 덧붙이고, reset 시각이 없으면 `-`입니다. 없는 값은 `-`, 오류는 `Status`에 표시합니다. 표 렌더링에는 `cli-table3` 0.6.5와 `picocolors` 1.1.1을 사용합니다.
+
+`--pretty`가 없으면 각 window 줄에 `reset_in=6d18h`처럼 관측 시각 기준 남은 시간을 표시합니다. 큰 단위 두 개로 표시하며 1시간 미만은 분만, 이미 지난 reset은 `0m`입니다. 숫자 metric(`percent`, `used`, `limit`, `remaining`)은 plain·pretty 출력에서만 소수점 둘째 자리까지 올림하고 원본 값은 바꾸지 않습니다.
+
+공급자마다 월간이 있으면 월간, 없으면 주간 창 하나(가장 긴 창)에 예상 균등 사용량 비율을 표시합니다. 계산은 `(창 길이 - 남은 시간) / 창 길이 × 100`(주간 7일, 월간은 리셋 한 달 전부터)이며 소수점 둘째 자리까지 올림합니다. pretty 출력은 `Usage` 열 뒤에 `(exp 42.86%)`처럼 덧붙이고, plain 출력은 해당 창 줄에 `expected=42.86`으로 표시합니다.
+
+ollama-pro는 plain·pretty 모두 월간 창만 표시하고(없으면 전체), 헤더 `windows=`는 표시된 창 수입니다. 수집 데이터는 바뀌지 않습니다.
 
 ## 중지와 데이터
 

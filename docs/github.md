@@ -10,7 +10,7 @@
 - 자동 머지 옵션은 아직 적용하지 않았다. 아래 머지·브랜치 유지 항목은 운영 목표다.
 - [PR #28](https://github.com/qus0in/yoroi/pull/28): dev → main 병합 완료(merge commit `48bdd8e`), feature 라벨·0.1.0 milestone.
 - 이후 변경은 별도 PR로 진행한다. docs-only 변경은 CI fast pass로 앱 검증을 생략하며, 필수 체크 `ci`는 계속 요구한다.
-- 최종 PR(미병합): dev → main, `Closes #25 #57 #59 #60 #61`. 병합 뒤 docs-only 기록 PR로 fast pass를 원격 확인한다. Wiki(#58) 뒤 #58·#56을 직접 close한다.
+- PR #62 병합(`1b3b027`): `Closes #25 #57 #59 #60 #61` 자동 종료 확인. Wiki(#58)는 아직 게시 전이다. 게시 뒤 같은 문서 PR에서 #58·#56을 직접 close한다.
 - PR 필수 체크는 pull_request 실행·head SHA·PR 체크 상태를 함께 확인한다.
   workflow_dispatch 체크는 성공해도 PR 필수 체크로 평가되지 않는다.
   자동 실행 누락 시 PR 이벤트/승인 대기/활성 workflow를 확인하고 적격 이벤트 CI를 실행한다.

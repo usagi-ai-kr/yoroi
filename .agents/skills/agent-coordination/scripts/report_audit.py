@@ -1,12 +1,37 @@
 #!/usr/bin/env python3
 """작업 결과 보고서 내용과 소유권·보안 준수 여부를 검사하는 감사 스크립트."""
-import json, sys
+import json, posixpath, sys
 from pathlib import Path
 
 try:
     from task_packet import validate_packet, is_non_empty_str, has_secret
 except ImportError:
     from .task_packet import validate_packet, is_non_empty_str, has_secret
+
+
+def _normalize(p: str) -> str:
+    return posixpath.normpath(p.strip().replace("\\", "/"))
+
+
+def _is_owned(mod_file: str, owned) -> bool:
+    norm = _normalize(mod_file)
+    if norm == ".." or norm.startswith("../"):
+        return False
+    for entry in owned:
+        raw = entry.strip().replace("\\", "/")
+        if raw.endswith("/"):
+            base = posixpath.normpath(raw.rstrip("/")) if raw.strip("/") else "/"
+            if base == "/":
+                if norm.startswith("/"):
+                    return True
+            elif base in (".", ""):
+                if not norm.startswith("/") and norm not in (".", ""):
+                    return True
+            elif norm == base or norm.startswith(base + "/"):
+                return True
+        elif norm == _normalize(entry):
+            return True
+    return False
 
 
 def audit_report(packet_data, report_data) -> list[str]:
@@ -22,9 +47,9 @@ def audit_report(packet_data, report_data) -> list[str]:
     if not isinstance(mod, list) or not mod or not all(is_non_empty_str(f) for f in mod):
         errors.append("modified_files는 비어있지 않은 문자열 배열이어야 합니다.")
     else:
-        unowned = set(mod) - owned
+        unowned = sorted(f for f in mod if not _is_owned(f, owned))
         if unowned:
-            errors.append(f"소유권 보고 위반: 비소유 파일 수정 보고: {sorted(unowned)}")
+            errors.append(f"소유권 보고 위반: 비소유 파일 수정 보고: {unowned}")
 
     ver = report_data.get("verification_results")
     if not isinstance(ver, list) or not ver or not all(is_non_empty_str(v) for v in ver):

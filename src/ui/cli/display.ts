@@ -1,0 +1,49 @@
+import type { UsageResult } from "../../app/usage-source.js";
+import type { ProviderId, UsageWindow } from "../../domain/usage.js";
+import { expectedMetrics, quotaKind } from "./expected.js";
+import { formatNumber, formatTimeLeft } from "./format.js";
+
+export function displayWindows(provider: ProviderId,
+  windows: readonly UsageWindow[]): readonly UsageWindow[] {
+  if (provider !== "ollama-pro") return windows;
+  const monthly = windows.filter((window) => quotaKind(window.id) === "monthly");
+  return monthly.length > 0 ? monthly : windows;
+}
+
+export function show(metric: number | string): string {
+  return typeof metric === "number" ? formatNumber(metric) : metric;
+}
+
+function value(metric: number | string | undefined): string {
+  return metric === undefined ? "unknown" : show(metric);
+}
+
+function renderWindow(window: UsageWindow, observedAt: string,
+  windows: readonly UsageWindow[]): string {
+  const left = formatTimeLeft(window.resetAt, observedAt);
+  const metrics = [
+    `used=${value(window.used)}`,
+    `remaining=${value(window.remaining)}`,
+    `limit=${value(window.limit)}`,
+    `percent=${value(window.percent)}`,
+    `reset=${value(window.resetAt)}`,
+    `reset_in=${left?.replace(" ", "") ?? "unknown"}`,
+    ...expectedMetrics(window, windows, observedAt),
+  ];
+  return `  - ${window.id} [${window.unit}] ${metrics.join(" ")}`;
+}
+
+export function renderResult(result: UsageResult): string[] {
+  if ("snapshot" in result) {
+    const { provider, observedAt, windows } = result.snapshot;
+    const visible = displayWindows(provider, windows);
+    const header = `${provider}: ok observed=${observedAt} windows=${visible.length}`;
+    if (visible.length === 0) return [`${header} (no usage windows reported)`];
+    return [header, ...visible.map((window) => renderWindow(window, observedAt, visible))];
+  }
+  return [`${result.provider}: error [${result.error.code}] ${result.error.message}`];
+}
+
+export function renderResults(results: readonly UsageResult[]): string[] {
+  return results.flatMap((result) => renderResult(result));
+}

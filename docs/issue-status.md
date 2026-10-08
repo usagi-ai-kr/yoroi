@@ -49,10 +49,10 @@
 
 ## 사람 조치 (2026-10-08)
 
-- [#26 Ollama 서명 키·실행 계정 인증 설정](https://github.com/qus0in/yoroi/issues/26): `handle`, `hold`.
-- [#27 OpenCode Go API 키 실행 환경 설정](https://github.com/qus0in/yoroi/issues/27): `handle`, `hold`.
+- [#26 Ollama 서명 키·실행 계정 인증 설정](https://github.com/qus0in/yoroi/issues/26): `handle`, 완료.
+- [#27 OpenCode Go API 키 실행 환경 설정](https://github.com/qus0in/yoroi/issues/27): `handle`, 완료.
 - 두 건 모두 사용자 설정 후 실계정 조회 성공을 확인했다. 키 값은 이슈에서 받지 않았다.
-- 본문 수정·hold 해제·댓글·종료는 자동 승인 검토에서 확인 요청 범위 초과로 거부되어 유지했다.
+- 확인 요청만으로 상태 변경은 거부됐으나, 이후 사용자 명시 승인으로 검증 기록·hold 해제·종료했다.
 
 ## 회고
 

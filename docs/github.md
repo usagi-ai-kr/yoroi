@@ -8,6 +8,8 @@
 - 2026-10-08 main 보호 적용: PR 필수, 승인 0명, `ci` 필수·strict, 관리자 포함,
   force push·삭제 금지. 기존 성공 workflow의 실제 job 이름 `ci`를 확인했다.
 - 자동 머지 옵션은 아직 적용하지 않았다. 아래 머지·브랜치 유지 항목은 운영 목표다.
+- [PR #28](https://github.com/qus0in/yoroi/pull/28): dev → main, feature 라벨·0.1.0 milestone.
+- 자동 CI가 시작되지 않으면 동일 head의 workflow_dispatch로 확인하고 commit check-runs와 대조한다.
 
 | 항목 | 운영 목표 |
 | --- | --- |

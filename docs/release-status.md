@@ -5,6 +5,7 @@
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
 - CLI `--version`은 package.json을 읽는다. 빌드도 같은 JSON을 산출물에 포함한다.
 - tag·Release는 발행하지 않았다. 변경은 `dev → main` PR로 게시하며 해당 PR의 CI를 확인한다.
+- [PR #28](https://github.com/qus0in/yoroi/pull/28)에 첫 CLI MVP와 버전·pnpm 전환을 게시했다.
 
 ## 인증 검증
 
@@ -30,9 +31,11 @@
 ## GitHub 조치
 
 - main 보호 적용: PR·ci 필수, strict 최신 기준, 관리자 포함, force push·삭제 금지.
-- #26·#27은 실제 조회 검증 완료지만 이슈 본문/hold/종료 변경은 자동 승인 검토에서 거부됐다.
-  확인 요청을 이슈 상태 변경 허가로 볼 수 없다는 사유여서 원격 상태를 유지했다.
+- #26·#27은 사용자 명시 승인 후 검증 결과를 기록하고 hold 해제·종료했다.
 - 완료 기록은 PR에도 포함한다. milestone은 실제 릴리스 커밋 검증과 통합 시점에 맞춰 완료한다.
+- 최초 게시 커밋의 [원격 CI](https://github.com/qus0in/yoroi/actions/runs/37709346179)가 통과했다.
+  자동 실행이 보고되지 않아 동일 head의 workflow_dispatch를 실행했다.
+  PR 화면의 체크가 늦게 갱신될 때는 commit check-runs의 head SHA·ci 결과도 대조한다.
 
 ## 회고와 릴리스 기준
 

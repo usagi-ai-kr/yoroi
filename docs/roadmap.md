@@ -8,7 +8,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 | Bootstrap | 프로젝트 관리 기반 | 규칙·스킬·템플릿·검증·CI 정의 | 완료 |
 | 원격 연결 | Git/GitHub 운영 적용 | 원격·라벨·보호·CI 확인 | 원격·라벨·main 보호 적용 |
 | 제품 범위 | 5개 공급자 CLI once/watch | 계약·사용량 창·오류·60초 반복 | 조회 계약 확인, Ollama는 비공식 |
-| 개발 기반 | Node/TypeScript CLI | 실행·빌드·단위/BDD·CI | 로컬 통과, 새 CI 원격 실행 미확인 |
+| 개발 기반 | Node/TypeScript CLI | 실행·빌드·단위/BDD·CI | pnpm 로컬·원격 CI 통과 |
 | 첫 기능 | 수집부터 CLI 표시 | 5개 실제 어댑터 및 전체 계약 검증 | 구현·5개 계정 smoke 통과 |
 
 - `package.json`의 버전은 `0.1.0`이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.

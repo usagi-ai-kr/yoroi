@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { stripVTControlCharacters } from "node:util";
 import { type UsageResult } from "../src/app/usage-source.js";
 import { createSnapshot, type UsageWindow } from "../src/domain/usage.js";
 import { expectedMetrics, expectedPercent, expectedSuffix, quotaKind } from "../src/ui/cli/expected.js";
@@ -88,5 +89,6 @@ test("pretty output appends exp once and keeps every table line the same width",
 
   assert.equal(text.split("(exp").length - 1, 1);
   assert.ok(text.includes("12% (exp 42.86%)"));
-  assert.equal(new Set(lines.map((line) => line.length)).size, 1);
+  const widths = lines.map((line) => stripVTControlCharacters(line).length);
+  assert.equal(new Set(widths).size, 1);
 });

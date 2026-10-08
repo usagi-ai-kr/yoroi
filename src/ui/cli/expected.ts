@@ -58,7 +58,8 @@ export function expectedPercent(window: UsageWindow, observedAt: string): number
   return Math.min(100, Math.max(0, elapsed));
 }
 
-function selectedPercent(provider: ProviderId, window: UsageWindow,
+/** 표시 대상이면 선택된 창의 예상 균등 사용량 원본값을, 아니면 undefined를 돌려준다. */
+export function selectedExpectedPercent(provider: ProviderId, window: UsageWindow,
   windows: readonly UsageWindow[], observedAt: string): number | undefined {
   if (!isExpectedWindow(provider, window, windows)) return undefined;
   return expectedPercent(window, observedAt);
@@ -66,12 +67,12 @@ function selectedPercent(provider: ProviderId, window: UsageWindow,
 
 export function expectedMetrics(provider: ProviderId, window: UsageWindow,
   windows: readonly UsageWindow[], observedAt: string): string[] {
-  const percent = selectedPercent(provider, window, windows, observedAt);
+  const percent = selectedExpectedPercent(provider, window, windows, observedAt);
   return percent === undefined ? [] : [`expected=${formatNumber(percent)}`];
 }
 
 export function expectedSuffix(provider: ProviderId, window: UsageWindow,
   windows: readonly UsageWindow[], observedAt: string): string {
-  const percent = selectedPercent(provider, window, windows, observedAt);
+  const percent = selectedExpectedPercent(provider, window, windows, observedAt);
   return percent === undefined ? "" : ` (exp ${formatNumber(percent)}%)`;
 }

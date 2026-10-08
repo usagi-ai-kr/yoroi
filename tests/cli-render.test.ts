@@ -17,7 +17,7 @@ test("renderer prints observedAt, all window metrics and percent", () => {
 
   assert.deepEqual(renderResults([result]), [
     `codex: ok observed=${observedAt} windows=1`,
-    "  - weekly [requests] used=3 remaining=7 limit=10 percent=30 reset=2026-10-14T00:00:00Z reset_in=6d18h expected=3.28",
+    "  - weekly [requests] used=3 remaining=7 limit=10 percent=30 reset=2026-10-14T00:00:00Z reset_in=6d18h expected=3.28 usage_status=over",
   ]);
 });
 
@@ -33,7 +33,7 @@ test("renderer marks missing metrics as unknown and empty windows explicitly", (
 
   assert.deepEqual(renderResults([partial, empty]), [
     `agy: ok observed=${observedAt} windows=1`,
-    "  - monthly [tokens] used=unknown remaining=unknown limit=unknown percent=0 reset=unknown reset_in=unknown",
+    "  - monthly [tokens] used=unknown remaining=unknown limit=unknown percent=0 reset=unknown reset_in=unknown usage_status=n/a",
     `claude: ok observed=${observedAt} windows=0 (no usage windows reported)`,
   ]);
 });

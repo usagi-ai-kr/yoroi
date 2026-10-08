@@ -3,6 +3,7 @@ import type { ProviderId, UsageWindow } from "../../domain/usage.js";
 import { expectedMetrics } from "./expected.js";
 import { formatNumber, formatTimeLeft } from "./format.js";
 import { displayWindows, windowLabels } from "./labels.js";
+import { usageStatus } from "./pace.js";
 
 export { displayWindows, windowLabels } from "./labels.js";
 
@@ -25,6 +26,7 @@ function renderWindow(provider: ProviderId, window: UsageWindow, observedAt: str
     `reset=${value(window.resetAt)}`,
     `reset_in=${left?.replace(" ", "") ?? "unknown"}`,
     ...expectedMetrics(provider, window, windows, observedAt),
+    `usage_status=${usageStatus(provider, window, windows, observedAt)}`,
   ];
   return `  - ${label} [${window.unit}] ${metrics.join(" ")}`;
 }

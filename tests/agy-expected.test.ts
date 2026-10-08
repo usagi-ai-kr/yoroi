@@ -22,7 +22,7 @@ test("agy shows expected on every weekly window", () => {
   assert.equal(marked.length, 2);
   assert.ok(marked.some((line) => line.includes("- g-w ")));
   assert.ok(marked.some((line) => line.includes("- c-w ")));
-  assert.ok(marked.every((line) => line.endsWith("expected=42.86")));
+  assert.ok(marked.every((line) => line.includes("expected=42.86")));
   assert.ok(!lines.some((line) => line.includes("- g-5h ") && line.includes("expected=")));
   assert.ok(!lines.some((line) => line.includes("- c-5h ") && line.includes("expected=")));
 });

@@ -52,4 +52,5 @@ pnpm remove -g yoroi
 
 - 인증 환경 변수 이름과 프로필 선택은 [공급자와 인증](Providers-and-Authentication)을 확인합니다.
 - 60초 `watch` 동작과 종료 방법은 [워커 운영](Worker-Operations)을 확인합니다.
+- 실행 결과의 사용량 상태(`under`·`optimal`·`over`·`n/a`) 표시도 [워커 운영](Worker-Operations)에 정리했습니다.
 - 개발 검증 명령은 [체크와 문제 해결](Checks-and-Troubleshooting)을 확인합니다.

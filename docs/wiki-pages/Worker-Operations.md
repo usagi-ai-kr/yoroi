@@ -38,6 +38,8 @@ pnpm --silent run dev watch --interval 30 --pretty
 
 창 행 정렬은 표시 단계에서만 수행합니다: `m`→`w`→`5h`(접두어 표기도 `g-w`·`c-5h` 같은 등급)→등급 없는 내부 id 행은 맨 뒤이며, 같은 등급은 수집 순서를 유지합니다.
 
+사용량 상태 표시(표시 전용): exp가 있는 행은 실제%(`percent` 우선, 없으면 `used/limit`)와 exp를 원본값으로 비교해 `|차이| ≤ 3%p`면 `optimal`(경계 포함), `-3%p` 미만이면 `under`, `+3%p` 초과면 `over`, exp나 실제%를 구하지 못한 행은 `n/a`입니다. 표시 수치는 소수점 둘째 자리로 올리고 비교에는 원본값을 씁니다. plain 출력은 window 줄에 `usage_status=over`처럼 붙고, pretty는 `Status` 열이 `ok over`처럼 `ok`를 유지한 채 부가 표기만 더합니다(열 폭 불변). 수집·저장 데이터는 바뀌지 않습니다.
+
 ollama-pro는 plain·pretty 모두 `monthly`·`credits:included`(월간 인정)만 표시하고, `credits:purchased`는 계속 수집하지만 기본 출력에서는 제외합니다. 그래서 기본 표시는 월간 `m`(`credits:included`)만 남고, `activity:*`·`session`·`weekly`도 숨깁니다. 표시 대상이 0개면 창 0개에 `windows=0 (N windows hidden)`처럼 안내하고 전체를 대신 보여주지 않습니다. 수집 데이터는 바뀌지 않습니다.
 
 창 표기는 길이가 확정된 것만 `5h`·`w`·`m`으로 줄이고(그 외 내부 id 그대로), codex는 kind 첫 글자(`p-5h`)→버킷+kind(`cp-5h`)→내부 id 순으로만 승격합니다. `credits:included` 예상 비율은 `period.from` 시작점 기준이며, 없으면 숨깁니다. 계산에는 내부 id를 그대로 씁니다.

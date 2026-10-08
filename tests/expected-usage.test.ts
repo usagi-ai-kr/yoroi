@@ -64,9 +64,9 @@ test("plain output adds expected to monthly over weekly and keeps other lines un
   const lines = renderResults([result]);
 
   assert.equal(lines.filter((line) => line.includes("expected=")).length, 1);
-  assert.ok(lines.find((line) => line.includes("- m [percent]"))!.endsWith("expected=0"));
-  assert.ok(lines.find((line) => line.includes("- w [percent]"))!.endsWith("reset_in=4d0h"));
-  assert.ok(lines.find((line) => line.includes("- 5h [percent]"))!.endsWith("reset_in=5h0m"));
+  assert.ok(lines.find((line) => line.includes("- m [percent]"))!.includes("expected=0"));
+  assert.ok(lines.find((line) => line.includes("- w [percent]"))!.includes("reset_in=4d0h"));
+  assert.ok(lines.find((line) => line.includes("- 5h [percent]"))!.includes("reset_in=5h0m"));
 });
 
 test("plain output falls back to the weekly window when no monthly window exists", () => {

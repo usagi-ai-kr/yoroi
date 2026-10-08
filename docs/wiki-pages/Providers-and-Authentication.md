@@ -12,14 +12,15 @@
 
 - `YOROI_PROVIDERS`: 선택할 공급자 ID 목록. 생략하면 다섯 개 모두 조회합니다.
 - `YOROI_TIMEOUT_MS`: 전체 기본 timeout(기본 10000ms). `YOROI_<공급자>_TIMEOUT_MS`로 개별 조정합니다.
+- `YOROI_INTERVAL_SECONDS`: `watch` 간격 초(기본 60). `YOROI_DEBUG=1`이면 읽은 `.env` 경로만 표시합니다.
 - `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로를 지정할 때 사용합니다.
 - `YOROI_OPENCODE_GO_API_KEY`: OpenCode Go API key를 실행 환경에 제공합니다.
 - `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`: Ollama Pro Ed25519 서명 키 경로를 바꿉니다.
-- 개발 실행에서는 환경 변수가 `.env` 값보다 우선합니다. 변수명만 문서화하며 실제 값을 Wiki에 올리지 마세요.
+- 실행 시 이미 설정된 환경 변수가 `.env` 값보다 우선합니다. 변수명만 문서화하며 실제 값을 Wiki에 올리지 마세요.
 
 ## Claude OAuth
 
-인증 선택 순서는 `YOROI_CLAUDE_OAUTH_TOKEN` → `CLAUDE_CODE_OAUTH_TOKEN` → 저장된 기존 프로필입니다. 명시 변수가 빈 값이면 저장소로 fallback하지 않습니다. `CLAUDE_CONFIG_DIR`가 있으면 그 프로필을 사용하고, 없으면 실행 계정 HOME의 `.claude`를 사용합니다.
+인증 선택 순서는 `YOROI_CLAUDE_OAUTH_TOKEN` → `CLAUDE_CODE_OAUTH_TOKEN` → 저장된 기존 프로필입니다. 명시 변수가 빈 값이면 저장소로 fallback하지 않습니다. `CLAUDE_CONFIG_DIR`(없으면 실행 계정 HOME의 `.claude`)과 `CLAUDE_SECURESTORAGE_CONFIG_DIR`이 있으면 그 프로필을 사용합니다.
 
 - Yoroi는 로그인·refresh·credential 저장을 실행하지 않습니다.
 - macOS에서는 Keychain을 읽고, 조회가 실패하면 동일 프로필의 `.credentials.json`을 확인합니다.

@@ -48,9 +48,13 @@
 ## 수집 이벤트 계약 (app 계층, #31 첫 단위)
 
 - `src/app/collection-events.ts`의 순수 함수 `buildCollectionEvents`가 collectOnce 결과에서
-  `usage.collected`(전체 성공 1건)·`usage.partial`(실패 있음 1건)·`auth.expired`(공급자별 인증 만료)·
-  `usage.resetChanged`(이전 스냅샷 대비 resetAt 변경, 양쪽 정의 시만) 목록을 만든다.
-- 이벤트에는 이름·공급자·시각·오류 코드·변경된 resetAt만 담고 스냅샷·수치·추정치·비밀값을 담지 않는다.
-  rolling window 추정치도 발행하지 않는다.
+  요약 이벤트 1건과 공급자별 이벤트를 만든다.
+- 요약 정책: 1건 이상 전부 성공 `usage.collected`·성공/실패 혼재 `usage.partial`·
+  1건 이상 전부 실패 `usage.failed`(신규)·결과 0건 `usage.empty`(신규).
+  요약 이벤트는 `succeeded`·`failed` 개수를 함께 담는다.
+- 공급자 이벤트: `auth.expired`(인증 만료 격리)·`usage.resetChanged`
+  (이전 스냅샷 대비 resetAt 변경, 양쪽 정의 시만, `windowId` 포함).
+- 이벤트에는 이름·공급자·시각·개수·창 id·오류 코드·변경된 resetAt만 담고
+  스냅샷·사용량 원본·추정치·비밀값을 담지 않는다. rolling window 추정치도 발행하지 않는다.
 - 의존 방향: app은 domain·app만 import한다(infra·ui import 금지, tests/architecture.test.ts로 검증).
   0.2.0 저장·WS·Zod 연결은 다음 단위 범위다.

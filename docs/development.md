@@ -1,8 +1,7 @@
 # 개발과 검증
 
-Yoroi는 AI 사용량 모니터링 CLI다. Node 24.13.1·pnpm 12.10.1을 고정한다.
-TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD는 Cucumber다.
-버전 원본은 `package.json`의 `0.1.1`이며 [milestone](https://github.com/qus0in/yoroi/milestone/1)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
+Yoroi는 AI 사용량 모니터링 CLI다. Node 24.13.1·pnpm 12.10.1을 고정한다. TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD는 Cucumber다.
+버전 원본은 `package.json`의 `0.1.2`이며 [0.1.2 milestone](https://github.com/qus0in/yoroi/milestone/4)(#4)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
 
 ## 앱 실행과 검증
 
@@ -37,7 +36,8 @@ pnpm run check
   실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
 - dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다.
   이미 지정된 환경 변수가 .env보다 우선한다. .env는 Git ignore 대상이다.
-- 전역 실행의 `.env` 로드는 현재 디렉터리 `.env` → 설치 위치 복사본 순으로 처음 존재하는 것만 읽고 기존 환경 변수는 덮어쓰지 않는다. `YOROI_DEBUG=1`이면 읽은 경로만 stderr에 표시한다(값 미출력). `install:global`은 pnpm pack tarball로 레포와 독립된 사본을 설치하고(디렉터리 설치는 심볼릭 링크라 쓰지 않음) 레포 `.env`를 권한 600으로 복사하며, 재실행 때 갱신되므로 레포 `.env` 변경 후 재실행이 필요하다. 제거(`pnpm remove -g yoroi`)는 설치 사본과 복사본을 함께 삭제한다(실측). `files`는 `dist`뿐이라 publish 대상에 `.env`는 없다.
+- 전역 실행의 `.env` 로드는 현재 디렉터리 `.env` → 설치 위치 복사본 순으로 처음 존재하는 것만 읽고 기존 환경 변수는 덮어쓰지 않는다. `YOROI_DEBUG=1`이면 읽은 경로만 stderr에 표시한다(값 미출력). 후보가 없으면 조용히 건너뛰고, 존재하는 `.env`의 로드 실패(권한·파싱)는 `yoroi: env file load failed <경로> (<코드>)`만 stderr에 남기고 종료 코드 2로 멈춘다(원문·값 미출력).
+- `install:global`은 pnpm pack tarball로 레포와 독립된 사본을 설치하고(디렉터리 설치는 심볼릭 링크라 쓰지 않음) `scripts/copy-env.mjs`가 레포 `.env`를 임시 파일 0600 원자 생성·교체로 설치 위치에 복사한다(umask 무관·심볼릭 링크 미추종). 재실행 때 갱신되므로 레포 `.env` 변경 후 재실행이 필요하다. 제거(`pnpm remove -g yoroi`)는 설치 사본과 복사본을 함께 삭제한다(실측). `files`는 `dist`뿐이라 publish 대상에 `.env`는 없다.
 - pnpm은 packageManager 버전을 고정하며 Corepack 시 `corepack enable pnpm`을 쓴다.
   [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)을 따르고 필요 시 Node/Corepack 경로를 우선한다.
 - CI는 설명문서만 변경 시 빠른 통과를 제공하고, 그 외에는 `validate-repo.py --ci`·스킬 검증·frozen install·전체 check를 실행한다.

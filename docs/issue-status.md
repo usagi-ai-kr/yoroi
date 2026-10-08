@@ -35,7 +35,7 @@
 | #17 | closed | Claude 완료 기준 충족 후 close |
 | #29 | open, handle·hold | 환경별 CLI 응답 차이 원인 미확정. 자동 경로는 GET으로 교체 |
 
-- milestone #3은 open인 #13·#14·#29를 남긴 채 close 예정이며 다른 milestone로 옮기지 않는다.
+- milestone #3은 open인 #13·#14·#29를 남긴 채 close했고 다른 milestone로 옮기지 않았다.
 
 ## 0.2.0 (웹·이력 확장, #30–#55)
 
@@ -47,8 +47,9 @@
 - `0.1.0` (#1) closed: 31 closed, open 0.
   PR #63 병합 `6a6802a`(head `e6ffd2e`), PR CI `37725084420` success,
   [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행.
-- `0.1.1` (#3) open: #15–#17 closed, #13·#14·#29 open. close 예정이며 open 이슈는 이관하지 않는다.
-  릴리스 준비: 버전 `0.1.1`, 예정 tag `v0.1.1`(target은 dev → main 머지 커밋).
+- `0.1.1` (#3) closed(open 3·closed 4): #15–#17 closed, #13·#14·#29 open 유지·이관 없음.
+  발행 완료: 버전 `0.1.1`, [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1)
+  (target PR #65 머지 커밋 `7470250`, 머지 후 CI run `37735089637` success).
 - `0.2.0` (#2) open: 30–55 매핑. package 버전은 변경하지 않았다.
 - 닫힌 issue 포함 미매핑 없음을 확인했다.
 
@@ -62,3 +63,8 @@
 - 병합 `6a6802a`(main), head `e6ffd2e`. PR CI `37725084420` success
   (main 트리 동일, ci.yml main push 트리거 없음).
 - [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행 후 0.1.0 milestone close.
+
+## PR #65 (병합, v0.1.1 발행)
+
+- 병합 `7470250`(main). 머지 후 workflow_dispatch CI run `37735089637` success.
+- [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행 후 0.1.1 milestone close.

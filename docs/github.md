@@ -14,6 +14,8 @@
 - PR 필수 체크는 pull_request 실행·head SHA·PR 체크 상태를 함께 확인한다.
   workflow_dispatch 체크는 성공해도 PR 필수 체크로 평가되지 않는다.
   자동 실행 누락 시 PR 이벤트/승인 대기/활성 workflow를 확인하고 적격 이벤트 CI를 실행한다.
+- PR #65 병합(`7470250`)으로 v0.1.1 tag·Release를 발행하고 0.1.1 milestone을 close(open 3 유지)했다.
+- 회고(v0.1.1): main에는 push CI 트리거가 없어 머지 후 검증은 workflow_dispatch(run `37735089637`)로 실행했고, PR 자기 승인은 불가하다(필수 승인 0명).
 
 | 항목 | 운영 목표 |
 | --- | --- |

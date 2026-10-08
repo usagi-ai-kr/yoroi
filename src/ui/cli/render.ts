@@ -57,7 +57,7 @@ export function renderPretty(results: readonly UsageResult[]): string[] {
         const left = formatTimeLeft(w.resetAt, observedAt);
         const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
         table.push([provider, labels[index]!,
-          formatUsage(w) + expectedSuffix(w, visible, observedAt), reset, okText]);
+          formatUsage(w) + expectedSuffix(provider, w, visible, observedAt), reset, okText]);
       });
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);

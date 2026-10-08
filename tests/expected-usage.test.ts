@@ -31,8 +31,8 @@ test("weekly expected is the elapsed share of seven days formatted to 2dp ceilin
   const weekly = win({ id: "weekly", resetAt: "2026-10-08T00:00:00.000Z" });
 
   assert.equal(formatNumber(expectedPercent(weekly, observedAt)!), "42.86");
-  assert.deepEqual(expectedMetrics(weekly, [weekly], observedAt), ["expected=42.86"]);
-  assert.equal(expectedSuffix(weekly, [weekly], observedAt), " (exp 42.86%)");
+  assert.deepEqual(expectedMetrics("opencode-go", weekly, [weekly], observedAt), ["expected=42.86"]);
+  assert.equal(expectedSuffix("opencode-go", weekly, [weekly], observedAt), " (exp 42.86%)");
 });
 
 test("monthly expected spans the calendar month before reset with clamping", () => {
@@ -50,9 +50,9 @@ test("expected needs a reset time and only marks the longest selected window", (
   const monthly = win({ id: "monthly", resetAt: "2026-11-07T00:00:00.000Z" });
 
   assert.equal(expectedPercent(win({ id: "weekly" }), observedAt), undefined);
-  assert.deepEqual(expectedMetrics(win({ id: "weekly" }), [win({ id: "weekly" })], observedAt), []);
-  assert.equal(expectedSuffix(weekly, [weekly, monthly], observedAt), "");
-  assert.equal(expectedSuffix(monthly, [weekly, monthly], observedAt), " (exp 0%)");
+  assert.deepEqual(expectedMetrics("opencode-go", win({ id: "weekly" }), [win({ id: "weekly" })], observedAt), []);
+  assert.equal(expectedSuffix("opencode-go", weekly, [weekly, monthly], observedAt), "");
+  assert.equal(expectedSuffix("opencode-go", monthly, [weekly, monthly], observedAt), " (exp 0%)");
 });
 
 test("plain output adds expected to monthly over weekly and keeps other lines unchanged", () => {
@@ -64,9 +64,9 @@ test("plain output adds expected to monthly over weekly and keeps other lines un
   const lines = renderResults([result]);
 
   assert.equal(lines.filter((line) => line.includes("expected=")).length, 1);
-  assert.ok(lines[1]!.endsWith("reset_in=5h0m"));
-  assert.ok(lines[2]!.endsWith("reset_in=4d0h"));
-  assert.ok(lines[3]!.endsWith("expected=0"));
+  assert.ok(lines.find((line) => line.includes("- m [percent]"))!.endsWith("expected=0"));
+  assert.ok(lines.find((line) => line.includes("- w [percent]"))!.endsWith("reset_in=4d0h"));
+  assert.ok(lines.find((line) => line.includes("- 5h [percent]"))!.endsWith("reset_in=5h0m"));
 });
 
 test("plain output falls back to the weekly window when no monthly window exists", () => {

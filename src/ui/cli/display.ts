@@ -14,8 +14,8 @@ function value(metric: number | string | undefined): string {
   return metric === undefined ? "unknown" : show(metric);
 }
 
-function renderWindow(window: UsageWindow, observedAt: string, windows: readonly UsageWindow[],
-  label: string): string {
+function renderWindow(provider: ProviderId, window: UsageWindow, observedAt: string,
+  windows: readonly UsageWindow[], label: string): string {
   const left = formatTimeLeft(window.resetAt, observedAt);
   const metrics = [
     `used=${value(window.used)}`,
@@ -24,7 +24,7 @@ function renderWindow(window: UsageWindow, observedAt: string, windows: readonly
     `percent=${value(window.percent)}`,
     `reset=${value(window.resetAt)}`,
     `reset_in=${left?.replace(" ", "") ?? "unknown"}`,
-    ...expectedMetrics(window, windows, observedAt),
+    ...expectedMetrics(provider, window, windows, observedAt),
   ];
   return `  - ${label} [${window.unit}] ${metrics.join(" ")}`;
 }
@@ -52,7 +52,7 @@ export function renderResult(result: UsageResult): string[] {
         `${header} (no usage windows reported)`];
     }
     return [header, ...visible.map((window, index) =>
-      renderWindow(window, observedAt, visible, labels[index]!))];
+      renderWindow(provider, window, observedAt, visible, labels[index]!))];
   }
   return [`${result.provider}: error [${result.error.code}] ${result.error.message}`];
 }

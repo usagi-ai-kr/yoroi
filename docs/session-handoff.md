@@ -7,7 +7,7 @@
 - 규칙은 AGENTS.md, 실행·검증은 development.md, Git은 github.md를 먼저 읽는다.
 - main 직접 push 금지. dev → main PR, merge commit, dev 유지.
 - 완료 issue는 close하고 PR에는 `Closes #번호`를 넣는다. memo는 수정하지 않는다.
-- 태그·Release는 검증 SHA로 이후 관리한다. 현재 0.1.0은 발행하지 않았다.
+- 태그·Release는 검증 SHA로 이후 관리한다. 0.1.0은 발행 완료([Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0), target `6a6802a`).
 
 ## 회고
 
@@ -47,8 +47,9 @@ pnpm run check
 - 프로젝트 로컬 dependencies: cli-table3, picocolors. 전역 설치하지 않았다.
 - README 이미지: assets/yoroi-haunted-armor.jpg, Nano Banana 2.1, 2752×1536.
 - Wiki 원본: wiki-pages/. 기존 Home 문구를 보존한다. 게시 대상은 Yoroi Wiki다.
-- 버전 원본 package.json=0.1.0, milestone 0.1.0=#1–29·#56–61,
-  milestone 0.2.0=#30–55(웹·SQLite 계획, 미구현). 열린 조사 이슈는 issue-status.md를 본다.
+- 버전 원본 package.json=0.1.0, milestone 0.1.0=closed(31 closed, open 0),
+  milestone 0.1.1=#13–#17·#29(open),
+  milestone 0.2.0=#30–#55(웹·SQLite 계획, 설계만). 열린 조사 이슈는 issue-status.md를 본다.
 
 ## 게시 상태
 
@@ -60,8 +61,14 @@ pnpm run check
   [CI](https://github.com/qus0in/yoroi/actions/runs/37721012020)가 fast-pass 성공했다.
   실제 install·app check는 skipped이며 필수 `ci`는 success다.
 - PR #62의 `Closes`로 #25·#57·#59·#60·#61을 종료했다.
-- 미완료 조사: #3·#13–#17·#29. 0.2.0 웹·SQLite #30–55는 아직 구현하지 않았다.
+- [PR #63](https://github.com/qus0in/yoroi/pull/63) 병합: `6a6802a`(head `e6ffd2e`).
+  [PR CI](https://github.com/qus0in/yoroi/actions/runs/37725084420) success
+  (main 트리 동일, ci.yml main push 트리거 없음).
+- [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행 후 0.1.0 milestone close(31 closed, open 0).
+- Wiki 원격 master `a181ccb` 게시, 새 clone 6페이지 동일 확인. #58·#56 close.
+- 0.2.0 준비 설계는 로컬 `next-0.2.0` worktree의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+- 남은 조사: #13–#17·#29(0.1.1). 0.2.0 웹·SQLite #30–55는 설계 단계다.
 - Wiki 최종 게시 증거는 [#58](https://github.com/qus0in/yoroi/issues/58),
-  전체 마무리·문서 CI 검증은 [#56](https://github.com/qus0in/yoroi/issues/56)에서 확인한다.
+  전체 마무리·문서 CI 검증은 [#56](https://github.com/qus0in/yoroi/issues/56)에서 확인한다(둘 다 closed).
 - 다음 에이전트는 위 이슈의 최신 상태, `git status`, 열린 PR과 보호 체크를 먼저 확인한다.
   완료된 작업을 다시 구현하거나 불필요한 실계정 조회를 반복하지 않는다.

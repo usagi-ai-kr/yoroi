@@ -5,7 +5,9 @@
   #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
 - CLI `--version`은 package.json을 읽는다. 빌드도 같은 JSON을 산출물에 포함한다.
-- tag·Release는 미발행이다. PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 close 예정이다(사용자 결정).
+- tag·Release는 발행 완료다. PR #63 merge commit `6a6802a`(main),
+  PR head `e6ffd2e`, PR CI `37725084420` success(main 트리 동일, ci.yml main push 트리거 없음).
+  [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`).
   변경은 `dev → main` PR로 게시하며 해당 PR의 CI를 확인한다.
 - [PR #28](https://github.com/qus0in/yoroi/pull/28)에 첫 CLI MVP와 버전·pnpm 전환을 게시했다.
 
@@ -65,5 +67,16 @@
 
 - 새 milestone 0.1.1(#3)을 만들고 #13–#17·#29를 0.1.0에서 이동했다(이슈마다 사유 댓글).
 - #3은 샘플 red→green 실측 댓글 후 close했다.
-- PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 milestone close를 결정했다(아직 미발행).
-- #58·#56은 병합 뒤 Wiki 게시·검증 후 root가 직접 close 예정이다.
+- PR #63 병합·PR CI 통과 후 v0.1.0 tag·Release를 발행하고 0.1.0 milestone을 close했다.
+- #58·#56은 Wiki 게시·검증 후 root가 직접 close했다.
+
+## 2026-10-08 v0.1.0 발행·Wiki 게시·마일스톤 close (root 조치)
+
+- PR #63 merge commit `6a6802a`(main). PR head `e6ffd2e`,
+- [PR CI](https://github.com/qus0in/yoroi/actions/runs/37725084420) success(main 트리 동일, ci.yml main push 트리거 없음).
+- [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`).
+- Wiki 원격 master `a181ccb` 게시, 새 clone으로 6페이지 main 소스와 동일 확인.
+- #58·#56 close, 0.1.0 milestone close(31 closed, open 0).
+- 0.1.1 milestone에 #13–#17·#29 open.
+- 0.2.0 준비 설계 문서는 로컬 브랜치 `next-0.2.0` worktree
+- (`/Users/young-mini/Workspace/yoroi-0.2.0`)의 `docs/v0.2.0/`에 있고 아직 커밋 전.

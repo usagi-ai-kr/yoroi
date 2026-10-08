@@ -10,7 +10,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 | 제품 범위 | 5개 공급자 CLI once/watch | 계약·사용량 창·오류·60초 반복 | 구현. 계약 일부(#13–#17·#29)는 0.1.1로 이동 |
 | 개발 기반 | Node/TypeScript CLI | 실행·빌드·단위/BDD·CI | 완료. 샘플 red→green 기록(#3) 실측 후 close |
 | 첫 기능 | 수집부터 CLI 표시 | 5개 어댑터·전체 계약 검증 | 구현 완료. Claude는 사용자 허가 GET으로 교체 |
-| 자동화 | 워커·CI 범위·버전 스크립트·Wiki 운영 | #56–#61 | #57·#59·#60·#61·#25 closed(PR #62). #58·#56은 Wiki 검증 대기 |
+| 자동화 | 워커·CI 범위·버전 스크립트·Wiki 운영 | #56–#61 | 완료. #57·#59·#60·#61·#25 closed(PR #62). #58·#56 closed(Wiki 게시 검증 후) |
 | 웹·이력 | 대시보드·SQLite·운영 | #30–#55 (0.2.0) | 미구현 |
 
 - `package.json`의 버전은 `0.1.0`이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
@@ -23,9 +23,9 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
   초기 `0.x`의 호환성 파괴는 minor와 마이그레이션 기록으로 관리한다.
   안정된 `1.x` 공개 계약 이후 호환성 파괴는 major다.
 - minor 증가 시 patch를 0으로 초기화한다. 다음 수정 후보는 `0.1.1`(milestone #3), 새 기능 후보는 `0.2.0`이다.
-- milestone은 릴리스 커밋의 원격 CI 확인 전까지 열린다. 이후 목표는 범위가 정해질 때 생성한다.
-- 예정 tag는 `v0.1.0`. PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 milestone close 예정이다.
-  아직 발행하지 않았으며 변경은 dev → main PR로 검증한다.
+- milestone은 릴리스 커밋의 원격 CI 확인 후 닫는다. 0.1.0은 close 완료(31 closed, open 0). 이후 목표는 범위가 정해질 때 생성한다.
+- `v0.1.0` tag·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행 완료(target `6a6802a`, PR #63 병합·PR CI `37725084420`).
+  변경은 dev → main PR로 검증한다.
 - 웹 UI·DB/히스토리 저장은 0.2.0 범위다. 알림은 후속 범위다.
 - milestone은 계획, `vX.Y.Z` tag는 검증된 커밋, Release는 발행 기록이다.
 - 일반 절차는 `.agents/skills/semver-milestones/SKILL.md`를 따른다.

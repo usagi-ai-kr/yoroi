@@ -14,12 +14,12 @@
 | #22 | closed | 사용자 승인 GET 계약으로 완료 조건을 갱신하고 close. 근거는 이슈 본문 |
 | #25 | closed | 문서 동기화 PR #62 병합 후 close |
 | #26, #27 | closed | 사람 조치 handle 완료(이전 검증 기록) |
-| #56 | open | 자동화 plan. #58 Wiki 검증 후 직접 close 예정 |
+| #56 | closed | 자동화 plan. Wiki 게시 검증 후 직접 close |
 | #57 | closed | 코드·CI 자동화. PR #62 병합 후 close |
-| #58 | open | Wiki 최종 게시. 게시 검증 후 직접 close 예정 |
+| #58 | closed | Wiki 최종 게시. 원격 master `a181ccb`, 새 clone 6페이지 동일 확인 후 close |
 | #59 | closed | pretty CLI. PR #62 병합 후 close |
 | #60 | closed | README 중세 유럽 기사 갑옷 이미지. PR #62 병합 후 close |
-| #61 | closed | 버전 스크립트·SemVer 절차. PR #62 병합 후 close. tag·Release 없음 |
+| #61 | closed | 버전 스크립트·SemVer 절차. PR #62 병합 후 close. v0.1.0 tag·Release는 PR #63 병합 후 발행 |
 
 ## 0.1.1 (계약 보강, #13–#17·#29)
 
@@ -37,8 +37,9 @@
 
 ## 마일스톤 상태
 
-- `0.1.0` (#1) open: #1–#12·#18–#28, #56–#61 매핑. package 버전은 `0.1.0` 유지.
-  PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 close 예정(사용자 결정, 아직 미발행).
+- `0.1.0` (#1) closed: 31 closed, open 0.
+  PR #63 병합 `6a6802a`(head `e6ffd2e`), PR CI `37725084420` success,
+  [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행.
 - `0.1.1` (#3) open: #13–#17, #29 매핑. 0.1.0에서 이동(사용자 결정).
 - `0.2.0` (#2) open: 30–55 매핑. package 버전은 변경하지 않았다.
 - 닫힌 issue 포함 미매핑 없음을 확인했다.
@@ -46,4 +47,10 @@
 ## PR #62 (병합)
 
 - 병합 `1b3b027`. `Closes #25 #57 #59 #60 #61`로 위 이슈 5건이 closed 확인됐다.
-- 남은 작업: Wiki(#58) 게시와 그 검증 뒤 #58·#56을 직접 close. 이 Wiki 게시는 아직 수행 전이다.
+- Wiki(#58) 게시·검증 뒤 #58·#56을 직접 close했다.
+
+## PR #63 (병합, v0.1.0 발행)
+
+- 병합 `6a6802a`(main), head `e6ffd2e`. PR CI `37725084420` success
+  (main 트리 동일, ci.yml main push 트리거 없음).
+- [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행 후 0.1.0 milestone close.

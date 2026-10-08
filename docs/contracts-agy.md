@@ -1,6 +1,6 @@
 # AGY CLI 사용량 명령 계약
 
-- 확인일: 2026-10-07
+- 확인일: 2026-10-07 (최종 보강: 2026-10-08)
 - 대상: Google Antigravity CLI (`agy`)
 - 버전: 1.3.1 (`/Users/young-mini/.local/bin/agy`)
 - 실행 명령: `agy -p /usage`
@@ -8,11 +8,12 @@
 
 ## 1. 실행 명령 및 호출 계약
 
-- 실행 계약: `executable: 'agy'`, `args: ['-p', '/usage']`.
+- 실행 계약: `executable: 'agy'`, `args: ['-p', '/usage']`. PATH 기반 탐색.
 - 사용자 확인 및 실행 검증:
   - `agy -p /usage` 호출이 모델 호출 없이 순수 상태 조회를 반환함을 확인.
-  - 종료 코드: 성공 시 0, 비정상 시 nonzero.
-  - 표준 출력: 탭 구분(TSV) 텍스트 테이블. 표준 에러는 빈 값 유지.
+  - 비대화형 호출 가능: 1.3.1에서 PTY 상호작용 없이 완료 확인. (단, 공식 문서 부재로 비공식 계약)
+  - 종료 코드: 성공 시 0, 비정상 시 nonzero. 표준 에러는 빈 값 유지.
+  - 지원 버전 정책: 1.3.1 실측 동작 기준. 하위/다중 버전 정책은 공식 문서 부재로 미검증.
 
 ## 2. 실제 출력 구조 및 필드 사양
 
@@ -38,12 +39,16 @@
 - 인증 실패: 출력 내 `account ineligible`, `unauthenticated`, `login` 등 감지 시 `SourceError('authentication')`.
 - 포맷 불일치: 4열 TSV 구조 누락 또는 윈도우 0개 시 `SourceError('parse')`.
 
-## 5. 구현 상태
+## 5. 구현 상태 및 Fixture
 
 - 어댑터: `src/infra/agy-source.ts`
 - 파서: `src/infra/cli-usage-parser.ts` (`parseAgyUsage`)
 - 테스트: `tests/agy.test.ts`, `tests/cli-usage.test.ts`
-- Fixture: `tests/fixtures/agy-usage.txt` (실제 구조 보존 합성값)
+- Fixture (민감정보 제거 4종):
+  - `tests/fixtures/agy-usage.txt`: 정상 TSV 성공
+  - `tests/fixtures/agy-exhausted.txt`: 쿼터 소진 (remaining 0%, percent 100%)
+  - `tests/fixtures/agy-unauthenticated.txt`: 미인증 에러
+  - `tests/fixtures/agy-not-installed.txt`: 바이너리/명령 없음 에러
 
 ## 6. 인증 경로 (현행)
 
@@ -51,15 +56,13 @@
 - 전용 auth resolver는 없다. 1.3.1 `--help`에는 login·auth 하위 명령이 없다. 로그인은 대화형 `agy`로 한다.
 - 공식 설치 문서: 로컬은 OS 키링의 기존 OAuth를 silent sign-in으로 쓰고,
   Gemini API key 모드(`modelProvider: gemini`, `GEMINI_API_KEY`)는 계정 세션을 만들지 않는 별도 모델 API 모드다.
-  구독 quota를 복구하는 경로가 아니다.
-  [install](https://www.antigravity.google/docs/cli/install/)
+  구독 quota를 복구하는 경로가 아니다. [install](https://www.antigravity.google/docs/cli/install/)
 - 공식 `/usage` 문서는 대화형 TUI 패널이며 백엔드에서 설정과 쿼터를 새로 갱신한다고 설명한다.
   `-p /usage`의 비대화형 계약은 문서화되어 있지 않다. [usage](https://www.antigravity.google/docs/cli/commands/usage/)
 
-## 7. 미확인 호출 계약
+## 7. 미확인 호출 계약 및 완료 기준 요약
 
-- 키링 서비스·계정명, 자격 증명 파일 경로·형식. 키체인이나 파일은 열람하지 않았다.
-- 바이너리 내부 RPC(`RetrieveUserQuotaSummary`, `FetchQuotaStatus`, `aicode.googleapis.com`)의 요청·응답 계약.
-  정적 문자열로 존재만 확인했다. 공개 GET 계약으로 취급하지 않는다.
-- 직접 인증 연동의 가능성은 있으나 저장소와 호출 계약이 확인되지 않았다. 현행 구현은 CLI 위임이다.
-- 복구 절차(대화형 `agy`, 브라우저·SSH 로그인)는 [auth-recovery.md](auth-recovery.md)에 있다.
+- 미확인: 키링 파일/서비스명, 내부 RPC 계약(`RetrieveUserQuotaSummary` 등), 다중 버전 지원 정책.
+- 완료 기준 판정: 1) 버전/탐색(부분: 1.3.1 실측, 다중버전 미검증), 2) 명령 확인(충족), 3) 비대화형(부분: 실측 성공, 공식문서 미검증),
+  4) 복수 윈도우 매핑(충족), 5) ANSI/파싱 경계(충족), 6) Fixture 4종(충족), 7) 포맷 변경 테스트(충족).
+- 복구 절차: [auth-recovery.md](auth-recovery.md).

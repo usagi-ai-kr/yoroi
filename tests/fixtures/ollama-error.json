@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "synthetic-unauthorized",
+    "message": "synthetic error body for normalization tests; never echoed"
+  }
+}

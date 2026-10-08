@@ -16,6 +16,12 @@
 - PTY·ANSI·locale 의존 파싱은 필요 없다. stdout JSON만 파싱하고 stderr는 출력하지 않는다.
 - 기존 CLI 인증을 사용한다. credential 파일을 읽거나 새 로그인하지 않는다.
 
+## 계약 테스트 조건 (버전 변화 감지)
+
+- 응답에 `rateLimitsByLimitId`와 `rateLimits`가 모두 없으면 `parse` 오류(포맷 변화 신호).
+- 지표가 0–100 밖이거나 `resetsAt`이 비수치·창 객체가 비형식이면 `parse`.
+- 구버전 `rateLimits` 단독 구조는 수용 유지(하위 호환 확인), JSON-RPC `error`는 코드별로 구분한다.
+
 ## 매핑과 실패
 
 - `rateLimitsByLimitId`가 있으면 모든 bucket을 사용하고, 없으면 `rateLimits`를 사용한다.

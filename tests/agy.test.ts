@@ -5,7 +5,11 @@ import { AgySource } from '../src/infra/agy-source.js';
 import type { ProcessRequest, ProcessRunner } from '../src/infra/process-port.js';
 
 const observedAt = '2026-10-07T00:00:00Z';
-const fixture = await readFile(new URL('./fixtures/agy-usage.txt', import.meta.url), 'utf8');
+const readFix = (name: string) => readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
+const fixture = await readFix('agy-usage.txt');
+const exhaustedFixture = await readFix('agy-exhausted.txt');
+const unauthFixture = await readFix('agy-unauthenticated.txt');
+const notFoundFixture = await readFix('agy-not-installed.txt');
 
 function runner(stdout: string, exitCode = 0, stderr = ''): ProcessRunner {
   return { run: async (_request: ProcessRequest) => ({ stdout, stderr, exitCode }) };
@@ -26,6 +30,12 @@ test('AGY source runs agy -p /usage and maps TSV windows', async () => {
   assert.equal(snapshot.windows[0]?.resetAt, '2026-10-14T04:00:00Z');
 });
 
+test('AGY source parses exhausted quota fixture', async () => {
+  const snapshot = await new AgySource(runner(exhaustedFixture), 'agy', 5000, () => observedAt).read();
+  assert.equal(snapshot.windows.length, 4);
+  assert.ok(snapshot.windows.every(w => w.remaining === 0 && w.percent === 100));
+});
+
 test('AGY source normalizes exit code and authentication errors', async () => {
   await assert.rejects(new AgySource(runner('', 1)).read(), { code: 'exit' });
   await assert.rejects(new AgySource(runner('Account ineligible: not logged in')).read(), {
@@ -33,6 +43,15 @@ test('AGY source normalizes exit code and authentication errors', async () => {
   });
   await assert.rejects(new AgySource(runner('', 1, 'Error: unauthenticated access')).read(), {
     code: 'authentication',
+  });
+  await assert.rejects(new AgySource(runner(unauthFixture)).read(), {
+    code: 'authentication',
+  });
+  await assert.rejects(new AgySource(runner(notFoundFixture, 127)).read(), {
+    code: 'exit',
+  });
+  await assert.rejects(new AgySource(runner(notFoundFixture, 0)).read(), {
+    code: 'parse',
   });
   await assert.rejects(new AgySource(runner('invalid non-tsv format')).read(), {
     code: 'parse',

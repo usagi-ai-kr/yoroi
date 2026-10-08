@@ -2,7 +2,7 @@
 
 Yoroi는 AI 사용량 모니터링 CLI다. Node 24.13.1·pnpm 12.10.1을 고정한다.
 TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD는 Cucumber다.
-버전 원본은 `package.json`의 `0.1.0`이며 [milestone](https://github.com/qus0in/yoroi/milestone/1)과 연결한다. 릴리스 발행은 없다.
+버전 원본은 `package.json`의 `0.1.1`이며 [milestone](https://github.com/qus0in/yoroi/milestone/1)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
 
 ## 앱 실행과 검증
 
@@ -20,7 +20,7 @@ pnpm run test:bdd
 pnpm run build
 node --env-file-if-exists=.env dist/src/main.js --help
 node dist/src/main.js --version
-pnpm add -g .
+pnpm run install:global
 yoroi --version
 pnpm remove -g yoroi
 pnpm run check
@@ -29,7 +29,7 @@ pnpm run check
 - `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
 - `watch`: 즉시 1회 후 **수집 완료 뒤 60초 대기**한다. 시작 간격은 수집 시간+60초다.
   분 단위 고정 시작이 아닌 완료 기준 대기이며 조회가 겹치지 않는다.
-- 전역 CLI: `pnpm add -g .`(또는 저장소 절대경로)로 전역 설치 후 `yoroi`를 실행한다. 제거는 `pnpm remove -g yoroi`.
+- 전역 CLI: `pnpm run install:global`(임시 pnpm pack tarball 전역 설치·레포 독립 사본·설치 위치로 `.env` 복사)로 설치 후 `yoroi`를 실행한다. 제거는 `pnpm remove -g yoroi`.
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
 - 출력 테스트는 ANSI를 제거한 뒤 비교한다. CI는 색상 지원 환경이므로 `FORCE_COLOR=1`에서도 통과를 확인한다.
@@ -37,6 +37,7 @@ pnpm run check
   실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
 - dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다.
   이미 지정된 환경 변수가 .env보다 우선한다. .env는 Git ignore 대상이다.
+- 전역 실행의 `.env` 로드는 현재 디렉터리 `.env` → 설치 위치 복사본 순으로 처음 존재하는 것만 읽고 기존 환경 변수는 덮어쓰지 않는다. `YOROI_DEBUG=1`이면 읽은 경로만 stderr에 표시한다(값 미출력). `install:global`은 pnpm pack tarball로 레포와 독립된 사본을 설치하고(디렉터리 설치는 심볼릭 링크라 쓰지 않음) 레포 `.env`를 권한 600으로 복사하며, 재실행 때 갱신되므로 레포 `.env` 변경 후 재실행이 필요하다. 제거(`pnpm remove -g yoroi`)는 설치 사본과 복사본을 함께 삭제한다(실측). `files`는 `dist`뿐이라 publish 대상에 `.env`는 없다.
 - pnpm은 packageManager 버전을 고정하며 Corepack 시 `corepack enable pnpm`을 쓴다.
   [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)을 따르고 필요 시 Node/Corepack 경로를 우선한다.
 - CI는 설명문서만 변경 시 빠른 통과를 제공하고, 그 외에는 `validate-repo.py --ci`·스킬 검증·frozen install·전체 check를 실행한다.

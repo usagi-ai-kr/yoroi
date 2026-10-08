@@ -26,22 +26,17 @@ pnpm run check
 ```
 
 - `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
-- `watch`: 즉시 1회 후 **수집 완료 뒤 60초 대기**한다. 시작 간격은 수집 시간+60초다.
-  분 단위 고정 시작이 아닌 완료 기준 대기이며 조회가 겹치지 않는다.
+- `watch`: 즉시 1회 후 **수집 완료 뒤 60초 대기**한다. 시작 간격은 수집 시간+60초이며, 분 단위 고정 시작이 아닌 완료 기준 대기라 조회가 겹치지 않는다.
+- 서브커맨드 도움말(`once --help`, `watch -h`)은 exit 0으로 사용법·옵션을 출력한다(플래그 우선).
+- `pnpm --silent`: pnpm 실행 배너를 억제해 pretty 표나 CLI 스냅샷 터미널 출력을 온전히 확인하기 위해 사용한다(배너가 무해한 일반 실행에는 생략).
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
-- 출력 테스트는 ANSI를 제거한 뒤 비교한다. CI는 색상 지원 환경이므로 `FORCE_COLOR=1`에서도 통과를 확인한다.
-- 테스트는 fake source/HTTP/process/scheduler 및 합성 fixture를 사용한다.
-  실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
-- dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다.
-  이미 지정된 환경 변수가 .env보다 우선한다. .env는 Git ignore 대상이다.
-- 전역 실행의 `.env` 로드는 cwd `.env`와 설치 위치 복사본을 모두 읽어 키 단위로 병합한다(실제 환경 변수 > cwd `.env` > 설치 사본). 둘 다 없으면 조용히 건너뛴다. `YOROI_DEBUG=1`이면 파일별 경로와 적용된 키 이름만 stderr에 표시한다(값 미출력). 존재하는 `.env`의 로드 실패는 `yoroi: env file load failed <경로> (<코드>)`만 남기고 종료 코드 2로 멈춘다.
-- 전역 설치 검증: `pnpm run install:global` 재실행(설치 경로만 확인) 뒤 두 케이스를 `YOROI_DEBUG=1 yoroi once --pretty`로 1회씩 확인한다. (1) 빈 `mktemp -d`: 설치 사본 줄 하나. (2) 합성 `.env` 한 줄만 둔 디렉터리: cwd·설치 사본 줄 둘, 설치 사본은 남은 키만. 경로·키 이름·공급자 Status 첫 단어·종료 코드만 기록하고 값·수치는 남기지 않는다. 확인 뒤 임시 디렉터리를 지운다.
-- `install:global`은 pnpm pack tarball로 레포와 독립된 사본을 전역 설치하고(디렉터리 설치는 심볼릭 링크라 쓰지 않음) `scripts/copy-env.mjs`가 레포 `.env`를 0600 원자 생성·교체로 설치 위치에 복사한다(umask 무관·심볼릭 링크 미추종). 레포 `.env` 변경 후 재실행해야 갱신된다. 제거(`pnpm remove -g yoroi`)는 사본과 복사본을 함께 삭제한다(실측). `files`는 `dist`뿐이라 publish 대상에 `.env`는 없다.
-- pnpm은 packageManager 버전을 고정하며 Corepack 시 `corepack enable pnpm`을 쓴다.
-  [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)을 따르고 필요 시 Node/Corepack 경로를 우선한다.
-- CI는 설명문서만 변경 시 빠른 통과를 제공하고, 그 외에는 `validate-repo.py --ci`·스킬 검증·frozen install·전체 check를 실행한다.
-  PR 필수 체크는 `pull_request` 실행으로 확인하고, 수동 `workflow_dispatch` 성공은 진단용이다.
+- 출력 테스트는 ANSI 제거 후 비교한다. CI를 위해 `FORCE_COLOR=1` 통과도 확인한다.
+- 테스트는 fake source/HTTP/process/scheduler와 fixture를 써서 실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
+- dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다. 이미 지정된 환경 변수가 .env보다 우선하며 .env는 Git ignore 대상이다.
+- 전역 설치·.env: [global-install.md](global-install.md)
+- pnpm은 packageManager 버전을 고정하며 Corepack 시 `corepack enable pnpm`을 쓴다. [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)을 따르고 필요 시 Node/Corepack 경로를 우선한다.
+- CI는 설명문서만 변경 시 빠른 통과, 그 외에는 `validate-repo.py --ci`·스킬 검증·frozen install·check를 실행한다. PR 필수 체크는 `pull_request` 실행으로 확인하며 수동 `workflow_dispatch`는 진단용이다(단 main 머지 커밋 검증에는 versioning.md 절차에 따라 `workflow_dispatch` 활용).
 
 ## 설정과 공급자 상태
 

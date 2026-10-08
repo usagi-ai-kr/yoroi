@@ -13,6 +13,14 @@ Yoroi는 다섯 공급자의 사용량을 한 번 조회하거나 주기적으�
 
 ## 시작
 
+전역 설치 후 어디서든 다음 명령을 실행합니다.
+
+```bash
+yoroi --help
+yoroi once --pretty
+yoroi watch --pretty
+```
+
 1. [시작하기](Getting-Started)에서 Node/pnpm과 실행 방법을 확인합니다.
 2. [공급자와 인증](Providers-and-Authentication)에서 필요한 인증 경로를 설정합니다.
 3. [워커 운영](Worker-Operations)에서 `once`와 `watch` 동작을 확인합니다.

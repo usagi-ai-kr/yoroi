@@ -3,7 +3,8 @@
 ## 단발 조회
 
 ```bash
-pnpm run dev once
+yoroi once
+yoroi once --pretty
 ```
 
 단발 실행은 선택된 공급자를 한 번 조회합니다. 일부 공급자만 실패하면 성공 결과를 함께 반환하며, 실패 공급자는 별도 오류로 표시됩니다.
@@ -11,8 +12,9 @@ pnpm run dev once
 ## 주기 조회
 
 ```bash
-pnpm run dev watch
-pnpm run dev watch --interval 30
+yoroi watch
+yoroi watch --pretty
+yoroi watch --interval 30 --pretty
 ```
 
 - `watch`는 시작 직후 한 번 조회합니다.
@@ -20,14 +22,23 @@ pnpm run dev watch --interval 30
 - `--interval`은 초 단위 대기 시간을 바꿉니다. 환경 변수 `YOROI_INTERVAL_SECONDS`의 기본값도 60초입니다.
 - 한 주기에서 일부 공급자가 실패해도 다음 주기는 계속됩니다.
 
+## 도움말
+
+```bash
+yoroi --help
+yoroi -h
+```
+
+도움말은 서브커맨드 없이 최상위에서만 처리되며 종료 코드는 0입니다. `once --help`·`watch --help`·`watch -h`처럼 서브커맨드 뒤에 붙이면 미지원 인자로 분류되어 종료 코드 2와 사용법이 stderr로 출력됩니다(실측).
+
 ## Pretty 출력 선택
 
 pretty 표 출력은 once와 watch에서 선택할 수 있습니다.
 
 ```bash
-pnpm --silent run dev once --pretty
-pnpm --silent run dev watch --pretty
-pnpm --silent run dev watch --interval 30 --pretty
+yoroi once --pretty
+yoroi watch --pretty
+yoroi watch --interval 30 --pretty
 ```
 
 표는 `Provider`, `Status`, `Window`, `Usage`, `Reset (KST)` 순서의 열을 사용합니다(Status 내용·각 열 폭은 이전과 같음). `Reset (KST)` 값은 시각 뒤에 남은 시간을 `(6d 18h)`처럼 덧붙이고, reset 시각이 없으면 `-`입니다. 없는 값은 `-`, 오류는 `Status`에 표시합니다. 표 렌더링에는 `cli-table3` 0.6.5와 `picocolors` 1.1.1을 사용합니다.

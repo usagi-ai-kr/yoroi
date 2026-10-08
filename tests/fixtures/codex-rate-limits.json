@@ -1,0 +1,13 @@
+{
+  "id": 2,
+  "result": {
+    "rateLimits": {"primary": {"usedPercent": 10, "windowDurationMins": 300}},
+    "rateLimitsByLimitId": {
+      "codex": {
+        "primary": {"usedPercent": 40, "windowDurationMins": 300, "resetsAt": 1791331200},
+        "secondary": {"usedPercent": 100, "windowDurationMins": 10080, "resetsAt": null}
+      },
+      "review": {"primary": null, "secondary": null}
+    }
+  }
+}

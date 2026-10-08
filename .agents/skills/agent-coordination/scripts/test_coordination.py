@@ -56,9 +56,27 @@ def test_report_audit():
     print("ok: report audit rules passed")
 
 
+def test_report_audit_directory_prefix():
+    pkt = make_packet("t1", "p1", ["docs/wiki-pages/"], ["dir_pass"])
+    base = {
+        "task_id": "t1", "provenance": {"worker_actions": "implemented"},
+        "verification_results": ["PASS: dir 1"],
+    }
+    for allowed in ("docs/wiki-pages/a.md", "docs/wiki-pages/sub/b.md"):
+        rep = dict(base, modified_files=[allowed])
+        assert audit_report(pkt, rep) == [], allowed
+    for denied in ("docs/wiki-pages-other/a.md", "docs/wiki-pages/../other/a.md",
+                   "../docs/wiki-pages/a.md", "other/a.md",
+                   "docs/wiki-pages/../../etc/passwd"):
+        rep = dict(base, modified_files=[denied])
+        assert any("소유권 보고 위반" in e for e in audit_report(pkt, rep)), denied
+    print("ok: report audit directory prefix passed")
+
+
 def main():
     test_packet_validation()
     test_report_audit()
+    test_report_audit_directory_prefix()
     print("PASS: coordination script boundary tests passed")
     return 0
 

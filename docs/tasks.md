@@ -10,11 +10,13 @@
 - PR #62 검증: PR CI `37720540457` success, push CI `37720536646` success.
 - 구현·문서 자동화 완료(main 반영): CI 분류기와 docs-only fast pass, `test_*.py` unittest, agent-coordination 스킬, 버전 스크립트, pretty CLI(`--pretty`), README 중세 유럽 기사 갑옷 이미지.
 - 검증 수치(루트 보고): TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests, 스킬 테스트 PASS.
-- 닫힌 이슈: #1–#25 중 완료 기준을 충족한 항목, #22, #25, #57, #59, #60, #61. 미완료 조사 이슈 #3·#13–#17·#29는 open 유지.
-- 버전: `package.json` 0.1.0 유지. tag·GitHub Release 미발행.
+- 닫힌 이슈: #1–#25 중 완료 기준을 충족한 항목, #3(red→green 실측), #22, #25, #57, #59, #60, #61. #13–#17·#29는 0.1.1로 이동하고 open 유지.
+- 버전: `package.json` 0.1.0 유지. tag·GitHub Release 미발행. PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 milestone close 예정(사용자 결정).
+- PR #63(dev, 커밋 `62f55fd`·`51bfac8`): CLI 숫자 올림·reset_in 표시, 오케스트레이터 분담·graceful-stop 스킬. 병합 전.
 
-## 남은 작업 (Wiki만)
+## 남은 작업
 
+- PR #63 병합·main CI 통과 후 v0.1.0 tag·Release를 발행하고 0.1.0 milestone을 close한다.
 - Wiki(#58)는 아직 게시 전이다. 다음 순서로 진행한다.
   1. 원격 docs-only CI의 첫 pass를 확인한다.
   2. main의 #62 기준 Wiki 소스로 Wiki를 게시한다.
@@ -36,7 +38,7 @@
 | CI classifier, `validate-repo.py --ci`, `development.md` CI 문장 | p3 | 병합 완료(#62) |
 | 버전 스크립트 `scripts/version.py`, `docs/versioning.md` | p3 | 병합 완료(#62), #61 closed |
 | Wiki 소스·게시 | p4 | 게시 전. #58 |
-| issue·docs 운영 현황, 독립 검토 | p5 | 본 문서 포함. 검토 `/tmp/yoroi-final-review.md` |
+| issue·docs 운영 현황, 독립 검토 | p5 | 본 문서 포함. 독립 검토 완료 |
 | README 이미지, 통합, 커밋·push·PR·merge | root | 병합 완료(#62). 다음 docs-only PR 담당 |
 
 ## CI 정책
@@ -48,6 +50,7 @@
 
 ## 이슈·마일스톤 매핑
 
-- `0.1.0`: #1–#29, #56–#61. 제품 버전은 0.1.0을 유지한다.
+- `0.1.0`: #1–#12·#18–#28, #56–#61. 제품 버전은 0.1.0을 유지한다.
+- `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정).
 - `0.2.0`: #30–#55. 아직 구현하지 않았다. 이번 작업 범위가 아니다.
 - 상세: [issue-status.md](issue-status.md).

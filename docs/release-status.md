@@ -1,10 +1,12 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
 - 버전 원본: `package.json` version `0.1.0`, private 유지.
-- 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–27 및 #29 연결.
+- 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–#12·#18–#28·#56–#61 연결.
+  #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
 - CLI `--version`은 package.json을 읽는다. 빌드도 같은 JSON을 산출물에 포함한다.
-- tag·Release는 발행하지 않았다. 변경은 `dev → main` PR로 게시하며 해당 PR의 CI를 확인한다.
+- tag·Release는 미발행이다. PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 close 예정이다(사용자 결정).
+  변경은 `dev → main` PR로 게시하며 해당 PR의 CI를 확인한다.
 - [PR #28](https://github.com/qus0in/yoroi/pull/28)에 첫 CLI MVP와 버전·pnpm 전환을 게시했다.
 
 ## 인증 검증
@@ -58,3 +60,10 @@
 - 버전: `package.json` 0.1.0 유지. tag·GitHub Release 미발행. `scripts/version.py`는 쓰기 작업을 하지 않는다.
 - 검증 수치: TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests PASS.
 - 기록: 초기 README 이미지는 중세 유럽 기사 갑옷으로 교체 완료.
+
+## 2026-10-08 0.1.1 이동과 #3 close (사용자 결정)
+
+- 새 milestone 0.1.1(#3)을 만들고 #13–#17·#29를 0.1.0에서 이동했다(이슈마다 사유 댓글).
+- #3은 샘플 red→green 실측 댓글 후 close했다.
+- PR #63 병합·main CI 통과 시 v0.1.0 tag·Release 발행과 0.1.0 milestone close를 결정했다(아직 미발행).
+- #58·#56은 병합 뒤 Wiki 게시·검증 후 root가 직접 close 예정이다.

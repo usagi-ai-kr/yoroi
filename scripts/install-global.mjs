@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { copyEnv } from './copy-env.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -66,10 +67,8 @@ function main() {
   console.log(`Installed path: ${installedPath}`);
   console.log(`Installed realpath: ${installedRealPath}`);
 
-  if (fs.existsSync(repoEnvPath)) {
-    const targetEnvPath = path.join(installedRealPath, '.env');
-    fs.copyFileSync(repoEnvPath, targetEnvPath);
-    fs.chmodSync(targetEnvPath, 0o600);
+  const targetEnvPath = path.join(installedRealPath, '.env');
+  if (copyEnv(repoEnvPath, targetEnvPath)) {
     console.log(`Copied .env to: ${targetEnvPath} (chmod 600)`);
   }
 }

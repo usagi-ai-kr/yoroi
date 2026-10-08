@@ -16,7 +16,10 @@
 - 구현·문서 자동화 완료(main 반영): CI 분류기와 docs-only fast pass, `test_*.py` unittest, agent-coordination 스킬, 버전 스크립트, pretty CLI(`--pretty`), README 중세 유럽 기사 갑옷 이미지.
 - 검증 수치(루트 보고): TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests, 스킬 테스트 PASS.
 - 닫힌 이슈: #1–#25 중 완료 기준을 충족한 항목, #3(red→green 실측), #22, #25, #57, #59, #60, #61. #13–#17·#29는 0.1.1로 이동했고 계약 대조 후 #15–#17 closed.
-- 버전: `package.json` `0.1.1`. v0.1.0 tag·Release 발행 완료(PR #63 병합 후).
+- 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08, 커밋 대기). v0.1.0·v0.1.1 tag·Release 발행 완료.
+- 0.1.2 준비: dev → main PR 예정, tag·Release는 미발행(별도 승인). 포함 변경 `v0.1.1..origin/dev`:
+  전역 설치·.env 복사, 정렬 m→w→h, agy 주간 exp, credits:purchased 숨김, under/optimal/over,
+  Status 열 이동, #31 이벤트 계약 착수. milestone 0.1.2의 #13·#14·#29는 이번 PR로 닫지 않고 open 유지.
 - 0.1.1 발행 완료: PR #65 머지 커밋 `7470250`, 머지 후 workflow_dispatch CI run `37735089637` success,
   [v0.1.1 tag·Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행, milestone #3 close
   (open 3: #13·#14·#29 유지·이관 없음).
@@ -30,7 +33,7 @@
 - 0.2.0 착수: 계획 문서 [v0.2.0-plan.md](v0.2.0-plan.md). 첫 단위 #31 이벤트 계약 타입 진행 중
   (`src/app/collection-events.ts`·`tests/collection-events.test.ts`). 다음 단위: #31 Zod → #32.
   설계 문서는 로컬 브랜치 `next-0.2.0` worktree의 `docs/v0.2.0/`에 있고 아직 커밋 전.
-- CLI pnpm 전역화: 진행 중.
+- CLI 전역화(`install:global`·.env 복사·cwd 우선 로드): 구현·문서·실측 완료(418812b·7c5fc18).
 - 그 외 추가 개발은 계획하지 않는다.
 
 ## 회고 (2026-10-08)

@@ -1,6 +1,6 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
-- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.1`(아래 0.1.1 발행 완료 참조).
+- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.2` 준비(아래 0.1.2 준비 참조. v0.1.0·v0.1.1 발행 완료).
 - 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–#12·#18–#28·#56–#61 연결.
   #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
@@ -92,3 +92,9 @@
 - 이슈: #15·#16·#17 closed. #13(429 rate limit·Retry-After 미실측)·#14(balance fallback 미실측)·
   #29(`hold`) open 유지.
 - milestone #3(0.1.1) close: open 3(#13·#14·#29)·closed 4. close 시점에는 open 이슈를 옮기지 않았고, 이후 사용자 결정으로 [0.1.2](https://github.com/qus0in/yoroi/milestone/4)로 이동했다.
+
+## 2026-10-08 0.1.2 준비 (버전 증가, 미발행)
+
+- 버전 `0.1.2`(사용자 결정 2026-10-08). dev → main PR 예정이며 tag·Release는 미발행(별도 승인).
+- 포함 변경 `v0.1.1..origin/dev`: 전역 설치·.env 복사(418812b·7c5fc18), 정렬 m→w→h·agy 주간 exp(79fe08b), credits:purchased 숨김(1979c08), under/optimal/over(0883ccb·3a9daa4), Status 열 이동(86fe5a6), #31 이벤트 계약 착수(3925460).
+- milestone 0.1.2의 #13·#14·#29는 이번 PR로 닫지 않고 open 유지한다.

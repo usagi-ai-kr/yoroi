@@ -1,6 +1,6 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
-- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.2` 준비(아래 0.1.2 준비 참조. v0.1.0·v0.1.1 발행 완료).
+- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.2` 준비(PR #66 재검토 대기, v0.1.0·v0.1.1 발행 완료).
 - 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–#12·#18–#28·#56–#61 연결.
   #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
@@ -72,29 +72,25 @@
 
 ## 2026-10-08 v0.1.0 발행·Wiki 게시·마일스톤 close (root 조치)
 
-- PR #63 merge commit `6a6802a`(main). PR head `e6ffd2e`,
-- [PR CI](https://github.com/qus0in/yoroi/actions/runs/37725084420) success(main 트리 동일, ci.yml main push 트리거 없음).
+- PR #63 merge commit `6a6802a`(main), PR head `e6ffd2e`, PR CI `37725084420` success.
 - [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`).
 - Wiki 원격 master `a181ccb` 게시, 새 clone으로 6페이지 main 소스와 동일 확인.
 - #58·#56 close, 0.1.0 milestone close(31 closed, open 0).
 - 0.1.1 milestone에 #13–#17·#29 open.
-- 0.2.0 준비 설계 문서는 로컬 브랜치 `next-0.2.0` worktree
-- (`/Users/young-mini/Workspace/yoroi-0.2.0`)의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+- 0.2.0 설계 문서는 `next-0.2.0` worktree(`docs/v0.2.0/`)에 위치.
 
 ## 2026-10-08 0.1.1 발행 완료 (root 조치)
 
 - 버전: `package.json` `0.1.1`. [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1)
   발행(target: PR #65 머지 커밋 `7470250`).
-- 머지 후 검증: main에 push CI 트리거가 없어 workflow_dispatch로
-  [run 37735089637](https://github.com/qus0in/yoroi/actions/runs/37735089637) 실행 success.
-- 포함 변경 `v0.1.0..7470250`: PR #64 표시 개선(`4b16213`·`5d6a5de`·`1ad5240`·`cd82c9a`),
-  `f8ba205` 계약 대조·fixture 보강(#13–#17), `94e06fa` 버전 증가·릴리스 준비 기록.
-- 이슈: #15·#16·#17 closed. #13(429 rate limit·Retry-After 미실측)·#14(balance fallback 미실측)·
-  #29(`hold`) open 유지.
-- milestone #3(0.1.1) close: open 3(#13·#14·#29)·closed 4. close 시점에는 open 이슈를 옮기지 않았고, 이후 사용자 결정으로 [0.1.2](https://github.com/qus0in/yoroi/milestone/4)로 이동했다.
+- 머지 후 검증: main push CI 부재로 workflow_dispatch [run 37735089637](https://github.com/qus0in/yoroi/actions/runs/37735089637) 실행 success.
+- 포함 변경 `v0.1.0..7470250`: PR #64 표시 개선, `f8ba205` 계약 대조(#13–#17), `94e06fa` 버전 갱신.
+- 이슈: #15·#16·#17 closed. #13·#14·#29 open 유지 후 0.1.2 milestone(#4)으로 이동.
+- milestone #3(0.1.1) close 완료.
 
 ## 2026-10-08 0.1.2 준비 (버전 증가, 미발행)
 
-- 버전 `0.1.2`(사용자 결정 2026-10-08). dev → main PR 예정이며 tag·Release는 미발행(별도 승인).
-- 포함 변경 `v0.1.1..origin/dev`: 전역 설치·.env 복사(418812b·7c5fc18), 정렬 m→w→h·agy 주간 exp(79fe08b), credits:purchased 숨김(1979c08), under/optimal/over(0883ccb·3a9daa4), Status 열 이동(86fe5a6), #31 이벤트 계약 착수(3925460).
-- milestone 0.1.2의 #13·#14·#29는 이번 PR로 닫지 않고 open 유지한다.
+- 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08). PR #66 리뷰 반영 후 재검토 대기 중.
+- v0.1.2 tag·Release 미발행(사용자 승인 필요).
+- milestone 0.1.2(#4) open 이슈 #13·#14·#29는 이번 PR로 닫지 않고 open 유지.
+- 0.2.0 보류: 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).

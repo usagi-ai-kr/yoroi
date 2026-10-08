@@ -39,3 +39,9 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
 - 이미 발행한 tag는 불변이다. 덮어쓰지 않는다. 검증 실패·버전 불일치 시 발행하지 않고
   원인과 남은 작업을 보고한다.
 - milestone은 계획, tag는 검증된 커밋, Release는 발행 기록이다.
+
+## 현재 운영 현황 (2026-10-08)
+
+- 버전: `package.json` `0.1.2`(PR #66 리뷰 반영 후 재검토 대기).
+- tag·Release: `v0.1.2` 미발행(사용자 승인 필요, v0.1.0·v0.1.1 발행 완료).
+- milestone: `0.1.2` open (#13·#14·#29 open 유지), `0.2.0` open (0.2.0 보류 상태).

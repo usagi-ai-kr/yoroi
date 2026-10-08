@@ -63,3 +63,12 @@
 - 합성 응답·생성 Ed25519 키로 서명 검증, 키 손상·HTTP 실패·누락 창·파싱 오류를 검사한다.
 - 실제 Ollama 계정 조회 성공: 구독/구매 크레딧 2개·집계 5개, 총 7개 창 파싱.
   개인 응답·키 원문은 기록하지 않는다.
+
+## CLI 표시 (출력 전용 규칙, 수집 데이터 불변)
+
+- 표시: `monthly`·`credits:included`(월간 인정, `included.period.until` 리셋)·`credits:purchased`.
+  숨김: `activity:*` 전부, 이전 `session`·`weekly`. 표시 대상이 없으면 전체를 보여준다.
+- 표기: `monthly`·`credits:included` → `m`, `credits:purchased`는 내부 id 그대로.
+  계산(월간 판정·예상 비율)에는 내부 id를 그대로 쓴다.
+- 합성 예시: `ollama-pro: ok observed=2026-10-08T00:00:00Z windows=2` 뒤에
+  `  - m [USD] used=unknown remaining=1.25 limit=5 percent=unknown …`처럼 표시한다.

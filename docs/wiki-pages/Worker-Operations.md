@@ -36,7 +36,9 @@ pnpm --silent run dev watch --interval 30 --pretty
 
 공급자마다 월간이 있으면 월간, 없으면 주간 창 하나(가장 긴 창)에 예상 균등 사용량 비율을 표시합니다. 계산은 `(창 길이 - 남은 시간) / 창 길이 × 100`(주간 7일, 월간은 리셋 한 달 전부터)이며 소수점 둘째 자리까지 올림합니다. pretty 출력은 `Usage` 열 뒤에 `(exp 42.86%)`처럼 덧붙이고, plain 출력은 해당 창 줄에 `expected=42.86`으로 표시합니다.
 
-ollama-pro는 plain·pretty 모두 월간 창만 표시하고(없으면 전체), 헤더 `windows=`는 표시된 창 수입니다. 수집 데이터는 바뀌지 않습니다.
+ollama-pro는 plain·pretty 모두 `monthly`·`credits:included`(월간 인정)·`credits:purchased`만 표시하고, `activity:*`·`session`·`weekly`는 숨깁니다. 표시 대상이 없으면 전체를 보여주고, 헤더 `windows=`는 표시된 창 수입니다. 수집 데이터는 바뀌지 않습니다.
+
+창 표기는 길이가 확정된 것만 `5h`·`w`·`m`으로 줄이고(그 외 내부 id 그대로), 같은 표기가 겹칠 때만 `g-5h`처럼 접두어를 붙입니다. 계산에는 내부 id를 그대로 씁니다.
 
 ## 중지와 데이터
 

@@ -2,42 +2,11 @@ import Table from "cli-table3";
 import pc from "picocolors";
 import type { UsageResult } from "../../app/usage-source.js";
 import type { UsageWindow } from "../../domain/usage.js";
-import { formatNumber, formatTimeLeft } from "./format.js";
+import { displayWindows, show } from "./display.js";
+import { expectedSuffix } from "./expected.js";
+import { formatTimeLeft } from "./format.js";
 
-function show(metric: number | string): string {
-  return typeof metric === "number" ? formatNumber(metric) : metric;
-}
-
-function value(metric: number | string | undefined): string {
-  return metric === undefined ? "unknown" : show(metric);
-}
-
-function renderWindow(window: UsageWindow, observedAt: string): string {
-  const left = formatTimeLeft(window.resetAt, observedAt);
-  const metrics = [
-    `used=${value(window.used)}`,
-    `remaining=${value(window.remaining)}`,
-    `limit=${value(window.limit)}`,
-    `percent=${value(window.percent)}`,
-    `reset=${value(window.resetAt)}`,
-    `reset_in=${left?.replace(" ", "") ?? "unknown"}`,
-  ];
-  return `  - ${window.id} [${window.unit}] ${metrics.join(" ")}`;
-}
-
-export function renderResult(result: UsageResult): string[] {
-  if ("snapshot" in result) {
-    const { provider, observedAt, windows } = result.snapshot;
-    const header = `${provider}: ok observed=${observedAt} windows=${windows.length}`;
-    if (windows.length === 0) return [`${header} (no usage windows reported)`];
-    return [header, ...windows.map((window) => renderWindow(window, observedAt))];
-  }
-  return [`${result.provider}: error [${result.error.code}] ${result.error.message}`];
-}
-
-export function renderResults(results: readonly UsageResult[]): string[] {
-  return results.flatMap((result) => renderResult(result));
-}
+export { renderResult, renderResults } from "./display.js";
 
 export function formatResetTime(iso?: string): string {
   if (!iso) return "-";
@@ -80,12 +49,14 @@ export function renderPretty(results: readonly UsageResult[]): string[] {
   for (const r of results) {
     if ("snapshot" in r) {
       const { provider, windows, observedAt } = r.snapshot;
+      const visible = displayWindows(provider, windows);
       const okText = colors.green("ok");
-      if (windows.length === 0) table.push([provider, "(none)", "-", "-", okText]);
-      else for (const w of windows) {
+      if (visible.length === 0) table.push([provider, "(none)", "-", "-", okText]);
+      else for (const w of visible) {
         const left = formatTimeLeft(w.resetAt, observedAt);
         const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
-        table.push([provider, w.id, formatUsage(w), reset, okText]);
+        table.push([provider, w.id,
+          formatUsage(w) + expectedSuffix(w, visible, observedAt), reset, okText]);
       }
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);

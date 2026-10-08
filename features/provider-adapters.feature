@@ -5,12 +5,22 @@ Feature: 실제 공급자 어댑터 fake 전송 통합
     When I run "once"
     Then the CLI exit code is 0
     And stdout has results for providers "ollama-pro,opencode-go,codex,agy,claude"
-    And the CLI stdout contains "- session [percent]"
+    And the CLI stdout contains "- monthly [percent]"
+    And the CLI stdout does not contain "- session [percent]"
     And the CLI stdout contains "- rolling [percent]"
     And the CLI stdout contains "- codex:primary:300m [percent]"
     And the CLI stdout contains "- gemini-models:weekly-limit-remaining [percent]"
     And the CLI stdout contains "- session:5h [percent]"
     And the CLI stdout contains "weekly:7d [percent] used=unknown remaining=unknown limit=unknown percent=60 reset=2026-10-10T00:00:00.000Z"
+
+  Scenario: ollama-pro에 월간 창이 없으면 전체 창을 출력한다
+    Given the five real provider adapters with fake transports
+    And real adapter "ollama-pro" payload omits the monthly window
+    When I run "once"
+    Then the CLI exit code is 0
+    And stdout has results for providers "ollama-pro,opencode-go,codex,agy,claude"
+    And the CLI stdout contains "- session [percent]"
+    And the CLI stdout contains "- weekly [percent]"
 
   Scenario: HTTP와 CLI 일부 실패가 나머지 성공과 격리된다
     Given the five real provider adapters with fake transports

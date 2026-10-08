@@ -17,7 +17,7 @@ test("renderer prints observedAt, all window metrics and percent", () => {
 
   assert.deepEqual(renderResults([result]), [
     `codex: ok observed=${observedAt} windows=1`,
-    "  - weekly [requests] used=3 remaining=7 limit=10 percent=30 reset=2026-10-14T00:00:00Z reset_in=6d18h",
+    "  - weekly [requests] used=3 remaining=7 limit=10 percent=30 reset=2026-10-14T00:00:00Z reset_in=6d18h expected=3.28",
   ]);
 });
 

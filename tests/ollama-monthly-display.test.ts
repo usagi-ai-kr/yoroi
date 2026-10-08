@@ -38,7 +38,7 @@ test("ollama-pro pretty renders only the monthly row while keeping the table int
   assert.equal(new Set(widths).size, 1);
 });
 
-test("current ollama schema hides all five activity rows and keeps both credits rows", () => {
+test("current ollama schema hides activity and purchased credits rows but keeps the snapshot", () => {
   const result: UsageResult = { provider: "ollama-pro", snapshot: createSnapshot("ollama-pro", observedAt, [
     { id: "credits:included", unit: "USD", remaining: 6, limit: 10, used: 4,
       percent: 40, resetAt: "2026-11-01T00:00:00Z" },
@@ -50,12 +50,17 @@ test("current ollama schema hides all five activity rows and keeps both credits 
     { id: "activity:7d:output_tokens", unit: "tokens", used: 30 },
   ]) };
   const lines = renderResults([result]);
+  const pretty = renderPretty([result]).join("\n");
 
-  assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=2`);
+  assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=1`);
   assert.ok(lines.some((line) => line.startsWith("  - m [USD] ")));
-  assert.ok(lines.some((line) => line.startsWith("  - credits:purchased [USD] ")));
+  assert.ok(!lines.some((line) => line.includes("credits:purchased")));
   assert.ok(!lines.some((line) => line.includes("activity:7d")));
-  assert.equal(result.snapshot.windows.length, 7);
+  assert.ok(!pretty.includes("credits:purchased"));
+  assert.ok(pretty.includes(" m "));
+  assert.deepEqual(result.snapshot.windows.map((window) => window.id),
+    ["credits:included", "credits:purchased", "activity:7d:request_count", "activity:7d:usage_usd",
+      "activity:7d:input_tokens", "activity:7d:cached_input_tokens", "activity:7d:output_tokens"]);
 });
 
 test("ollama-pro hides every non-target window when no display target exists", () => {

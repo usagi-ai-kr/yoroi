@@ -69,7 +69,7 @@ test("falls back to internal ids when labels would still collide", () => {
     ["monthly", "credits:included"]);
 });
 
-test("ollama-pro display keeps monthly and credits windows and hides the rest", () => {
+test("ollama-pro display keeps monthly windows and hides credits:purchased with the rest", () => {
   const current = [
     w("credits:included", { unit: "USD" }), w("credits:purchased", { unit: "USD" }),
     w("activity:7d:request_count", { unit: "requests" }), w("activity:7d:usage_usd", { unit: "USD" }),
@@ -78,7 +78,7 @@ test("ollama-pro display keeps monthly and credits windows and hides the rest", 
   ];
 
   assert.deepEqual(displayWindows("ollama-pro", current).map((window) => window.id),
-    ["credits:included", "credits:purchased"]);
+    ["credits:included"]);
   assert.deepEqual(displayWindows("ollama-pro", [
     w("session"), w("weekly"), w("monthly"), w("activity:last-4-weeks", { unit: "USD" }),
   ]).map((window) => window.id), ["monthly"]);

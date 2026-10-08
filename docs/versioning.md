@@ -1,0 +1,41 @@
+# 버전 관리와 릴리스 순서
+
+- 버전 원본은 `package.json` 하나다. CLI `--version`도 이 값을 읽는다.
+  별도 버전 파일을 만들지 않는다. 스크립트: `scripts/version.py`, 테스트: `scripts/test_version.py`.
+- 일반 규칙은 [semver-milestones 스킬](../.agents/skills/semver-milestones/SKILL.md)을 따른다.
+
+## SemVer 정책
+
+- 형식은 엄격 `X.Y.Z`만 허용한다. 선행 0(`01.2.3`), 잘못된 문자, prerelease(`-beta.1`)와
+  build(`+sha`)는 거절한다. 지원 방침을 바꾸려면 이 문서와 `version.py` 정규식을 함께 고친다.
+- 호환 파괴는 major, 호환 기능 추가는 minor, 수정은 patch다.
+- minor 증가 시 patch=0, major 증가 시 minor·patch=0으로 초기화한다. minor는 정수이며
+  `0.9.0` 다음은 `0.10.0`이다.
+- `0.x`는 초기 개발 단계다. 이 단계에서 파괴 변경은 minor로 올리고, major(=1.0.0)는
+  공개 계약 안정 선언에 쓴다. 변경 영향과 마이그레이션을 milestone·PR에 기록한다.
+
+## version.py 사용법
+
+```bash
+python3 scripts/version.py                     # 현재 버전·manifest·예정 vTag·milestone 표시(읽기 전용)
+python3 scripts/version.py --bump patch        # dry-run: 파일 변경 없음
+python3 scripts/version.py --bump minor        # 0.9.3 -> 0.10.0
+python3 scripts/version.py --bump major        # 0.9.3 -> 1.0.0
+python3 scripts/version.py --bump patch --apply  # manifest version 필드만 기록
+```
+
+- 기본과 `--bump`는 read-only다. `--apply`를 명시할 때만 `package.json`의 version을 쓴다.
+- 자동 git commit·push·tag·Release는 하지 않는다.
+
+## 릴리스 순서
+
+1. milestone의 목표·완료 기준·미완료 항목을 확인한다. 열린 채로 남은 항목을 조용히 옮기지 않는다.
+2. `--bump` dry-run으로 예정 버전과 `vX.Y.Z` tag를 정하고, `--apply` 후 빌드·출력 버전
+   (`yoroi --version`)이 manifest와 같은지 확인한다.
+3. dev → main PR에서 CI(`pull_request`)와 전체 검증이 통과한 **검증된 커밋 SHA**를 기록한다.
+4. 그 SHA에 `vX.Y.Z` 태그를 만들고 Release로 발행 기록을 남긴다. 순서는 검증 → tag → Release다.
+5. 발행 후 tag·커밋·산출물·Release가 일치하는지 확인하고 다음 milestone을 정리한다.
+
+- 이미 발행한 tag는 불변이다. 덮어쓰지 않는다. 검증 실패·버전 불일치 시 발행하지 않고
+  원인과 남은 작업을 보고한다.
+- milestone은 계획, tag는 검증된 커밋, Release는 발행 기록이다.

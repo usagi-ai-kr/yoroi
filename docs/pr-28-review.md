@@ -86,3 +86,4 @@
 
 - 재검토 댓글 6050713889의 위험 항목(내부 API, 로그인 만료, #29)을 [claude-operations.md](claude-operations.md)에 정리했다.
 - 위험 수용과 정책 승인은 기록되어 있지 않다. #29는 비차단 별도 조사로 둔다.
+- PR #28 병합 완료: merge commit `48bdd8e`, dev 동기화 완료. 이후 작업은 [tasks.md](tasks.md)에 기록한다.

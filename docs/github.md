@@ -8,7 +8,9 @@
 - 2026-10-08 main 보호 적용: PR 필수, 승인 0명, `ci` 필수·strict, 관리자 포함,
   force push·삭제 금지. 기존 성공 workflow의 실제 job 이름 `ci`를 확인했다.
 - 자동 머지 옵션은 아직 적용하지 않았다. 아래 머지·브랜치 유지 항목은 운영 목표다.
-- [PR #28](https://github.com/qus0in/yoroi/pull/28): dev → main, feature 라벨·0.1.0 milestone.
+- [PR #28](https://github.com/qus0in/yoroi/pull/28): dev → main 병합 완료(merge commit `48bdd8e`), feature 라벨·0.1.0 milestone.
+- 이후 변경은 별도 PR로 진행한다. docs-only 변경은 CI fast pass로 앱 검증을 생략하며, 필수 체크 `ci`는 계속 요구한다.
+- 최종 PR(미병합): dev → main, `Closes #25 #57 #59 #60 #61`. 병합 뒤 docs-only 기록 PR로 fast pass를 원격 확인한다. Wiki(#58) 뒤 #58·#56을 직접 close한다.
 - PR 필수 체크는 pull_request 실행·head SHA·PR 체크 상태를 함께 확인한다.
   workflow_dispatch 체크는 성공해도 PR 필수 체크로 평가되지 않는다.
   자동 실행 누락 시 PR 이벤트/승인 대기/활성 workflow를 확인하고 적격 이벤트 CI를 실행한다.
@@ -21,6 +23,12 @@
 | 머지 | merge commit, 지원 시 자동 머지 |
 | 리뷰 | 1인 운영 기준 필수 승인 0명, PR은 필수 |
 | 브랜치 유지 | 머지 후 `dev` 유지 |
+
+## 이슈 종료 규칙 (2026-10-08 사용자 지시)
+
+- 처리된 issue는 반드시 close한다. 완료 기준 충족 시 PR에 `Closes #번호`를 넣거나 PR 밖에서 직접 close한다.
+- 미완료 사유가 있으면 open 유지 후 사유 1–2줄을 남긴다. memo 이슈는 손대지 않는다.
+- PR 머지 뒤에야 끝나는 작업은 PR Closes에 넣지 않고 완료 후 직접 close한다.
 
 ## 초기화
 

@@ -16,11 +16,13 @@ test('domain/app/CLI imports enforce the Clean Architecture dependency direction
     if (!['domain', 'app', 'ui'].includes(layer!)) continue;
     const source = await readFile(file, 'utf8');
     const imports = /(?:\bfrom\s*|\bimport\s*|\b(?:import|require)\s*\()(['"])([^'"]+)\1/g;
+    const uiAllowlist = ['cli-table3', 'picocolors'];
     for (const match of source.matchAll(imports)) {
         const text = match[2]!;
         const target = text.startsWith('.') ? relative(root, resolve(dirname(file), text)).split('/')[0] : text;
         const allowed = layer === 'domain' ? ['domain'] : layer === 'app' ? ['app', 'domain'] : ['ui', 'app', 'domain'];
-        assert.ok(allowed.includes(target!) || (layer === 'ui' && text.startsWith('node:')),
+        const isUiAllowed = layer === 'ui' && (text.startsWith('node:') || uiAllowlist.includes(text));
+        assert.ok(allowed.includes(target!) || isUiAllowed,
           `${relative(root, file)} must not depend on ${text}`);
     }
   }

@@ -10,6 +10,7 @@
 | `skill-authoring` | 스킬 생성·수정·검증, 재사용할 회고 반영 |
 | `github-workflow` | 계획·진척·보고, 이슈·PR·라벨·레포 운영 |
 | `semver-milestones` | 목표·milestone·버전 계획, 릴리스 준비 |
+| `agent-coordination` | 토큰 절약·파일 소유권·작업 패킷 위임 및 감사 |
 
 ```bash
 python3 scripts/validate-repo.py

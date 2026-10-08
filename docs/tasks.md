@@ -19,27 +19,29 @@
 - 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08). v0.1.0·v0.1.1·v0.1.2 tag·Release 발행 완료.
 - 0.1.2 발행 완료: PR #66 머지 커밋 `4dfd4d7`(2026-10-08T10:35:35Z, .env 병합 로드 `68bce2f` 포함),
   머지 후 workflow_dispatch CI run `37764517117` success, tag `v0.1.2` → `4dfd4d7`,
-  [v0.1.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행, milestone #4 close
-  (open 3: #13·#14·#29 유지·이관 없음). 포함 변경은 [release-status.md](release-status.md).
+  [v0.1.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행, milestone #4 close(open 3: #13·#14·#29 유지).
+- PR #67 병합 완료: merge commit `62ef080`(2026-10-08T13:16:52Z), head `3dadf92`.
+  PR CI `37780797515` success, main workflow_dispatch CI `37783139920` success.
+  포함 커밋: `ff3371c`(서브커맨드 도움말 `once/watch --help`·`-h`), `3dadf92`(문서 정리·`global-install.md` 분리).
+- 현재 상태 요약: **0.1.x 마무리 완료·0.2.0 보류**(milestone #2·#30–#55 open 유지). 미완 #13·#14·#29 open 유지.
+- 다음 후보: PR #67 변경을 담을 0.1.3 tag·Release 필요 여부는 사용자 결정(주의: opencode worker는 무료 모델 소진 시 오래된 패킷을 재실행할 수 있어 주의).
 - 0.1.1 발행 완료: PR #65 머지 커밋 `7470250`, 머지 후 workflow_dispatch CI run `37735089637` success,
-  [v0.1.1 tag·Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행, milestone #3 close
-  (open 3: #13·#14·#29 유지·이관 없음).
-  포함 변경 `v0.1.0..7470250`: PR #64 표시 개선(Ollama activity·창 짧은 표기)과 `f8ba205` 계약 대조(#13–#17).
-- PR #63(dev, 커밋 `62f55fd`·`51bfac8`): CLI 숫자 올림·reset_in 표시, 오케스트레이터 분담·graceful-stop 스킬. 병합 `6a6802a` 완료.
+  [v0.1.1 tag·Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행, milestone #3 close(open 3: #13·#14·#29 유지).
+- PR #63(dev): CLI 숫자 올림·reset_in 표시, 오케스트레이터 분담·graceful-stop 스킬. 병합 `6a6802a` 완료.
 
 ## 남은 작업
 
-- 0.1.2(milestone #4, close): #13(429 미실측)·#14(balance fallback 미실측)·#29(Claude `/usage` 환경별 차이, hold) open 유지.
-  0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
-- 0.2.0 보류: 계획 문서 [v0.2.0-plan.md](v0.2.0-plan.md). 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).
-  설계 문서는 로컬 브랜치 `next-0.2.0` worktree의 `docs/v0.2.0/`에 있고 아직 커밋 전.
-- CLI 전역화(`install:global`·.env 복사·cwd+설치 사본 병합 로드): 구현·문서·실측 완료(418812b·7c5fc18·68bce2f).
+- 0.1.x 마무리 완료: 서브커맨드 도움말 및 문서 분리 반영(PR #67). 미완 계약 #13·#14·#29 open 유지.
+- 0.1.3 tag·Release 발행 여부는 사용자 결정.
+- 0.2.0 보류: 계획 문서 [v0.2.0-plan.md](v0.2.0-plan.md). 설계 초안 14건은 `docs/v0.2.0/`으로 dev 이관 완료. milestone #2·#30–#55 open 유지.
+- CLI 전역화(`install:global`·.env 복사·cwd+설치 사본 병합 로드): 구현·문서([global-install.md](global-install.md))·실측 완료.
 - 그 외 추가 개발은 계획하지 않는다.
 
 ## 회고 (2026-10-08)
 
 - 중단 요청 뒤 worker·후속 단계가 자동 재개되는 문제가 있었다 → `graceful-stop` 스킬 추가(재개 금지 체크포인트).
-- root가 구현을 직접 맡아 부담이 커졌다 → root는 오케스트레이터, 구현·조사·검증은 패킷 분담. 값은 [orchestration.md](orchestration.md).
+- root가 구현을 직접 맡아 부담이 커졌다 → root는 오케스트레이터, 구현·조사·검증은 패킷 분담([orchestration.md](orchestration.md)).
+- opencode worker는 무료 모델 소진 시 오래된 패킷을 재실행할 수 있어 주의 필요.
 
 ## 소유표
 

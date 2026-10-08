@@ -13,88 +13,59 @@
 
 ## 인증 검증
 
-- [#26 Ollama](https://github.com/qus0in/yoroi/issues/26): 사용자 서명 키 연결 확인.
-  인증 성공 후 참조 구현과 실제 응답의 차이를 발견했다.
-  현재 usage 집계·balance 크레딧 응답 파서를 추가해 총 7개 창을 확인했다.
-- [#27 OpenCode](https://github.com/qus0in/yoroi/issues/27): 사용자 제공 .env 설정으로
-  실제 API 조회·rolling/weekly/monthly 3개 창 파싱 성공.
-- Codex/AGY/Claude 실제 조회는 앞선 작업에서 성공했다.
-- 개인 키·수치·응답 원문은 기록하지 않았다. 현재 응답 fixture는 합성값만 사용한다.
+- [#26 Ollama](https://github.com/qus0in/yoroi/issues/26): 사용자 서명 키 연결 확인, usage 집계·balance 파서 추가(7개 창 확인).
+- [#27 OpenCode](https://github.com/qus0in/yoroi/issues/27): .env 설정으로 API 조회·rolling/weekly/monthly 3개 창 파싱 성공.
+- Codex/AGY/Claude 실제 조회 성공. 개인 키·수치·응답 원문 미기록(합성 fixture 사용).
 
 ## pnpm 전환
 
-- Node 24.13.1 유지, `packageManager: pnpm@12.10.1` 고정.
-- npm lock을 pnpm-lock.yaml로 변환했다. CI는 frozen install과 pnpm check를 사용한다.
-- pnpm-workspace.yaml에 strict 설정과 esbuild 빌드 허용을 기록한다.
-- dev는 `.env`를 Node 기본 옵션으로 읽는다. 이미 설정된 환경 변수가 우선한다.
-- [설치 지침](https://pnpm.io/installation)과 [공식 CI action](https://github.com/pnpm/setup)을 확인했다.
-- 로컬 PATH의 기존 pnpm 11이 충돌해 Node/Corepack shim 경로를 우선하여 검증했다.
-- 검증(당시): pnpm check 75개 테스트·BDD 16시나리오/87step 통과. pnpm dev 실제 API 조회와 빌드 `--version`도 확인했다.
-- 최종 검증(freeze): 단위·통합 128개 통과, BDD 25 시나리오/144 step 통과, 레포 검사 129파일·3스킬 PASS.
+- Node 24.13.1, `packageManager: pnpm@12.10.1` 고정. npm lock을 pnpm-lock.yaml로 변환.
+- pnpm-workspace.yaml에 strict 설정과 esbuild 빌드 허용 기록, Node/Corepack shim 경로 우선 검증.
+- [설치 지침](https://pnpm.io/installation)과 [공식 CI action](https://github.com/pnpm/setup) 확인.
+- 최종 검증(freeze 당시): 단위·통합 128개, BDD 25 시나리오/144 step, 레포 검사 129파일·3스킬 PASS.
 
 ## GitHub 조치
 
 - main 보호 적용: PR·ci 필수, strict 최신 기준, 관리자 포함, force push·삭제 금지.
-- #26·#27은 사용자 명시 승인 후 검증 결과를 기록하고 hold 해제·종료했다.
-- 완료 기록은 PR에도 포함한다. milestone은 실제 릴리스 커밋 검증과 통합 시점에 맞춰 완료한다.
-- 최초 게시 커밋의 [원격 CI](https://github.com/qus0in/yoroi/actions/runs/37709346179)가 통과했다.
-  자동 실행이 보고되지 않아 동일 head의 workflow_dispatch를 실행했다.
-  이후 리뷰에서 수동 실행 체크가 PR 필수 조건에 반영되지 않는 것을 확인했다.
-  [GitHub 근거](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks):
-  적격 이벤트의 workflow run을 확인해야 하며 수동 체크 성공으로 PR 통과를 판단하지 않는다.
+- #26·#27은 사용자 명시 승인 후 검증 결과 기록 후 close. milestone은 릴리스 커밋 검증 시점 완료.
+- 최초 게시 커밋 [원격 CI](https://github.com/qus0in/yoroi/actions/runs/37709346179) 통과, workflow_dispatch 실행.
+  적격 이벤트 workflow run 확인 원칙 수립(수동 체크 단독으로 PR 통과 판단 금지).
 
 ## 회고와 릴리스 기준
 
-- 비공식 API의 참조 구현과 실제 응답은 다를 수 있다. 인증 후 필드·자료형만 확인하고
-  실제 구조의 합성 fixture로 회귀 검증한다. 없는 quota·reset은 추정하지 않는다.
-- 버전 파일을 추가하지 않고 manifest·CLI 출력·milestone·tag를 같은 SemVer에 연결한다.
-- 릴리스 시 해당 커밋의 타입·단위·BDD·빌드·레포 검사와 원격 CI를 확인한다.
-  발행 요청 시에만 검증된 커밋에 tag와 Release를 연결한다.
-- Ollama 인증/포맷 변경·네트워크·응답 크기 초과에서 다른 공급자의 결과가 유지되는지 검사한다.
-  비공식 API의 영향은 해당 공급자에 한정하고 누락 수치를 생성하지 않는다.
-- PR 리뷰 조치와 완료 기준은 [pr-28-review.md](pr-28-review.md)에 기록한다.
-- Claude 자동 수집은 CLI print 경로를 제거하고 OAuth 사용량 GET으로 보강했다.
-  최신 인증·조회 계약과 실행 검증은 [claude-readonly.md](claude-readonly.md)에 기록한다.
+- 비공식 API 차이는 인증 후 필드·자료형만 확인하고 합성 fixture로 회귀 검증.
+- 버전 파일 추가 없이 manifest·CLI 출력·milestone·tag를 같은 SemVer에 연결.
+- 릴리스 시 타입·단위·BDD·빌드·레포 검사와 원격 CI 확인(발행 요청 시에만 tag/Release 연결).
+- Ollama 영향은 해당 공급자에 한정. PR 리뷰 조치·완료 기준은 [pr-28-review.md](pr-28-review.md).
+- Claude 자동 수집은 OAuth 사용량 GET으로 보강([claude-readonly.md](claude-readonly.md)).
 
-## 2026-10-08 문서·자동화 정리 (PR #62)
+## 2026-10-08 v0.1.0 발행 (PR #62·#63, root 조치)
 
-- PR #62 병합 `1b3b027`(head `b09ac71`). PR CI `37720540457`, push CI `37720536646` success.
-- 버전: `package.json` `0.1.0`(당시). tag·GitHub Release는 이 시점엔 미발행이었다(현재 v0.1.0·v0.1.1·v0.1.2 발행 완료). `scripts/version.py`는 쓰기 작업을 하지 않는다.
-- 검증 수치: TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests PASS.
-- 기록: 초기 README 이미지는 중세 유럽 기사 갑옷으로 교체 완료.
-
-## 2026-10-08 0.1.1 이동과 #3 close (사용자 결정)
-
-- 새 milestone 0.1.1(#3)을 만들고 #13–#17·#29를 0.1.0에서 이동했다(이슈마다 사유 댓글).
-- #3은 샘플 red→green 실측 댓글 후 close했다.
-- PR #63 병합·PR CI 통과 후 v0.1.0 tag·Release를 발행하고 0.1.0 milestone을 close했다.
-- #58·#56은 Wiki 게시·검증 후 root가 직접 close했다.
-
-## 2026-10-08 v0.1.0 발행·Wiki 게시·마일스톤 close (root 조치)
-
-- PR #63 merge commit `6a6802a`(main), PR head `e6ffd2e`, PR CI `37725084420` success.
-- [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`).
-- Wiki 원격 master `a181ccb` 게시, 새 clone으로 6페이지 main 소스와 동일 확인.
-- #58·#56 close, 0.1.0 milestone close(31 closed, open 0).
-- 0.1.1 milestone에 #13–#17·#29 open.
-- 0.2.0 설계 문서는 `next-0.2.0` worktree(`docs/v0.2.0/`)에 위치.
+- PR #62 병합 `1b3b027`, PR #63 merge commit `6a6802a`(main), PR CI `37725084420` success.
+- [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`), Wiki master `a181ccb` 게시.
+- 0.1.0 milestone close(31 closed). 0.1.1 milestone(#3)에 #13–#17·#29 이동. #58·#56 close.
 
 ## 2026-10-08 0.1.1 발행 완료 (root 조치)
 
-- 버전: `package.json` `0.1.1`. [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1)
-  발행(target: PR #65 머지 커밋 `7470250`).
-- 머지 후 검증: main push CI 부재로 workflow_dispatch [run 37735089637](https://github.com/qus0in/yoroi/actions/runs/37735089637) 실행 success.
-- 포함 변경 `v0.1.0..7470250`: PR #64 표시 개선, `f8ba205` 계약 대조(#13–#17), `94e06fa` 버전 갱신.
-- 이슈: #15·#16·#17 closed. #13·#14·#29 open 유지 후 0.1.2 milestone(#4)으로 이동.
-- milestone #3(0.1.1) close 완료.
+- 버전: `package.json` `0.1.1`. [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행(target: PR #65 머지 커밋 `7470250`).
+- 머지 후 검증: workflow_dispatch [run 37735089637](https://github.com/qus0in/yoroi/actions/runs/37735089637) success.
+- 포함 변경: PR #64 표시 개선, `f8ba205` 계약 대조(#13–#17), `94e06fa` 버전 갱신.
+- #15–#17 closed. #13·#14·#29 open 유지 후 0.1.2 milestone(#4)으로 이동. milestone #3 close.
 
 ## 2026-10-08 0.1.2 발행 완료 (root 조치)
 
 - 버전: `package.json` `0.1.2`. PR #66 병합 `4dfd4d7`(main, 2026-10-08T10:35:35Z), head `68bce2f`
   (.env 병합 로드 포함). PR CI `37763214238` success.
-- 머지 후 검증: main push CI 부재로 workflow_dispatch [run 37764517117](https://github.com/qus0in/yoroi/actions/runs/37764517117) success.
+- 머지 후 검증: workflow_dispatch [run 37764517117](https://github.com/qus0in/yoroi/actions/runs/37764517117) success.
 - tag `v0.1.2` → `4dfd4d7`. [v0.1.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행.
-- 포함 변경 `v0.1.1..4dfd4d7`: 전역 설치·.env 복사와 cwd+설치 사본 키 단위 병합 로드, 창 정렬 m→w→h,
-  agy 주간 exp, credits:purchased 숨김, under/optimal/over, Status 열 이동, PR #66 리뷰 반영(.env 0600 원자 생성·로드 실패 종료 2).
 - milestone 0.1.2(#4) close(open 3 #13·#14·#29 유지·이관 없음).
-- 0.2.0(#2) 보류 유지(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).
+- 0.2.0(#2) 보류 유지(사용자 결정 2026-10-08, 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).
+
+## 2026-10-08 PR #67 머지 및 main 검증 (서브커맨드 도움말·문서 정리)
+
+- PR #67 MERGED, merge commit `62ef080`(main, 2026-10-08T13:16:52Z), head `3dadf92`.
+- CI 검증: PR CI [run 37780797515](https://github.com/qus0in/yoroi/actions/runs/37780797515) success, main workflow_dispatch CI [run 37783139920](https://github.com/qus0in/yoroi/actions/runs/37783139920) success.
+- 포함 커밋: `ff3371c`(서브커맨드 도움말 `once/watch --help`·`-h`), `3dadf92`(문서 정리·global-install.md 분리).
+- 현재 상태 요약: **0.1.x 마무리 완료·0.2.0 보류**. 미완 #13·#14·#29 open 유지, milestone #2·#30–#55 open 유지.
+- 다음 후보: PR #67 변경을 담을 0.1.3 tag·Release 필요 여부는 사용자 결정.
+  (주의: opencode worker는 무료 모델 소진 시 오래된 패킷을 재실행할 수 있어 주의 필요).

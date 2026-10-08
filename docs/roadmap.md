@@ -26,7 +26,11 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 - 첫 MVP 기능은 minor인 `0.1.0`으로 관리한다. 수정은 patch, 기능 추가는 minor로 증가한다.
   초기 `0.x`의 호환성 파괴는 minor와 마이그레이션 기록으로 관리한다.
   안정된 `1.x` 공개 계약 이후 호환성 파괴는 major다.
-- minor 증가 시 patch를 0으로 초기화한다. 직전 발행은 `0.1.2`(milestone #4), 다음 후보는 `0.1.3`, 새 기능 후보는 `0.2.0`(보류)이다.
+- minor 증가 시 patch를 0으로 초기화한다. 직전 발행은 `0.1.2`(milestone #4 close), 다음 후보는 `0.1.3`, 새 기능 후보는 `0.2.0`(보류)이다.
+- PR #67 병합(merge `62ef080`, 2026-10-08T13:16:52Z): 서브커맨드 도움말(`ff3371c`)·문서 정리(`3dadf92`) 반영 완료.
+  PR CI `37780797515` success, main workflow_dispatch CI `37783139920` success.
+- 현재 상태 요약: **0.1.x 마무리 완료·0.2.0 보류**(milestone #2·#30–#55 open 유지). 미완 #13·#14·#29 open 유지.
+- 다음 후보: PR #67 변경을 담을 0.1.3 tag·Release 필요 여부는 사용자 결정(주의: opencode worker는 무료 모델 소진 시 구 패킷 재실행 주의).
 - milestone은 릴리스 커밋의 원격 CI 확인 후 닫는다. 0.1.0·0.1.1·0.1.2는 close 완료. 이후 목표는 범위가 정해질 때 생성한다.
 - `v0.1.0` tag·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행 완료(target `6a6802a`, PR #63 병합·PR CI `37725084420`).
   `v0.1.1` 발행 완료(target `7470250`, PR #65 병합·workflow_dispatch CI `37735089637`).

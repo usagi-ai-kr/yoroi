@@ -27,7 +27,7 @@ pnpm run check
 
 - `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
 - `watch`: 즉시 1회 후 **수집 완료 뒤 60초 대기**한다. 시작 간격은 수집 시간+60초이며, 분 단위 고정 시작이 아닌 완료 기준 대기라 조회가 겹치지 않는다.
-- 서브커맨드 도움말(`once --help`, `watch -h`)은 exit 0으로 사용법·옵션을 출력한다(플래그 우선).
+- 도움말은 최상위 `yoroi --help`·`yoroi -h`와 서브명령 `yoroi once --help`·`yoroi watch --help`·`yoroi watch -h` 모두 exit 0으로 사용법을 출력한다. 잘못된 인자는 exit 2다(실측).
 - `pnpm --silent`: pnpm 실행 배너를 억제해 pretty 표나 CLI 스냅샷 터미널 출력을 온전히 확인하기 위해 사용한다(배너가 무해한 일반 실행에는 생략).
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.

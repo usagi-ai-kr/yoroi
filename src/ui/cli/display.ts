@@ -29,18 +29,28 @@ function renderWindow(window: UsageWindow, observedAt: string, windows: readonly
   return `  - ${label} [${window.unit}] ${metrics.join(" ")}`;
 }
 
+export interface VisibleWindows {
+  readonly windows: readonly UsageWindow[];
+  readonly labels: readonly string[];
+  readonly hidden: number;
+}
+
 export function visibleWindows(provider: ProviderId,
-  windows: readonly UsageWindow[]): { readonly windows: readonly UsageWindow[]; readonly labels: readonly string[] } {
+  windows: readonly UsageWindow[]): VisibleWindows {
   const visible = displayWindows(provider, windows);
-  return { windows: visible, labels: windowLabels(provider, visible) };
+  return { windows: visible, labels: windowLabels(provider, visible),
+    hidden: windows.length - visible.length };
 }
 
 export function renderResult(result: UsageResult): string[] {
   if ("snapshot" in result) {
     const { provider, observedAt, windows } = result.snapshot;
-    const { windows: visible, labels } = visibleWindows(provider, windows);
+    const { windows: visible, labels, hidden } = visibleWindows(provider, windows);
     const header = `${provider}: ok observed=${observedAt} windows=${visible.length}`;
-    if (visible.length === 0) return [`${header} (no usage windows reported)`];
+    if (visible.length === 0) {
+      return [hidden > 0 ? `${header} (${hidden} windows hidden)` :
+        `${header} (no usage windows reported)`];
+    }
     return [header, ...visible.map((window, index) =>
       renderWindow(window, observedAt, visible, labels[index]!))];
   }

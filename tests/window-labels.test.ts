@@ -36,6 +36,28 @@ test("adds a prefix only when the same label repeats in one provider", () => {
   assert.deepEqual(windowLabels("claude", [w("weekly:sonnet:7d")]), ["w"]);
 });
 
+test("codex prefers kind initials then bucket plus kind when buckets differ", () => {
+  assert.deepEqual(windowLabels("codex", [
+    w("codex:primary:300m"), w("codex:secondary:300m"),
+  ]), ["p-5h", "s-5h"]);
+  assert.deepEqual(windowLabels("codex", [
+    w("codex:primary:300m"), w("review:primary:300m"),
+  ]), ["cp-5h", "rp-5h"]);
+  assert.deepEqual(windowLabels("codex", [
+    w("codex:primary:300m"), w("codex:secondary:300m"), w("review:primary:300m"),
+  ]), ["cp-5h", "s-5h", "rp-5h"]);
+  assert.deepEqual(windowLabels("codex", [
+    w("codex:primary:300m"), w("codex:secondary:300m"),
+    w("review:primary:300m"), w("review:secondary:300m"),
+  ]), ["cp-5h", "cs-5h", "rp-5h", "rs-5h"]);
+});
+
+test("codex falls back to internal ids when qualifiers still collide", () => {
+  assert.deepEqual(windowLabels("codex", [
+    w("codex:primary:300m"), w("coral:primary:300m"),
+  ]), ["codex:primary:300m", "coral:primary:300m"]);
+});
+
 test("uses the whole first word when prefix initials collide", () => {
   assert.deepEqual(windowLabels("agy", [
     w("gemini-models:weekly-limit-remaining"), w("gpt-models:weekly-limit-remaining"),
@@ -60,6 +82,5 @@ test("ollama-pro display keeps monthly and credits windows and hides the rest", 
   assert.deepEqual(displayWindows("ollama-pro", [
     w("session"), w("weekly"), w("monthly"), w("activity:last-4-weeks", { unit: "USD" }),
   ]).map((window) => window.id), ["monthly"]);
-  assert.deepEqual(displayWindows("ollama-pro", [w("session"), w("activity:last-4-weeks")])
-    .map((window) => window.id), ["session", "activity:last-4-weeks"]);
+  assert.deepEqual(displayWindows("ollama-pro", [w("session"), w("activity:last-4-weeks")]), []);
 });

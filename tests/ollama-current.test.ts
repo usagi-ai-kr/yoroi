@@ -23,7 +23,8 @@ test('current Ollama activity schema preserves units and the actual query range'
 test('current Ollama included and purchased balances preserve credit renewal and remaining values', () => {
   const result = parseOllamaBalance(JSON.stringify(balance), now);
   assert.deepEqual(result.windows[0], { id: 'credits:included', unit: 'USD', remaining: 6,
-    limit: 10, used: 4, percent: 40, resetAt: '2026-11-01T00:00:00Z' });
+    limit: 10, used: 4, percent: 40, resetAt: '2026-11-01T00:00:00Z',
+    periodStart: '2026-10-01T00:00:00Z' });
   assert.deepEqual(result.windows[1], { id: 'credits:purchased', unit: 'USD', remaining: 2 });
   for (const limit of [0, 0.00000011]) {
     const parsed = parseOllamaBalance(JSON.stringify({ included: { balance_usd: 0, allowance_usd: limit } }), now);
@@ -38,7 +39,8 @@ test('unsupported totals and malformed balances remain safe parse errors', () =>
     assert.throws(() => parseOllamaUsage(JSON.stringify(data), now), new SourceError('parse'));
   }
   for (const data of [{}, { included: {} }, { included: { balance_usd: -1, allowance_usd: 10 } },
-    { ...balance, included: { ...balance.included, period: { until: 'secret' } } }]) {
+    { ...balance, included: { ...balance.included, period: { until: 'secret' } } },
+    { ...balance, included: { ...balance.included, period: { from: 'secret' } } }]) {
     assert.throws(() => parseOllamaBalance(JSON.stringify(data), now), new SourceError('parse'));
   }
 });

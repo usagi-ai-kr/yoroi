@@ -22,12 +22,19 @@ test('domain rejects invalid providers, dates, numbers, units and duplicate wind
     { id: '5h', unit: 'token', used: NaN },
     { id: '5h', unit: '', used: 1 },
     { id: '5h', unit: 'token', resetAt: 'tomorrow', used: 1 },
+    { id: '5h', unit: 'token', periodStart: 'tomorrow', used: 1 },
   ];
   for (const window of invalid) assert.throws(() => createSnapshot('codex', at, [window]));
   assert.throws(() => createSnapshot('unknown' as 'codex', at, []));
   assert.throws(() => createSnapshot('codex', 'invalid', []));
   const window = { id: '5h', unit: 'percent', percent: 0 };
   assert.throws(() => createSnapshot('codex', at, [window, window]));
+});
+test('domain preserves an optional ISO period start alongside the reset time', () => {
+  const snapshot = createSnapshot('ollama-pro', at, [
+    { id: 'credits:included', unit: 'USD', remaining: 6, limit: 10, resetAt: at, periodStart: at },
+  ]);
+  assert.equal(snapshot.windows[0]?.periodStart, at);
 });
 test('source errors expose normalized messages only', () => {
   for (const code of ['authentication', 'not-installed', 'parse', 'timeout', 'network',

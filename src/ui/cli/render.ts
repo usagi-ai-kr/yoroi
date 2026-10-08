@@ -49,9 +49,10 @@ export function renderPretty(results: readonly UsageResult[]): string[] {
   for (const r of results) {
     if ("snapshot" in r) {
       const { provider, windows, observedAt } = r.snapshot;
-      const { windows: visible, labels } = visibleWindows(provider, windows);
+      const { windows: visible, labels, hidden } = visibleWindows(provider, windows);
       const okText = colors.green("ok");
-      if (visible.length === 0) table.push([provider, "(none)", "-", "-", okText]);
+      if (visible.length === 0) table.push([provider, "(none)",
+        hidden > 0 ? `${hidden} hidden` : "-", "-", okText]);
       else visible.forEach((w, index) => {
         const left = formatTimeLeft(w.resetAt, observedAt);
         const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");

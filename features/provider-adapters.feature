@@ -24,15 +24,16 @@ Feature: 실제 공급자 어댑터 fake 전송 통합
     And the CLI stdout contains "- credits:purchased [USD]"
     And the CLI stdout does not contain "activity:7d"
 
-  Scenario: ollama-pro에 월간 창이 없으면 전체 창을 출력한다
+  Scenario: ollama-pro에 표시 대상이 없으면 창 0개와 숨김 안내를 출력한다
     Given the five real provider adapters with fake transports
     And real adapter "ollama-pro" payload omits the monthly window
     When I run "once"
     Then the CLI exit code is 0
     And stdout has results for providers "ollama-pro,opencode-go,codex,agy,claude"
-    And the CLI stdout contains "- session [percent]"
-    And the CLI stdout contains "- weekly [percent]"
-    And the CLI stdout contains "activity:last-4-weeks [USD]"
+    And the CLI stdout contains "ollama-pro: ok"
+    And the CLI stdout contains "windows=0 (3 windows hidden)"
+    And the CLI stdout does not contain "- session [percent]"
+    And the CLI stdout does not contain "- weekly [percent]"
 
   Scenario: HTTP와 CLI 일부 실패가 나머지 성공과 격리된다
     Given the five real provider adapters with fake transports

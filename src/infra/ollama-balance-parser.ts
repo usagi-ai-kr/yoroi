@@ -26,6 +26,10 @@ export function parseOllamaBalance(body: string, observedAt: string) {
         if (typeof period.until !== 'string') throw new Error();
         window = { ...window, resetAt: period.until };
       }
+      if (period.from != null) {
+        if (typeof period.from !== 'string') throw new Error();
+        window = { ...window, periodStart: period.from };
+      }
     }
     const windows: UsageWindow[] = [window];
     if (data.purchased != null) {

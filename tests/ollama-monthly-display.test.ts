@@ -58,16 +58,20 @@ test("current ollama schema hides all five activity rows and keeps both credits 
   assert.equal(result.snapshot.windows.length, 7);
 });
 
-test("ollama-pro without any display target keeps every window to avoid data loss", () => {
+test("ollama-pro hides every non-target window when no display target exists", () => {
   const result: UsageResult = { provider: "ollama-pro", snapshot: createSnapshot("ollama-pro", observedAt, [
     { id: "session", unit: "percent", percent: 35 },
     { id: "activity:7d:request_count", unit: "requests", used: 4 },
   ]) };
   const lines = renderResults([result]);
+  const pretty = renderPretty([result]).join("\n");
 
-  assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=2`);
-  assert.ok(lines.some((line) => line.includes("session")));
-  assert.ok(lines.some((line) => line.includes("activity:7d:request_count")));
+  assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=0 (2 windows hidden)`);
+  assert.equal(lines.length, 1);
+  assert.ok(pretty.includes("(none)"));
+  assert.ok(pretty.includes("2 hidden"));
+  assert.ok(!pretty.includes("session"));
+  assert.ok(!pretty.includes("activity:7d"));
 });
 
 test("other providers keep shorter windows visible with short labels", () => {

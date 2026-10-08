@@ -1,5 +1,6 @@
 import { createSnapshot, type UsageWindow } from '../domain/usage.js';
 import { SourceError } from '../app/usage-source.js';
+import { parseClaudeReset } from './claude-reset.js';
 
 const ANSI_REGEX = /\x1b\[[0-9;]*[a-zA-Z]/g;
 const AUTH_PATTERNS = [
@@ -59,31 +60,18 @@ export function parseClaudeUsage(stdout: string, observedAt: string) {
   checkAuth(clean);
   const windows: UsageWindow[] = [];
 
-  const sessionMatch = clean.match(/Current session:\s*(\d+(?:\.\d+)?)%\s*used/i);
-  const sessionVal = sessionMatch?.[1];
-  if (sessionVal !== undefined) {
-    const percent = Number(sessionVal);
-    if (Number.isFinite(percent) && percent >= 0 && percent <= 100) {
-      windows.push({ id: 'session:5h', unit: 'percent', percent });
-    }
-  }
-
-  const weekMatch = clean.match(/Current week \(all models\):\s*(\d+(?:\.\d+)?)%\s*used/i);
-  const weekVal = weekMatch?.[1];
-  if (weekVal !== undefined) {
-    const percent = Number(weekVal);
-    if (Number.isFinite(percent) && percent >= 0 && percent <= 100) {
-      windows.push({ id: 'weekly:7d', unit: 'percent', percent });
-    }
-  }
-
-  const sonnetMatch = clean.match(/Current week \(Sonnet only\):\s*(\d+(?:\.\d+)?)%\s*used/i);
-  const sonnetVal = sonnetMatch?.[1];
-  if (sonnetVal !== undefined) {
-    const percent = Number(sonnetVal);
-    if (Number.isFinite(percent) && percent >= 0 && percent <= 100) {
-      windows.push({ id: 'weekly:sonnet:7d', unit: 'percent', percent });
-    }
+  const labels: Readonly<Record<string, string>> = {
+    'session': 'session:5h', 'week (all models)': 'weekly:7d', 'week (sonnet only)': 'weekly:sonnet:7d',
+  };
+  for (const line of clean.split(/\r?\n/)) {
+    const match = /^Current (session|week \(all models\)|week \(Sonnet only\)):\s*(\d+(?:\.\d+)?)%\s*used\b(.*)$/i.exec(line.trim());
+    if (!match) continue;
+    const percent = Number(match[2]);
+    if (percent > 100) continue;
+    const resetText = /·\s*resets\s+(.+)$/i.exec(match[3] ?? '')?.[1];
+    const resetAt = resetText ? parseClaudeReset(resetText, observedAt) : undefined;
+    const window: UsageWindow = { id: labels[match[1]!.toLowerCase()]!, unit: 'percent', percent };
+    windows.push(resetAt ? { ...window, resetAt } : window);
   }
 
   if (windows.length === 0) throw new SourceError('parse');

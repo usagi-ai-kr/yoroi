@@ -57,6 +57,6 @@ export function installRealAdapters(): void {
     new OpenCodeGoSource(http, "bdd-opencode-go-key"),
     new CodexSource(process),
     new AgySource(process),
-    new ClaudeSource(process),
+    new ClaudeSource(process, 'claude', 10000, () => '2026-10-07T00:00:00Z'),
   ];
 }

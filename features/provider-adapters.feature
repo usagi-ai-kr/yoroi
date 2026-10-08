@@ -10,6 +10,7 @@ Feature: 실제 공급자 어댑터 fake 전송 통합
     And the CLI stdout contains "- codex:primary:300m [percent]"
     And the CLI stdout contains "- gemini-models:weekly-limit-remaining [percent]"
     And the CLI stdout contains "- session:5h [percent]"
+    And the CLI stdout contains "weekly:7d [percent] used=unknown remaining=unknown limit=unknown percent=60 reset=2026-10-10T00:00:00.000Z"
 
   Scenario: HTTP와 CLI 일부 실패가 나머지 성공과 격리된다
     Given the five real provider adapters with fake transports

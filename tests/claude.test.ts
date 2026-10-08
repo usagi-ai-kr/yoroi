@@ -25,6 +25,7 @@ test('Claude source runs claude -p /usage and maps session/weekly windows', asyn
   assert.equal(snapshot.windows[0]?.percent, 25);
   assert.equal(snapshot.windows[1]?.id, 'weekly:7d');
   assert.equal(snapshot.windows[1]?.percent, 60);
+  assert.equal(snapshot.windows[1]?.resetAt, '2026-10-10T00:00:00.000Z');
 });
 
 test('Claude parses the current layout with reset suffixes and extra sections', () => {
@@ -40,7 +41,20 @@ test('Claude parses the current layout with reset suffixes and extra sections', 
 
   assert.deepEqual(snapshot.windows.map(window => [window.id, window.percent]),
     [['session:5h', 12.5], ['weekly:7d', 34]]);
-  assert.ok(snapshot.windows.every(window => window.resetAt === undefined));
+  assert.deepEqual(snapshot.windows.map(window => window.resetAt),
+    ['2026-10-07T12:50:00.000Z', '2026-10-10T00:00:00.000Z']);
+});
+
+test('Claude maps Sonnet resets and keeps percent when a reset is missing or invalid', () => {
+  const snapshot = parseClaudeUsage([
+    'Current session: 0% used',
+    'Current week (all models): 100% used · resets Feb 30 at 9:00am (Asia/Seoul)',
+    'Current week (Sonnet only): 15% used · resets Oct 11 at 12:00pm (Asia/Seoul)',
+  ].join('\n'), observedAt);
+  assert.deepEqual(snapshot.windows.map(window => [window.id, window.percent, window.resetAt]), [
+    ['session:5h', 0, undefined], ['weekly:7d', 100, undefined],
+    ['weekly:sonnet:7d', 15, '2026-10-11T03:00:00.000Z'],
+  ]);
 });
 
 test('Claude source normalizes exit code and authentication errors', async () => {

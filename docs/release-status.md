@@ -51,3 +51,10 @@
 - PR 리뷰 조치와 완료 기준은 [pr-28-review.md](pr-28-review.md)에 기록한다.
 - Claude 자동 수집은 CLI print 경로를 제거하고 OAuth 사용량 GET으로 보강했다.
   최신 인증·조회 계약과 실행 검증은 [claude-readonly.md](claude-readonly.md)에 기록한다.
+
+## 2026-10-08 문서·자동화 정리 (PR #62)
+
+- PR #62 병합 `1b3b027`(head `b09ac71`). PR CI `37720540457`, push CI `37720536646` success.
+- 버전: `package.json` 0.1.0 유지. tag·GitHub Release 미발행. `scripts/version.py`는 쓰기 작업을 하지 않는다.
+- 검증 수치: TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests PASS.
+- 기록: 초기 README 이미지는 중세 유럽 기사 갑옷으로 교체 완료.

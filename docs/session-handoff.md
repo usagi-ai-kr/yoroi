@@ -52,6 +52,13 @@ pnpm run check
 
 ## 게시 상태
 
-- PR #28 병합: `48bdd8e`. 후속 변경은 dev 작업 트리에서 최종 검증 중이다.
-- 후속 PR 종료 대상: #25·#57·#59·#60·#61. Wiki 게시 후 #58·#56을 종료한다.
-- 최종 게시 결과와 SHA는 작업 완료 시 아래에 갱신한다.
+- PR #28 병합: `48bdd8e`.
+- [PR #62](https://github.com/qus0in/yoroi/pull/62) 병합: `1b3b027`.
+  [pull_request CI](https://github.com/qus0in/yoroi/actions/runs/37720540457) 성공.
+- 검증: TS 136개, BDD 25시나리오·144step, Python 19개, 협업 스크립트·레포 검사 통과.
+- PR #62의 `Closes`로 #25·#57·#59·#60·#61을 종료했다.
+- 미완료 조사: #3·#13–#17·#29. 0.2.0 웹·SQLite #30–55는 아직 구현하지 않았다.
+- Wiki 최종 게시 증거는 [#58](https://github.com/qus0in/yoroi/issues/58),
+  전체 마무리·문서 CI 검증은 [#56](https://github.com/qus0in/yoroi/issues/56)에서 확인한다.
+- 다음 에이전트는 위 이슈의 최신 상태, `git status`, 열린 PR과 보호 체크를 먼저 확인한다.
+  완료된 작업을 다시 구현하거나 불필요한 실계정 조회를 반복하지 않는다.

@@ -1,14 +1,10 @@
 import type { UsageResult } from "../../app/usage-source.js";
 import type { ProviderId, UsageWindow } from "../../domain/usage.js";
-import { expectedMetrics, quotaKind } from "./expected.js";
+import { expectedMetrics } from "./expected.js";
 import { formatNumber, formatTimeLeft } from "./format.js";
+import { displayWindows, windowLabels } from "./labels.js";
 
-export function displayWindows(provider: ProviderId,
-  windows: readonly UsageWindow[]): readonly UsageWindow[] {
-  if (provider !== "ollama-pro") return windows;
-  const monthly = windows.filter((window) => quotaKind(window.id) === "monthly");
-  return monthly.length > 0 ? monthly : windows;
-}
+export { displayWindows, windowLabels } from "./labels.js";
 
 export function show(metric: number | string): string {
   return typeof metric === "number" ? formatNumber(metric) : metric;
@@ -18,8 +14,8 @@ function value(metric: number | string | undefined): string {
   return metric === undefined ? "unknown" : show(metric);
 }
 
-function renderWindow(window: UsageWindow, observedAt: string,
-  windows: readonly UsageWindow[]): string {
+function renderWindow(window: UsageWindow, observedAt: string, windows: readonly UsageWindow[],
+  label: string): string {
   const left = formatTimeLeft(window.resetAt, observedAt);
   const metrics = [
     `used=${value(window.used)}`,
@@ -30,16 +26,33 @@ function renderWindow(window: UsageWindow, observedAt: string,
     `reset_in=${left?.replace(" ", "") ?? "unknown"}`,
     ...expectedMetrics(window, windows, observedAt),
   ];
-  return `  - ${window.id} [${window.unit}] ${metrics.join(" ")}`;
+  return `  - ${label} [${window.unit}] ${metrics.join(" ")}`;
+}
+
+export interface VisibleWindows {
+  readonly windows: readonly UsageWindow[];
+  readonly labels: readonly string[];
+  readonly hidden: number;
+}
+
+export function visibleWindows(provider: ProviderId,
+  windows: readonly UsageWindow[]): VisibleWindows {
+  const visible = displayWindows(provider, windows);
+  return { windows: visible, labels: windowLabels(provider, visible),
+    hidden: windows.length - visible.length };
 }
 
 export function renderResult(result: UsageResult): string[] {
   if ("snapshot" in result) {
     const { provider, observedAt, windows } = result.snapshot;
-    const visible = displayWindows(provider, windows);
+    const { windows: visible, labels, hidden } = visibleWindows(provider, windows);
     const header = `${provider}: ok observed=${observedAt} windows=${visible.length}`;
-    if (visible.length === 0) return [`${header} (no usage windows reported)`];
-    return [header, ...visible.map((window) => renderWindow(window, observedAt, visible))];
+    if (visible.length === 0) {
+      return [hidden > 0 ? `${header} (${hidden} windows hidden)` :
+        `${header} (no usage windows reported)`];
+    }
+    return [header, ...visible.map((window, index) =>
+      renderWindow(window, observedAt, visible, labels[index]!))];
   }
   return [`${result.provider}: error [${result.error.code}] ${result.error.message}`];
 }

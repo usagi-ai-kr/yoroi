@@ -2,7 +2,7 @@ import Table from "cli-table3";
 import pc from "picocolors";
 import type { UsageResult } from "../../app/usage-source.js";
 import type { UsageWindow } from "../../domain/usage.js";
-import { displayWindows, show } from "./display.js";
+import { visibleWindows, show } from "./display.js";
 import { expectedSuffix } from "./expected.js";
 import { formatTimeLeft } from "./format.js";
 
@@ -49,15 +49,16 @@ export function renderPretty(results: readonly UsageResult[]): string[] {
   for (const r of results) {
     if ("snapshot" in r) {
       const { provider, windows, observedAt } = r.snapshot;
-      const visible = displayWindows(provider, windows);
+      const { windows: visible, labels, hidden } = visibleWindows(provider, windows);
       const okText = colors.green("ok");
-      if (visible.length === 0) table.push([provider, "(none)", "-", "-", okText]);
-      else for (const w of visible) {
+      if (visible.length === 0) table.push([provider, "(none)",
+        hidden > 0 ? `${hidden} hidden` : "-", "-", okText]);
+      else visible.forEach((w, index) => {
         const left = formatTimeLeft(w.resetAt, observedAt);
         const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
-        table.push([provider, w.id,
+        table.push([provider, labels[index]!,
           formatUsage(w) + expectedSuffix(w, visible, observedAt), reset, okText]);
-      }
+      });
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);
       table.push([r.provider, "-", "-", "-", err]);

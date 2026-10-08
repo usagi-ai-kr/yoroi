@@ -18,7 +18,7 @@ test("pretty and plain renderers apply two-decimal ceiling", () => {
   assert.equal(formatUsage({ id: "w", unit: "tokens", percent: 33.3333, used: 1.005, limit: 3 }),
     "33.34% (1.01/3 tokens)");
   const lines = renderResult({ provider: "ollama-pro", snapshot: createSnapshot("ollama-pro", "2026-10-07T05:30:00.000Z", [
-    { id: "weekly", unit: "percent", percent: 12.3401 },
+    { id: "monthly", unit: "percent", percent: 12.3401 },
   ]) });
   assert.match(lines[1] ?? "", /percent=12\.35 /);
 });

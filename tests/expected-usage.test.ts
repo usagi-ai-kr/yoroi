@@ -13,6 +13,7 @@ const win = (window: Partial<UsageWindow> & { id: string }): UsageWindow =>
 
 test("quotaKind classifies only monthly, weekly, and codex seven-day windows", () => {
   assert.equal(quotaKind("monthly"), "monthly");
+  assert.equal(quotaKind("credits:included"), "monthly");
   assert.equal(quotaKind("weekly"), "weekly");
   assert.equal(quotaKind("weekly:7d"), "weekly");
   assert.equal(quotaKind("weekly:sonnet:7d"), "weekly");
@@ -23,6 +24,7 @@ test("quotaKind classifies only monthly, weekly, and codex seven-day windows", (
   assert.equal(quotaKind("codex:primary:300m"), undefined);
   assert.equal(quotaKind("gemini-models:five-hour-limit-remaining"), undefined);
   assert.equal(quotaKind("activity:last-4-weeks"), undefined);
+  assert.equal(quotaKind("credits:purchased"), undefined);
 });
 
 test("weekly expected is the elapsed share of seven days formatted to 2dp ceiling", () => {
@@ -76,7 +78,7 @@ test("plain output falls back to the weekly window when no monthly window exists
   const marked = renderResults([result]).filter((line) => line.includes("expected="));
 
   assert.equal(marked.length, 1);
-  assert.match(marked[0]!, /- weekly:7d \[percent\]/);
+  assert.match(marked[0]!, /- w \[percent\]/);
 });
 
 test("pretty output appends exp once and keeps every table line the same width", () => {

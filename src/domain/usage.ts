@@ -8,6 +8,7 @@ export interface UsageWindow {
   readonly limit?: number;
   readonly percent?: number;
   readonly resetAt?: string;
+  readonly periodStart?: string;
 }
 export interface UsageSnapshot {
   readonly provider: ProviderId;
@@ -35,7 +36,8 @@ export function createSnapshot(provider: ProviderId, observedAt: string,
       }
     }
     if ((window.percent !== undefined && window.percent > 100) ||
-      (window.resetAt !== undefined && !validDate(window.resetAt))) {
+      (window.resetAt !== undefined && !validDate(window.resetAt)) ||
+      (window.periodStart !== undefined && !validDate(window.periodStart))) {
       throw new Error('Invalid usage percent or reset time');
     }
     return Object.freeze({ ...window });

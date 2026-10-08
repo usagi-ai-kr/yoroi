@@ -12,7 +12,7 @@ function codexMinutes(id: string): number | undefined {
 
 export function quotaKind(id: string): QuotaKind | undefined {
   const parts = id.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  if (parts.includes("monthly")) return "monthly";
+  if (parts.includes("monthly") || id.toLowerCase() === "credits:included") return "monthly";
   if (parts.includes("weekly")) return "weekly";
   return codexMinutes(id) === CODEX_WEEK_MINUTES ? "weekly" : undefined;
 }
@@ -37,7 +37,14 @@ export function expectedPercent(window: UsageWindow, observedAt: string): number
   const end = Date.parse(window.resetAt);
   const now = Date.parse(observedAt);
   if (!Number.isFinite(end) || !Number.isFinite(now)) return undefined;
-  const start = kind === "weekly" ? end - WEEK_MS : calendarMonthStart(new Date(end));
+  let start: number;
+  if (window.id === "credits:included") {
+    const from = window.periodStart === undefined ? Number.NaN : Date.parse(window.periodStart);
+    if (!Number.isFinite(from) || from >= end) return undefined;
+    start = from;
+  } else {
+    start = kind === "weekly" ? end - WEEK_MS : calendarMonthStart(new Date(end));
+  }
   const length = end - start;
   if (length <= 0) return undefined;
   const elapsed = ((now - start) / length) * 100;

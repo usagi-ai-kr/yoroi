@@ -30,9 +30,8 @@
 - 명시값이 비어 있으면 다른 계정 저장소로 fallback하지 않는다.
 - 저장 OAuth의 accessToken·만료만 확인한다. refreshToken을 실행하거나 값을 외부 기록에 포함하지 않는다.
 - API key·Bedrock·Vertex·Foundry 인증은 구독 OAuth로 간주하지 않는다.
-- root의 읽기 전용 `claude auth status`는 none/미로그인/firstParty였다.
-  HOME은 기본값이며 관련 인증·routing 환경 변수는 모두 미설정이었다.
-- worker는 claude.ai/로그인/firstParty·기본 디렉터리였다. 조사한 인증·routing 변수는 미설정이다.
+- 조사 시점 인증 모드는 환경마다 달랐다. worker는 claude.ai 로그인(firstParty), root는 `claude auth status` 기준 none(미로그인)이었다.
+  두 환경 모두 조사한 인증·routing 환경 변수는 명시 설정이 없었다(모두 미설정). HOME은 기본값이었다.
 - root의 기본 Keychain은 accessToken이 없고 만료 상태, 같은 HOME의 파일 OAuth는 유효했다.
   값은 기록하지 않았다. 누락/만료 Keychain → 같은 프로필 파일 조회를 합성 회귀 테스트로 보강했다.
 - 과거 worker의 한도 출력과 root의 비용 출력 사이 차이의 단일 원인은 아직 확정하지 않았다.
@@ -62,4 +61,4 @@
   경로·헤더(`anthropic-beta`)·응답 형식은 예고 없이 바뀔 수 있다.
 - 변경되면 parse 또는 unavailable로 격리되며 CLI나 모델 API로 대체하지 않는다.
 - refresh를 하지 않으므로 만료된 accessToken은 authentication이다. CLI가 저장소를 갱신해야 회복된다.
-- 실패 시 다른 4개 공급자는 계속 조회되지만 Claude 한도는 unknown으로 남는다.
+- 실패 시 Claude 결과만 error로 남고, 다른 4개 공급자는 계속 조회된다.

@@ -20,8 +20,9 @@
 | seven_day_sonnet | utilization | resets_at | weekly:sonnet:7d |
 | seven_day_opus | utilization | resets_at | weekly:opus:7d |
 
-- null/없는 bucket은 건너뛰며 최소 1개 유효 bucket이 필요하다. utilization은 유한 0–100 수치다.
-- resets_at은 날짜가 유효하고 명시 시간대가 있는 ISO를 UTC로 정규화한다. 누락/null은 unknown이다.
+- null/없는 bucket은 건너뛴다. 유효 bucket이 하나도 없으면 parse 오류다. utilization은 유한 0–100 수치다.
+- resets_at은 날짜가 유효하고 명시 시간대가 있는 ISO를 UTC로 정규화한다.
+  resets_at이 없거나 null이면 resetAt만 생략하고 percent는 보존한다. 형식이 잘못된 값은 parse 오류다.
   소수점 이하는 밀리초로 자르고 부족하면 0으로 채운다(`.1` → `.100`, `.1234` → `.123`).
 - 비정상 bucket/reset은 parse 오류다. extra_usage의 비용을 사용률로 추정하지 않는다.
 

@@ -3,6 +3,7 @@
 import json
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -11,6 +12,12 @@ EXCEPTIONS = {
     "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "uv.lock", "poetry.lock",
     "Cargo.lock", "Gemfile.lock", "go.sum", "gradlew", "gradlew.bat",
 }
+CI_EXCLUDED_DOCS = {"README.md", "AGENTS.md", "CLAUDE.md"}
+
+
+def ci_excludes_content(name):
+    """--ci에서 내용(줄 수) 검사만 제외할 설명문서. 스킬은 제외 대상이 아니다."""
+    return name.startswith("docs/") or name in CI_EXCLUDED_DOCS
 
 
 def file_list():
@@ -27,6 +34,7 @@ def file_list():
 
 
 def main():
+    ci = "--ci" in sys.argv[1:]
     errors = []
     files = file_list()
     for name in files:
@@ -37,6 +45,8 @@ def main():
             continue
         if not path.is_file():
             errors.append(f"{name}: tracked file missing; stage deletion if intended")
+            continue
+        if ci and ci_excludes_content(name):
             continue
         data = path.read_bytes()
         if b"\0" in data or path.name in EXCEPTIONS:

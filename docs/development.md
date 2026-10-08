@@ -10,7 +10,9 @@ TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD�
 pnpm install --frozen-lockfile
 pnpm run dev --help
 pnpm run dev once
+pnpm --silent run dev once --pretty
 pnpm run dev watch
+pnpm --silent run dev watch --pretty
 pnpm run dev watch --interval 30
 pnpm run typecheck
 pnpm test
@@ -33,8 +35,10 @@ pnpm run check
 - pnpm 버전은 packageManager에 고정한다. Corepack 사용 시 `corepack enable pnpm`으로 활성화한다.
 - [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)의 현행 지침을 적용한다.
   다른 pnpm이 PATH에서 앞서면 `pnpm --version`으로 확인하고 Node/Corepack 경로를 우선한다.
-- CI는 frozen install·레포 검사·전체 check를 실행한다. PR 필수 체크는 `pull_request` 실행으로 확인한다.
-  수동 `workflow_dispatch` 성공은 진단용이며 PR 필수 체크 충족으로 간주하지 않는다.
+- CI job은 항상 실행된다. 변경이 설명문서(docs/**, 루트 README.md·AGENTS.md·CLAUDE.md)뿐이면
+  fast pass 메시지만 출력하고 앱 install·검증·check 없이 필수 체크를 통과시킨다.
+  그 외 변경은 `validate-repo.py --ci`·스킬/회귀 검증·frozen install·전체 check를 실행한다.
+  PR 필수 체크는 `pull_request` 실행으로 확인하고, 수동 `workflow_dispatch` 성공은 진단용이다.
 
 ## 설정과 공급자 상태
 
@@ -83,7 +87,8 @@ bash .agents/skills/skill-authoring/scripts/validate.sh .agents/skills/github-wo
 - 추적 파일과 ignore되지 않은 신규 파일을 검사한다. staging은 필요 없다.
 - Git 초기화 전에는 임시 Git 디렉터리로 파일 목록만 조회하며 저장소를 변경하지 않는다.
 - 스킬 필수 필드·이름·상대 링크, 전체 파일 줄 수·심볼릭 링크를 검증한다.
-- CI는 문서·스킬 변경에도 같은 레포 검증을 실행한다.
+- `--ci`는 설명문서 내용 검사(줄 수)만 제외하고 스킬 검증은 유지한다.
+  로컬 기본 실행은 문서 줄 수까지 포함한 전체 검증을 유지한다.
 - 레포 검증 자체는 외부 패키지 설치나 네트워크 접속 없이 실행할 수 있다.
 
 ## 파일 크기 예외

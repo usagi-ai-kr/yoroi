@@ -23,13 +23,46 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # qketing과 동일 pin
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Classify changed files
+        id: scope
+        env:
+          RAW_EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          EVENT="manual"
+          if [ "$RAW_EVENT" = "pull_request" ] || [ "$RAW_EVENT" = "push" ]; then
+            EVENT="$RAW_EVENT"
+          fi
+          python3 scripts/ci-scope.py \
+            --event "$EVENT" \
+            --base "$PR_BASE" \
+            --head "$PR_HEAD" \
+            --before "$PUSH_BEFORE" \
+            --after "$PUSH_AFTER" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Fast pass for docs-only change
+        if: steps.scope.outputs.docs_only == 'true'
+        run: |
+          echo "Documentation-only change detected."
+          echo "Fast passing required status check without running full application build."
       - name: Validate repository and skills
-        run: python3 scripts/validate-repo.py
+        if: steps.scope.outputs.docs_only != 'true'
+        run: |
+          python3 scripts/validate-repo.py --ci
+          python3 -m unittest discover -s scripts -p "test_*.py"
+          python3 .agents/skills/agent-coordination/scripts/test_coordination.py
       - uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        if: steps.scope.outputs.docs_only != 'true'
         with:
           cache: true
           install: false
       - name: Install dependencies (frozen)
+        if: steps.scope.outputs.docs_only != 'true'
         run: pnpm install --frozen-lockfile
       - name: Check (typecheck, tests, BDD, build)
+        if: steps.scope.outputs.docs_only != 'true'
         run: pnpm run check

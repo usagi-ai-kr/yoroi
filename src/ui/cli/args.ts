@@ -1,8 +1,8 @@
 export type ParsedArgs =
   | { readonly kind: "help" }
   | { readonly kind: "version" }
-  | { readonly kind: "once" }
-  | { readonly kind: "watch"; readonly intervalMs: number | undefined }
+  | { readonly kind: "once"; readonly pretty?: boolean }
+  | { readonly kind: "watch"; readonly intervalMs?: number; readonly pretty?: boolean }
   | { readonly kind: "error"; readonly message: string };
 
 export const MAX_INTERVAL_SECONDS = 86_400;
@@ -18,6 +18,42 @@ function parseInterval(value: string | undefined): number | null {
   return milliseconds;
 }
 
+function parseOnce(args: readonly string[]): ParsedArgs {
+  if (args.length === 0) return { kind: "once" };
+  if (args.length === 1 && args[0] === "--pretty") return { kind: "once", pretty: true };
+  if (args[0] === "--pretty") return { kind: "error", message: `unexpected argument: ${args[1]}` };
+  return { kind: "error", message: `unexpected argument: ${args[0]}` };
+}
+
+function parseWatch(args: readonly string[]): ParsedArgs {
+  let intervalMs: number | undefined;
+  let pretty: boolean | undefined;
+  let idx = 0;
+  while (idx < args.length) {
+    const flag = args[idx];
+    if (flag === "--pretty") {
+      if (pretty !== undefined) return { kind: "error", message: "duplicate --pretty" };
+      pretty = true;
+      idx += 1;
+    } else if (flag === "--interval") {
+      if (intervalMs !== undefined) return { kind: "error", message: "duplicate --interval" };
+      const val = args[idx + 1];
+      if (val === undefined) return { kind: "error", message: "invalid --interval: (missing)" };
+      const parsed = parseInterval(val);
+      if (parsed === null) return { kind: "error", message: `invalid --interval: ${val}` };
+      intervalMs = parsed;
+      idx += 2;
+    } else {
+      return { kind: "error", message: `unexpected argument: ${flag}` };
+    }
+  }
+  return {
+    kind: "watch",
+    ...(intervalMs !== undefined ? { intervalMs } : {}),
+    ...(pretty !== undefined ? { pretty } : {}),
+  };
+}
+
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const command = argv[0];
   if (command === undefined) return { kind: "error", message: "missing command" };
@@ -25,20 +61,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   if (command === "--version" || command === "-v") {
     return argv.length === 1 ? { kind: "version" } : { kind: "error", message: "unexpected version argument" };
   }
-  if (command === "once") {
-    if (argv.length > 1) return { kind: "error", message: `unexpected argument: ${argv[1]}` };
-    return { kind: "once" };
-  }
-  if (command === "watch") {
-    const [flag, value, ...rest] = argv.slice(1);
-    if (flag === undefined) return { kind: "watch", intervalMs: undefined };
-    if (flag !== "--interval") return { kind: "error", message: `unexpected argument: ${flag}` };
-    if (rest.length > 0) return { kind: "error", message: `unexpected argument: ${rest[0]}` };
-    const intervalMs = parseInterval(value);
-    if (intervalMs === null) {
-      return { kind: "error", message: `invalid --interval: ${value ?? "(missing)"}` };
-    }
-    return { kind: "watch", intervalMs };
-  }
+  if (command === "once") return parseOnce(argv.slice(1));
+  if (command === "watch") return parseWatch(argv.slice(1));
   return { kind: "error", message: `unknown command: ${command}` };
 }

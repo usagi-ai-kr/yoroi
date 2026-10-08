@@ -80,4 +80,9 @@
 - 단위·통합 128개, BDD 25 시나리오/144 step, 레포 검사 129파일·3스킬 PASS.
 - 위 105개·22 시나리오·114/116파일 수치는 당시 라운드 기록이며 최종 수치가 아니다.
 - 최종 Claude 변경은 OAuth 사용량 GET 교체, 엄격한 reset 파싱, 인증 격리 회귀 테스트를 포함한다.
-- 상세 검증·한계는 [claude-readonly.md](claude-readonly.md), PR 답글 근거는 `/tmp/yoroi-claude-readonly-pr-result.md`.
+- 상세 검증·한계는 [claude-readonly.md](claude-readonly.md), PR 답글 근거는 게시된 PR 댓글을 따른다.
+
+## 최종 재검토 반영 (2026-10-08)
+
+- 재검토 댓글 6050713889의 위험 항목(내부 API, 로그인 만료, #29)을 [claude-operations.md](claude-operations.md)에 정리했다.
+- 위험 수용과 정책 승인은 기록되어 있지 않다. #29는 비차단 별도 조사로 둔다.

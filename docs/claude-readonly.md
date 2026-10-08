@@ -5,7 +5,7 @@
 - 문제: `-p /usage`의 출력 성공만으로 모델 요청 없는 실행을 증명할 수 없었다.
 - 결정: 기본 5개를 유지하고 Claude만 고정 OAuth usage GET으로 교체한다.
   CLI·모델 요청·로그인·토큰 갱신·credential 쓰기·비용 기반 quota 추정 경로는 없다.
-- 분담: AGY 인증 resolver, OpenCode API 어댑터·BDD·독립 계약 조사, Codex 조립·문서·통합.
+- AGY는 전용 인증 resolver 없이 CLI 인증에 위임한다. 근거는 [contracts-agy.md](contracts-agy.md).
 
 ## 근거와 범위
 
@@ -53,7 +53,6 @@
   once exit 0, watch exit 0, watch 2 cycles, `GET /api/oauth/usage` 3회 모두 200, body 없음.
   `security` 읽기 3회, 금지 호출(refresh·claude 실행·쓰기) 0회.
 - 초기 실패 원인은 루트 보고 기준 만료된 Keychain 항목이다. 같은 프로필의 유효한 파일 OAuth로 성공했다.
-- 증거 감사 기록: `/tmp/yoroi-final-live-review.md`, `/tmp/yoroi-claude-live-readonly.md`(JSON).
 
 ## 내부 API 한계
 
@@ -62,3 +61,26 @@
 - 변경되면 parse 또는 unavailable로 격리되며 CLI나 모델 API로 대체하지 않는다.
 - refresh를 하지 않으므로 만료된 accessToken은 authentication이다. CLI가 저장소를 갱신해야 회복된다.
 - 실패 시 Claude 결과만 error로 남고, 다른 4개 공급자는 계속 조회된다.
+
+## Cooldown과 현행 경로 (2026-10-08)
+
+- 현행 인증 순서: 명시 토큰 → macOS Keychain(`security` 읽기) → 같은 프로필 `.credentials.json` → 고정 GET.
+  호출마다 저장소를 다시 읽으며 토큰 캐시는 없다. 정상 경로의 watch 주기당 `security` 호출은 최대 1회다.
+- `auth status`, `login`, refresh는 자동 조회하지 않는다.
+- API 429는 현재 `unavailable`이다. `Retry-After`를 읽지 않고 backoff도 구현하지 않았다.
+- 인증 저장소 fallback은 API cooldown 회피를 보장하지 않는다. 토큰이 같은 계정의 한도를 공유하기 때문이다.
+- cooldown 발생 위치(API 429, 로컬 저장소, CLI 로컬 제한)는 사용자 확인을 기다린다.
+  확인 전에는 CLI 자동 fallback, 토큰 캐시, backoff를 구현하지 않는다.
+- 공식 [costs 문서](https://code.claude.com/docs/en/costs)는 plan-usage 요청이 rate limit되면
+  60분 이내의 마지막 조회값을 표시하고 `r`로 재시도하도록 설명한다.
+  60분은 표시 freshness 기준이며 cooldown 길이나 `Retry-After` 값이 아니다.
+- `claude auth status`의 cooldown 계약은 공식 CLI reference에서 확인되지 않았다.
+  이 명령의 429·`Retry-After` 동작은 미확인이며 위 60분 기준과 혼동하지 않는다.
+- 설치된 CLI 2.1.293 바이너리에는 usage 429를 `retry-after` 기반으로 메모이즈하는 내부 경로가 정적으로 존재한다.
+  버전별 내부 구현이므로 공개 계약이 아니며 현행 Yoroi 코드는 이를 구현하지 않는다.
+
+## 운영 위험과 승인 상태 (2026-10-08)
+
+- 내부 API 공개 지원 계약은 없다. 사용 범위 미확인과 위험 수용 기록 없음을 포함한 상세는 [claude-operations.md](claude-operations.md)에 있다.
+- 자동 모델·CLI fallback은 구현되어 있지 않다. 로그인 만료 절차는 운영 문서를 따른다.
+- #29(환경별 CLI 응답 차이)는 원인 미확정이며 별도 조사로 유지한다.

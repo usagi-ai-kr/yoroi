@@ -1,6 +1,6 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
-- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.2` 준비(PR #66 재검토 대기, v0.1.0·v0.1.1 발행 완료).
+- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.2`(v0.1.0·v0.1.1·v0.1.2 발행 완료).
 - 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–#12·#18–#28·#56–#61 연결.
   #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
@@ -59,7 +59,7 @@
 ## 2026-10-08 문서·자동화 정리 (PR #62)
 
 - PR #62 병합 `1b3b027`(head `b09ac71`). PR CI `37720540457`, push CI `37720536646` success.
-- 버전: `package.json` `0.1.0`(당시). tag·GitHub Release는 이 시점엔 미발행이었다(현재 v0.1.0·v0.1.1 발행 완료). `scripts/version.py`는 쓰기 작업을 하지 않는다.
+- 버전: `package.json` `0.1.0`(당시). tag·GitHub Release는 이 시점엔 미발행이었다(현재 v0.1.0·v0.1.1·v0.1.2 발행 완료). `scripts/version.py`는 쓰기 작업을 하지 않는다.
 - 검증 수치: TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests PASS.
 - 기록: 초기 README 이미지는 중세 유럽 기사 갑옷으로 교체 완료.
 
@@ -88,9 +88,13 @@
 - 이슈: #15·#16·#17 closed. #13·#14·#29 open 유지 후 0.1.2 milestone(#4)으로 이동.
 - milestone #3(0.1.1) close 완료.
 
-## 2026-10-08 0.1.2 준비 (버전 증가, 미발행)
+## 2026-10-08 0.1.2 발행 완료 (root 조치)
 
-- 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08). PR #66 리뷰 반영 후 재검토 대기 중.
-- v0.1.2 tag·Release 미발행(사용자 승인 필요).
-- milestone 0.1.2(#4) open 이슈 #13·#14·#29는 이번 PR로 닫지 않고 open 유지.
-- 0.2.0 보류: 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).
+- 버전: `package.json` `0.1.2`. PR #66 병합 `4dfd4d7`(main, 2026-10-08T10:35:35Z), head `68bce2f`
+  (.env 병합 로드 포함). PR CI `37763214238` success.
+- 머지 후 검증: main push CI 부재로 workflow_dispatch [run 37764517117](https://github.com/qus0in/yoroi/actions/runs/37764517117) success.
+- tag `v0.1.2` → `4dfd4d7`. [v0.1.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행.
+- 포함 변경 `v0.1.1..4dfd4d7`: 전역 설치·.env 복사와 cwd+설치 사본 키 단위 병합 로드, 창 정렬 m→w→h,
+  agy 주간 exp, credits:purchased 숨김, under/optimal/over, Status 열 이동, PR #66 리뷰 반영(.env 0600 원자 생성·로드 실패 종료 2).
+- milestone 0.1.2(#4) close(open 3 #13·#14·#29 유지·이관 없음).
+- 0.2.0(#2) 보류 유지(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).

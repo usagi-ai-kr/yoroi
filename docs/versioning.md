@@ -33,8 +33,12 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
 2. `--bump` dry-run으로 예정 버전과 `vX.Y.Z` tag를 정하고, `--apply` 후 빌드·출력 버전
    (`yoroi --version`)이 manifest와 같은지 확인한다.
 3. dev → main PR에서 CI(`pull_request`)와 전체 검증이 통과한 **검증된 커밋 SHA**를 기록한다.
-4. 그 SHA에 `vX.Y.Z` 태그를 만들고 Release로 발행 기록을 남긴다. 순서는 검증 → tag → Release다.
-5. 발행 후 tag·커밋·산출물·Release가 일치하는지 확인하고 다음 milestone을 정리한다.
+4. PR을 병합한다(필수 승인 0명이라 자기 PR 승인은 불가하며 `ci` 통과 뒤 병합한다). main에는 push CI 트리거가 없다.
+   병합 커밋에서 `workflow_dispatch`로 CI를 실행해 success를 확인한다.
+5. 그 병합 커밋 SHA에 `vX.Y.Z` 태그를 만들고 Release로 발행 기록을 남긴다.
+   순서는 병합 → workflow_dispatch CI → tag → Release → milestone close다.
+6. 발행 후 tag·커밋·산출물·Release가 일치하는지 확인하고 다음 milestone을 정리한다.
+   open으로 남긴 이슈는 이관 여부와 닫히는 조건을 기록한다.
 
 - 이미 발행한 tag는 불변이다. 덮어쓰지 않는다. 검증 실패·버전 불일치 시 발행하지 않고
   원인과 남은 작업을 보고한다.
@@ -42,6 +46,6 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
 
 ## 현재 운영 현황 (2026-10-08)
 
-- 버전: `package.json` `0.1.2`(PR #66 리뷰 반영 후 재검토 대기).
-- tag·Release: `v0.1.2` 미발행(사용자 승인 필요, v0.1.0·v0.1.1 발행 완료).
-- milestone: `0.1.2` open (#13·#14·#29 open 유지), `0.2.0` open (0.2.0 보류 상태).
+- 버전: `package.json` `0.1.2`. PR #66 병합 `4dfd4d7`, workflow_dispatch CI `37764517117` success.
+- tag·Release: `v0.1.0`·`v0.1.1`·`v0.1.2` 발행 완료([v0.1.2](https://github.com/qus0in/yoroi/releases/tag/v0.1.2), target `4dfd4d7`).
+- milestone: `0.1.2` closed (#13·#14·#29 open 유지·이관 없음), `0.2.0` open (0.2.0 보류 상태).

@@ -11,19 +11,18 @@
 
 | pane | 담당 | 상태 (2026-10-08) |
 | --- | --- | --- |
-| `wX:p2` (AGY) | CLI, 스킬, workflow | 사용 가능 |
-| `wX:p3` | CI, 버전 | 사용 가능 |
-| `wX:p4` | Wiki | root가 Esc로 중지 |
-| `wX:p5` | 이슈, 문서 운영 | root가 Esc로 중지 |
+| `wX:p1` (claude) | root 오케스트레이터 | 사용 중 |
+| `wX:p2` (agy) | CLI, 스킬, workflow | 사용 가능 |
+| `wX:p3` (claude) | CI, 버전, 문서·Wiki 운영, 검증·측정 | 사용 가능 |
+| `wX:p4`·`wX:p5` | 없음 | 구성에서 제거됨 |
 
-- 중지한 p4·p5는 상태(마지막 보고·변경 파일)를 확인한 뒤 root의 명시 지시(새 패킷)로만 재개한다.
+- worker 권한 프롬프트는 root가 승인하지 않고 다른 pane에 재배정한다.
 - 같은 파일을 두 pane에 동시에 배정하지 않는다. 현재 소유표는 [tasks.md](tasks.md)에 둔다.
-- 이름: 에이전트 이름은 하네스 이름 그대로다. p2 `agy`, 중복된 OpenCode만 p3–p5 `opencode-1`–`opencode-3`.
-  root(p1)와 pane 라벨은 지정하지 않는다.
+- 이름: 에이전트 이름은 하네스 이름 그대로다(p1·p3 `claude`, p2 `agy`). pane 라벨은 지정하지 않는다.
 - pane의 에이전트·모델은 사용자가 정한다. root는 `herdr agent list`와 화면의 모델 표시로 현재 상태를
   확인한 뒤 그 안에서 배정하고, `/exit`·`herdr agent start`·모델 선택·권한 승인은 요청 시에만 한다.
 - 2026-10-08 사고: root가 p3·p4·p5를 임의로 종료하고 DeepSeek V4 Pro로 재시작했고, p4에서는 확인 없는
-  키 입력으로 모델이 바뀌었다. 이 사고 이후 p3–p5는 DeepSeek V4 Pro 상태다. 원래 모델 복원 여부는 사용자 결정이다.
+  키 입력으로 모델이 바뀌었다. 이후 구성은 사용자가 정했고 현재 값은 위 표다.
 
 ## 패킷·보고서 경로
 
@@ -49,6 +48,6 @@
 | --- | --- |
 | 사용자 범위 확인, 패킷 발행, pane 배정 | `src/`·`tests/` 구현과 테스트 |
 | 보고서 감사, `git diff --stat` 대조 | 스킬·스크립트 수정(p2), CI·버전(p3) |
-| 통합 충돌 해소, 한두 줄 정정 | Wiki 소스·게시 준비(p4) |
-| 커밋·push·PR·merge·이슈 close | 문서·회고 초안, 이슈 현황 정리(p5) |
+| 통합 충돌 해소, 한두 줄 정정 | Wiki 소스·게시 준비(p3) |
+| 커밋·push·PR·merge·이슈 close | 문서·회고 초안, 이슈 현황 정리(p3) |
 | AGENTS.md 규칙 반영(사용자 요청 시) | `pnpm run check`, `validate-repo.py` 실행·보고 |

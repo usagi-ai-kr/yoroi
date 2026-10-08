@@ -36,7 +36,10 @@
 ## 0.1.2 (남은 계약 확인, #13·#14·#29)
 
 - 새 milestone 0.1.2(#4)로 이동했다(사용자 결정, 2026-10-08).
-- 버전 0.1.2 릴리스 준비(PR #66 리뷰 반영 후 재검토 대기, v0.1.2 tag·Release 미발행·사용자 승인 필요)에도 이 3건은 이번 PR로 닫지 않고 open 유지한다.
+- v0.1.2 발행 완료(PR #66 병합 `4dfd4d7`, tag·Release, milestone #4 close)에도 이 3건은 닫지 않고 open 유지·이관 없음이다.
+
+- 계약 판정 기준: 완료 기준마다 (a) 코드·문서·합성 테스트로 검증 가능, (b) 실계정 실측·공식 근거 필요로 나눠
+  파일:줄 근거와 판정표로 댓글에 남긴다. (b)가 남으면 close하지 않고 open 유지하며 닫히는 조건을 함께 기록한다.
 
 | 이슈 | 상태 | 근거 또는 미완료 사유 |
 | --- | --- | --- |
@@ -58,7 +61,9 @@
 - `0.1.1` (#3) closed(open 3·closed 4): #15–#17 closed. open #13·#14·#29는 이후 0.1.2로 이동.
   발행 완료: 버전 `0.1.1`, [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1)
   (target PR #65 머지 커밋 `7470250`, 머지 후 CI run `37735089637` success).
-- `0.1.2` (#4) open: #13·#14·#29 매핑. 0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인). 버전 0.1.2 준비(PR #66 재검토 대기, v0.1.2 tag·Release 미발행·사용자 승인 필요)이며 이 3건은 open 유지.
+- `0.1.2` (#4) closed(open 3·closed 1): #13·#14·#29 매핑, 0.1.1에서 이동(사용자 결정 2026-10-08).
+  발행 완료: [v0.1.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2)
+  (target PR #66 머지 커밋 `4dfd4d7`, 머지 후 CI run `37764517117` success). 이 3건은 open 유지.
 - `0.2.0` (#2) open: #30–#55 매핑. 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지). 패키지 버전은 0.1.2이다.
 - 닫힌 issue 포함 미매핑 없음을 확인했다.
 
@@ -77,3 +82,8 @@
 
 - 병합 `7470250`(main). 머지 후 workflow_dispatch CI run `37735089637` success.
 - [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행 후 0.1.1 milestone close.
+
+## PR #66 (병합, v0.1.2 발행)
+
+- 병합 `4dfd4d7`(main, 2026-10-08T10:35:35Z), head `68bce2f`(.env 병합 로드 포함). PR CI `37763214238` success.
+- 머지 후 workflow_dispatch CI run `37764517117` success. [v0.1.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행 후 0.1.2 milestone close.

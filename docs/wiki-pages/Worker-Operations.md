@@ -30,7 +30,7 @@ pnpm --silent run dev watch --pretty
 pnpm --silent run dev watch --interval 30 --pretty
 ```
 
-표는 `Provider`, `Window`, `Usage`, `Reset (KST)`, `Status` 열을 사용합니다. `Reset (KST)` 값은 시각 뒤에 남은 시간을 `(6d 18h)`처럼 덧붙이고, reset 시각이 없으면 `-`입니다. 없는 값은 `-`, 오류는 `Status`에 표시합니다. 표 렌더링에는 `cli-table3` 0.6.5와 `picocolors` 1.1.1을 사용합니다.
+표는 `Provider`, `Status`, `Window`, `Usage`, `Reset (KST)` 순서의 열을 사용합니다(Status 내용·각 열 폭은 이전과 같음). `Reset (KST)` 값은 시각 뒤에 남은 시간을 `(6d 18h)`처럼 덧붙이고, reset 시각이 없으면 `-`입니다. 없는 값은 `-`, 오류는 `Status`에 표시합니다. 표 렌더링에는 `cli-table3` 0.6.5와 `picocolors` 1.1.1을 사용합니다.
 
 `--pretty`가 없으면 각 window 줄에 `reset_in=6d18h`처럼 관측 시각 기준 남은 시간을 표시합니다. 큰 단위 두 개로 표시하며 1시간 미만은 분만, 이미 지난 reset은 `0m`입니다. 숫자 metric(`percent`, `used`, `limit`, `remaining`)은 plain·pretty 출력에서만 소수점 둘째 자리까지 올림하고 원본 값은 바꾸지 않습니다.
 
@@ -38,7 +38,7 @@ pnpm --silent run dev watch --interval 30 --pretty
 
 창 행 정렬은 표시 단계에서만 수행합니다: `m`→`w`→`5h`(접두어 표기도 `g-w`·`c-5h` 같은 등급)→등급 없는 내부 id 행은 맨 뒤이며, 같은 등급은 수집 순서를 유지합니다.
 
-사용량 상태 표시(표시 전용): exp가 있는 행은 실제%(`percent` 우선, 없으면 `used/limit`)와 exp를 원본값으로 비교해 `|차이| ≤ 3%p`면 `optimal`(경계 포함), `-3%p` 미만이면 `under`, `+3%p` 초과면 `over`, exp나 실제%를 구하지 못한 행은 `n/a`입니다. 표시 수치는 소수점 둘째 자리로 올리고 비교에는 원본값을 씁니다. plain 출력은 window 줄에 `usage_status=over`처럼 붙고, pretty는 `Status` 열이 `ok over`처럼 `ok`를 유지한 채 부가 표기만 더합니다(열 폭 불변). 수집·저장 데이터는 바뀌지 않습니다.
+사용량 상태 표시(표시 전용): exp가 있는 행은 실제%(`percent` 우선, 없으면 `used/limit`)와 exp를 원본값으로 비교해 `|차이| ≤ 3%p`면 `optimal`(경계 포함), `-3%p` 미만이면 `under`, `+3%p` 초과면 `over`, exp나 실제%를 구하지 못한 행은 `n/a`입니다. 표시 수치는 소수점 둘째 자리로 올리고 비교에는 원본값을 씁니다. plain 출력은 공급자 줄 `provider: ok observed=… windows=N`을 유지하고, 창 행은 라벨·단위 바로 뒤 첫 지표로 `usage_status=over`를 붙입니다. pretty는 `Status` 열이 `ok over`처럼 `ok`를 유지한 채 부가 표기만 더합니다(열 폭 불변). 수집·저장 데이터는 바뀌지 않습니다.
 
 ollama-pro는 plain·pretty 모두 `monthly`·`credits:included`(월간 인정)만 표시하고, `credits:purchased`는 계속 수집하지만 기본 출력에서는 제외합니다. 그래서 기본 표시는 월간 `m`(`credits:included`)만 남고, `activity:*`·`session`·`weekly`도 숨깁니다. 표시 대상이 0개면 창 0개에 `windows=0 (N windows hidden)`처럼 안내하고 전체를 대신 보여주지 않습니다. 수집 데이터는 바뀌지 않습니다.
 

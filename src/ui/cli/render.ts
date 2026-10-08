@@ -51,10 +51,10 @@ export function formatUsage(window: UsageWindow): string {
 export function renderPretty(results: readonly UsageResult[]): string[] {
   const useColor = Boolean(pc.isColorSupported && process.env.FORCE_COLOR !== "0");
   const colors = pc.createColors(useColor);
-  const head = ["Provider", "Window", "Usage", "Reset (KST)", "Status"];
+  const head = ["Provider", "Status", "Window", "Usage", "Reset (KST)"];
   const table = new Table({
     head: head.map((h: string) => colors.bold(h)),
-    colWidths: [13, 16, 22, 27, 22],
+    colWidths: [13, 22, 16, 22, 27],
     wordWrap: true,
     style: { head: [], border: [] },
   });
@@ -63,18 +63,18 @@ export function renderPretty(results: readonly UsageResult[]): string[] {
       const { provider, windows, observedAt } = r.snapshot;
       const { windows: visible, labels, hidden } = visibleWindows(provider, windows);
       const okText = colors.green("ok");
-      if (visible.length === 0) table.push([provider, "(none)",
-        hidden > 0 ? `${hidden} hidden` : "-", "-", okText]);
+      if (visible.length === 0) table.push([provider, okText, "(none)",
+        hidden > 0 ? `${hidden} hidden` : "-", "-"]);
       else visible.forEach((w, index) => {
         const left = formatTimeLeft(w.resetAt, observedAt);
         const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
         const status = formatStatus(useColor, usageStatus(provider, w, visible, observedAt));
-        table.push([provider, labels[index]!,
-          formatUsage(w) + expectedSuffix(provider, w, visible, observedAt), reset, status]);
+        table.push([provider, status, labels[index]!,
+          formatUsage(w) + expectedSuffix(provider, w, visible, observedAt), reset]);
       });
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);
-      table.push([r.provider, "-", "-", "-", err]);
+      table.push([r.provider, err, "-", "-", "-"]);
     }
   }
   return table.toString().split("\n");

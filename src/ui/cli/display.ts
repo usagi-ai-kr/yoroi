@@ -19,6 +19,7 @@ function renderWindow(provider: ProviderId, window: UsageWindow, observedAt: str
   windows: readonly UsageWindow[], label: string): string {
   const left = formatTimeLeft(window.resetAt, observedAt);
   const metrics = [
+    `usage_status=${usageStatus(provider, window, windows, observedAt)}`,
     `used=${value(window.used)}`,
     `remaining=${value(window.remaining)}`,
     `limit=${value(window.limit)}`,
@@ -26,7 +27,6 @@ function renderWindow(provider: ProviderId, window: UsageWindow, observedAt: str
     `reset=${value(window.resetAt)}`,
     `reset_in=${left?.replace(" ", "") ?? "unknown"}`,
     ...expectedMetrics(provider, window, windows, observedAt),
-    `usage_status=${usageStatus(provider, window, windows, observedAt)}`,
   ];
   return `  - ${label} [${window.unit}] ${metrics.join(" ")}`;
 }

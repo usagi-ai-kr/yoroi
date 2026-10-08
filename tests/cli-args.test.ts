@@ -44,7 +44,7 @@ test("once prints window metrics and marks missing values unknown", async () => 
 
   assert.equal(await cli.run(["once"]), 0);
   assert.ok(stdout.some((line) => line === `codex: ok observed=${observedAt} windows=1`));
-  assert.ok(stdout.includes("  - weekly [requests] used=3 remaining=unknown limit=10 percent=unknown reset=unknown reset_in=unknown usage_status=n/a"));
+  assert.ok(stdout.includes("  - weekly [requests] usage_status=n/a used=3 remaining=unknown limit=10 percent=unknown reset=unknown reset_in=unknown"));
 });
 
 test("once keeps partial success at exit 0 and prints the error line", async () => {

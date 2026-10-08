@@ -8,11 +8,11 @@ Feature: 실제 공급자 어댑터 fake 전송 통합
     And the CLI stdout contains "- m [percent]"
     And the CLI stdout does not contain "- session [percent]"
     And the CLI stdout contains "- 5h [percent]"
-    And the CLI stdout contains "- 5h [percent] used=unknown remaining=unknown limit=unknown percent=40"
+    And the CLI stdout contains "- 5h [percent] usage_status=n/a used=unknown remaining=unknown limit=unknown percent=40"
     And the CLI stdout contains "- g-w [percent]"
     And the CLI stdout contains "- c-5h [percent]"
-    And the CLI stdout contains "- 5h [percent] used=unknown remaining=unknown limit=unknown percent=35 reset=2026-10-08T06:00:00.000Z"
-    And the CLI stdout contains "- w [percent] used=unknown remaining=unknown limit=unknown percent=60 reset=2026-10-10T00:00:00.000Z"
+    And the CLI stdout contains "- 5h [percent] usage_status=n/a used=unknown remaining=unknown limit=unknown percent=35 reset=2026-10-08T06:00:00.000Z"
+    And the CLI stdout contains "- w [percent] usage_status=optimal used=unknown remaining=unknown limit=unknown percent=60 reset=2026-10-10T00:00:00.000Z"
 
   Scenario: ollama-pro 현재 activity 스키마에서 activity·구매 크레딧 행을 숨긴다
     Given the five real provider adapters with fake transports

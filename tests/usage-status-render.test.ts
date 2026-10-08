@@ -15,13 +15,13 @@ const plain = (w: UsageWindow): UsageResult =>
 const statusOf = (w: UsageWindow): string | undefined =>
   renderResults([plain(w)])[1]?.match(/usage_status=(\S+)/)?.[1];
 
-test("plain appends usage_status at the end of window metrics", () => {
+test("plain puts usage_status right after the window label and unit", () => {
   const weekly = win({ id: "weekly", percent: 89, resetAt });
-
-  assert.equal(statusOf(weekly), "optimal");
   const line = renderResults([plain(weekly)])[1]!;
 
-  assert.ok(line.endsWith("usage_status=optimal"), line);
+  assert.equal(statusOf(weekly), "optimal");
+  assert.ok(line.startsWith("  - w [percent] usage_status=optimal used="), line);
+  assert.equal(line.split(" ").indexOf("usage_status=optimal"), 5);
 });
 
 test("status follows the actual-versus-expected comparison", () => {
@@ -42,10 +42,21 @@ test("pretty Status column shows ok plus the status inside 22 columns", () => {
   const lines = renderPretty([result]);
   const text = stripVTControlCharacters(lines.join("\n"));
 
-  assert.match(text, /│ ok over\s*│/);
+  assert.match(text, /│ opencode-go │ ok over\s*│ w\s*│/);
   const widths = lines.map((line) => stripVTControlCharacters(line).length);
   assert.equal(new Set(widths).size, 1);
-  assert.equal(stripVTControlCharacters(lines[1]!).split("│")[5]!.trim().length <= 22, true);
+  assert.equal(stripVTControlCharacters(lines[1]!).split("│")[2]!.trim().length <= 22, true);
+});
+
+test("pretty header puts Status right after Provider", () => {
+  const lines = renderPretty([plain(win({ id: "weekly", percent: 95, resetAt }))]);
+  const cells = stripVTControlCharacters(lines[1]!).split("│").map((cell) => cell.trim());
+
+  assert.equal(cells[1], "Provider");
+  assert.equal(cells[2], "Status");
+  assert.equal(cells[3], "Window");
+  assert.equal(cells[4], "Usage");
+  assert.equal(cells[5], "Reset (KST)");
 });
 
 test("formatStatus colors each status and keeps the ok prefix", () => {

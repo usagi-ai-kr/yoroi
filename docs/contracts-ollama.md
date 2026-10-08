@@ -97,4 +97,4 @@
 - `credits:included` 예상 비율은 파서가 보존한 `included.period.from`(periodStart) 시작점 기준이며,
   없거나 무효·reset 이후면 숨긴다. legacy `monthly`는 응답에 시작 필드가 없어 기존 역산을 유지한다.
 - 합성 예시: `ollama-pro: ok observed=2026-10-08T00:00:00Z windows=1` 뒤에
-  `  - m [USD] used=unknown remaining=1.25 limit=5 percent=unknown …`처럼 표시한다.
+  `  - m [USD] usage_status=n/a used=unknown remaining=1.25 limit=5 percent=unknown …`처럼 표시한다.

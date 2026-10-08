@@ -4,6 +4,9 @@ import type { Scheduler } from "../../app/watch-usage.js";
 import type { UsageResult, UsageSource } from "../../app/usage-source.js";
 import { parseArgs } from "./args.js";
 import { renderResults, renderPretty } from "./render.js";
+import { getHelpText, USAGE } from "./help.js";
+
+export { USAGE } from "./help.js";
 
 export interface CliEnvironment {
   stdout(text: string): void;
@@ -23,19 +26,6 @@ export interface CliProgram {
   run(argv: string[]): Promise<number>;
 }
 
-export const USAGE = [
-  "usage: yoroi <once|watch> [--interval <seconds>] [--pretty] [--help] [--version]",
-  "",
-  "examples:",
-  "  pnpm --silent run dev once --pretty",
-  "  pnpm --silent run dev watch --pretty",
-  "  pnpm --silent run dev watch --interval 30 --pretty",
-  "",
-  "providers: defaults to all 5 (ollama-pro,opencode-go,codex,agy,claude)",
-  "  select: YOROI_PROVIDERS=<comma-separated-list>",
-  "",
-  "watch: waits for interval after collection completes (non-overlapping)",
-].join("\n");
 export const DEFAULT_INTERVAL_MS = 60_000;
 
 export function createCli(deps: CliDependencies): CliProgram {
@@ -69,7 +59,7 @@ export function createCli(deps: CliDependencies): CliProgram {
   return {
     async run(argv: string[]): Promise<number> {
       const parsed = parseArgs(argv);
-      if (parsed.kind === "help") { env.stdout(USAGE); return 0; }
+      if (parsed.kind === "help") { env.stdout(getHelpText(parsed.subcommand)); return 0; }
       if (parsed.kind === "error") return fail(parsed.message);
       if (parsed.kind === "version") {
         if (deps.version === undefined) return fail("version unavailable");

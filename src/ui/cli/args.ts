@@ -1,5 +1,7 @@
+import type { Subcommand } from "./help.js";
+
 export type ParsedArgs =
-  | { readonly kind: "help" }
+  | { readonly kind: "help"; readonly subcommand?: Subcommand }
   | { readonly kind: "version" }
   | { readonly kind: "once"; readonly pretty?: boolean }
   | { readonly kind: "watch"; readonly intervalMs?: number; readonly pretty?: boolean }
@@ -19,6 +21,9 @@ function parseInterval(value: string | undefined): number | null {
 }
 
 function parseOnce(args: readonly string[]): ParsedArgs {
+  if (args.includes("--help") || args.includes("-h")) {
+    return { kind: "help", subcommand: "once" };
+  }
   if (args.length === 0) return { kind: "once" };
   if (args.length === 1 && args[0] === "--pretty") return { kind: "once", pretty: true };
   if (args[0] === "--pretty") return { kind: "error", message: `unexpected argument: ${args[1]}` };
@@ -26,6 +31,9 @@ function parseOnce(args: readonly string[]): ParsedArgs {
 }
 
 function parseWatch(args: readonly string[]): ParsedArgs {
+  if (args.includes("--help") || args.includes("-h")) {
+    return { kind: "help", subcommand: "watch" };
+  }
   let intervalMs: number | undefined;
   let pretty: boolean | undefined;
   let idx = 0;

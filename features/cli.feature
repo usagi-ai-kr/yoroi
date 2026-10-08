@@ -76,3 +76,15 @@ Feature: 5개 공급자 CLI once/watch 수용 시나리오
     When I run "watch --interval 0"
     Then the CLI exit code is 2
     And the CLI stderr contains "usage"
+
+  Scenario: once --help는 서브커맨드 사용법을 출력하고 0을 반환한다
+    Given all 5 fake providers succeed
+    When I run "once --help"
+    Then the CLI exit code is 0
+    And the CLI stdout contains "usage: yoroi once"
+
+  Scenario: watch -h는 서브커맨드 사용법을 출력하고 0을 반환한다
+    Given all 5 fake providers succeed
+    When I run "watch -h"
+    Then the CLI exit code is 0
+    And the CLI stdout contains "usage: yoroi watch"

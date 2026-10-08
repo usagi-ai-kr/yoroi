@@ -32,6 +32,7 @@ pnpm run check
 - 전역 CLI: `pnpm add -g .`(또는 저장소 절대경로)로 전역 설치 후 `yoroi`를 실행한다. 제거는 `pnpm remove -g yoroi`.
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
+- 출력 테스트는 ANSI를 제거한 뒤 비교한다. CI는 색상 지원 환경이므로 `FORCE_COLOR=1`에서도 통과를 확인한다.
 - 테스트는 fake source/HTTP/process/scheduler 및 합성 fixture를 사용한다.
   실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
 - dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다.

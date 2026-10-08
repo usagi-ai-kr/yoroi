@@ -20,3 +20,4 @@ dist/
 coverage/
 tmp/
 *.log
+gen-lang*

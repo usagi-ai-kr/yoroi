@@ -41,3 +41,13 @@
 - 표시 표기: 길이 확정 창만 `5h`·`w`·`m`으로 줄이고(그 외 내부 id 그대로), codex는 kind 첫 글자(`p-5h`)→버킷+kind(`cp-5h`)→내부 id 3단계로만 승격한다. 내부 id·수집 데이터·계산은 바뀌지 않는다.
 - `credits:included` 예상 비율은 `period.from`(periodStart) 시작점 기준이며, 없거나 무효·reset 이후면 숨긴다. opencode·legacy monthly는 응답에 시작 필드가 없어 기존 역산을 유지한다.
 - README에는 출력 예시를 두지 않았다(README 변경은 사용자 요청 범위).
+
+## 수집 이벤트 계약 (app 계층, #31 첫 단위)
+
+- `src/app/collection-events.ts`의 순수 함수 `buildCollectionEvents`가 collectOnce 결과에서
+  `usage.collected`(전체 성공 1건)·`usage.partial`(실패 있음 1건)·`auth.expired`(공급자별 인증 만료)·
+  `usage.resetChanged`(이전 스냅샷 대비 resetAt 변경, 양쪽 정의 시만) 목록을 만든다.
+- 이벤트에는 이름·공급자·시각·오류 코드·변경된 resetAt만 담고 스냅샷·수치·추정치·비밀값을 담지 않는다.
+  rolling window 추정치도 발행하지 않는다.
+- 의존 방향: app은 domain·app만 import한다(infra·ui import 금지, tests/architecture.test.ts로 검증).
+  0.2.0 저장·WS·Zod 연결은 다음 단위 범위다.

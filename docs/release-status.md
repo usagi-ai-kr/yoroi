@@ -91,4 +91,4 @@
   `f8ba205` 계약 대조·fixture 보강(#13–#17), `94e06fa` 버전 증가·릴리스 준비 기록.
 - 이슈: #15·#16·#17 closed. #13(429 rate limit·Retry-After 미실측)·#14(balance fallback 미실측)·
   #29(`hold`) open 유지.
-- milestone #3(0.1.1) close: open 3(#13·#14·#29)·closed 4. open 이슈는 다른 milestone로 옮기지 않는다.
+- milestone #3(0.1.1) close: open 3(#13·#14·#29)·closed 4. close 시점에는 open 이슈를 옮기지 않았고, 이후 사용자 결정으로 [0.1.2](https://github.com/qus0in/yoroi/milestone/4)로 이동했다.

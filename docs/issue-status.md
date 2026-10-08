@@ -25,32 +25,40 @@
 
 - `0.1.1` milestone(#3)을 새로 만들고 0.1.0에서 이동했다(사용자 결정, 이슈마다 사유 댓글).
 - 2026-10-08 계약 대조(`f8ba205`, push CI `37733082881`): #15·#16·#17은 완료 기준 충족으로 close.
+- milestone #3은 open #13·#14·#29를 남긴 채 close했다. 같은 날 사용자 결정으로 해당 3건은 0.1.2로 이동했다.
+
+| 이슈 | 상태 | 근거 또는 미완료 사유 |
+| --- | --- | --- |
+| #15 | closed | Codex 완료 기준 7개 충족(계약 문서·fixture·테스트) 후 close |
+| #16 | closed | AGY 완료 기준 충족 후 close |
+| #17 | closed | Claude 완료 기준 충족 후 close |
+
+## 0.1.2 (남은 계약 확인, #13·#14·#29)
+
+- 새 milestone 0.1.2(#4)로 이동했다(사용자 결정, 2026-10-08).
 
 | 이슈 | 상태 | 근거 또는 미완료 사유 |
 | --- | --- | --- |
 | #13 | open | Ollama 계약 대조(f8ba205) 후 부분 충족. 429 rate limit·Retry-After는 실측·공식 근거 부재로 미확인 |
 | #14 | open | OpenCode 계약 대조(f8ba205) 후 부분 충족. balance fallback 응답 필드 미실측 |
-| #15 | closed | Codex 완료 기준 7개 충족(계약 문서·fixture·테스트) 후 close |
-| #16 | closed | AGY 완료 기준 충족 후 close |
-| #17 | closed | Claude 완료 기준 충족 후 close |
-| #29 | open, handle·hold | 환경별 CLI 응답 차이 원인 미확정. 자동 경로는 GET으로 교체 |
-
-- milestone #3은 open인 #13·#14·#29를 남긴 채 close했고 다른 milestone로 옮기지 않았다.
+| #29 | open, handle·hold | Claude `/usage` 환경별 응답 차이 원인 미확정. 자동 경로는 GET으로 교체 |
 
 ## 0.2.0 (웹·이력 확장, #30–#55)
 
-- #30 계획과 #31–#55 구현 issue는 모두 `0.2.0` milestone에 매핑했다. 아직 구현하지 않았다.
-- 이 목표는 사용자 계획이며 이 문서 작업의 구현 범위가 아니다. 모두 open 유지.
+- 착수(2026-10-08): 계획 문서 [v0.2.0-plan.md](v0.2.0-plan.md). 첫 단위 #31 이벤트 계약 타입 진행 중.
+- 다음 단위 순서: #31(Zod 스키마 연결) → #32(웹·서버 빌드 기반).
+- #30 계획과 #31–#55 구현 issue는 모두 `0.2.0` milestone이며 open 유지.
 
 ## 마일스톤 상태
 
 - `0.1.0` (#1) closed: 31 closed, open 0.
   PR #63 병합 `6a6802a`(head `e6ffd2e`), PR CI `37725084420` success,
   [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행.
-- `0.1.1` (#3) closed(open 3·closed 4): #15–#17 closed, #13·#14·#29 open 유지·이관 없음.
+- `0.1.1` (#3) closed(open 3·closed 4): #15–#17 closed. open #13·#14·#29는 이후 0.1.2로 이동.
   발행 완료: 버전 `0.1.1`, [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1)
   (target PR #65 머지 커밋 `7470250`, 머지 후 CI run `37735089637` success).
-- `0.2.0` (#2) open: 30–55 매핑. package 버전은 변경하지 않았다.
+- `0.1.2` (#4) open: #13·#14·#29 매핑. 0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
+- `0.2.0` (#2) open: 30–55 매핑. 착수(계획 문서 v0.2.0-plan.md, #31 진행). 패키지 버전은 0.1.1이다.
 - 닫힌 issue 포함 미매핑 없음을 확인했다.
 
 ## PR #62 (병합)

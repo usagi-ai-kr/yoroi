@@ -10,7 +10,8 @@
   PR #63(`6a6802a`, head `e6ffd2e`, PR CI `37725084420` success).
 - v0.1.0 [tag·Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`).
 - Wiki 원격 master `a181ccb` 게시, 새 clone 6페이지 동일 확인. #58·#56 close.
-- 0.1.0 milestone close(31 closed, open 0). 0.1.1에 #13·#14·#29 open(#15–#17 closed).
+- 0.1.0 milestone close(31 closed, open 0). 0.1.1 milestone close(#15–#17 closed).
+  잔존 #13·#14·#29는 새 milestone 0.1.2로 이동(사용자 결정 2026-10-08).
 - PR #62 검증: PR CI `37720540457` success, push CI `37720536646` success.
 - 구현·문서 자동화 완료(main 반영): CI 분류기와 docs-only fast pass, `test_*.py` unittest, agent-coordination 스킬, 버전 스크립트, pretty CLI(`--pretty`), README 중세 유럽 기사 갑옷 이미지.
 - 검증 수치(루트 보고): TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests, 스킬 테스트 PASS.
@@ -24,10 +25,12 @@
 
 ## 남은 작업
 
-- 0.1.1: 발행 완료(v0.1.1). #15–#17 closed. #13(429 미실측)·#14(balance fallback 미실측)·#29(hold) open 유지.
-  milestone #3은 open 이슈를 남긴 채 close했고 다른 milestone로 옮기지 않았다. 남은 조사는 각 이슈에서 진행.
-- 0.2.0: #30–#55. 준비 설계 문서는 로컬 브랜치 `next-0.2.0` worktree
-  (`/Users/young-mini/Workspace/yoroi-0.2.0`)의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+- 0.1.2(milestone #4): #13(429 미실측)·#14(balance fallback 미실측)·#29(Claude `/usage` 환경별 차이, hold) open.
+  0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
+- 0.2.0 착수: 계획 문서 [v0.2.0-plan.md](v0.2.0-plan.md). 첫 단위 #31 이벤트 계약 타입 진행 중
+  (`src/app/collection-events.ts`·`tests/collection-events.test.ts`). 다음 단위: #31 Zod → #32.
+  설계 문서는 로컬 브랜치 `next-0.2.0` worktree의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+- CLI pnpm 전역화: 진행 중.
 - 그 외 추가 개발은 계획하지 않는다.
 
 ## 회고 (2026-10-08)
@@ -57,7 +60,8 @@
 ## 이슈·마일스톤 매핑
 
 - `0.1.0`: #1–#12·#18–#28, #56–#61. 릴리스 버전 0.1.0(v0.1.0 tag·Release 발행 완료).
-- `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정). 2026-10-08 계약 대조: #15·#16·#17 충족 closed, #13(429 미실측)·#14(balance fallback 미실측) 부분 open, #29 `hold` 유지. milestone #3 closed(이관 없음), v0.1.1 발행 완료.
+- `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정). 계약 대조로 #15·#16·#17 closed, milestone #3 closed, v0.1.1 발행 완료.
   - 회고: `report_audit.py`는 glob 소유 패턴을 펼치지 않아 오탐 FAIL을 낸다. root가 `git status`로 대조한다.
-- `0.2.0`: #30–#55. 아직 구현하지 않았다. 이번 작업 범위가 아니다.
+- `0.1.2`: #13·#14·#29. 0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
+- `0.2.0`: #30–#55. 착수: 계획 문서 v0.2.0-plan.md, 첫 단위 #31 진행·다음 #31 Zod → #32.
 - 상세: [issue-status.md](issue-status.md).

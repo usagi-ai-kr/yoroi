@@ -29,6 +29,25 @@ ollama-pro,opencode-go,codex,agy,claude
 
 필요한 공급자 ID는 `ollama-pro`, `opencode-go`, `codex`, `agy`, `claude`입니다. 중복되거나 지원하지 않는 ID는 설정 오류입니다.
 
+## 전역 CLI 설치와 제거
+
+어디서든 `yoroi` 명령을 호출하려면 저장소 경로로 전역 설치합니다.
+
+```bash
+pnpm run build
+pnpm add -g .
+yoroi --version
+yoroi --help
+yoroi once --pretty
+yoroi watch --pretty
+```
+
+전역 설치를 제거할 때는 다음 명령을 실행합니다.
+
+```bash
+pnpm remove -g yoroi
+```
+
 ## 다음 단계
 
 - 인증 환경 변수 이름과 프로필 선택은 [공급자와 인증](Providers-and-Authentication)을 확인합니다.

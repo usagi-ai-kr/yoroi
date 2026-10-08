@@ -20,24 +20,25 @@ pnpm run test:bdd
 pnpm run build
 node --env-file-if-exists=.env dist/src/main.js --help
 node dist/src/main.js --version
+pnpm add -g .
+yoroi --version
+pnpm remove -g yoroi
 pnpm run check
 ```
 
 - `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
 - `watch`: 즉시 1회 후 **수집 완료 뒤 60초 대기**한다. 시작 간격은 수집 시간+60초다.
   분 단위 고정 시작이 아닌 완료 기준 대기이며 조회가 겹치지 않는다.
+- 전역 CLI: `pnpm add -g .`(또는 저장소 절대경로)로 전역 설치 후 `yoroi`를 실행한다. 제거는 `pnpm remove -g yoroi`.
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
 - 테스트는 fake source/HTTP/process/scheduler 및 합성 fixture를 사용한다.
   실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
 - dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다.
   이미 지정된 환경 변수가 .env보다 우선한다. .env는 Git ignore 대상이다.
-- pnpm 버전은 packageManager에 고정한다. Corepack 사용 시 `corepack enable pnpm`으로 활성화한다.
-- [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)의 현행 지침을 적용한다.
-  다른 pnpm이 PATH에서 앞서면 `pnpm --version`으로 확인하고 Node/Corepack 경로를 우선한다.
-- CI job은 항상 실행된다. 변경이 설명문서(docs/**, 루트 README.md·AGENTS.md·CLAUDE.md)뿐이면
-  fast pass 메시지만 출력하고 앱 install·검증·check 없이 필수 체크를 통과시킨다.
-  그 외 변경은 `validate-repo.py --ci`·스킬/회귀 검증·frozen install·전체 check를 실행한다.
+- pnpm은 packageManager 버전을 고정하며 Corepack 시 `corepack enable pnpm`을 쓴다.
+  [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)을 따르고 필요 시 Node/Corepack 경로를 우선한다.
+- CI는 설명문서만 변경 시 빠른 통과를 제공하고, 그 외에는 `validate-repo.py --ci`·스킬 검증·frozen install·전체 check를 실행한다.
   PR 필수 체크는 `pull_request` 실행으로 확인하고, 수동 `workflow_dispatch` 성공은 진단용이다.
 
 ## 설정과 공급자 상태
@@ -93,8 +94,5 @@ bash .agents/skills/skill-authoring/scripts/validate.sh .agents/skills/github-wo
 
 ## 파일 크기 예외
 
-- 잠금 파일: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `uv.lock`,
-  `poetry.lock`, `Cargo.lock`, `Gemfile.lock`, `go.sum`.
-- 생성된 Gradle wrapper: `gradlew`, `gradlew.bat`.
-- 바이너리는 줄 수 검사에서 제외한다.
+- 줄 수 검사 제외: 잠금 파일(`package-lock.json`·`pnpm-lock.yaml`·`yarn.lock`·`uv.lock`·`poetry.lock`·`Cargo.lock`·`Gemfile.lock`·`go.sum`), Gradle wrapper(`gradlew`·`gradlew.bat`), 바이너리.
 - 예외 추가 시 이 문서와 검증 스크립트를 함께 갱신한다.

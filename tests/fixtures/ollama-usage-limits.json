@@ -1,0 +1,8 @@
+{
+  "limits": {
+    "session": { "usage": 0.349 },
+    "weekly": { "usage": 0.316 },
+    "monthly": { "usage": 0.053 }
+  },
+  "activity": { "cost": "1.25000" }
+}

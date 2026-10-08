@@ -14,13 +14,16 @@
 - PR #62 검증: PR CI `37720540457` success, push CI `37720536646` success.
 - 구현·문서 자동화 완료(main 반영): CI 분류기와 docs-only fast pass, `test_*.py` unittest, agent-coordination 스킬, 버전 스크립트, pretty CLI(`--pretty`), README 중세 유럽 기사 갑옷 이미지.
 - 검증 수치(루트 보고): TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests, 스킬 테스트 PASS.
-- 닫힌 이슈: #1–#25 중 완료 기준을 충족한 항목, #3(red→green 실측), #22, #25, #57, #59, #60, #61. #13–#17·#29는 0.1.1로 이동하고 open 유지.
-- 버전: `package.json` 0.1.0 유지. v0.1.0 tag·Release 발행 완료(PR #63 병합 후).
+- 닫힌 이슈: #1–#25 중 완료 기준을 충족한 항목, #3(red→green 실측), #22, #25, #57, #59, #60, #61. #13–#17·#29는 0.1.1로 이동했고 계약 대조 후 #15–#17 closed.
+- 버전: `package.json` `0.1.1`. v0.1.0 tag·Release 발행 완료(PR #63 병합 후).
+- 0.1.1 릴리스 준비: 예정 tag `v0.1.1`, target은 dev → main 머지 커밋(미발행).
+  포함 변경 `v0.1.0..origin/dev`: PR #64 표시 개선(Ollama activity·창 짧은 표기)과 `f8ba205` 계약 대조(#13–#17).
 - PR #63(dev, 커밋 `62f55fd`·`51bfac8`): CLI 숫자 올림·reset_in 표시, 오케스트레이터 분담·graceful-stop 스킬. 병합 `6a6802a` 완료.
 
 ## 남은 작업
 
-- 0.1.1: #13–#17·#29 open. 계약 확인·환경별 CLI 응답 원인을 마일스톤 #3에서 진행한다.
+- 0.1.1: #15–#17 closed. #13(429 미실측)·#14(balance fallback 미실측)·#29(hold) open 유지.
+  milestone #3은 open 이슈를 남긴 채 close 예정이며 다른 milestone로 옮기지 않는다.
 - 0.2.0: #30–#55. 준비 설계 문서는 로컬 브랜치 `next-0.2.0` worktree
   (`/Users/young-mini/Workspace/yoroi-0.2.0`)의 `docs/v0.2.0/`에 있고 아직 커밋 전.
 - 그 외 추가 개발은 계획하지 않는다.
@@ -51,7 +54,8 @@
 
 ## 이슈·마일스톤 매핑
 
-- `0.1.0`: #1–#12·#18–#28, #56–#61. 제품 버전은 0.1.0을 유지한다.
-- `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정).
+- `0.1.0`: #1–#12·#18–#28, #56–#61. 릴리스 버전 0.1.0(v0.1.0 tag·Release 발행 완료).
+- `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정). 2026-10-08 계약 대조: #15·#16·#17 충족 closed, #13(429 미실측)·#14(balance fallback 미실측) 부분 open, #29 `hold` 유지. milestone #3 close 예정(이관 없음).
+  - 회고: `report_audit.py`는 glob 소유 패턴을 펼치지 않아 오탐 FAIL을 낸다. root가 `git status`로 대조한다.
 - `0.2.0`: #30–#55. 아직 구현하지 않았다. 이번 작업 범위가 아니다.
 - 상세: [issue-status.md](issue-status.md).

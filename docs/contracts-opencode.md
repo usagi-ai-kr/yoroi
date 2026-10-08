@@ -37,6 +37,13 @@
 - fallback: 누락/null 윈도우는 건너뛰고 나머지 윈도우로 스냅샷을 만든다.
   세 윈도우가 모두 빠지면 parse 오류다. `resetsAt` 누락은 reset 없이 허용한다.
 
+| 응답 필드 | `UsageSnapshot` 매핑 |
+| --- | --- |
+| `rolling`·`weekly`·`monthly` 키 | window.id 그대로(모델별 윈도우 없음) |
+| `status` | `ok`·`rate-limited`만 허용, 그 외 parse |
+| `percent`(정수 0~100) | window.percent, unit은 `'percent'` 고정 |
+| `resetsAt`(ISO 8601, 생략 가능) | window.resetAt(ISO), 누락 시 필드 없음 |
+
 ## 3. 오류 매핑
 
 | HTTP | 서버 error.type | Yoroi `SourceError` |
@@ -59,4 +66,4 @@
 ## 5. 남은 확인 항목
 
 - 2026-10-08 `.env` 설정으로 실제 계정 조회 성공: rolling/weekly/monthly 3개 창 파싱.
-- Zen 크레딧 잔액은 이 endpoint에 없다(anomalyco/opencode#44189, 후속 범위).
+- balance fallback 표현 필드는 미검증: Zen 크레딧 잔액은 이 endpoint에 없다(anomalyco/opencode#44189, 후속 범위).

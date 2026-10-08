@@ -1,0 +1,15 @@
+{
+  "range": "7d",
+  "scope": "self",
+  "granularity": "day",
+  "from": "2026-10-01T00:00:00Z",
+  "until": "2026-10-08T00:00:00Z",
+  "totals": {
+    "request_count": 4,
+    "usage_usd": 1.25,
+    "input_tokens": 100,
+    "cached_input_tokens": 20,
+    "output_tokens": 30
+  },
+  "buckets": []
+}

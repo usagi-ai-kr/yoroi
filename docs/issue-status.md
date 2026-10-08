@@ -24,11 +24,18 @@
 ## 0.1.1 (계약 보강, #13–#17·#29)
 
 - `0.1.1` milestone(#3)을 새로 만들고 0.1.0에서 이동했다(사용자 결정, 이슈마다 사유 댓글).
+- 2026-10-08 계약 대조(`f8ba205`, push CI `37733082881`): #15·#16·#17은 완료 기준 충족으로 close.
 
 | 이슈 | 상태 | 근거 또는 미완료 사유 |
 | --- | --- | --- |
-| #13–#17 | open | 계약 확인 미완료. 실측 한도·지원 버전·소진 fixture 근거 부족. 댓글 참조 |
+| #13 | open | Ollama 계약 대조(f8ba205) 후 부분 충족. 429 rate limit·Retry-After는 실측·공식 근거 부재로 미확인 |
+| #14 | open | OpenCode 계약 대조(f8ba205) 후 부분 충족. balance fallback 응답 필드 미실측 |
+| #15 | closed | Codex 완료 기준 7개 충족(계약 문서·fixture·테스트) 후 close |
+| #16 | closed | AGY 완료 기준 충족 후 close |
+| #17 | closed | Claude 완료 기준 충족 후 close |
 | #29 | open, handle·hold | 환경별 CLI 응답 차이 원인 미확정. 자동 경로는 GET으로 교체 |
+
+- milestone #3은 open인 #13·#14·#29를 남긴 채 close 예정이며 다른 milestone로 옮기지 않는다.
 
 ## 0.2.0 (웹·이력 확장, #30–#55)
 
@@ -40,7 +47,8 @@
 - `0.1.0` (#1) closed: 31 closed, open 0.
   PR #63 병합 `6a6802a`(head `e6ffd2e`), PR CI `37725084420` success,
   [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행.
-- `0.1.1` (#3) open: #13–#17, #29 매핑. 0.1.0에서 이동(사용자 결정).
+- `0.1.1` (#3) open: #15–#17 closed, #13·#14·#29 open. close 예정이며 open 이슈는 이관하지 않는다.
+  릴리스 준비: 버전 `0.1.1`, 예정 tag `v0.1.1`(target은 dev → main 머지 커밋).
 - `0.2.0` (#2) open: 30–55 매핑. package 버전은 변경하지 않았다.
 - 닫힌 issue 포함 미매핑 없음을 확인했다.
 

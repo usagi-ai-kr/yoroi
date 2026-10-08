@@ -56,4 +56,7 @@ test('human CLI parser normalizes authentication and unsupported output', () => 
   assert.throws(() => parseClaudeUsage('Unexpected plain text without usage', observedAt), {
     code: 'parse',
   });
+  assert.throws(() => parseClaudeUsage('zsh: command not found: claude', observedAt), {
+    code: 'parse',
+  });
 });

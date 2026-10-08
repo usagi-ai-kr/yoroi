@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import { NodeHttpClient } from "../src/infra/http-client.js";
 import { OPENCODE_GO_USAGE_URL, OpenCodeGoSource } from "../src/infra/opencode-go-source.js";
 
 const observedAt = "2026-10-07T00:00:00Z";
+const errorFixture = await readFile(new URL("./fixtures/opencode-go-error.json", import.meta.url), "utf8");
 const okBody = JSON.stringify({ usage: {
   rolling: { status: "ok", percent: 4, resetsAt: "2026-10-07T16:27:38.287Z" },
   weekly: { status: "ok", percent: 3, resetsAt: "2026-10-14T00:00:00.287Z" },
@@ -42,8 +44,8 @@ test("401 and 403 are authentication, 429 and other statuses are unavailable", a
   const cases: [number, string][] = [[401, "authentication"], [403, "authentication"],
     [429, "unavailable"], [500, "unavailable"], [404, "unavailable"]];
   for (const [status, code] of cases) {
-    await assert.rejects(source(async () => new Response('{"error":{"message":"secret"}}', { status })).read(),
-      failure(code, "secret"), String(status));
+    await assert.rejects(source(async () => new Response(errorFixture, { status })).read(),
+      failure(code, "redacted"), String(status));
   }
 });
 

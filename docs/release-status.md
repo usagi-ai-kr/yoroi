@@ -1,6 +1,6 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
-- 버전 원본: `package.json` version `0.1.0`, private 유지.
+- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.1`(아래 0.1.1 릴리스 준비 참조).
 - 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–#12·#18–#28·#56–#61 연결.
   #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
@@ -80,3 +80,13 @@
 - 0.1.1 milestone에 #13–#17·#29 open.
 - 0.2.0 준비 설계 문서는 로컬 브랜치 `next-0.2.0` worktree
 - (`/Users/young-mini/Workspace/yoroi-0.2.0`)의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+
+## 2026-10-08 0.1.1 릴리스 준비 (root 결정, 발행 전)
+
+- 버전: `package.json` `0.1.1`. 예정 tag `v0.1.1`, target은 dev → main 머지 커밋(아직 미발행).
+- 포함 변경 `v0.1.0..origin/dev`: PR #64 표시 개선(Ollama activity 숨김·창 짧은 표기,
+  `4b16213`·`5d6a5de`·`1ad5240`·`cd82c9a`)과 `f8ba205` 계약 대조·fixture 보강(#13–#17).
+  `bf391bb` v0.1.0 발행 기록도 범위에 포함된다.
+- 이슈: #15·#16·#17 closed. #13(429 rate limit·Retry-After 미실측)·#14(balance fallback 미실측)은 open 유지,
+  #29는 `hold` open 유지.
+- milestone #3(0.1.1)은 open인 #13·#14·#29를 남긴 채 close 예정이며 다른 milestone로 옮기지 않는다.

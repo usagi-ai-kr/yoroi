@@ -6,12 +6,20 @@ Welcome to the yoroi wiki!
 
 Yoroi는 다섯 공급자의 사용량을 한 번 조회하거나 주기적으로 표시하는 로컬 CLI입니다.
 
-- 현재 버전: `0.1.2` (v0.1.0·v0.1.1 Release 발행 완료, 0.1.2는 dev에서 준비 중)
+- 현재 버전: `0.1.2` (v0.1.0·v0.1.1·v0.1.2 Release 발행 완료)
 - 기본 공급자: Ollama Pro, OpenCode Go, Codex, AGY, Claude
 - 공급자별 조회 실패는 분리하며 다른 공급자 조회를 계속합니다.
 - 사용량 이력 데이터베이스나 웹 UI는 현재 범위에 포함되지 않습니다.
 
 ## 시작
+
+전역 설치 후 어디서든 다음 명령을 실행합니다.
+
+```bash
+yoroi --help
+yoroi once --pretty
+yoroi watch --pretty
+```
 
 1. [시작하기](Getting-Started)에서 Node/pnpm과 실행 방법을 확인합니다.
 2. [공급자와 인증](Providers-and-Authentication)에서 필요한 인증 경로를 설정합니다.

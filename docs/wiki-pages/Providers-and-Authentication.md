@@ -24,13 +24,13 @@
 
 - Yoroi는 로그인·refresh·credential 저장을 실행하지 않습니다.
 - macOS에서는 Keychain을 읽고, 조회가 실패하면 동일 프로필의 `.credentials.json`을 확인합니다.
-- 만료된 세션은 사용자가 같은 프로필에서 `claude auth login`으로 갱신한 뒤 `pnpm run dev once`로 확인합니다.
+- 만료된 세션은 사용자가 같은 프로필에서 `claude auth login`으로 갱신한 뒤 `yoroi once`로 확인합니다.
 - Claude의 `/api/oauth/usage` 경로는 CLI 내부 경로이며 공개 API 지원·호환성을 보장하지 않습니다.
 - 상세 복구 절차: [Claude·AGY 인증 복구](https://github.com/qus0in/yoroi/blob/main/docs/auth-recovery.md).
 
 ## AGY 인증
 
-AGY 인증은 `agy -p /usage` 호출을 통해 CLI에 위임합니다. 1.3.1 도움말에 전용 login/auth 하위 명령은 없습니다. 세션이 없으면 대화형 `agy`를 실행해 로그인하고, 이어서 `pnpm run dev once`로 확인합니다. Gemini API key 모드는 구독 사용량 세션과 별개입니다.
+AGY 인증은 `agy -p /usage` 호출을 통해 CLI에 위임합니다. 1.3.1 도움말에 전용 login/auth 하위 명령은 없습니다. 세션이 없으면 대화형 `agy`를 실행해 로그인하고, 이어서 `yoroi once`로 확인합니다. Gemini API key 모드는 구독 사용량 세션과 별개입니다.
 
 ## Reset 시각
 

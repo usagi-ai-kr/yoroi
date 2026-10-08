@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { SourceError, type UsageSource } from "../src/app/usage-source.js";
-import type { Scheduler } from "../src/app/watch-usage.js";
 import { createSnapshot, providers, type ProviderId } from "../src/domain/usage.js";
 import { createCli } from "../src/ui/cli/bootstrap.js";
 import { parseArgs } from "../src/ui/cli/args.js";
@@ -15,12 +14,9 @@ const bad = (provider: ProviderId): UsageSource =>
 function setup(sources: readonly UsageSource[]) {
   const stdout: string[] = [];
   const stderr: string[] = [];
-  const scheduler: Scheduler = { sleep: async () => {} };
   const cli = createCli({
     env: { stdout: (text) => stdout.push(text), stderr: (text) => stderr.push(text) },
-    sources,
-    scheduler,
-    subscribeSignals: () => () => {},
+    sources, scheduler: { sleep: async () => {} }, subscribeSignals: () => () => {},
   });
   return { cli, stdout, stderr };
 }
@@ -83,12 +79,15 @@ test("short and long help and version flags behave the same", () => {
   for (const argv of [["--version"], ["-v"]]) assert.deepEqual(parseArgs(argv), { kind: "version" });
   assert.equal(parseArgs(["--version", "extra"]).kind, "error");
   assert.equal(parseArgs(["-h", "extra"]).kind, "help", "help은 뒤 인자를 무시하고 출력");
-  const cases = [["once", "--help"], ["watch", "--help"], ["once", "--pretty", "--pretty"]];
-  for (const argv of cases) {
-    const parsed = parseArgs(argv);
-    assert.equal(parsed.kind, "error", argv.join(" "));
-    assert.match(parsed.kind === "error" ? parsed.message : "", /unexpected argument/);
+  for (const a of [["once", "--help"], ["once", "-h"]]) {
+    assert.deepEqual(parseArgs(a), { kind: "help", subcommand: "once" });
   }
+  for (const a of [["watch", "--help"], ["watch", "-h"]]) {
+    assert.deepEqual(parseArgs(a), { kind: "help", subcommand: "watch" });
+  }
+  const dup = parseArgs(["once", "--pretty", "--pretty"]);
+  assert.equal(dup.kind, "error");
+  assert.match(dup.kind === "error" ? dup.message : "", /unexpected argument/);
 });
 
 test("help succeeds and empty configuration is a config error", async () => {

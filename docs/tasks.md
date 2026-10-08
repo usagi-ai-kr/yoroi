@@ -16,10 +16,11 @@
 - 구현·문서 자동화 완료(main 반영): CI 분류기와 docs-only fast pass, `test_*.py` unittest, agent-coordination 스킬, 버전 스크립트, pretty CLI(`--pretty`), README 중세 유럽 기사 갑옷 이미지.
 - 검증 수치(루트 보고): TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests, 스킬 테스트 PASS.
 - 닫힌 이슈: #1–#25 중 완료 기준을 충족한 항목, #3(red→green 실측), #22, #25, #57, #59, #60, #61. #13–#17·#29는 0.1.1로 이동했고 계약 대조 후 #15–#17 closed.
-- 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08). v0.1.0·v0.1.1 tag·Release 발행 완료.
-- 0.1.2 준비: PR #66 리뷰 반영 후 재검토 대기, v0.1.2 tag·Release는 미발행(사용자 승인 필요). 포함 변경 `v0.1.1..origin/dev`:
-  전역 설치·.env 원자 복사(0600), 정렬 m→w→h, agy 주간 exp, credits:purchased 숨김, under/optimal/over,
-  Status 열 이동. milestone 0.1.2의 #13·#14·#29는 이번 PR로 닫지 않고 open 유지.
+- 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08). v0.1.0·v0.1.1·v0.1.2 tag·Release 발행 완료.
+- 0.1.2 발행 완료: PR #66 머지 커밋 `4dfd4d7`(2026-10-08T10:35:35Z, .env 병합 로드 `68bce2f` 포함),
+  머지 후 workflow_dispatch CI run `37764517117` success, tag `v0.1.2` → `4dfd4d7`,
+  [v0.1.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행, milestone #4 close
+  (open 3: #13·#14·#29 유지·이관 없음). 포함 변경은 [release-status.md](release-status.md).
 - 0.1.1 발행 완료: PR #65 머지 커밋 `7470250`, 머지 후 workflow_dispatch CI run `37735089637` success,
   [v0.1.1 tag·Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행, milestone #3 close
   (open 3: #13·#14·#29 유지·이관 없음).
@@ -28,11 +29,11 @@
 
 ## 남은 작업
 
-- 0.1.2(milestone #4): #13(429 미실측)·#14(balance fallback 미실측)·#29(Claude `/usage` 환경별 차이, hold) open.
+- 0.1.2(milestone #4, close): #13(429 미실측)·#14(balance fallback 미실측)·#29(Claude `/usage` 환경별 차이, hold) open 유지.
   0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
 - 0.2.0 보류: 계획 문서 [v0.2.0-plan.md](v0.2.0-plan.md). 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).
   설계 문서는 로컬 브랜치 `next-0.2.0` worktree의 `docs/v0.2.0/`에 있고 아직 커밋 전.
-- CLI 전역화(`install:global`·.env 복사·cwd 우선 로드): 구현·문서·실측 완료(418812b·7c5fc18).
+- CLI 전역화(`install:global`·.env 복사·cwd+설치 사본 병합 로드): 구현·문서·실측 완료(418812b·7c5fc18·68bce2f).
 - 그 외 추가 개발은 계획하지 않는다.
 
 ## 회고 (2026-10-08)
@@ -64,6 +65,6 @@
 - `0.1.0`: #1–#12·#18–#28, #56–#61. 릴리스 버전 0.1.0(v0.1.0 tag·Release 발행 완료).
 - `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정). 계약 대조로 #15·#16·#17 closed, milestone #3 closed, v0.1.1 발행 완료.
   - 회고: `report_audit.py`는 glob 소유 패턴을 펼치지 않아 오탐 FAIL을 낸다. root가 `git status`로 대조한다.
-- `0.1.2`: #13·#14·#29. 0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
+- `0.1.2`: #13·#14·#29. 0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인). milestone #4 closed, v0.1.2 발행 완료, 3건은 open 유지.
 - `0.2.0`: #30–#55. 보류: 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지). 계획 문서 v0.2.0-plan.md.
 - 상세: [issue-status.md](issue-status.md).

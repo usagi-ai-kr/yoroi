@@ -37,6 +37,7 @@
 - plain 출력의 window 줄에 `reset_in=6d18h`처럼 observedAt 기준 남은 시간을 붙인다. 1시간 미만은 `45m`, 지난 리셋은 `0m`이다.
 - pretty 출력의 Reset (KST) 열은 시각 뒤에 `(6d 18h)`를 붙인다. 리셋 시각이 없으면 `-`다.
 - 공급자마다 가장 긴 창 하나(월간 우선, 없으면 주간)에 시간 경과에 따른 예상 균등 사용량 비율을 표시한다. 계산은 `(창 길이 - 남은 시간) / 창 길이 × 100`(주간 7일, 월간은 리셋 1개월 전 역산)이며 소수점 둘째 자리까지 올림한다. plain은 `expected=42.86`, pretty는 `Usage` 열 뒤에 `(exp 42.86%)`로 붙인다.
-- ollama-pro 표시: `monthly`·`credits:included`(월간 인정, period.until 리셋)·`credits:purchased`만 plain·pretty에 표시하고, `activity:*`·`session`·`weekly`는 숨긴다. 표시 대상이 없으면 전체를 보여준다. 헤더 `windows=`는 표시된 창 수다.
-- 표시 표기: 길이 확정 창만 `5h`·`w`·`m`으로 줄이고(그 외 내부 id 그대로), 같은 표기가 겹칠 때만 `<접두어>-<표기>`를 붙인다. 내부 id·수집 데이터·계산은 바뀌지 않는다.
+- ollama-pro 표시: `monthly`·`credits:included`(월간 인정, period.until 리셋)·`credits:purchased`만 plain·pretty에 표시하고, `activity:*`·`session`·`weekly`는 숨긴다. 표시 대상이 0개면 창 0개에 plain `windows=0 (N windows hidden)`·pretty `(none)` 행으로 안내하고 전체 폴백은 하지 않는다.
+- 표시 표기: 길이 확정 창만 `5h`·`w`·`m`으로 줄이고(그 외 내부 id 그대로), codex는 kind 첫 글자(`p-5h`)→버킷+kind(`cp-5h`)→내부 id 3단계로만 승격한다. 내부 id·수집 데이터·계산은 바뀌지 않는다.
+- `credits:included` 예상 비율은 `period.from`(periodStart) 시작점 기준이며, 없거나 무효·reset 이후면 숨긴다. opencode·legacy monthly는 응답에 시작 필드가 없어 기존 역산을 유지한다.
 - README에는 출력 예시를 두지 않았다(README 변경은 사용자 요청 범위).

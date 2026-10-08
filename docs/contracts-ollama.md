@@ -67,8 +67,11 @@
 ## CLI 표시 (출력 전용 규칙, 수집 데이터 불변)
 
 - 표시: `monthly`·`credits:included`(월간 인정, `included.period.until` 리셋)·`credits:purchased`.
-  숨김: `activity:*` 전부, 이전 `session`·`weekly`. 표시 대상이 없으면 전체를 보여준다.
+  숨김: `activity:*` 전부, 이전 `session`·`weekly`. 표시 대상이 0개면 창 0개에
+  plain `windows=0 (N windows hidden)`·pretty `(none)` 행으로 안내하고 전체 폴백은 하지 않는다.
 - 표기: `monthly`·`credits:included` → `m`, `credits:purchased`는 내부 id 그대로.
   계산(월간 판정·예상 비율)에는 내부 id를 그대로 쓴다.
+- `credits:included` 예상 비율은 파서가 보존한 `included.period.from`(periodStart) 시작점 기준이며,
+  없거나 무효·reset 이후면 숨긴다. legacy `monthly`는 응답에 시작 필드가 없어 기존 역산을 유지한다.
 - 합성 예시: `ollama-pro: ok observed=2026-10-08T00:00:00Z windows=2` 뒤에
   `  - m [USD] used=unknown remaining=1.25 limit=5 percent=unknown …`처럼 표시한다.

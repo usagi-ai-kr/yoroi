@@ -14,6 +14,7 @@ Feature: 기본 5개 공급자 및 격리 정책
     Then the composed CLI exit code is 0
     And composed stdout contains "ollama-pro: error [authentication]"
     And composed stdout contains "opencode-go: error [authentication]"
+    And composed stdout contains "claude: error [authentication]"
     And composed stdout contains "codex: ok"
 
   Scenario: 조회 지연 후 완료 시점 기준으로 60초 대기한다

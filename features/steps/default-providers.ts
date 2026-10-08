@@ -9,7 +9,8 @@ const world = new DefaultProvidersWorld();
 
 Given("default configuration without YOROI_PROVIDERS", () => {
   world.reset();
-  world.configEnv = { YOROI_OPENCODE_GO_API_KEY: "dummy-key", YOROI_OLLAMA_PRO_SIGNING_KEY_PATH: "valid" };
+  world.configEnv = { YOROI_OPENCODE_GO_API_KEY: "dummy-key", YOROI_OLLAMA_PRO_SIGNING_KEY_PATH: "valid",
+    YOROI_CLAUDE_OAUTH_TOKEN: "fake-claude-token" };
 });
 
 Given("all 5 providers succeed in composition", () => {});
@@ -24,7 +25,8 @@ Given("API providers fail with authentication while others succeed", () => {});
 Given("default composition with {int}ms collection delay", (delay: number) => {
   world.reset();
   world.collectionDelayMs = delay;
-  world.configEnv = { YOROI_OPENCODE_GO_API_KEY: "dummy-key", YOROI_OLLAMA_PRO_SIGNING_KEY_PATH: "valid" };
+  world.configEnv = { YOROI_OPENCODE_GO_API_KEY: "dummy-key", YOROI_OLLAMA_PRO_SIGNING_KEY_PATH: "valid",
+    YOROI_CLAUDE_OAUTH_TOKEN: "fake-claude-token" };
 });
 
 Given("composed scheduler stops after {int} cycles", (cycles: number) => {

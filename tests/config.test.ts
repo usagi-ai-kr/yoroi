@@ -35,3 +35,18 @@ test('Ollama uses signing key path when present and credentials remain optional'
   assert.equal(withoutCreds.providers[0]?.signingKeyPath, undefined);
   assert.equal(withoutCreds.providers[1]?.apiKey, undefined);
 });
+
+test('Claude explicit OAuth overrides CLI OAuth; config directory and home retain their scope', () => {
+  const config = loadConfig({ YOROI_PROVIDERS: 'claude', HOME: '/fake/home',
+    CLAUDE_CONFIG_DIR: '/fake/config', YOROI_CLAUDE_OAUTH_TOKEN: 'explicit-test-token',
+    CLAUDE_CODE_OAUTH_TOKEN: 'cli-test-token', ANTHROPIC_API_KEY: 'unsupported-api-key' });
+  assert.equal(config.providers[0]?.oauthToken, 'explicit-test-token');
+  assert.equal(config.providers[0]?.configDir, '/fake/config');
+  assert.equal(config.providers[0]?.home, '/fake/home');
+  assert.equal(loadConfig({ YOROI_PROVIDERS: 'claude', CLAUDE_CODE_OAUTH_TOKEN: 'cli-test-token' })
+    .providers[0]?.oauthToken, 'cli-test-token');
+  assert.equal(loadConfig({ YOROI_PROVIDERS: 'claude', YOROI_CLAUDE_OAUTH_TOKEN: '',
+    CLAUDE_CODE_OAUTH_TOKEN: 'cli-test-token' }).providers[0]?.oauthToken, '');
+  assert.equal(loadConfig({ YOROI_PROVIDERS: 'claude', ANTHROPIC_API_KEY: 'unsupported-api-key' })
+    .providers[0]?.oauthToken, undefined);
+});

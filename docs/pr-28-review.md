@@ -68,3 +68,16 @@
   정상 percent는 보존하며 비용 요약 응답 문제 #29와는 별도로 검증한다.
 - 테스트 105개·BDD 22시나리오/120단계·타입 검사·빌드 통과, 레포 검사 116파일/3스킬 통과.
   실제 Claude 어댑터의 합성 출력부터 CLI reset 표시까지 BDD로 확인했다.
+
+## 자동 조회 재검토
+
+- 후속 댓글에서 print 경로의 모델 실행 보장 부족을 지적했다. Claude 자동 수집을 usage GET으로 교체했다.
+- 기본 5개 선택은 유지하며 CLI·모델 API·credential 갱신으로 fallback하지 않는다.
+- 인증 환경 대조·조회 근거·검증·회고는 [claude-readonly.md](claude-readonly.md)에 기록한다.
+
+## 최종 검증 (freeze, 2026-10-08)
+
+- 단위·통합 128개, BDD 25 시나리오/144 step, 레포 검사 129파일·3스킬 PASS.
+- 위 105개·22 시나리오·114/116파일 수치는 당시 라운드 기록이며 최종 수치가 아니다.
+- 최종 Claude 변경은 OAuth 사용량 GET 교체, 엄격한 reset 파싱, 인증 격리 회귀 테스트를 포함한다.
+- 상세 검증·한계는 [claude-readonly.md](claude-readonly.md), PR 답글 근거는 `/tmp/yoroi-claude-readonly-pr-result.md`.

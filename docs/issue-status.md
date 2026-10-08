@@ -17,7 +17,7 @@
 | 이슈 | 현재 결과 | 완료/후속 기준 |
 | --- | --- | --- |
 | #1 | 아키텍처·의존 방향 정의 및 검사 구현 | `docs/architecture.md`, import 경계 테스트 |
-| #2–3 | TypeScript 실행·빌드·TDD/BDD·CI 정의 구현 | Node/npm 고정, 로컬 check 통과 |
+| #2–3 | TypeScript 실행·빌드·TDD/BDD·CI 정의 구현 | Node/pnpm 고정, 로컬 check 통과 |
 | #4–5 | 도메인·UsageSource·정규화 오류 구현 | 불변조건 및 성공/실패 테스트 |
 | #6 | 프로세스 실행·JSONL handshake·timeout/cancel | fake child 테스트, shell 비사용 |
 | #7 | 환경 설정·공급자 선택·credential·timeout | 잘못된 설정은 조회 전에 실패 |
@@ -26,10 +26,10 @@
 | #12 | HTTP 경계·timeout·오류 정규화 구현 | fake fetch 테스트, 민감 헤더 비노출 |
 | #13–14 | Ollama 비공식 서명 API·OpenCode 공식 Go API 계약 확인 | pinned OpenUsage 및 공식 route 근거 |
 | #15 | Codex 공식 app-server 읽기 계약 및 합성 fixture | 공식 문서·파서 검사, 실제 조회 성공 |
-| #16–17 | 두 CLI `-p /usage` 직접 실행·출력 구조 확인 | AGY TSV 및 Claude 평문 계약 |
+| #16–17 | AGY CLI·Claude 읽기 전용 OAuth GET 계약 | Claude print 자동 호출 제거, 평문 파서는 호환용 |
 | #18–19 | Ollama/OpenCode HTTP 어댑터 구현·실제 조회 성공 | 현재 Ollama 집계/잔액 7개 창, OpenCode 3개 창 |
 | #20 | Codex UsageSource 구현·fake process 검증 | usedPercent/reset/bucket·형식 변경·오류 검사 |
-| #21–22 | AGY/Claude process 어댑터 구현 | 실제 조회 성공: 창 4개/2개, 개인 수치 기록 없음 |
+| #21–22 | AGY process·Claude GET 어댑터 구현 | Claude 인증·모델 실행 없는 조회 검증은 claude-readonly.md |
 | #23 | 다섯 실제 어댑터 기본 registry 연결 | 설정·credential·timeout·선택 순서 검사 |
 | #24 | 실제 5개 어댑터의 경계 fake BDD 추가 | 전체 성공·HTTP/CLI 실패 격리·watch 종료 검사 |
 | #25 | 현재 실행·아키텍처·제약·로드맵 동기화 | 전체 MVP 완료로 표시하지 않음 |

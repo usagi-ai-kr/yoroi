@@ -1,24 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { ClaudeSource } from '../src/infra/claude-source.js';
 import { parseClaudeUsage } from '../src/infra/cli-usage-parser.js';
-import type { ProcessRequest, ProcessRunner } from '../src/infra/process-port.js';
 
 const observedAt = '2026-10-07T00:00:00Z';
 const fixture = await readFile(new URL('./fixtures/claude-usage.txt', import.meta.url), 'utf8');
 
-function runner(stdout: string, exitCode = 0, stderr = ''): ProcessRunner {
-  return { run: async (_request: ProcessRequest) => ({ stdout, stderr, exitCode }) };
-}
-
-test('Claude source runs claude -p /usage and maps session/weekly windows', async () => {
-  const fake: ProcessRunner = { run: async request => {
-    assert.equal(request.executable, 'claude');
-    assert.deepEqual(request.args, ['-p', '/usage']);
-    return { stdout: fixture, stderr: '', exitCode: 0 };
-  } };
-  const snapshot = await new ClaudeSource(fake, 'claude', 5000, () => observedAt).read();
+test('historical human CLI output maps session/weekly windows without executing Claude', () => {
+  const snapshot = parseClaudeUsage(fixture, observedAt);
   assert.equal(snapshot.provider, 'claude');
   assert.equal(snapshot.windows.length, 2);
   assert.equal(snapshot.windows[0]?.id, 'session:5h');
@@ -57,15 +46,14 @@ test('Claude maps Sonnet resets and keeps percent when a reset is missing or inv
   ]);
 });
 
-test('Claude source normalizes exit code and authentication errors', async () => {
-  await assert.rejects(new ClaudeSource(runner('', 1)).read(), { code: 'exit' });
-  await assert.rejects(new ClaudeSource(runner('Please run /login to authenticate')).read(), {
+test('human CLI parser normalizes authentication and unsupported output', () => {
+  assert.throws(() => parseClaudeUsage('Please run /login to authenticate', observedAt), {
     code: 'authentication',
   });
-  await assert.rejects(new ClaudeSource(runner('', 1, 'Error: unauthorized /login required')).read(), {
+  assert.throws(() => parseClaudeUsage('Error: unauthorized /login required', observedAt), {
     code: 'authentication',
   });
-  await assert.rejects(new ClaudeSource(runner('Unexpected plain text without usage')).read(), {
+  assert.throws(() => parseClaudeUsage('Unexpected plain text without usage', observedAt), {
     code: 'parse',
   });
 });

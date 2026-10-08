@@ -1,7 +1,7 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
 - 버전 원본: `package.json` version `0.1.0`, private 유지.
-- 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–27 연결.
+- 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–27 및 #29 연결.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
 - CLI `--version`은 package.json을 읽는다. 빌드도 같은 JSON을 산출물에 포함한다.
 - tag·Release는 발행하지 않았다. 변경은 `dev → main` PR로 게시하며 해당 PR의 CI를 확인한다.
@@ -25,8 +25,8 @@
 - dev는 `.env`를 Node 기본 옵션으로 읽는다. 이미 설정된 환경 변수가 우선한다.
 - [설치 지침](https://pnpm.io/installation)과 [공식 CI action](https://github.com/pnpm/setup)을 확인했다.
 - 로컬 PATH의 기존 pnpm 11이 충돌해 Node/Corepack shim 경로를 우선하여 검증했다.
-- 검증: pnpm check 75개 테스트·BDD 16시나리오/87step·타입·빌드 통과,
-  레포 검사 106파일·3스킬 통과. pnpm dev 실제 API 조회와 빌드 `--version`도 확인했다.
+- 검증(당시): pnpm check 75개 테스트·BDD 16시나리오/87step 통과. pnpm dev 실제 API 조회와 빌드 `--version`도 확인했다.
+- 최종 검증(freeze): 단위·통합 128개 통과, BDD 25 시나리오/144 step 통과, 레포 검사 129파일·3스킬 PASS.
 
 ## GitHub 조치
 
@@ -49,3 +49,5 @@
 - Ollama 인증/포맷 변경·네트워크·응답 크기 초과에서 다른 공급자의 결과가 유지되는지 검사한다.
   비공식 API의 영향은 해당 공급자에 한정하고 누락 수치를 생성하지 않는다.
 - PR 리뷰 조치와 완료 기준은 [pr-28-review.md](pr-28-review.md)에 기록한다.
+- Claude 자동 수집은 CLI print 경로를 제거하고 OAuth 사용량 GET으로 보강했다.
+  최신 인증·조회 계약과 실행 검증은 [claude-readonly.md](claude-readonly.md)에 기록한다.

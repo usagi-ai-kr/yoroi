@@ -6,6 +6,10 @@ export interface ProviderSettings {
   readonly timeoutMs: number;
   readonly apiKey?: string;
   readonly signingKeyPath?: string;
+  readonly oauthToken?: string;
+  readonly configDir?: string;
+  readonly secureStorageConfigDir?: string;
+  readonly home?: string;
 }
 export interface RuntimeConfig {
   readonly providers: readonly ProviderSettings[];
@@ -35,6 +39,16 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): R
     const setting: ProviderSettings = {
       id, executable, timeoutMs: positive(env[`${prefix}_TIMEOUT_MS`], timeoutMs, 'provider timeout'),
     };
+    if (id === 'claude') {
+      const oauthToken = env.YOROI_CLAUDE_OAUTH_TOKEN ?? env.CLAUDE_CODE_OAUTH_TOKEN;
+      return { ...setting,
+        ...(oauthToken !== undefined ? { oauthToken } : {}),
+        ...(env.CLAUDE_CONFIG_DIR !== undefined ? { configDir: env.CLAUDE_CONFIG_DIR } : {}),
+        ...(env.CLAUDE_SECURESTORAGE_CONFIG_DIR !== undefined
+          ? { secureStorageConfigDir: env.CLAUDE_SECURESTORAGE_CONFIG_DIR } : {}),
+        ...(env.HOME !== undefined ? { home: env.HOME } : {}),
+      };
+    }
     if (id === 'ollama-pro') {
       const rawPath = env.YOROI_OLLAMA_PRO_SIGNING_KEY_PATH ??
         (env.HOME ? `${env.HOME}/.ollama/id_ed25519` : undefined);

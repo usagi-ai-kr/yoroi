@@ -1,7 +1,8 @@
 # CLI MVP 아키텍처 (#1)
 
 - 목표: `once` 단발 조회와 `watch` 즉시 조회 후 기본 60초 반복 조회.
-- 대상: Ollama Pro(비공식 서명 API)·OpenCode Go(공식 API), Codex·AGY·Claude(로컬 CLI).
+- 대상: Ollama Pro(비공식 서명 API)·OpenCode Go(공식 API), Codex·AGY(로컬 CLI),
+  Claude(내부 OAuth 사용량 GET). Claude 자동 수집은 CLI·모델 요청을 실행하지 않으며 macOS Keychain은 읽기 전용으로만 조회한다.
 - 웹 UI·DB/히스토리 저장·알림은 MVP 후속 범위다.
 
 ## 계층과 의존 방향

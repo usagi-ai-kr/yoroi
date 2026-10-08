@@ -9,15 +9,21 @@ import { fileOllamaAuthorization } from '../infra/ollama-key.js';
 import { OpenCodeGoSource } from '../infra/opencode-go-source.js';
 import { AgySource } from '../infra/agy-source.js';
 import { ClaudeSource } from '../infra/claude-source.js';
+import { claudeAuthorization } from '../infra/claude-credentials.js';
+import type { HttpClient } from '../infra/http-client.js';
+import type { ProcessRunner } from '../infra/process-port.js';
 
 export type SourceFactories = Partial<Record<ProviderId, (settings: ProviderSettings) => UsageSource>>;
-export function defaultFactories(): SourceFactories {
+export function defaultFactories(ports: { http?: HttpClient; runner?: ProcessRunner } = {}): SourceFactories {
+  const runner = ports.runner ?? new NodeProcessRunner();
+  const client = ports.http ?? new NodeHttpClient();
   return {
-    codex: settings => new CodexSource(new NodeProcessRunner(), settings.executable, settings.timeoutMs),
-    agy: settings => new AgySource(new NodeProcessRunner(), settings.executable, settings.timeoutMs),
-    claude: settings => new ClaudeSource(new NodeProcessRunner(), settings.executable, settings.timeoutMs),
-    'opencode-go': settings => new OpenCodeGoSource(new NodeHttpClient(), settings.apiKey ?? '', settings.timeoutMs),
-    'ollama-pro': settings => new OllamaSource(new NodeHttpClient(),
+    codex: settings => new CodexSource(runner, settings.executable, settings.timeoutMs),
+    agy: settings => new AgySource(runner, settings.executable, settings.timeoutMs),
+    claude: settings => new ClaudeSource(client,
+      claudeAuthorization(settings, runner), settings.timeoutMs),
+    'opencode-go': settings => new OpenCodeGoSource(client, settings.apiKey ?? '', settings.timeoutMs),
+    'ollama-pro': settings => new OllamaSource(client,
       fileOllamaAuthorization(settings.signingKeyPath ?? ''), settings.timeoutMs),
   };
 }

@@ -46,7 +46,12 @@ pnpm run check
 - `YOROI_INTERVAL_SECONDS`: 기본 60, 정수 1–86400초.
   `watch --interval`은 초 단위 override이며 최대 86400초, 최소 1ms 단위 양수다.
 - `YOROI_TIMEOUT_MS`: 기본 10000. `YOROI_<공급자>_TIMEOUT_MS`로 개별 override.
-- `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`, `YOROI_CLAUDE_PATH`: 실행 파일 경로, 기본 PATH 탐색.
+- `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로, 기본 PATH 탐색.
+- Claude는 CLI를 실행하지 않고 OAuth 사용량 GET만 호출한다. 인증 우선순위는
+  `YOROI_CLAUDE_OAUTH_TOKEN` → `CLAUDE_CODE_OAUTH_TOKEN` → 기존 저장소다.
+  `CLAUDE_CONFIG_DIR` 또는 실행 계정 HOME의 설정을 읽는다. 로그인·갱신·저장은 수행하지 않는다.
+  macOS Keychain은 `security find-generic-password` 읽기 호출만 사용하며 실패하면 같은 프로필의 파일을 본다.
+  API key/Bedrock/Vertex를 구독 OAuth로 대체하지 않는다. 상세 근거는 [읽기 전용 검증](claude-readonly.md).
 - OpenCode Go는 `YOROI_OPENCODE_GO_API_KEY`가 필요하다.
 - Ollama는 기본 `$HOME/.ollama/id_ed25519`를 사용한다.
   `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`로 서명 키 경로를 변경한다. Bearer 토큰과 다르다.
@@ -59,7 +64,7 @@ pnpm run check
 | Ollama Pro | 비공식 서명 usage/balance API | 실제 조회 성공·7개 창 파싱 | [계약](contracts-ollama.md) |
 | OpenCode Go | 공식 Go usage API | 실제 조회 성공·3개 창 파싱 | [계약](contracts-opencode.md) |
 | AGY | `agy -p /usage` | 구현·실제 CLI 구조 확인 | [계약](contracts-agy.md) |
-| Claude | `claude -p /usage` | 구현·실제 CLI 구조 확인 | [계약](contracts-claude.md) |
+| Claude | OAuth usage GET (내부 경로) | CLI 실행 제거·읽기 전용 경계 검증 | [계약](contracts-claude.md) |
 
 - 계층·의존 규칙은 [architecture.md](architecture.md), 이슈별 결과는 [issue-status.md](issue-status.md).
 - 웹 UI·DB/히스토리 저장·알림은 이번 CLI 범위 밖이다.

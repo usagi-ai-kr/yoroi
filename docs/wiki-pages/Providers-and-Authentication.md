@@ -16,7 +16,7 @@
 - `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로를 지정할 때 사용합니다.
 - `YOROI_OPENCODE_GO_API_KEY`: OpenCode Go API key를 실행 환경에 제공합니다.
 - `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`: Ollama Pro Ed25519 서명 키 경로를 바꿉니다.
-- 실행 시 이미 설정된 환경 변수가 `.env` 값보다 우선합니다. 변수명만 문서화하며 실제 값을 Wiki에 올리지 마세요.
+- 실행 시 이미 설정된 환경 변수가 두 `.env` 값보다 우선하며, 남은 키는 cwd `.env`가 설치 사본보다 우선합니다(키 단위 병합, 통째 대체 아님). 변수명만 문서화하며 실제 값을 Wiki에 올리지 마세요.
 
 ## Claude OAuth
 

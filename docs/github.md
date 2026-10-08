@@ -2,10 +2,12 @@
 
 ## 현재 상태
 
-- 권한 조정 후 로컬 Git을 `main` 브랜치로 초기화했다.
+- 현재 작업 브랜치는 `dev`이며 `dev → main` PR로 게시한다.
 - 원격: `origin` → `https://github.com/qus0in/yoroi.git`.
-- 브랜치 보호·관리 라벨·자동 머지 옵션은 아직 적용하지 않았다.
-- 아래는 운영 목표이며 원격에 적용된 설정을 의미하지 않는다.
+- 관리 라벨: `.github/labels.json` 9개를 원격에 적용 완료했다(기존 기본 라벨 10개는 사용자 지시로 삭제).
+- 2026-10-08 main 보호 적용: PR 필수, 승인 0명, `ci` 필수·strict, 관리자 포함,
+  force push·삭제 금지. 기존 성공 workflow의 실제 job 이름 `ci`를 확인했다.
+- 자동 머지 옵션은 아직 적용하지 않았다. 아래 머지·브랜치 유지 항목은 운영 목표다.
 
 | 항목 | 운영 목표 |
 | --- | --- |
@@ -26,7 +28,7 @@
 ## 이슈와 PR
 
 - 일반 절차: `.agents/skills/github-workflow/SKILL.md`.
-- 라벨 정의: `.github/labels.json`. 기존 라벨을 삭제하지 않는다.
+- 라벨 정의: `.github/labels.json`. 기본 라벨 10개는 사용자 명시 지시로 정리 완료.
 - 이슈 템플릿: 계획/작업용 `task.md`, 사람 조치용 `handle.md`.
 - 현황 보고는 `report`, 대기 상태는 `hold`로 표시한다.
 - 커밋 제목은 `<feature|fix|docs|chore>: <요약>`을 권장한다.

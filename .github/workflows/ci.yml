@@ -19,3 +19,11 @@ jobs:
           persist-credentials: false
       - name: Validate repository and skills
         run: python3 scripts/validate-repo.py
+      - uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          cache: true
+          install: false
+      - name: Install dependencies (frozen)
+        run: pnpm install --frozen-lockfile
+      - name: Check (typecheck, tests, BDD, build)
+        run: pnpm run check

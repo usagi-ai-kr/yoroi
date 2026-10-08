@@ -1,0 +1,27 @@
+{
+  "name": "yoroi",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.13.1"
+  },
+  "packageManager": "pnpm@12.10.1",
+  "bin": {
+    "yoroi": "dist/src/main.js"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --import tsx src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "test:bdd": "node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config cucumber.mjs",
+    "check": "pnpm run typecheck && pnpm run test && pnpm run test:bdd && pnpm run build"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "13.3.0",
+    "@types/node": "26.6.4",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

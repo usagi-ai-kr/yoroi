@@ -1,7 +1,64 @@
 # 개발과 검증
 
-Yoroi는 AI 사용량 모니터링 프로젝트다. 기술 스택· 수집 방식·실행 명령은 아직 미정이다.
-빌드 도구는 구현을 시작할 때 결정하고 명령을 이 문서에 추가한다.
+Yoroi는 AI 사용량 모니터링 CLI다. Node 24.13.1·pnpm 12.10.1을 고정한다.
+TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD는 Cucumber다.
+버전 원본은 `package.json`의 `0.1.0`이며 [milestone](https://github.com/qus0in/yoroi/milestone/1)과 연결한다. 릴리스 발행은 없다.
+
+## 앱 실행과 검증
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run dev --help
+pnpm run dev once
+pnpm run dev watch
+pnpm run dev watch --interval 30
+pnpm run typecheck
+pnpm test
+pnpm run test:bdd
+pnpm run build
+node --env-file-if-exists=.env dist/src/main.js --help
+node dist/src/main.js --version
+pnpm run check
+```
+
+- `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
+- `watch`: 즉시 1회 후 기본 60초 간격, 이전 수집 종료 후 대기하므로 조회는 겹치지 않는다.
+- SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
+- `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
+- 테스트는 fake source/HTTP/process/scheduler 및 합성 fixture를 사용한다.
+  실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
+- dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다.
+  이미 지정된 환경 변수가 .env보다 우선한다. .env는 Git ignore 대상이다.
+- pnpm 버전은 packageManager에 고정한다. Corepack 사용 시 `corepack enable pnpm`으로 활성화한다.
+- [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)의 현행 지침을 적용한다.
+  다른 pnpm이 PATH에서 앞서면 `pnpm --version`으로 확인하고 Node/Corepack 경로를 우선한다.
+- CI에는 레포 검사와 pnpm install --frozen-lockfile/typecheck/test/BDD/build를 연결했다. 새 CI의 원격 실행은 미확인이다.
+
+## 설정과 공급자 상태
+
+- 설정은 `src/config/load-config.ts`에서 환경 변수로 읽고 composition root에서 해석한다.
+- `YOROI_PROVIDERS`: 쉼표로 공급자 선택. 기본 `codex`. 중복·미지원 ID는 설정 오류다.
+- `YOROI_INTERVAL_SECONDS`: 기본 60, 정수 1–86400초.
+  `watch --interval`은 초 단위 override이며 최대 86400초, 최소 1ms 단위 양수다.
+- `YOROI_TIMEOUT_MS`: 기본 10000. `YOROI_<공급자>_TIMEOUT_MS`로 개별 override.
+- `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`, `YOROI_CLAUDE_PATH`: 실행 파일 경로, 기본 PATH 탐색.
+- OpenCode Go는 `YOROI_OPENCODE_GO_API_KEY`가 필요하다.
+- Ollama는 기본 `$HOME/.ollama/id_ed25519`를 사용한다.
+  `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`로 서명 키 경로를 변경한다. Bearer 토큰과 다르다.
+- credential은 로그·오류·fixture에 출력하지 않는다. 개인 사용량 원본은 저장하지 않는다.
+
+| 공급자 | 수집 방식 | 실제 구현 상태 | 계약 |
+| --- | --- | --- | --- |
+| Codex | CLI app-server JSONL | 구현·fake 테스트·실제 조회 성공 | [계약](contracts-codex.md) |
+| Ollama Pro | 비공식 서명 usage/balance API | 실제 조회 성공·7개 창 파싱 | [계약](contracts-ollama.md) |
+| OpenCode Go | 공식 Go usage API | 실제 조회 성공·3개 창 파싱 | [계약](contracts-opencode.md) |
+| AGY | `agy -p /usage` | 구현·실제 CLI 구조 확인 | [계약](contracts-agy.md) |
+| Claude | `claude -p /usage` | 구현·실제 CLI 구조 확인 | [계약](contracts-claude.md) |
+
+- 계층·의존 규칙은 [architecture.md](architecture.md), 이슈별 결과는 [issue-status.md](issue-status.md).
+- 웹 UI·DB/히스토리 저장·알림은 이번 CLI 범위 밖이다.
+- CLI/API 호출은 실행 호스트에서 수행한다. 서버에서도 같은 수집 포트를 사용하며
+  CLI 설치·로그인·키 파일 권한은 서버 실행 계정에 맞춘다.
 
 ## 기본 검증
 
@@ -15,9 +72,8 @@ bash .agents/skills/skill-authoring/scripts/validate.sh .agents/skills/github-wo
 - 추적 파일과 ignore되지 않은 신규 파일을 검사한다. staging은 필요 없다.
 - Git 초기화 전에는 임시 Git 디렉터리로 파일 목록만 조회하며 저장소를 변경하지 않는다.
 - 스킬 필수 필드·이름·상대 링크, 전체 파일 줄 수·심볼릭 링크를 검증한다.
-- CI는 문서·스킬 변경에도 같은 검증을 실행한다. 앱 빌드·테스트는 아직 없다.
-- 빌드·테스트가 생기면 `.github/workflows/ci.yml`의 `ci` job에 추가한다.
-- 외부 패키지 설치나 네트워크 접속 없이 검증할 수 있다.
+- CI는 문서·스킬 변경에도 같은 레포 검증을 실행한다.
+- 레포 검증 자체는 외부 패키지 설치나 네트워크 접속 없이 실행할 수 있다.
 
 ## 파일 크기 예외
 

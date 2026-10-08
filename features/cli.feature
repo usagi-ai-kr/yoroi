@@ -18,7 +18,7 @@ Feature: 5개 공급자 CLI once/watch 수용 시나리오
     When I run "once"
     Then the CLI exit code is 0
     And the CLI stdout contains "observed=2026-10-07T00:00:00Z"
-    And the CLI stdout contains "- weekly [requests] used=3 remaining=unknown limit=10"
+    And the CLI stdout contains "- weekly [requests] usage_status=n/a used=3 remaining=unknown limit=10"
 
   Scenario: usage창 percent와 관측시각을 출력한다
     Given provider "codex" reports window "weekly" with percent=30

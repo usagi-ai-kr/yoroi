@@ -3,6 +3,7 @@ import type { ProviderId, UsageWindow } from "../../domain/usage.js";
 import { expectedMetrics } from "./expected.js";
 import { formatNumber, formatTimeLeft } from "./format.js";
 import { displayWindows, windowLabels } from "./labels.js";
+import { usageStatus } from "./pace.js";
 
 export { displayWindows, windowLabels } from "./labels.js";
 
@@ -14,17 +15,18 @@ function value(metric: number | string | undefined): string {
   return metric === undefined ? "unknown" : show(metric);
 }
 
-function renderWindow(window: UsageWindow, observedAt: string, windows: readonly UsageWindow[],
-  label: string): string {
+function renderWindow(provider: ProviderId, window: UsageWindow, observedAt: string,
+  windows: readonly UsageWindow[], label: string): string {
   const left = formatTimeLeft(window.resetAt, observedAt);
   const metrics = [
+    `usage_status=${usageStatus(provider, window, windows, observedAt)}`,
     `used=${value(window.used)}`,
     `remaining=${value(window.remaining)}`,
     `limit=${value(window.limit)}`,
     `percent=${value(window.percent)}`,
     `reset=${value(window.resetAt)}`,
     `reset_in=${left?.replace(" ", "") ?? "unknown"}`,
-    ...expectedMetrics(window, windows, observedAt),
+    ...expectedMetrics(provider, window, windows, observedAt),
   ];
   return `  - ${label} [${window.unit}] ${metrics.join(" ")}`;
 }
@@ -52,7 +54,7 @@ export function renderResult(result: UsageResult): string[] {
         `${header} (no usage windows reported)`];
     }
     return [header, ...visible.map((window, index) =>
-      renderWindow(window, observedAt, visible, labels[index]!))];
+      renderWindow(provider, window, observedAt, visible, labels[index]!))];
   }
   return [`${result.provider}: error [${result.error.code}] ${result.error.message}`];
 }

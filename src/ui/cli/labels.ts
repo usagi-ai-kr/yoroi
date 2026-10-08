@@ -1,17 +1,19 @@
 import type { ProviderId, UsageWindow } from "../../domain/usage.js";
+import { sortByRank } from "./order.js";
 
 type Base = "5h" | "w" | "m";
 
 interface Entry { readonly id: string; readonly base?: Base; readonly stages?: readonly string[] }
 
 const OPENCODE: Readonly<Record<string, Base>> = { rolling: "5h", weekly: "w", monthly: "m" };
-const OLLAMA_TARGETS = new Set(["monthly", "credits:included", "credits:purchased"]);
+const OLLAMA_TARGETS = new Set(["monthly", "credits:included"]);
 
-/** 표시할 창만 고른다. ollama-pro는 월간·크레딧 대상만 남기고, 없으면 빈 목록을 돌려준다. */
+/** 표시할 창만 골라 m→w→5h→등급 없음 순으로 안정 정렬한다. ollama-pro는 월간 대상만, 없으면 빈 목록. */
 export function displayWindows(provider: ProviderId,
   windows: readonly UsageWindow[]): readonly UsageWindow[] {
-  if (provider !== "ollama-pro") return windows;
-  return windows.filter((window) => OLLAMA_TARGETS.has(window.id));
+  const visible = provider === "ollama-pro"
+    ? windows.filter((window) => OLLAMA_TARGETS.has(window.id)) : [...windows];
+  return sortByRank(windowLabels(provider, visible), visible);
 }
 
 function word(text: string): string {

@@ -1,6 +1,6 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
-- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.1`(아래 0.1.1 릴리스 준비 참조).
+- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.1.2` 준비(PR #66 재검토 대기, v0.1.0·v0.1.1 발행 완료).
 - 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–#12·#18–#28·#56–#61 연결.
   #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
@@ -47,7 +47,7 @@
 
 - 비공식 API의 참조 구현과 실제 응답은 다를 수 있다. 인증 후 필드·자료형만 확인하고
   실제 구조의 합성 fixture로 회귀 검증한다. 없는 quota·reset은 추정하지 않는다.
-- 버전 파일을 추가하지 않고 manifest·CLI 출력·milestone·예정 tag를 같은 SemVer에 연결한다.
+- 버전 파일을 추가하지 않고 manifest·CLI 출력·milestone·tag를 같은 SemVer에 연결한다.
 - 릴리스 시 해당 커밋의 타입·단위·BDD·빌드·레포 검사와 원격 CI를 확인한다.
   발행 요청 시에만 검증된 커밋에 tag와 Release를 연결한다.
 - Ollama 인증/포맷 변경·네트워크·응답 크기 초과에서 다른 공급자의 결과가 유지되는지 검사한다.
@@ -59,7 +59,7 @@
 ## 2026-10-08 문서·자동화 정리 (PR #62)
 
 - PR #62 병합 `1b3b027`(head `b09ac71`). PR CI `37720540457`, push CI `37720536646` success.
-- 버전: `package.json` 0.1.0 유지. tag·GitHub Release 미발행. `scripts/version.py`는 쓰기 작업을 하지 않는다.
+- 버전: `package.json` `0.1.0`(당시). tag·GitHub Release는 이 시점엔 미발행이었다(현재 v0.1.0·v0.1.1 발행 완료). `scripts/version.py`는 쓰기 작업을 하지 않는다.
 - 검증 수치: TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests PASS.
 - 기록: 초기 README 이미지는 중세 유럽 기사 갑옷으로 교체 완료.
 
@@ -72,21 +72,25 @@
 
 ## 2026-10-08 v0.1.0 발행·Wiki 게시·마일스톤 close (root 조치)
 
-- PR #63 merge commit `6a6802a`(main). PR head `e6ffd2e`,
-- [PR CI](https://github.com/qus0in/yoroi/actions/runs/37725084420) success(main 트리 동일, ci.yml main push 트리거 없음).
+- PR #63 merge commit `6a6802a`(main), PR head `e6ffd2e`, PR CI `37725084420` success.
 - [v0.1.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`).
 - Wiki 원격 master `a181ccb` 게시, 새 clone으로 6페이지 main 소스와 동일 확인.
 - #58·#56 close, 0.1.0 milestone close(31 closed, open 0).
 - 0.1.1 milestone에 #13–#17·#29 open.
-- 0.2.0 준비 설계 문서는 로컬 브랜치 `next-0.2.0` worktree
-- (`/Users/young-mini/Workspace/yoroi-0.2.0`)의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+- 0.2.0 설계 문서는 `next-0.2.0` worktree(`docs/v0.2.0/`)에 위치.
 
-## 2026-10-08 0.1.1 릴리스 준비 (root 결정, 발행 전)
+## 2026-10-08 0.1.1 발행 완료 (root 조치)
 
-- 버전: `package.json` `0.1.1`. 예정 tag `v0.1.1`, target은 dev → main 머지 커밋(아직 미발행).
-- 포함 변경 `v0.1.0..origin/dev`: PR #64 표시 개선(Ollama activity 숨김·창 짧은 표기,
-  `4b16213`·`5d6a5de`·`1ad5240`·`cd82c9a`)과 `f8ba205` 계약 대조·fixture 보강(#13–#17).
-  `bf391bb` v0.1.0 발행 기록도 범위에 포함된다.
-- 이슈: #15·#16·#17 closed. #13(429 rate limit·Retry-After 미실측)·#14(balance fallback 미실측)은 open 유지,
-  #29는 `hold` open 유지.
-- milestone #3(0.1.1)은 open인 #13·#14·#29를 남긴 채 close 예정이며 다른 milestone로 옮기지 않는다.
+- 버전: `package.json` `0.1.1`. [v0.1.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1)
+  발행(target: PR #65 머지 커밋 `7470250`).
+- 머지 후 검증: main push CI 부재로 workflow_dispatch [run 37735089637](https://github.com/qus0in/yoroi/actions/runs/37735089637) 실행 success.
+- 포함 변경 `v0.1.0..7470250`: PR #64 표시 개선, `f8ba205` 계약 대조(#13–#17), `94e06fa` 버전 갱신.
+- 이슈: #15·#16·#17 closed. #13·#14·#29 open 유지 후 0.1.2 milestone(#4)으로 이동.
+- milestone #3(0.1.1) close 완료.
+
+## 2026-10-08 0.1.2 준비 (버전 증가, 미발행)
+
+- 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08). PR #66 리뷰 반영 후 재검토 대기 중.
+- v0.1.2 tag·Release 미발행(사용자 승인 필요).
+- milestone 0.1.2(#4) open 이슈 #13·#14·#29는 이번 PR로 닫지 않고 open 유지.
+- 0.2.0 보류: 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).

@@ -6,7 +6,7 @@ Welcome to the yoroi wiki!
 
 Yoroi는 다섯 공급자의 사용량을 한 번 조회하거나 주기적으로 표시하는 로컬 CLI입니다.
 
-- 현재 버전: `0.1.0` (아직 공개 Release 없음)
+- 현재 버전: `0.1.2` (v0.1.0·v0.1.1 Release 발행 완료, 0.1.2는 dev에서 준비 중)
 - 기본 공급자: Ollama Pro, OpenCode Go, Codex, AGY, Claude
 - 공급자별 조회 실패는 분리하며 다른 공급자 조회를 계속합니다.
 - 사용량 이력 데이터베이스나 웹 UI는 현재 범위에 포함되지 않습니다.

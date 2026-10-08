@@ -16,8 +16,8 @@ test("credits:included is monthly and needs a validated period start", () => {
   assert.equal(quotaKind("credits:included"), "monthly");
   assert.equal(quotaKind("credits:purchased"), undefined);
   assert.equal(formatNumber(expectedPercent(credits, "2026-10-15T00:00:00.000Z")!), "45.17");
-  assert.equal(expectedSuffix(weekly, [weekly, credits], "2026-10-15T00:00:00.000Z"), "");
-  assert.equal(expectedSuffix(credits, [weekly, credits], "2026-10-15T00:00:00.000Z"), " (exp 45.17%)");
+  assert.equal(expectedSuffix("ollama-pro", weekly, [weekly, credits], "2026-10-15T00:00:00.000Z"), "");
+  assert.equal(expectedSuffix("ollama-pro", credits, [weekly, credits], "2026-10-15T00:00:00.000Z"), " (exp 45.17%)");
 });
 
 test("credits:included hides expected without a usable period start", () => {

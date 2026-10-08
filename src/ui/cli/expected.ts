@@ -1,4 +1,4 @@
-import type { UsageWindow } from "../../domain/usage.js";
+import type { ProviderId, UsageWindow } from "../../domain/usage.js";
 import { formatNumber } from "./format.js";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -20,6 +20,13 @@ export function quotaKind(id: string): QuotaKind | undefined {
 export function selectExpectedWindow(windows: readonly UsageWindow[]): UsageWindow | undefined {
   const monthly = windows.find((window) => quotaKind(window.id) === "monthly");
   return monthly ?? windows.find((window) => quotaKind(window.id) === "weekly");
+}
+
+/** agy는 주간 창 전부를 대상으로 하고, 그 외 공급자는 가장 긴 창 하나만 대상으로 한다. */
+export function isExpectedWindow(provider: ProviderId, window: UsageWindow,
+  windows: readonly UsageWindow[]): boolean {
+  if (provider === "agy") return quotaKind(window.id) === "weekly";
+  return selectExpectedWindow(windows) === window;
 }
 
 function calendarMonthStart(end: Date): number {
@@ -51,20 +58,21 @@ export function expectedPercent(window: UsageWindow, observedAt: string): number
   return Math.min(100, Math.max(0, elapsed));
 }
 
-function selectedPercent(window: UsageWindow, windows: readonly UsageWindow[],
-  observedAt: string): number | undefined {
-  if (selectExpectedWindow(windows) !== window) return undefined;
+/** 표시 대상이면 선택된 창의 예상 균등 사용량 원본값을, 아니면 undefined를 돌려준다. */
+export function selectedExpectedPercent(provider: ProviderId, window: UsageWindow,
+  windows: readonly UsageWindow[], observedAt: string): number | undefined {
+  if (!isExpectedWindow(provider, window, windows)) return undefined;
   return expectedPercent(window, observedAt);
 }
 
-export function expectedMetrics(window: UsageWindow, windows: readonly UsageWindow[],
-  observedAt: string): string[] {
-  const percent = selectedPercent(window, windows, observedAt);
+export function expectedMetrics(provider: ProviderId, window: UsageWindow,
+  windows: readonly UsageWindow[], observedAt: string): string[] {
+  const percent = selectedExpectedPercent(provider, window, windows, observedAt);
   return percent === undefined ? [] : [`expected=${formatNumber(percent)}`];
 }
 
-export function expectedSuffix(window: UsageWindow, windows: readonly UsageWindow[],
-  observedAt: string): string {
-  const percent = selectedPercent(window, windows, observedAt);
+export function expectedSuffix(provider: ProviderId, window: UsageWindow,
+  windows: readonly UsageWindow[], observedAt: string): string {
+  const percent = selectedExpectedPercent(provider, window, windows, observedAt);
   return percent === undefined ? "" : ` (exp ${formatNumber(percent)}%)`;
 }

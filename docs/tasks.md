@@ -10,22 +10,29 @@
   PR #63(`6a6802a`, head `e6ffd2e`, PR CI `37725084420` success).
 - v0.1.0 [tag·Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.0) 발행(target `6a6802a`).
 - Wiki 원격 master `a181ccb` 게시, 새 clone 6페이지 동일 확인. #58·#56 close.
-- 0.1.0 milestone close(31 closed, open 0). 0.1.1에 #13–#17·#29 open.
+- 0.1.0 milestone close(31 closed, open 0). 0.1.1 milestone close(#15–#17 closed).
+  잔존 #13·#14·#29는 새 milestone 0.1.2로 이동(사용자 결정 2026-10-08).
 - PR #62 검증: PR CI `37720540457` success, push CI `37720536646` success.
 - 구현·문서 자동화 완료(main 반영): CI 분류기와 docs-only fast pass, `test_*.py` unittest, agent-coordination 스킬, 버전 스크립트, pretty CLI(`--pretty`), README 중세 유럽 기사 갑옷 이미지.
 - 검증 수치(루트 보고): TS 136 tests, BDD 25 시나리오/144 step, Python 19 tests, 스킬 테스트 PASS.
 - 닫힌 이슈: #1–#25 중 완료 기준을 충족한 항목, #3(red→green 실측), #22, #25, #57, #59, #60, #61. #13–#17·#29는 0.1.1로 이동했고 계약 대조 후 #15–#17 closed.
-- 버전: `package.json` `0.1.1`. v0.1.0 tag·Release 발행 완료(PR #63 병합 후).
-- 0.1.1 릴리스 준비: 예정 tag `v0.1.1`, target은 dev → main 머지 커밋(미발행).
-  포함 변경 `v0.1.0..origin/dev`: PR #64 표시 개선(Ollama activity·창 짧은 표기)과 `f8ba205` 계약 대조(#13–#17).
+- 버전: `package.json` `0.1.2`(사용자 결정 2026-10-08). v0.1.0·v0.1.1 tag·Release 발행 완료.
+- 0.1.2 준비: PR #66 리뷰 반영 후 재검토 대기, v0.1.2 tag·Release는 미발행(사용자 승인 필요). 포함 변경 `v0.1.1..origin/dev`:
+  전역 설치·.env 원자 복사(0600), 정렬 m→w→h, agy 주간 exp, credits:purchased 숨김, under/optimal/over,
+  Status 열 이동. milestone 0.1.2의 #13·#14·#29는 이번 PR로 닫지 않고 open 유지.
+- 0.1.1 발행 완료: PR #65 머지 커밋 `7470250`, 머지 후 workflow_dispatch CI run `37735089637` success,
+  [v0.1.1 tag·Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.1) 발행, milestone #3 close
+  (open 3: #13·#14·#29 유지·이관 없음).
+  포함 변경 `v0.1.0..7470250`: PR #64 표시 개선(Ollama activity·창 짧은 표기)과 `f8ba205` 계약 대조(#13–#17).
 - PR #63(dev, 커밋 `62f55fd`·`51bfac8`): CLI 숫자 올림·reset_in 표시, 오케스트레이터 분담·graceful-stop 스킬. 병합 `6a6802a` 완료.
 
 ## 남은 작업
 
-- 0.1.1: #15–#17 closed. #13(429 미실측)·#14(balance fallback 미실측)·#29(hold) open 유지.
-  milestone #3은 open 이슈를 남긴 채 close 예정이며 다른 milestone로 옮기지 않는다.
-- 0.2.0: #30–#55. 준비 설계 문서는 로컬 브랜치 `next-0.2.0` worktree
-  (`/Users/young-mini/Workspace/yoroi-0.2.0`)의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+- 0.1.2(milestone #4): #13(429 미실측)·#14(balance fallback 미실측)·#29(Claude `/usage` 환경별 차이, hold) open.
+  0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
+- 0.2.0 보류: 계획 문서 [v0.2.0-plan.md](v0.2.0-plan.md). 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지).
+  설계 문서는 로컬 브랜치 `next-0.2.0` worktree의 `docs/v0.2.0/`에 있고 아직 커밋 전.
+- CLI 전역화(`install:global`·.env 복사·cwd 우선 로드): 구현·문서·실측 완료(418812b·7c5fc18).
 - 그 외 추가 개발은 계획하지 않는다.
 
 ## 회고 (2026-10-08)
@@ -55,7 +62,8 @@
 ## 이슈·마일스톤 매핑
 
 - `0.1.0`: #1–#12·#18–#28, #56–#61. 릴리스 버전 0.1.0(v0.1.0 tag·Release 발행 완료).
-- `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정). 2026-10-08 계약 대조: #15·#16·#17 충족 closed, #13(429 미실측)·#14(balance fallback 미실측) 부분 open, #29 `hold` 유지. milestone #3 close 예정(이관 없음).
+- `0.1.1`: #13–#17·#29. 0.1.0에서 이동(사용자 결정). 계약 대조로 #15·#16·#17 closed, milestone #3 closed, v0.1.1 발행 완료.
   - 회고: `report_audit.py`는 glob 소유 패턴을 펼치지 않아 오탐 FAIL을 낸다. root가 `git status`로 대조한다.
-- `0.2.0`: #30–#55. 아직 구현하지 않았다. 이번 작업 범위가 아니다.
+- `0.1.2`: #13·#14·#29. 0.1.1에서 이동(사용자 결정 2026-10-08, 남은 계약 확인).
+- `0.2.0`: #30–#55. 보류: 0.2.0 보류(사용자 결정 2026-10-08, 이유: 0.1.x 마무리 우선, milestone #2·#30–#55 open 유지). 계획 문서 v0.2.0-plan.md.
 - 상세: [issue-status.md](issue-status.md).

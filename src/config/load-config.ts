@@ -18,8 +18,10 @@ function positive(value: string | undefined, fallback: number, name: string, max
   return Number(value);
 }
 export function loadConfig(env: Readonly<Record<string, string | undefined>>): RuntimeConfig {
-  const selected = (env.YOROI_PROVIDERS ?? 'codex').split(',').map(value => value.trim());
-  if (new Set(selected).size !== selected.length ||
+  const selected = env.YOROI_PROVIDERS !== undefined
+    ? env.YOROI_PROVIDERS.split(',').map(value => value.trim())
+    : [...providers];
+  if (selected.length === 0 || new Set(selected).size !== selected.length ||
     selected.some(id => !providers.includes(id as ProviderId))) {
     throw new Error('Invalid provider selection');
   }
@@ -34,15 +36,14 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): R
       id, executable, timeoutMs: positive(env[`${prefix}_TIMEOUT_MS`], timeoutMs, 'provider timeout'),
     };
     if (id === 'ollama-pro') {
-      const signingKeyPath = env.YOROI_OLLAMA_PRO_SIGNING_KEY_PATH ??
+      const rawPath = env.YOROI_OLLAMA_PRO_SIGNING_KEY_PATH ??
         (env.HOME ? `${env.HOME}/.ollama/id_ed25519` : undefined);
-      if (!signingKeyPath?.trim()) throw new Error('Missing credential path for ollama-pro');
-      return { ...setting, signingKeyPath };
+      const signingKeyPath = rawPath?.trim();
+      return signingKeyPath ? { ...setting, signingKeyPath } : setting;
     }
     if (id === 'opencode-go') {
-      const apiKey = env[`${prefix}_API_KEY`];
-      if (!apiKey?.trim()) throw new Error(`Missing credential for ${id}`);
-      return { ...setting, apiKey };
+      const apiKey = env[`${prefix}_API_KEY`]?.trim();
+      return apiKey ? { ...setting, apiKey } : setting;
     }
     return setting;
   });

@@ -1,4 +1,5 @@
 import { SourceError } from '../app/usage-source.js';
+import { readLimitedBody } from './http-body.js';
 
 export interface HttpRequest {
   readonly method: string;
@@ -34,8 +35,9 @@ export class NodeHttpClient implements HttpClient {
       if (request.body !== undefined) init.body = request.body;
       const response = await this.fetcher(request.url, init);
       return { status: response.status, headers: Object.fromEntries(response.headers),
-        body: await response.text() };
-    } catch {
+        body: await readLimitedBody(response, controller.signal) };
+    } catch (error) {
+      if (error instanceof SourceError && error.code === 'unavailable') throw error;
       throw new SourceError(signal?.aborted ? 'cancelled' : timedOut ? 'timeout' : 'network');
     } finally {
       clearTimeout(timer);

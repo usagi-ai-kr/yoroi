@@ -23,7 +23,14 @@ export interface CliProgram {
   run(argv: string[]): Promise<number>;
 }
 
-export const USAGE = "usage: yoroi <once|watch> [--interval <seconds>] [--help] [--version]";
+export const USAGE = [
+  "usage: yoroi <once|watch> [--interval <seconds>] [--help] [--version]",
+  "",
+  "providers: defaults to all 5 (ollama-pro,opencode-go,codex,agy,claude)",
+  "  select: YOROI_PROVIDERS=<comma-separated-list>",
+  "",
+  "watch: waits for interval after collection completes (non-overlapping)",
+].join("\n");
 export const DEFAULT_INTERVAL_MS = 60_000;
 
 export function createCli(deps: CliDependencies): CliProgram {

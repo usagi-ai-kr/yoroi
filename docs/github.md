@@ -9,7 +9,9 @@
   force push·삭제 금지. 기존 성공 workflow의 실제 job 이름 `ci`를 확인했다.
 - 자동 머지 옵션은 아직 적용하지 않았다. 아래 머지·브랜치 유지 항목은 운영 목표다.
 - [PR #28](https://github.com/qus0in/yoroi/pull/28): dev → main, feature 라벨·0.1.0 milestone.
-- 자동 CI가 시작되지 않으면 동일 head의 workflow_dispatch로 확인하고 commit check-runs와 대조한다.
+- PR 필수 체크는 pull_request 실행·head SHA·PR 체크 상태를 함께 확인한다.
+  workflow_dispatch 체크는 성공해도 PR 필수 체크로 평가되지 않는다.
+  자동 실행 누락 시 PR 이벤트/승인 대기/활성 workflow를 확인하고 적격 이벤트 CI를 실행한다.
 
 | 항목 | 운영 목표 |
 | --- | --- |

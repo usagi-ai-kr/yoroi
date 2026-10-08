@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import type { UsageResult } from "../../src/app/usage-source.js";
 import type { HttpClient } from "../../src/infra/http-client.js";
 import type { ProcessOutput, ProcessRunner } from "../../src/infra/process-port.js";
 import { AgySource } from "../../src/infra/agy-source.js";
@@ -17,12 +18,14 @@ const opencodeBody = await fixture("opencode-go-usage.json");
 const ollamaBody = JSON.stringify({ limits: { session: { usage: 0.25 },
   weekly: { usage: 0.6 }, monthly: { usage: 0.9 } }, activity: { cost: "1.23" } });
 
-export const fakeTransport = { opencodeStatus: 200, agyExitCode: 0 };
+export const fakeTransport = { opencodeStatus: 200, agyExitCode: 0,
+  ollamaStatus: 200, ollamaBody: ollamaBody as string };
+export const adapterResults: UsageResult[] = [];
 
 const http: HttpClient = {
   request: async (request) => {
     if (request.url.startsWith("https://ollama.com/api/usage")) {
-      return { status: 200, headers: {}, body: ollamaBody };
+      return { status: fakeTransport.ollamaStatus, headers: {}, body: fakeTransport.ollamaBody };
     }
     if (request.url === "https://opencode.ai/zen/go/v1/usage") {
       return { status: fakeTransport.opencodeStatus, headers: {}, body: opencodeBody };
@@ -46,6 +49,9 @@ export function installRealAdapters(): void {
   resetWorld();
   fakeTransport.opencodeStatus = 200;
   fakeTransport.agyExitCode = 0;
+  fakeTransport.ollamaStatus = 200;
+  fakeTransport.ollamaBody = ollamaBody;
+  adapterResults.length = 0;
   world.sources = [
     new OllamaSource(http, async () => "Signature bdd"),
     new OpenCodeGoSource(http, "bdd-opencode-go-key"),

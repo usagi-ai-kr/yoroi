@@ -35,7 +35,9 @@
 - 완료 기록은 PR에도 포함한다. milestone은 실제 릴리스 커밋 검증과 통합 시점에 맞춰 완료한다.
 - 최초 게시 커밋의 [원격 CI](https://github.com/qus0in/yoroi/actions/runs/37709346179)가 통과했다.
   자동 실행이 보고되지 않아 동일 head의 workflow_dispatch를 실행했다.
-  PR 화면의 체크가 늦게 갱신될 때는 commit check-runs의 head SHA·ci 결과도 대조한다.
+  이후 리뷰에서 수동 실행 체크가 PR 필수 조건에 반영되지 않는 것을 확인했다.
+  [GitHub 근거](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks):
+  적격 이벤트의 workflow run을 확인해야 하며 수동 체크 성공으로 PR 통과를 판단하지 않는다.
 
 ## 회고와 릴리스 기준
 
@@ -44,3 +46,6 @@
 - 버전 파일을 추가하지 않고 manifest·CLI 출력·milestone·예정 tag를 같은 SemVer에 연결한다.
 - 릴리스 시 해당 커밋의 타입·단위·BDD·빌드·레포 검사와 원격 CI를 확인한다.
   발행 요청 시에만 검증된 커밋에 tag와 Release를 연결한다.
+- Ollama 인증/포맷 변경·네트워크·응답 크기 초과에서 다른 공급자의 결과가 유지되는지 검사한다.
+  비공식 API의 영향은 해당 공급자에 한정하고 누락 수치를 생성하지 않는다.
+- PR 리뷰 조치와 완료 기준은 [pr-28-review.md](pr-28-review.md)에 기록한다.

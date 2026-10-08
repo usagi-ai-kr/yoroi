@@ -22,7 +22,8 @@ pnpm run check
 ```
 
 - `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
-- `watch`: 즉시 1회 후 기본 60초 간격, 이전 수집 종료 후 대기하므로 조회는 겹치지 않는다.
+- `watch`: 즉시 1회 후 **수집 완료 뒤 60초 대기**한다. 시작 간격은 수집 시간+60초다.
+  분 단위 고정 시작이 아닌 완료 기준 대기이며 조회가 겹치지 않는다.
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
 - 테스트는 fake source/HTTP/process/scheduler 및 합성 fixture를 사용한다.
@@ -32,12 +33,16 @@ pnpm run check
 - pnpm 버전은 packageManager에 고정한다. Corepack 사용 시 `corepack enable pnpm`으로 활성화한다.
 - [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)의 현행 지침을 적용한다.
   다른 pnpm이 PATH에서 앞서면 `pnpm --version`으로 확인하고 Node/Corepack 경로를 우선한다.
-- CI에는 레포 검사와 pnpm install --frozen-lockfile/typecheck/test/BDD/build를 연결했다. 새 CI의 원격 실행은 미확인이다.
+- CI는 frozen install·레포 검사·전체 check를 실행한다. PR 필수 체크는 `pull_request` 실행으로 확인한다.
+  수동 `workflow_dispatch` 성공은 진단용이며 PR 필수 체크 충족으로 간주하지 않는다.
 
 ## 설정과 공급자 상태
 
 - 설정은 `src/config/load-config.ts`에서 환경 변수로 읽고 composition root에서 해석한다.
-- `YOROI_PROVIDERS`: 쉼표로 공급자 선택. 기본 `codex`. 중복·미지원 ID는 설정 오류다.
+- `YOROI_PROVIDERS`: 기본 다섯 공급자 모두 조회(`ollama-pro,opencode-go,codex,agy,claude`).
+  쉼표로 명시하면 해당 공급자만 조회한다. 중복·미지원 ID는 설정 오류다.
+- 공급자 인증/설치 누락은 공급자별 오류로 격리하고 다른 조회를 계속한다.
+  전체 실패는 exit 1, 선택·timeout 등 잘못된 설정은 exit 2다.
 - `YOROI_INTERVAL_SECONDS`: 기본 60, 정수 1–86400초.
   `watch --interval`은 초 단위 override이며 최대 86400초, 최소 1ms 단위 양수다.
 - `YOROI_TIMEOUT_MS`: 기본 10000. `YOROI_<공급자>_TIMEOUT_MS`로 개별 override.
@@ -46,6 +51,7 @@ pnpm run check
 - Ollama는 기본 `$HOME/.ollama/id_ed25519`를 사용한다.
   `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`로 서명 키 경로를 변경한다. Bearer 토큰과 다르다.
 - credential은 로그·오류·fixture에 출력하지 않는다. 개인 사용량 원본은 저장하지 않는다.
+- HTTP 응답은 1MiB까지 읽으며 초과 시 본문 스트림을 취소하고 unavailable로 정규화한다.
 
 | 공급자 | 수집 방식 | 실제 구현 상태 | 계약 |
 | --- | --- | --- | --- |

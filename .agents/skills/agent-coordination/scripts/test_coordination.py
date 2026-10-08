@@ -25,6 +25,8 @@ def test_packet_validation():
     ))
     valid = make_packet("t1", "p1", ["f1.ts"], ["test_pass"])
     assert validate_packet(valid) == []
+    assert valid["report_path"] == "/tmp/t1-report.json" and valid["on_stop"]
+    assert any("report_path" in e for e in validate_packet(dict(valid, report_path="")))
     print("ok: packet validation rules passed")
 
 

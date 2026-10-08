@@ -31,6 +31,8 @@ def validate_packet(data) -> list[str]:
             errors.append(f"{key}는 비어있지 않은 배열이어야 합니다.")
         elif not all(is_non_empty_str(item) for item in val):
             errors.append(f"{key}의 각 항목은 비어있지 않은 문자열이어야 합니다.")
+    if "report_path" in data and not is_non_empty_str(data["report_path"]):
+        errors.append("report_path는 비어있지 않은 문자열이어야 합니다.")
     timeout = data.get("timeout_minutes", 10)
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
         errors.append("timeout_minutes는 숫자(분 단위)여야 합니다.")
@@ -41,10 +43,14 @@ def validate_packet(data) -> list[str]:
     return errors
 
 
-def make_packet(task_id: str, pane: str, files: list[str], crit: list[str]) -> dict:
+def make_packet(task_id: str, pane: str, files: list[str], crit: list[str],
+                report_path: str | None = None) -> dict:
     return {
         "task_id": task_id, "target_pane": pane, "timeout_minutes": 10,
         "owned_files": files, "completion_criteria": crit,
+        "report_path": report_path or f"/tmp/{task_id}-report.json",
+        "report_format": "{task_id, modified_files:[str], verification_results:[str], provenance:{worker_actions:str|[str]}}",
+        "on_stop": "새 작업 중지, 실행 중 외부 쓰기는 완료만 확인, 변경 보존 후 보고",
         "forbidden_actions": [
             "unowned_file_modification", "raw_secret_exposure",
             "git_mutation_without_permission", "redundant_real_api_call"
@@ -54,7 +60,7 @@ def make_packet(task_id: str, pane: str, files: list[str], crit: list[str]) -> d
 
 def main():
     if len(sys.argv) < 2:
-        print("사용법: task_packet.py [validate <file.json> | create <id> <pane> <files,...> <criteria,...>]")
+        print("사용법: task_packet.py [validate <file.json> | create <id> <pane> <files,...> <criteria,...> [report_path]]")
         return 2
     cmd = sys.argv[1]
     if cmd == "validate":
@@ -78,7 +84,8 @@ def main():
         task_id, pane = sys.argv[2], sys.argv[3]
         files = [f.strip() for f in sys.argv[4].split(",") if f.strip()]
         crit = [c.strip() for c in sys.argv[5].split(",") if c.strip()]
-        packet = make_packet(task_id, pane, files, crit)
+        report = sys.argv[6] if len(sys.argv) > 6 else None
+        packet = make_packet(task_id, pane, files, crit, report)
         errors = validate_packet(packet)
         if errors:
             for err in errors: print(f"ERROR: 생성 검증 실패: {err}")

@@ -55,6 +55,7 @@ jobs:
           python3 scripts/validate-repo.py --ci
           python3 -m unittest discover -s scripts -p "test_*.py"
           python3 .agents/skills/agent-coordination/scripts/test_coordination.py
+          python3 .agents/skills/graceful-stop/scripts/test_stop_checkpoint.py
       - uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         if: steps.scope.outputs.docs_only != 'true'
         with:

@@ -2,7 +2,7 @@
 name: agent-coordination
 description: 토큰 절약, 명시적 파일 소유권, 하위 worker 안정 위임, 공식 CLI 계약 사전 검증 및 결과 감사 프로토콜을 관리한다. Root-Worker 협업, 작업 패킷 분담, 컨텍스트 핸드오프 요청에 사용한다.
 metadata:
-  version: "1.0"
+  version: "1.1"
 ---
 
 # 에이전트 협업 및 작업 분담
@@ -22,13 +22,34 @@ Root와 하위 Worker 간 토큰 소모를 최소화하고 안정적인 완결�
    `once`/`watch` 실행 검증은 정상 수행한다.
 7. **무관용 보안**: 실계정 토큰 노출을 엄격히 금지하고 합성 픽스처와 가상 포트를 우선 활용한다.
 
-## 2. 작업 흐름
+## 2. 오케스트레이터 역할 (Root 부담 최소화)
+
+Root는 직접 일하지 않고 **나누고 맡기고 확인**한다. 맥락은 root에 남기고 노동은 worker에 둔다.
+
+| Root가 맡는다 | Worker에게 넘긴다 |
+| --- | --- |
+| 사용자 범위 확인, 작업 분해, 소유 파일 배정 | 구현, 단위 테스트, 리팩터링 |
+| CLI 계약 사전 확인(`--help`·공식 문서) | 코드·로그·문서 조사와 요약 |
+| 패킷 발행, 보고서 감사, `git diff` 대조 | 전체 검증 실행(test·build·lint)과 결과 보고 |
+| 통합, 커밋·push·PR·이슈 등 외부 기록 | 문서 초안·회고 초안 |
+
+1. 10분을 넘거나 3개 이상 파일을 고치는 작업은 root가 직접 하지 않고 패킷으로 나눈다.
+   root의 직접 수정은 통합 충돌 해소와 한두 줄 정정으로 한정한다.
+2. 패킷마다 단일 소유자를 둔다. 같은 파일을 두 worker에 동시에 배정하지 않는다.
+3. Worker 보고는 `report_path`의 JSON 하나로 받는다. root는 긴 로그를 읽지 않고
+   보고서·감사 결과·`git diff --stat`만 확인한다. 의심될 때만 해당 부분을 재실행한다.
+4. Worker가 막히면 root가 대신 하지 않고 범위를 줄이거나 계약을 정정한 새 패킷을 발행한다.
+5. 진행 중 worker 목록(패킷 id·pane·상태)을 root가 한 곳에 유지해 중단·재개 시 사용한다.
+6. 중단 요청은 모든 worker에 전파한다. 절차는 `graceful-stop` 스킬을 따른다.
+
+## 3. 작업 흐름
 
 1. **작업 패킷 생성**:
    Root는 대상 Pane/Worker와 소유 파일, 검증 기준을 정하고 패킷을 검증한다:
    ```bash
-   python3 <skill-dir>/scripts/task_packet.py create <task_id> <target_pane> <owned_files,...> <criteria,...>
+   python3 <skill-dir>/scripts/task_packet.py create <task_id> <target_pane> <owned_files,...> <criteria,...> [report_path]
    ```
+   패킷에는 `report_path`와 중단 규칙(`on_stop`)이 포함된다.
 2. **Worker 완결 수행**:
    Worker는 구현, 단위 테스트, 검증, 보고서 작성을 끝까지 완결한다.
 3. **결과 감사 및 프로비넌스 확인**:

@@ -56,6 +56,9 @@ pnpm run check
 - [PR #62](https://github.com/qus0in/yoroi/pull/62) 병합: `1b3b027`.
   [pull_request CI](https://github.com/qus0in/yoroi/actions/runs/37720540457) 성공.
 - 검증: TS 136개, BDD 25시나리오·144step, Python 19개, 협업 스크립트·레포 검사 통과.
+- [문서 PR #63](https://github.com/qus0in/yoroi/pull/63)의 최초 head `5b5366e`에서
+  [CI](https://github.com/qus0in/yoroi/actions/runs/37721012020)가 fast-pass 성공했다.
+  실제 install·app check는 skipped이며 필수 `ci`는 success다.
 - PR #62의 `Closes`로 #25·#57·#59·#60·#61을 종료했다.
 - 미완료 조사: #3·#13–#17·#29. 0.2.0 웹·SQLite #30–55는 아직 구현하지 않았다.
 - Wiki 최종 게시 증거는 [#58](https://github.com/qus0in/yoroi/issues/58),

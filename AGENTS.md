@@ -6,6 +6,10 @@
   생성 파일·의존성 잠금 파일·바이너리는 제외하며 예외는 docs/development.md에 기록한다.
 - 작업을 10분 이내에 검증 가능한 단위로 나누고 진척·남은 작업을 짧게 보고한다.
   긴 작업은 단위별로 이어서 수행하고, 위임은 사용자 요청이나 적용되는 지침에 따른다.
+- 하위 worker를 쓰는 세션의 root는 오케스트레이터다. 구현·조사·검증 실행은 패킷으로 분담하고
+  root는 범위 결정·패킷·감사·통합·외부 기록만 맡는다. 절차는 `agent-coordination` 스킬을 따른다.
+- 중단 요청을 받으면 새 작업을 시작하지 않고 `graceful-stop` 스킬로 멈춘다.
+  "이어하기"는 인수인계의 후속 단계가 아니라 현재 요청 범위만 수행한다.
 - 기존 사용자 변경을 보존하고 요청 범위의 구현과 검증을 끝까지 수행한다.
 - 커밋을 제안하거나 자동으로 만들지 않는다. 사용자 요청 시에만 커밋한다.
 - push·배포 요청은 필요한 회고와 커밋을 포함한다. 대상·범위는 요청에서 확인한다.
@@ -30,9 +34,12 @@
 - 스킬 작성·회고: [docs/skills.md](docs/skills.md), `skill-authoring` 스킬
 - 목표·버전 관리: [docs/roadmap.md](docs/roadmap.md), `semver-milestones` 스킬
 - 로컬 작업 기록: [docs/tasks.md](docs/tasks.md)
+- 협업 분담·중단: [docs/orchestration.md](docs/orchestration.md), `agent-coordination`·`graceful-stop` 스킬
 
 스킬 원본은 `.agents/skills/`다. 작업에 맞는 아래 파일을 읽고 적용한다.
 
 - [github-workflow](.agents/skills/github-workflow/SKILL.md)
 - [skill-authoring](.agents/skills/skill-authoring/SKILL.md)
 - [semver-milestones](.agents/skills/semver-milestones/SKILL.md)
+- [agent-coordination](.agents/skills/agent-coordination/SKILL.md)
+- [graceful-stop](.agents/skills/graceful-stop/SKILL.md)

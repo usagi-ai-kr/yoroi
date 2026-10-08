@@ -50,7 +50,9 @@ test("pretty Status column shows ok plus the status inside 22 columns", () => {
 
 test("formatStatus colors each status and keeps the ok prefix", () => {
   for (const status of ["under", "optimal", "over", "n/a"] as const) {
-    assert.match(formatStatus(false, status), new RegExp(`^ok ${status}$`));
+    const plainText = stripVTControlCharacters(formatStatus(false, status));
+    const colored = stripVTControlCharacters(formatStatus(true, status));
+    assert.equal(plainText, `ok ${status}`);
+    assert.equal(colored, `ok ${status}`, "색상 유무와 무관한 텍스트");
   }
-  assert.equal(formatStatus(false, "optimal"), "ok optimal");
 });

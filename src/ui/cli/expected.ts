@@ -12,7 +12,7 @@ function codexMinutes(id: string): number | undefined {
 
 export function quotaKind(id: string): QuotaKind | undefined {
   const parts = id.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  if (parts.includes("monthly")) return "monthly";
+  if (parts.includes("monthly") || id.toLowerCase() === "credits:included") return "monthly";
   if (parts.includes("weekly")) return "weekly";
   return codexMinutes(id) === CODEX_WEEK_MINUTES ? "weekly" : undefined;
 }

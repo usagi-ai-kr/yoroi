@@ -13,12 +13,12 @@ const legacy: UsageResult = { provider: "ollama-pro", snapshot: createSnapshot("
   { id: "activity:last-4-weeks", unit: "USD", used: 1.25 },
 ]) };
 
-test("ollama-pro plain shows only the monthly window and counts displayed windows", () => {
+test("ollama-pro plain shows only the monthly window labeled m and hides the rest", () => {
   const lines = renderResults([legacy]);
 
   assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=1`);
   assert.equal(lines.length, 2);
-  assert.ok(lines[1]!.startsWith("  - monthly [percent] "));
+  assert.ok(lines[1]!.startsWith("  - m [percent] "));
   assert.ok(!lines.some((line) => line.includes("- session")));
   assert.ok(!lines.some((line) => line.includes("- weekly")));
   assert.ok(!lines.some((line) => line.includes("activity:last-4-weeks")));
@@ -29,7 +29,7 @@ test("ollama-pro pretty renders only the monthly row while keeping the table int
   const lines = renderPretty([legacy]);
   const text = lines.join("\n");
 
-  assert.ok(text.includes("monthly"));
+  assert.ok(text.includes(" m "));
   assert.ok(!text.includes("session"));
   assert.ok(!text.includes("weekly"));
   assert.ok(!text.includes("activity:last-4-weeks"));
@@ -38,19 +38,39 @@ test("ollama-pro pretty renders only the monthly row while keeping the table int
   assert.equal(new Set(widths).size, 1);
 });
 
-test("ollama-pro without a monthly window keeps every window to avoid data loss", () => {
+test("current ollama schema hides all five activity rows and keeps both credits rows", () => {
   const result: UsageResult = { provider: "ollama-pro", snapshot: createSnapshot("ollama-pro", observedAt, [
+    { id: "credits:included", unit: "USD", remaining: 6, limit: 10, used: 4,
+      percent: 40, resetAt: "2026-11-01T00:00:00Z" },
+    { id: "credits:purchased", unit: "USD", remaining: 2 },
     { id: "activity:7d:request_count", unit: "requests", used: 4 },
-    { id: "credits:included", unit: "USD", used: 6, remaining: 4, limit: 10 },
+    { id: "activity:7d:usage_usd", unit: "USD", used: 1.25 },
+    { id: "activity:7d:input_tokens", unit: "tokens", used: 100 },
+    { id: "activity:7d:cached_input_tokens", unit: "tokens", used: 20 },
+    { id: "activity:7d:output_tokens", unit: "tokens", used: 30 },
   ]) };
   const lines = renderResults([result]);
 
   assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=2`);
-  assert.ok(lines.some((line) => line.includes("activity:7d:request_count")));
-  assert.ok(lines.some((line) => line.includes("credits:included")));
+  assert.ok(lines.some((line) => line.startsWith("  - m [USD] ")));
+  assert.ok(lines.some((line) => line.startsWith("  - credits:purchased [USD] ")));
+  assert.ok(!lines.some((line) => line.includes("activity:7d")));
+  assert.equal(result.snapshot.windows.length, 7);
 });
 
-test("other providers keep shorter windows visible", () => {
+test("ollama-pro without any display target keeps every window to avoid data loss", () => {
+  const result: UsageResult = { provider: "ollama-pro", snapshot: createSnapshot("ollama-pro", observedAt, [
+    { id: "session", unit: "percent", percent: 35 },
+    { id: "activity:7d:request_count", unit: "requests", used: 4 },
+  ]) };
+  const lines = renderResults([result]);
+
+  assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=2`);
+  assert.ok(lines.some((line) => line.includes("session")));
+  assert.ok(lines.some((line) => line.includes("activity:7d:request_count")));
+});
+
+test("other providers keep shorter windows visible with short labels", () => {
   const result: UsageResult = { provider: "opencode-go", snapshot: createSnapshot("opencode-go", observedAt, [
     { id: "rolling", unit: "percent", percent: 4, resetAt: "2026-10-04T05:00:00.000Z" },
     { id: "weekly", unit: "percent", percent: 3, resetAt: "2026-10-08T00:00:00.000Z" },
@@ -59,6 +79,7 @@ test("other providers keep shorter windows visible", () => {
   const lines = renderResults([result]);
 
   assert.equal(lines[0], `opencode-go: ok observed=${observedAt} windows=3`);
-  assert.ok(lines.some((line) => line.includes("- rolling")));
-  assert.ok(lines.some((line) => line.includes("- weekly")));
+  assert.ok(lines.some((line) => line.startsWith("  - 5h [percent]")));
+  assert.ok(lines.some((line) => line.startsWith("  - w [percent]")));
+  assert.ok(lines.some((line) => line.startsWith("  - m [percent]")));
 });

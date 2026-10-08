@@ -16,6 +16,13 @@ const agyBody = await fixture("agy-usage.txt");
 const opencodeBody = await fixture("opencode-go-usage.json");
 const ollamaBody = JSON.stringify({ limits: { session: { usage: 0.25 },
   weekly: { usage: 0.6 }, monthly: { usage: 0.9 } }, activity: { cost: "1.23" } });
+const ollamaActivityBody = JSON.stringify({ range: "7d", scope: "self", granularity: "day",
+  totals: { request_count: 4, usage_usd: 1.25, input_tokens: 100,
+    cached_input_tokens: 20, output_tokens: 30 } });
+export { ollamaActivityBody };
+const ollamaBalanceBody = JSON.stringify({ included: { balance_usd: 6, allowance_usd: 10,
+  period: { from: "2026-10-01T00:00:00Z", until: "2026-11-01T00:00:00Z" } },
+  purchased: { balance_usd: 2 } });
 
 export const fakeTransport = { opencodeStatus: 200, agyExitCode: 0,
   ollamaStatus: 200, ollamaBody: ollamaBody as string };
@@ -25,6 +32,9 @@ const http: HttpClient = {
   request: async (request) => {
     if (request.url.startsWith("https://ollama.com/api/usage")) {
       return { status: fakeTransport.ollamaStatus, headers: {}, body: fakeTransport.ollamaBody };
+    }
+    if (request.url.startsWith("https://ollama.com/api/balance")) {
+      return { status: 200, headers: {}, body: ollamaBalanceBody };
     }
     if (request.url === "https://opencode.ai/zen/go/v1/usage") {
       return { status: fakeTransport.opencodeStatus, headers: {}, body: opencodeBody };

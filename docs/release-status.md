@@ -66,6 +66,17 @@
 - PR #67 MERGED, merge commit `62ef080`(main, 2026-10-08T13:16:52Z), head `3dadf92`.
 - CI 검증: PR CI [run 37780797515](https://github.com/qus0in/yoroi/actions/runs/37780797515) success, main workflow_dispatch CI [run 37783139920](https://github.com/qus0in/yoroi/actions/runs/37783139920) success.
 - 포함 커밋: `ff3371c`(서브커맨드 도움말 `once/watch --help`·`-h`), `3dadf92`(문서 정리·global-install.md 분리).
-- 현재 상태 요약: **0.1.x 마무리 완료·0.2.0 보류**. 미완 #13·#14·#29 open 유지, milestone #2·#30–#55 open 유지.
+- 당시 상태 요약: 0.1.x 마무리 완료·0.2.0 보류. 미완 #13·#14·#29 open 유지, milestone #2·#30–#55 open 유지(이후 2026-10-10 정리).
 - 다음 후보: PR #67 변경을 담을 0.1.3 tag·Release 필요 여부는 사용자 결정.
   (주의: opencode worker는 무료 모델 소진 시 오래된 패킷을 재실행할 수 있어 주의 필요).
+
+## 2026-10-10 0.2.0 PR 준비 (미발행)
+
+- 버전: `package.json` `0.2.0`(`scripts/version.py --bump minor --apply`). 커밋·tag·Release는 아직 없다.
+- milestone 표기(2026-10-10 사용자 결정): #6 `0.3.0`([#71](https://github.com/qus0in/yoroi/issues/71)), #7 `0.4.0`([#70](https://github.com/qus0in/yoroi/issues/70)),
+  #8 `0.2.1`([#77](https://github.com/qus0in/yoroi/issues/77)). [#72](https://github.com/qus0in/yoroi/issues/72)는 이 PR에서 close 예정(아직 아님).
+- 범위: [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76) OpenCode Zen Free 락(전역 error 훅 → yoroi SQLite, `zen-free` CLI·`once` 상태 표시).
+  [#70](https://github.com/qus0in/yoroi/issues/70) 인사이트 레터·[#71](https://github.com/qus0in/yoroi/issues/71) 캐시·이력 문서 초안은 이번 PR에서 제외한다.
+- 검증(worker 보고): `pnpm run check` 254 tests·BDD 32 통과. p2 리뷰 결함 15건+교차 리뷰 결함 2건 수정.
+- 미실행: 실제 OpenCode 로드, 한도 초과 이벤트 실측, 전역 설치(`~/.config/opencode/plugins/`). 0.2.1([#77](https://github.com/qus0in/yoroi/issues/77))에서 검증한다.
+- 다음: 사용자 발행 요청 시 dev → main PR → CI → tag·Release 순서(versioning.md §릴리스 순서)를 따른다.

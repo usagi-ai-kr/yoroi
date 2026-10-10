@@ -7,22 +7,42 @@
 
 ## Herdr pane 역할
 
-워크스페이스 `wX`의 pane 번호 기준이다. root는 별도 pane에서 오케스트레이터로 동작한다.
+워크스페이스 `w12`의 pane 번호 기준이다(사용자 구성, 2026-10-10). root는 p1에서 오케스트레이터로 동작한다.
 
-| pane | 담당 | 상태 (2026-10-08) |
-| --- | --- | --- |
-| `wX:p1` (claude) | root 오케스트레이터 | 사용 중 |
-| `wX:p2` (agy) | CLI, 스킬, workflow | 사용 가능 |
-| `wX:p3` (claude) | CI, 버전, 문서·Wiki 운영, 검증·측정 | 사용 가능 |
-| `wX:p4`·`wX:p5` | 없음 | 구성에서 제거됨 |
+| pane | 모델 (사용자 지정) | 역할 | 비고 |
+| --- | --- | --- | --- |
+| `w12:p1` | Claude Opus 5.5 | root 오케스트레이터 | 범위·패킷·감사·통합 |
+| `w12:p2` | Claude Sonnet 5.5 | worker | 구현·검증 |
+| `w12:p3` | Codex GPT-6.1-Sol | worker | 구현·조사 |
+| `w12:p4` | Codex GPT-6-Luna | worker | 구현·조사 |
+| `w12:p5` | OpenCode Zen Space Bunny Free | worker | 한도 감시 대상 |
+| `w12:p6` | OpenCode Go LongCat 2.5 Preview Free | worker | 구현·검증 |
+| `w12:p7` | OpenCode Go Step 5 Preview Free | worker | 구현·검증 |
+| `w12:p8` | Ollama Cloud DeepSeek V4.1 Flash | worker | 문서·검증 |
 
-- worker 권한 프롬프트는 root가 승인하지 않고 다른 pane에 재배정한다.
+- **p5 한도 감시(임시, #72 훅 도입 전)**: 패킷 전송 전과 작업 진행 중 visible 화면에서
+  `Free usage exceeded`·재시도 문구를 확인하고, 보이면 p5를 가용 worker에서 제외한다.
+  모델·pane은 바꾸지 않는다(사용자 결정).
+- OpenCode worker(p5–p7)는 `/tmp` 접근 권한 프롬프트가 뜰 수 있고 승인은 사용자가 한다.
+  root는 대신 승인하지 않고 다른 가용 pane에 재배정한다.
 - 같은 파일을 두 pane에 동시에 배정하지 않는다. 현재 소유표는 [tasks.md](tasks.md)에 둔다.
-- 이름: 에이전트 이름은 하네스 이름 그대로다(p1·p3 `claude`, p2 `agy`). pane 라벨은 지정하지 않는다.
 - pane의 에이전트·모델은 사용자가 정한다. root는 `herdr agent list`와 화면의 모델 표시로 현재 상태를
-  확인한 뒤 그 안에서 배정하고, `/exit`·`herdr agent start`·모델 선택·권한 승인은 요청 시에만 한다.
+  배정 직전에 확인한 뒤 그 안에서 배정하고, `/exit`·`herdr agent start`·모델 선택·권한 승인은 요청 시에만 한다.
 - 2026-10-08 사고: root가 p3·p4·p5를 임의로 종료하고 DeepSeek V4 Pro로 재시작했고, p4에서는 확인 없는
-  키 입력으로 모델이 바뀌었다. 이후 구성은 사용자가 정했고 현재 값은 위 표다.
+  키 입력으로 모델이 바뀌었다. 이후 구성은 사용자가 정했고 현재 값은 위 표(2026-10-10 갱신)다.
+
+## root 역할 (2026-10-10 사용자 지시, Hermes 전달)
+
+- root의 중심 업무는 worker 결과 리뷰, 작업 분배, 회고와 배운 점 전파다. 직접 구현·조사로 응답을
+  오래 막지 않고 백그라운드 실행을 활용한다.
+- 계획·마일스톤·우선순위·설계 판단은 root 혼자 확정하지 않는다. 판단 가능한 worker(Claude Sonnet,
+  Codex Sol/Luna 등)에 같은 질문을 독립 분배해 비교·종합하고, 구현 worker와 검토 worker를 분리한다.
+- Hermes는 사용자 원문 전달과 진행·결과 전달만 하는 메신저다.
+
+## 배운 점 (2026-10-10)
+
+- 작업 중 pane은 `herdr agent read --source visible`만 통한다(recent 읽기는 실패). 전송 전·진행 중 확인도 visible을 쓴다.
+- zsh에서 `set -- $x` 반복 전송은 단어 분리가 안 돼 빈 프롬프트가 된다. 전송 전에 인자 분리·내용을 검증한다.
 
 ## 패킷·보고서 경로
 

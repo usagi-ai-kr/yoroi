@@ -34,7 +34,7 @@ pnpm run check
 - 출력 테스트는 ANSI 제거 후 비교한다. CI를 위해 `FORCE_COLOR=1` 통과도 확인한다.
 - 테스트는 fake source/HTTP/process/scheduler와 fixture를 써서 실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
 - dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다. 이미 지정된 환경 변수가 .env보다 우선하며 .env는 Git ignore 대상이다.
-- 전역 설치·.env: [global-install.md](global-install.md)
+- 전역 설치·.env: [global-install.md](global-install.md) / 갱신 절차: `global-cli-update` 스킬 참조
 - pnpm은 packageManager 버전을 고정하며 Corepack 시 `corepack enable pnpm`을 쓴다. [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)을 따르고 필요 시 Node/Corepack 경로를 우선한다.
 - CI는 설명문서만 변경 시 빠른 통과, 그 외에는 `validate-repo.py --ci`·스킬 검증·frozen install·check를 실행한다. PR 필수 체크는 `pull_request` 실행으로 확인하며 수동 `workflow_dispatch`는 진단용이다(단 main 머지 커밋 검증에는 versioning.md 절차에 따라 `workflow_dispatch` 활용).
 

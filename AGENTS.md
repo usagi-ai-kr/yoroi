@@ -16,6 +16,8 @@
 - 커밋을 제안하거나 자동으로 만들지 않는다. 사용자 요청 시에만 커밋한다.
 - push·배포 요청은 필요한 회고와 커밋을 포함한다. 대상·범위는 요청에서 확인한다.
 - main에 직접 push하지 않는다. 초기 원격 연결 이후 dev → main PR을 사용한다.
+- 버전이 바뀐 변경이 main에 머지되면 이 Mac의 전역 CLI를 `global-cli-update` 스킬과
+  docs/global-install.md 절차로 갱신하고 버전 일치를 확인한다. tag·Release·publish는 별도 요청 시에만.
 - GitHub 이슈·댓글·PR·레포 설정 변경은 사용자 요청으로 허가된 범위에서 실행한다.
   원격이 없거나 외부 기록이 허가되지 않은 경우 docs/tasks.md에 기록하고 작업을 계속한다.
 - memo 이슈는 사람 전용이다. 읽고 참고할 수 있지만 수정·생성·라벨 부착·close하지 않는다.
@@ -45,3 +47,4 @@
 - [semver-milestones](.agents/skills/semver-milestones/SKILL.md)
 - [agent-coordination](.agents/skills/agent-coordination/SKILL.md)
 - [graceful-stop](.agents/skills/graceful-stop/SKILL.md)
+- [global-cli-update](.agents/skills/global-cli-update/SKILL.md)

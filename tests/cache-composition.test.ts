@@ -26,12 +26,12 @@ test('empty data directory creates private SQLite cache; restart hits and closes
     try { assert.equal(db.prepare('SELECT count(*) AS n FROM observation_samples').get()?.n, 1); } finally { db.close(); }
     assert.equal(await compose(options).run(['once', '--refresh']), 0); assert.equal(reads, 2);
   } finally { h.cleanup(); } });
-test('cached production Claude source does not read Keychain, credential files or HTTP', async () => {
-  const h = setup(); let external = 0;
+test('cached production Claude source with an env token does not read Keychain, credential files or HTTP', async () => {
+  const h = setup(); let external = 0; const env = { ...h.env, YOROI_CLAUDE_OAUTH_TOKEN: 'synthetic-token' };
   try {
-    const p = openUsagePersistence(h.env)!; try { p.cache.set({ provider: 'claude', lookup: 'windows:all', ...sourceIdentity(loadConfig(h.env).providers[0]!, h.env) }, h.snapshot); } finally { p.close(); }
+    const p = openUsagePersistence(env)!; try { p.cache.set({ provider: 'claude', lookup: 'windows:all', ...sourceIdentity(loadConfig(env).providers[0]!, env) }, h.snapshot); } finally { p.close(); }
     const factories = defaultFactories({ runner: { run: async () => { external++; throw Error(); } }, http: { request: async () => { external++; throw Error(); } } });
-    assert.equal(await compose({ ...h.options, factories }).run(['once']), 0); assert.equal(external, 0);
+    assert.equal(await compose({ ...h.options, configEnv: env, factories }).run(['once']), 0); assert.equal(external, 0);
   } finally { h.cleanup(); } });
 test('creation/opening failures preserve provider plain output and exit code', async () => {
   const h = setup(); let reads = 0;

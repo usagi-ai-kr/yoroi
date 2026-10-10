@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { readFile as fsReadFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { claudeCredentialPath } from './claude-credential-source.js';
 import { userInfo } from 'node:os';
 import { SourceError } from '../app/usage-source.js';
+import { digest, parseClaudeCredentials } from './claude-principal.js';
 import type { ProcessRunner } from './process-port.js';
 
 export interface ClaudeAuthOptions {
@@ -16,40 +17,26 @@ export interface ClaudeAuthOptions {
   readonly now?: () => number;
 }
 
-function parseCredentials(content: string, now: number): string {
-  try {
-    const data = JSON.parse(content);
-    if (!data || typeof data !== 'object') throw new Error();
-    const oauth = (data as Record<string, unknown>).claudeAiOauth;
-    if (!oauth || typeof oauth !== 'object') throw new Error();
-    const token = (oauth as Record<string, unknown>).accessToken;
-    if (typeof token !== 'string' || !token.trim()) throw new Error();
-    const expiresAt = (oauth as Record<string, unknown>).expiresAt;
-    if (typeof expiresAt !== 'number' || !Number.isSafeInteger(expiresAt) || expiresAt <= 0) {
-      throw new Error();
-    }
-    if (now >= expiresAt) throw new Error();
-    return token.trim();
-  } catch {
-    throw new SourceError('authentication');
-  }
-}
+interface Resolved { readonly token: string; readonly principal: string }
+/** Calling it yields the token; `principal` yields the account digest of the same single credential read. */
+export type ClaudeAuthorizer = ((signal?: AbortSignal) => Promise<string>) &
+  { readonly principal: (signal?: AbortSignal) => Promise<string> };
 
 export function claudeAuthorization(
   options: ClaudeAuthOptions,
   runner: ProcessRunner,
-): (signal?: AbortSignal) => Promise<string> {
+): ClaudeAuthorizer {
   const platform = options.platform ?? process.platform;
   const now = options.now ?? (() => Date.now());
   const read = options.readFile ?? ((path: string) => fsReadFile(path, 'utf8'));
 
-  return async (signal?: AbortSignal) => {
+  const resolve = async (signal?: AbortSignal): Promise<Resolved> => {
     if (signal?.aborted) throw new SourceError('cancelled');
     if (options.oauthToken !== undefined) {
       const trimmed = options.oauthToken.trim();
       if (!trimmed) throw new SourceError('authentication');
       if (signal?.aborted) throw new SourceError('cancelled');
-      return trimmed;
+      return { token: trimmed, principal: digest('cred', trimmed) };
     }
     if (options.configDir !== undefined && !options.configDir.trim()) {
       throw new SourceError('authentication');
@@ -68,7 +55,7 @@ export function claudeAuthorization(
         }, signal);
         if (signal?.aborted) throw new SourceError('cancelled');
         if (output.exitCode !== 0) throw new SourceError('authentication');
-        return parseCredentials(output.stdout, now());
+        return parseClaudeCredentials(output.stdout, now());
       } catch (error) {
         if (signal?.aborted || (error instanceof SourceError && error.code === 'cancelled')) {
           throw new SourceError('cancelled');
@@ -76,12 +63,11 @@ export function claudeAuthorization(
         // Missing/expired Keychain credentials may have a valid same-profile file below.
       }
     }
-    const dir = (platform === 'darwin' ? options.secureStorageConfigDir : undefined) ?? options.configDir ??
-      (options.home?.trim() ? join(options.home, '.claude') : undefined);
-    if (!dir) throw new SourceError('authentication');
+    const path = claudeCredentialPath(options);
+    if (!path) throw new SourceError('authentication');
     let raw;
     try {
-      raw = await read(join(dir, '.credentials.json'));
+      raw = await read(path);
     } catch (error) {
       if (signal?.aborted || (error instanceof SourceError && error.code === 'cancelled')) {
         throw new SourceError('cancelled');
@@ -89,6 +75,18 @@ export function claudeAuthorization(
       throw new SourceError('authentication');
     }
     if (signal?.aborted) throw new SourceError('cancelled');
-    return parseCredentials(raw, now());
+    return parseClaudeCredentials(raw, now());
   };
+  // principal() reads credentials once; the next authorize() in the same collection reuses that result.
+  let pending: Promise<Resolved> | undefined;
+  const authorize = async (signal?: AbortSignal) => {
+    const reuse = pending; pending = undefined;
+    return (await (reuse ?? resolve(signal))).token;
+  };
+  const principal = (signal?: AbortSignal) => {
+    pending = resolve(signal);
+    pending.catch(() => undefined);
+    return pending.then(r => r.principal);
+  };
+  return Object.assign(authorize, { principal });
 }

@@ -37,7 +37,11 @@ export function updateGlobal({ args = [], root = repoRoot,
     return installed === version ? 0 : 1;
   };
   // Check performs only version reads: no build, install, Git or .env access.
-  if (args.includes('--check')) return compare();
+  // Both flags together are accepted with an explicit notice: --strict never applies here.
+  if (args.includes('--check')) {
+    if (args.includes('--strict')) write('Note: --strict is ignored with --check');
+    return compare();
+  }
   let warned = false;
   const status = execute('git', ['status', '--porcelain']);
   if (status.status !== 0 || status.error || typeof status.stdout !== 'string') {
@@ -45,11 +49,18 @@ export function updateGlobal({ args = [], root = repoRoot,
   } else if (status.stdout.trim()) {
     write('Warning: working tree has uncommitted changes'); warned = true;
   }
-  const behind = execute('git', ['rev-list', '--count', 'HEAD..origin/main']);
-  if (behind.status !== 0 || behind.error || !/^\d+\s*$/.test(behind.stdout ?? '')) {
-    write('Warning: origin/main comparison is unavailable'); warned = true;
-  } else if (Number(behind.stdout.trim()) > 0) {
-    write('Warning: working tree is behind local origin/main'); warned = true;
+  // A missing origin/main ref or upstream tracking is an environment condition, not a fault:
+  // report it once, skip the behind comparison, and do not let --strict fail on it.
+  const upstream = execute('git', ['rev-parse', '--verify', '--quiet', 'refs/remotes/origin/main']);
+  if (upstream.status !== 0 || upstream.error || typeof upstream.stdout !== 'string') {
+    write('Note: origin/main ref is unavailable; behind check skipped');
+  } else {
+    const behind = execute('git', ['rev-list', '--count', 'HEAD..origin/main']);
+    if (behind.status !== 0 || behind.error || !/^\d+\s*$/.test(behind.stdout ?? '')) {
+      write('Warning: origin/main comparison is unavailable'); warned = true;
+    } else if (Number(behind.stdout.trim()) > 0) {
+      write('Warning: working tree is behind local origin/main'); warned = true;
+    }
   }
   if (warned && args.includes('--strict')) {
     write('Strict update refused'); return 1;

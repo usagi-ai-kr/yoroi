@@ -8,15 +8,17 @@ function fixture(overrides = {}) {
     const key = [command, ...args].join(' '); calls.push(key);
     if (key in overrides) return overrides[key];
     return { status: 0, stdout: command === 'yoroi' ? '0.2.0\n' :
-      args[0] === 'rev-list' ? '0\n' : '' };
+      args[0] === 'rev-list' ? '0\n' : args[0] === 'rev-parse' ? 'sha\n' : '' };
   };
   const invoke = args => updateGlobal({ args, version: '0.2.0', run,
     write: message => output.push(message) });
   return { calls, output, invoke };
 }
+const UPSTREAM = 'git rev-parse --verify --quiet refs/remotes/origin/main';
+const BEHIND = 'git rev-list --count HEAD..origin/main';
 test('update builds, reuses installer, then verifies PATH yoroi', () => {
   const f = fixture(); assert.equal(f.invoke([]), 0);
-  assert.deepEqual(f.calls, ['git status --porcelain', 'git rev-list --count HEAD..origin/main',
+  assert.deepEqual(f.calls, ['git status --porcelain', UPSTREAM, BEHIND,
     'pnpm run build', 'pnpm run install:global', 'yoroi --version']);
   assert.deepEqual(f.output, ['repository=0.2.0 global=0.2.0']);
 });
@@ -32,8 +34,8 @@ test('check is read-only and compares matching, differing, and missing versions'
 test('dirty, behind, and unknown Git state warn; strict stops before build', () => {
   for (const overrides of [
     { 'git status --porcelain': { status: 0, stdout: ' M synthetic.env' } },
-    { 'git rev-list --count HEAD..origin/main': { status: 0, stdout: '2\n' } },
-    { 'git rev-list --count HEAD..origin/main': { status: 128, stderr: 'SYNTHETIC_SECRET' } },
+    { [BEHIND]: { status: 0, stdout: '2\n' } },
+    { [BEHIND]: { status: 128, stderr: 'SYNTHETIC_SECRET' } },
     { 'git status --porcelain': { status: null } },
   ]) {
     const loose = fixture(overrides); assert.equal(loose.invoke([]), 0);
@@ -43,6 +45,27 @@ test('dirty, behind, and unknown Git state warn; strict stops before build', () 
     assert.ok(!loose.output.join('\n').includes('SYNTHETIC_SECRET'));
     assert.ok(!loose.output.join('\n').includes('synthetic.env'));
   }
+});
+test('missing origin/main ref notes once, skips behind, and does not fail strict', () => {
+  for (const missing of [{ status: 128, stderr: 'SYNTHETIC_SECRET' }, { status: 1 }]) {
+    for (const args of [[], ['--strict']]) {
+      const f = fixture({ [UPSTREAM]: missing });
+      assert.equal(f.invoke(args), 0);
+      const notes = f.output.filter(message => message.startsWith('Note:'));
+      assert.equal(notes.length, 1); assert.ok(notes[0].includes('behind check skipped'));
+      assert.ok(!f.calls.includes(BEHIND));
+      assert.ok(f.calls.includes('pnpm run build'));
+      assert.ok(!f.output.join('\n').includes('SYNTHETIC_SECRET'));
+      assert.ok(!f.output.some(message => message.startsWith('Warning:')));
+    }
+  }
+});
+test('--check with --strict states that strict is ignored and stays read-only', () => {
+  const f = fixture(); assert.equal(f.invoke(['--check', '--strict']), 0);
+  assert.deepEqual(f.calls, ['yoroi --version']);
+  assert.ok(f.output.includes('Note: --strict is ignored with --check'));
+  const single = fixture(); assert.equal(single.invoke(['--check']), 0);
+  assert.ok(!single.output.some(message => message.includes('--strict')));
 });
 test('update fails on build/install failure and never exposes child diagnostics', () => {
   for (const script of ['build', 'install:global']) {

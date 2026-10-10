@@ -2,7 +2,7 @@ import { chmodSync, closeSync, existsSync, openSync } from 'node:fs';
 import type { DatabaseSync } from 'node:sqlite';
 import { dirname } from 'node:path';
 import { ensureDataDir } from './data-dir.js';
-import { migrate } from './migrations.js';
+import { migrate, type Migration } from './migrations.js';
 
 type SqliteModule = typeof import('node:sqlite');
 
@@ -22,15 +22,26 @@ export function loadSqlite(): SqliteModule {
   }
 }
 
+export interface OpenDatabaseOptions {
+  /** 연결 직후(WAL 전환·마이그레이션 포함)부터 적용하는 busy_timeout. 기본 2000ms(Zen 락). */
+  readonly busyTimeoutMs?: number;
+  /** 적용할 마이그레이션. 기본은 migrate()의 기본값. */
+  readonly migrations?: readonly Migration[];
+}
+
 /** 파일을 0600으로 만들고 WAL·busy_timeout·마이그레이션을 적용해 연다. */
-export function openDatabase(path: string): DatabaseSync {
+export function openDatabase(path: string, options: OpenDatabaseOptions = {}): DatabaseSync {
+  const busyTimeoutMs = options.busyTimeoutMs ?? 2000;
+  if (!Number.isSafeInteger(busyTimeoutMs) || busyTimeoutMs < 0 || busyTimeoutMs > 60_000) {
+    throw new RangeError('Invalid busy timeout');
+  }
   ensureDataDir(dirname(path));
   if (!existsSync(path)) closeSync(openSync(path, 'a', 0o600));
   const db = new (loadSqlite().DatabaseSync)(path);
   try {
-    db.exec('PRAGMA busy_timeout = 2000');
+    db.exec(`PRAGMA busy_timeout = ${busyTimeoutMs}`);
     db.exec('PRAGMA journal_mode = WAL');
-    migrate(db);
+    migrate(db, options.migrations);
   } catch (error) {
     db.close();
     throw error;

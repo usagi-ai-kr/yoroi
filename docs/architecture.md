@@ -1,6 +1,6 @@
 # CLI MVP 아키텍처 (#1)
 
-- 목표: `once` 단발 조회와 `watch` 즉시 조회 후 기본 60초 반복 조회.
+- 목표: `once` 단발 조회(`watch`는 0.3.0에서 제거).
 - 대상: Ollama Pro(비공식 서명 API)·OpenCode Go(공식 API), Codex·AGY(로컬 CLI),
   Claude(내부 OAuth 사용량 GET). Claude 자동 수집은 CLI·모델 요청을 실행하지 않으며 macOS Keychain은 읽기 전용으로만 조회한다.
 - 웹 UI·DB/히스토리 저장·알림은 MVP 후속 범위다.
@@ -10,9 +10,9 @@
 | 위치 | 책임 | 허용 의존 |
 | --- | --- | --- |
 | `src/domain` | 공급자·사용량 창·관측 시각·불변조건 | 표준 언어 기능만 |
-| `src/app` | UsageSource 포트·오류·단발/반복 수집 | domain 및 app |
-| `src/infra` | HTTP·프로세스·scheduler·공급자 변환 | app/domain 및 런타임 |
-| `src/ui/cli` | 명령·렌더링·signal 처리 | app/domain |
+| `src/app` | UsageSource 포트·오류·단발 수집 | domain 및 app |
+| `src/infra` | HTTP·프로세스·공급자 변환 | app/domain 및 런타임 |
+| `src/ui/cli` | 명령·렌더링 | app/domain |
 | `src/composition-root.ts`, `src/composition/` | 설정 해석·구체 구현 조립 | 모든 계층 |
 | `src/main.ts` | 실행 진입 | composition root |
 
@@ -27,7 +27,7 @@
 ## 구현 순서
 
 1. #1 설계 → #2–3 실행·검증 기반 → #4–5 domain/source 포트.
-2. #6–12 process·설정·수집·watch·CLI·HTTP 경계.
+2. #6–12 process·설정·수집·CLI·HTTP 경계.
 3. #13–17 조회 계약 확인 → #18–22 어댑터. 비공식 경로는 사용자 허가와 근거를 기록한다.
 4. #23 조립 → #24 BDD → #25 실제 검증 결과 기반 문서 동기화.
 

@@ -1,0 +1,28 @@
+[
+  {
+    "model_name": "synthetic-model-standard",
+    "organization": "synthetic-lab",
+    "license": "synthetic-license",
+    "rating": 1000.5,
+    "rating_lower": 990.25,
+    "rating_upper": 1010.75,
+    "variance": 12.5,
+    "vote_count": 40,
+    "rank": 2,
+    "category": "synthetic-category",
+    "leaderboard_publish_date": "2026-01-02"
+  },
+  {
+    "model_name": "synthetic-model-agent",
+    "organization": "synthetic-lab",
+    "license": "synthetic-license",
+    "score": 0.25,
+    "score_ci_lower": 0.1,
+    "score_ci_upper": 0.4,
+    "observation_count": 100,
+    "session_count": 30,
+    "rank": 1,
+    "category": "synthetic-category",
+    "leaderboard_publish_date": "2026-01-03"
+  }
+]

@@ -10,9 +10,6 @@ pnpm install --frozen-lockfile
 pnpm run dev --help
 pnpm run dev once
 pnpm --silent run dev once --pretty
-pnpm run dev watch
-pnpm --silent run dev watch --pretty
-pnpm run dev watch --interval 30
 pnpm run typecheck
 pnpm test
 pnpm run test:bdd
@@ -26,15 +23,16 @@ pnpm run check
 ```
 
 - `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
-- `watch`: 즉시 1회 후 **수집 완료 뒤 60초 대기**한다. 시작 간격은 수집 시간+60초이며, 분 단위 고정 시작이 아닌 완료 기준 대기라 조회가 겹치지 않는다.
-- 도움말은 최상위 `yoroi --help`·`yoroi -h`와 서브명령 `yoroi once --help`·`yoroi watch --help`·`yoroi watch -h` 모두 exit 0으로 사용법을 출력한다. 잘못된 인자는 exit 2다(실측).
+- `watch`는 0.3.0에서 제거됐다. 주기 실행이 필요하면 외부 스케줄러로 `yoroi once`를 실행한다(마이그레이션).
+- 도움말은 최상위 `yoroi --help`·`yoroi -h`와 서브명령 `yoroi once --help`·`-h` 모두 exit 0으로 사용법을 출력한다. 잘못된 인자는 exit 2다(실측).
 - `pnpm --silent`: pnpm 실행 배너를 억제해 pretty 표나 CLI 스냅샷 터미널 출력을 온전히 확인하기 위해 사용한다(배너가 무해한 일반 실행에는 생략).
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
+- 개별 테스트는 `node --import tsx --test tests/<파일>.test.ts`로 실행하며 node:test 컨텍스트가 데이터 경로를 임시 디렉터리로 격리한다.
 - 출력 테스트는 ANSI 제거 후 비교한다. CI를 위해 `FORCE_COLOR=1` 통과도 확인한다.
 - 테스트는 fake source/HTTP/process/scheduler와 fixture를 써서 실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
 - dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다. 이미 지정된 환경 변수가 .env보다 우선하며 .env는 Git ignore 대상이다.
-- 전역 설치·.env: [global-install.md](global-install.md)
+- 전역 설치·.env: [global-install.md](global-install.md) / 갱신 절차: `global-cli-update` 스킬 참조
 - pnpm은 packageManager 버전을 고정하며 Corepack 시 `corepack enable pnpm`을 쓴다. [pnpm 설치](https://pnpm.io/installation)·[CI setup](https://github.com/pnpm/setup)을 따르고 필요 시 Node/Corepack 경로를 우선한다.
 - CI는 설명문서만 변경 시 빠른 통과, 그 외에는 `validate-repo.py --ci`·스킬 검증·frozen install·check를 실행한다. PR 필수 체크는 `pull_request` 실행으로 확인하며 수동 `workflow_dispatch`는 진단용이다(단 main 머지 커밋 검증에는 versioning.md 절차에 따라 `workflow_dispatch` 활용).
 
@@ -46,8 +44,6 @@ pnpm run check
 - `YOROI_DATA_DIR`: 로컬 SQLite 저장 디렉터리. 기본 `${XDG_DATA_HOME:-~/.local/share}/yoroi`이며 DB 파일은 `yoroi.db`다(디렉터리 0700·파일 0600, #72).
 - 공급자 인증/설치 누락은 공급자별 오류로 격리하고 다른 조회를 계속한다.
   전체 실패는 exit 1, 선택·timeout 등 잘못된 설정은 exit 2다.
-- `YOROI_INTERVAL_SECONDS`: 기본 60, 정수 1–86400초.
-  `watch --interval`은 초 단위 override이며 최대 86400초, 최소 1ms 단위 양수다.
 - `YOROI_TIMEOUT_MS`: 기본 10000. `YOROI_<공급자>_TIMEOUT_MS`로 개별 override.
 - `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로, 기본 PATH 탐색.
 - Claude는 CLI를 실행하지 않고 OAuth 사용량 GET만 호출한다. 인증 우선순위는

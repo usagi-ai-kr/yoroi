@@ -11,7 +11,6 @@ function build() {
       stderr: (text: string) => stderr.push(text),
     },
     sources: [],
-    scheduler: { sleep: async () => {} },
     subscribeSignals: () => () => {},
   };
   return { cli: createCli(deps), stdout, stderr };

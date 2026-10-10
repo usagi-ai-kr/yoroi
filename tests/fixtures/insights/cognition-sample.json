@@ -1,0 +1,38 @@
+{
+  "v1": {
+    "models": ["Synthetic Model A"],
+    "colors": { "Synthetic Model A": "#000000" },
+    "lab_colors": { "Synthetic Lab": "#111111" },
+    "harness": { "Synthetic Model A": "synthetic-harness" },
+    "efforts": { "Synthetic Model A": ["high"] },
+    "subsets": { "main": 100, "extended": 150 },
+    "data": {
+      "Synthetic Model A": {
+        "high": {
+          "main": { "correct": 0.5, "new_score": 0.45, "tokens": 1000, "cost": 1.5,
+            "tool_calls": null, "steps": null, "ote": null }
+        }
+      }
+    }
+  },
+  "v1_1": {
+    "models": ["Synthetic Model A"],
+    "colors": { "Synthetic Model A": "#000000" },
+    "lab_colors": { "Synthetic Lab": "#111111" },
+    "harness": { "Synthetic Model A": "synthetic-harness" },
+    "efforts": { "Synthetic Model A": ["low", "high"] },
+    "subsets": { "main": 100, "extended": 150 },
+    "data": {
+      "Synthetic Model A": {
+        "low": {
+          "main": { "correct": 0.3, "new_score": 0.28, "tokens": 500, "cost": 0.5,
+            "duration_min": 2.5, "tool_calls": 5, "steps": 10, "ote": null, "flagged_rate": 0 }
+        },
+        "high": {
+          "main": { "correct": 0.6, "new_score": 0.55, "tokens": 2000, "cost": 3,
+            "duration_min": 4, "tool_calls": 8, "steps": 20, "ote": null, "flagged_rate": 0.01 }
+        }
+      }
+    }
+  }
+}

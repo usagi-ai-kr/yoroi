@@ -3,10 +3,15 @@ import test from 'node:test';
 import { compose } from '../src/composition-root.js';
 import { defaultFactories } from '../src/composition/sources.js';
 import type { HttpRequest } from '../src/infra/http-client.js';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-test('production Claude registry uses usage GET for once/watch without any process invocation', async () => {
+test('production Claude registry uses usage GET for once without any process invocation', async t => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'yoroi-claude-composition-'));
+  t.after(() => rmSync(dataDir, { recursive: true, force: true }));
   const requests: HttpRequest[] = [], stdout: string[] = [];
-  let processCalls = 0, sleeps = 0, stop: (() => void) | undefined;
+  let processCalls = 0;
   const factories = defaultFactories({
     runner: { run: async () => { processCalls++; throw new Error('process forbidden'); } },
     http: { request: async request => {
@@ -16,21 +21,19 @@ test('production Claude registry uses usage GET for once/watch without any proce
       }) };
     } },
   });
-  const cli = compose({ configEnv: { YOROI_PROVIDERS: 'claude',
+  const cli = compose({ dataDir, configEnv: { YOROI_PROVIDERS: 'claude',
     YOROI_CLAUDE_OAUTH_TOKEN: 'synthetic-oauth-token' }, factories,
     output: { stdout: line => stdout.push(line), stderr: () => assert.fail('unexpected CLI error') },
-    scheduler: { sleep: async ms => { assert.equal(ms, 60000); if (++sleeps === 2) stop?.(); } },
-    subscribeSignals: handler => { stop = handler; return () => { stop = undefined; }; },
+    subscribeSignals: () => () => {},
   });
   assert.equal(await cli.run(['once']), 0);
-  assert.equal(await cli.run(['watch']), 0);
-  assert.equal(requests.length, 3);
+  assert.equal(requests.length, 1);
   assert.equal(processCalls, 0);
   for (const request of requests) {
     assert.equal(request.method, 'GET');
     assert.equal(request.url, 'https://api.anthropic.com/api/oauth/usage');
     assert.equal(request.body, undefined);
   }
-  assert.equal(stdout.filter(line => line.startsWith('claude: ok')).length, 3);
-  assert.equal(stdout.filter(line => line.includes('reset=2026-10-08T06:00:00.000Z')).length, 3);
+  assert.equal(stdout.filter(line => line.startsWith('claude: ok')).length, 1);
+  assert.equal(stdout.filter(line => line.includes('reset=2026-10-08T06:00:00.000Z')).length, 1);
 });

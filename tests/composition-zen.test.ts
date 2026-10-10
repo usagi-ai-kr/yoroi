@@ -14,7 +14,7 @@ function output() {
   return { stdout, stderr, output: { stdout: (s: string) => stdout.push(s), stderr: (s: string) => stderr.push(s) } };
 }
 
-test('once shows unknown without creating a missing Zen database', async () => {
+test('once creates its cache DB and shows unknown without Zen reports', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-zen-once-'));
   const previous = process.env.YOROI_DATA_DIR;
   process.env.YOROI_DATA_DIR = dir;
@@ -24,25 +24,11 @@ test('once shows unknown without creating a missing Zen database', async () => {
       .run(['once']);
     assert.equal(code, 0);
     assert.ok(out.stdout.some(line => line.startsWith('opencode-zen-free: unknown')));
-    assert.equal(existsSync(join(dir, 'yoroi.db')), false);
+    assert.equal(existsSync(join(dir, 'yoroi.db')), true);
   } finally {
     if (previous === undefined) delete process.env.YOROI_DATA_DIR; else process.env.YOROI_DATA_DIR = previous;
     rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test('watch never reads or closes an injected Zen store', async () => {
-  let reads = 0, closes = 0, signal: (() => void) | undefined;
-  const out = output();
-  const store = { get: () => { reads += 1; return undefined; }, markExceeded: () => { throw new Error(); },
-    markOk: () => ({ changed: false }), close: () => { closes += 1; } };
-  const code = await compose({ configEnv: { YOROI_PROVIDERS: 'codex' }, factories, output: out.output,
-    zenLockStore: store, scheduler: { sleep: async () => signal?.() }, subscribeSignals: handler => {
-      signal = handler; return () => {};
-    } }).run(['watch']);
-  assert.equal(code, 0);
-  assert.equal(reads, 0);
-  assert.equal(closes, 0);
 });
 
 test('injected store close errors preserve the CLI result code', async () => {

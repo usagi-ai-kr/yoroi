@@ -43,6 +43,15 @@
 
 - 작업 중 pane은 `herdr agent read --source visible`만 통한다(recent 읽기는 실패). 전송 전·진행 중 확인도 visible을 쓴다.
 - zsh에서 `set -- $x` 반복 전송은 단어 분리가 안 돼 빈 프롬프트가 된다. 전송 전에 인자 분리·내용을 검증한다.
+- 루프 감시는 스킬 스크립트로 일반화했다([watch_workers.sh](../.agents/skills/agent-coordination/scripts/watch_workers.sh)).
+  이 레포에서 쓰는 호출 예시는 다음과 같다(pane·보고서 경로가 레포 고유 값이므로 여기에 둔다).
+
+  ```bash
+  bash .agents/skills/agent-coordination/scripts/watch_workers.sh \
+    --reports /tmp/yoroi-<task>-report.json [...] --panes w12:p5 w12:p6 --interval 20 --max-polls 120
+  ```
+
+  종료 조건은 새 보고서 생성, `blocked` pane, 무료 모델 한도 문구다. 한도 대상은 p5다.
 
 ## 패킷·보고서 경로
 

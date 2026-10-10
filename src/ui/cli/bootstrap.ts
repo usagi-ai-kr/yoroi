@@ -1,7 +1,6 @@
 import { collectOnce } from "../../app/collect-once.js";
-import { watchUsage } from "../../app/watch-usage.js";
-import type { Scheduler } from "../../app/watch-usage.js";
 import type { UsageResult, UsageSource } from "../../app/usage-source.js";
+import type { UsageResultMeta } from "../../app/usage-result-meta.js";
 import { parseArgs } from "./args.js";
 import { renderResults, renderPretty } from "./render.js";
 import { getHelpText, USAGE } from "./help.js";
@@ -16,16 +15,14 @@ export interface CliEnvironment {
 export interface CliDependencies {
   readonly env: CliEnvironment;
   readonly sources: readonly UsageSource[];
+  readonly sourceMeta?: (source: UsageSource) => UsageResultMeta | undefined;
   readonly zenLockStore?: ZenLockStore;
-  readonly scheduler: Scheduler;
   readonly subscribeSignals: (handler: () => void) => () => void;
-  readonly intervalMs?: number;
   readonly version?: string;
 }
 export interface CliProgram {
   run(argv: string[]): Promise<number>;
 }
-export const DEFAULT_INTERVAL_MS = 60_000;
 export function createCli(deps: CliDependencies): CliProgram {
   const { env } = deps;
   const fail = (message: string): number => {
@@ -38,12 +35,23 @@ export function createCli(deps: CliDependencies): CliProgram {
     for (const line of lines) env.stdout(line);
   };
   const runOnce = async (pretty: boolean): Promise<number> => {
-    const results = await collectOnce(deps.sources);
-    let zenFree;
-    try { zenFree = deps.zenLockStore ? getZenLock(deps.zenLockStore) ?? null : undefined; }
-    catch { zenFree = undefined; }
-    print(results, pretty, zenFree);
-    return results.length > 0 && results.every((result) => "error" in result) ? 1 : 0;
+    const controller = new AbortController();
+    const unsubscribe = deps.subscribeSignals(() => controller.abort());
+    try {
+      const collected = await collectOnce(deps.sources, controller.signal);
+      const results = collected.map((result, index) => {
+        const meta = 'snapshot' in result ? deps.sourceMeta?.(deps.sources[index]!) : undefined;
+        return meta ? { ...result, meta } : result;
+      });
+      let zenFree;
+      try { zenFree = deps.zenLockStore ? getZenLock(deps.zenLockStore) ?? null : undefined; }
+      catch { zenFree = undefined; }
+      print(results, pretty, zenFree);
+      return results.length > 0 && results.every((result) => "error" in result) ? 1 : 0;
+    } finally {
+      unsubscribe();
+      controller.abort();
+    }
   };
   const runZenFree = (parsed: Extract<ReturnType<typeof parseArgs>, { kind: "zen-free" }>): number => {
     if (!deps.zenLockStore) { env.stderr("zen-free storage unavailable\n"); return 1; }
@@ -59,18 +67,6 @@ export function createCli(deps: CliDependencies): CliProgram {
     if (parsed.json) { env.stdout(JSON.stringify(zenFreeJsonStatus(state ?? null))); return 0; }
     env.stdout(renderResults([], state ?? null)[0]!);
     return 0;
-  };
-  const runWatch = async (intervalMs: number, pretty: boolean): Promise<number> => {
-    const controller = new AbortController();
-    const unsubscribe = deps.subscribeSignals(() => controller.abort());
-    try {
-      const stream = watchUsage(deps.sources, deps.scheduler, controller.signal, intervalMs);
-      for await (const results of stream) print(results, pretty);
-      return 0;
-    } finally {
-      unsubscribe();
-      controller.abort();
-    }
   };
   return {
     async run(argv: string[]): Promise<number> {
@@ -89,8 +85,7 @@ export function createCli(deps: CliDependencies): CliProgram {
       if (deps.sources.length === 0) return fail("no providers configured");
       const pretty = Boolean(parsed.pretty);
       try {
-        if (parsed.kind === "once") return await runOnce(pretty);
-        return await runWatch(parsed.intervalMs ?? deps.intervalMs ?? DEFAULT_INTERVAL_MS, pretty);
+        return await runOnce(pretty);
       } catch (error) {
         env.stderr(`yoroi: ${error instanceof Error ? error.message : String(error)}`);
         return 2;

@@ -12,7 +12,7 @@
 
 - `YOROI_PROVIDERS`: 선택할 공급자 ID 목록. 생략하면 다섯 개 모두 조회합니다.
 - `YOROI_TIMEOUT_MS`: 전체 기본 timeout(기본 10000ms). `YOROI_<공급자>_TIMEOUT_MS`로 개별 조정합니다.
-- `YOROI_INTERVAL_SECONDS`: `watch` 간격 초(기본 60). `YOROI_DEBUG=1`이면 읽은 `.env` 경로만 표시합니다.
+- `YOROI_DEBUG=1`이면 읽은 `.env` 경로만 표시합니다.
 - `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로를 지정할 때 사용합니다.
 - `YOROI_OPENCODE_GO_API_KEY`: OpenCode Go API key를 실행 환경에 제공합니다.
 - `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`: Ollama Pro Ed25519 서명 키 경로를 바꿉니다.

@@ -45,12 +45,3 @@ Feature: 실제 공급자 어댑터 fake 전송 통합
     And the CLI stdout contains "opencode-go: error [authentication]"
     And the CLI stdout contains "agy: error [exit]"
     And stdout has results for providers "ollama-pro,codex,claude"
-
-  Scenario: 실제 어댑터 watch가 반복 수집 후 종료 signal로 정리된다
-    Given the five real provider adapters with fake transports
-    And fake scheduler stops after 2 sleeps
-    When I run "watch"
-    Then the CLI exit code is 0
-    And the adapter output contains 10 provider result headers
-    And scheduler slept "60000,60000"
-    And the signal subscription is cleaned up

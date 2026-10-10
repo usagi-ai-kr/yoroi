@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "date": "2026-01-02",
+      "model_permaslug": "synthetic/model-a",
+      "total_tokens": "12300"
+    },
+    {
+      "date": "2026-01-02",
+      "model_permaslug": "other",
+      "total_tokens": "700"
+    }
+  ],
+  "meta": {
+    "as_of": "2026-01-03T02:00:00Z",
+    "start_date": "2026-01-01",
+    "end_date": "2026-01-02",
+    "version": "v1"
+  }
+}

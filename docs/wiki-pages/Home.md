@@ -4,12 +4,11 @@ Welcome to the yoroi wiki!
 
 ![Yoroi 마스코트](https://github.com/qus0in/yoroi/blob/main/docs/assets/yoroi-haunted-armor.jpg?raw=1)
 
-Yoroi는 다섯 공급자의 사용량을 한 번 조회하거나 주기적으로 표시하는 로컬 CLI입니다.
+Yoroi는 다섯 공급자의 AI 사용량을 한 번 조회하는 로컬 CLI입니다.
 
-- 현재 버전: `0.1.2` (v0.1.0·v0.1.1·v0.1.2 Release 발행 완료)
 - 기본 공급자: Ollama Pro, OpenCode Go, Codex, AGY, Claude
 - 공급자별 조회 실패는 분리하며 다른 공급자 조회를 계속합니다.
-- 사용량 이력 데이터베이스나 웹 UI는 현재 범위에 포함되지 않습니다.
+- 반복 실행용 `watch` 명령은 제거됐습니다. 주기 실행은 외부 스케줄러로 `yoroi once`를 호출합니다.
 
 ## 시작
 
@@ -18,12 +17,12 @@ Yoroi는 다섯 공급자의 사용량을 한 번 조회하거나 주기적으�
 ```bash
 yoroi --help
 yoroi once --pretty
-yoroi watch --pretty
+yoroi zen-free status
 ```
 
 1. [시작하기](Getting-Started)에서 Node/pnpm과 실행 방법을 확인합니다.
 2. [공급자와 인증](Providers-and-Authentication)에서 필요한 인증 경로를 설정합니다.
-3. [워커 운영](Worker-Operations)에서 `once`와 `watch` 동작을 확인합니다.
+3. [사용량 캐시와 Zen Free](Usage-Cache-and-Zen-Free)에서 캐시·변화량과 로컬 Zen 상태를 확인합니다.
 4. [체크와 문제 해결](Checks-and-Troubleshooting)에서 검증·오류 대응을 확인합니다.
 
 ## 데이터와 보안

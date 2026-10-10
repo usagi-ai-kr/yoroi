@@ -18,10 +18,11 @@
     "build": "tsc -p tsconfig.json",
     "prepare": "pnpm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
-    "test:bdd": "node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config cucumber.mjs",
+    "test": "node --import ./tests/harness-setup.mjs --import tsx --test \"tests/**/*.test.ts\"",
+    "test:bdd": "node --import ./tests/harness-setup.mjs --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config cucumber.mjs",
     "check": "pnpm run typecheck && pnpm run test && pnpm run test:bdd && pnpm run build",
-    "install:global": "node scripts/install-global.mjs"
+    "install:global": "node scripts/install-global.mjs",
+    "update:global": "node scripts/update-global.mjs"
   },
   "devDependencies": {
     "@cucumber/cucumber": "13.3.0",

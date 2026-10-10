@@ -1,0 +1,41 @@
+{
+  "tier": "free",
+  "intelligence_index_version": 4.1,
+  "pagination": {
+    "page": 1,
+    "page_size": 200,
+    "total_pages": 1,
+    "has_more": false
+  },
+  "data": [
+    {
+      "id": "synthetic-aa-id",
+      "name": "Synthetic AA Model",
+      "slug": "synthetic-aa-model",
+      "release_date": "2026-01-01",
+      "model_creator": {
+        "id": "synthetic-maker",
+        "name": "Synthetic Maker"
+      },
+      "evaluations": {
+        "artificial_analysis_intelligence_index": 42.25,
+        "artificial_analysis_coding_index": null
+      },
+      "pricing": {
+        "price_1m_input_tokens": 0.5,
+        "price_1m_output_tokens": 2,
+        "price_1m_cache_hit_tokens": 0.1
+      },
+      "performance": {
+        "median_output_tokens_per_second": 80,
+        "median_time_to_first_token_seconds": 0.25
+      },
+      "artificial_analysis_intelligence_index_cost": {
+        "total_cost": 12,
+        "cost_per_task": {
+          "total_cost": 0.12
+        }
+      }
+    }
+  ]
+}

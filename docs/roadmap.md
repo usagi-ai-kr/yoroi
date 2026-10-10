@@ -9,7 +9,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 | --- | --- | --- | --- |
 | Bootstrap | 프로젝트 관리 기반 | 규칙·스킬·템플릿·검증·CI 정의 | 완료 |
 | 원격 연결 | Git/GitHub 운영 적용 | 원격·라벨·보호·CI 확인 | 완료(main 보호, PR #28 병합 `48bdd8e`) |
-| 제품 범위 | 5개 공급자 CLI once/watch | 계약·사용량 창·오류·60초 반복 | 구현. #15–#17·#13·#14 closed, #29는 0.1.2(#4)에서 hold 유지(2026-10-10) |
+| 제품 범위 | 5개 공급자 CLI once | 계약·사용량 창·오류 | 구현. #15–#17·#13·#14 closed, #29는 0.1.2(#4)에서 hold 유지(2026-10-10). watch는 0.3.0에서 제거([#83](https://github.com/qus0in/yoroi/issues/83)) |
 | 개발 기반 | Node/TypeScript CLI | 실행·빌드·단위/BDD·CI | 완료. 샘플 red→green 기록(#3) 실측 후 close |
 | 첫 기능 | 수집부터 CLI 표시 | 5개 어댑터·전체 계약 검증 | 구현 완료. Claude는 사용자 허가 GET으로 교체 |
 | 자동화 | 워커·CI 범위·버전 스크립트·Wiki 운영 | #56–#61 | 완료. #57·#59·#60·#61·#25 closed(PR #62). #58·#56 closed(Wiki 게시 검증 후) |

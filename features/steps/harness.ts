@@ -19,7 +19,6 @@ When("I run command {string}", async function (command: string) {
       stderr: (text) => stderr.push(text),
     },
     sources: [],
-    scheduler: { sleep: async () => {} },
     subscribeSignals: () => () => {},
   });
   exitCode = await cli.run([command]);

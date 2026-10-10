@@ -12,7 +12,7 @@ import { compose } from '../src/composition-root.js';
 function setup(store: ZenLockStore = new MemoryZenLockStore()) {
   const stdout: string[] = [], stderr: string[] = [];
   const cli = createCli({ env: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) },
-    sources: [], zenLockStore: store, scheduler: { sleep: async () => {} },
+    sources: [], zenLockStore: store,
     subscribeSignals: () => () => {} });
   return { cli, stdout, stderr };
 }

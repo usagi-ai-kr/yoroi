@@ -16,7 +16,7 @@ function setup(sources: readonly UsageSource[]) {
   const stderr: string[] = [];
   const cli = createCli({
     env: { stdout: (text) => stdout.push(text), stderr: (text) => stderr.push(text) },
-    sources, scheduler: { sleep: async () => {} }, subscribeSignals: () => () => {},
+    sources, subscribeSignals: () => () => {},
   });
   return { cli, stdout, stderr };
 }
@@ -57,9 +57,7 @@ test("once returns 1 when every provider fails", async () => {
 });
 
 test("argument errors return 2 with usage on stderr", async () => {
-  const invalid = [[], ["nope"], ["once", "extra"], ["watch", "--interval"],
-    ["watch", "--interval", "0"], ["watch", "--interval", "abc"],
-    ["watch", "--interval", "-1"], ["watch", "--interval", "86401"]];
+  const invalid = [[], ["nope"], ["once", "extra"], ["watch"], ["watch", "--interval", "5"]];
   for (const argv of invalid) {
     const { cli, stderr } = setup(providers.map(ok));
     assert.equal(await cli.run(argv), 2, argv.join(" "));
@@ -67,11 +65,17 @@ test("argument errors return 2 with usage on stderr", async () => {
   }
 });
 
-test("interval accepts fractional seconds and the 86400s cap, rejects beyond", () => {
-  assert.deepEqual(parseArgs(["watch", "--interval", "0.5"]), { kind: "watch", intervalMs: 500 });
-  assert.deepEqual(parseArgs(["watch", "--interval", "86400"]),
-    { kind: "watch", intervalMs: 86_400_000 });
-  assert.equal(parseArgs(["watch", "--interval", "86401"]).kind, "error");
+test("watch gives removal guidance to use once", () => {
+  const parsed = parseArgs(["watch"]);
+  assert.equal(parsed.kind, "error");
+  assert.match(parsed.kind === "error" ? parsed.message : "", /watch command removed/);
+  assert.match(parsed.kind === "error" ? parsed.message : "", /yoroi once/);
+});
+test("refresh combines with pretty in either order and rejects duplicates", () => {
+  assert.deepEqual(parseArgs(['once', '--refresh']), { kind: 'once', refresh: true });
+  for (const flags of [['--refresh', '--pretty'], ['--pretty', '--refresh']])
+    assert.deepEqual(parseArgs(['once', ...flags]), { kind: 'once', pretty: true, refresh: true });
+  assert.equal(parseArgs(['once', '--refresh', '--refresh']).kind, 'error');
 });
 
 test("short and long help and version flags behave the same", () => {
@@ -81,9 +85,6 @@ test("short and long help and version flags behave the same", () => {
   assert.equal(parseArgs(["-h", "extra"]).kind, "help", "help은 뒤 인자를 무시하고 출력");
   for (const a of [["once", "--help"], ["once", "-h"]]) {
     assert.deepEqual(parseArgs(a), { kind: "help", subcommand: "once" });
-  }
-  for (const a of [["watch", "--help"], ["watch", "-h"]]) {
-    assert.deepEqual(parseArgs(a), { kind: "help", subcommand: "watch" });
   }
   const dup = parseArgs(["once", "--pretty", "--pretty"]);
   assert.equal(dup.kind, "error");

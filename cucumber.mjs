@@ -1,4 +1,4 @@
 export default {
   paths: ["features/**/*.feature"],
-  import: ["features/steps/**/*.ts"],
+  import: ["tests/harness-setup.mjs", "features/steps/**/*.ts"],
 };

@@ -9,7 +9,7 @@ Before(() => { state.store = new MemoryZenLockStore(); state.out = []; state.cod
 async function run(argv: string[]): Promise<void> {
   const cli = createCli({ env: { stdout: line => state.out.push(line), stderr: line => state.out.push(line) },
     sources: [{ provider: 'codex', read: async () => createSnapshot('codex', '2026-10-10T00:00:00Z', []) }],
-    zenLockStore: state.store, scheduler: { sleep: async () => {} }, subscribeSignals: () => () => {} });
+    zenLockStore: state.store, subscribeSignals: () => () => {} });
   state.code = await cli.run(argv);
 }
 When('I report Zen free exceeded for model {string}', async (model: string) =>

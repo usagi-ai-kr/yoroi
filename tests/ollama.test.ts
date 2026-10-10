@@ -22,9 +22,8 @@ test('Ollama maps fractions, optional limits and actual spend without inventing 
 test('Ollama signs the exact timestamped request URI and passes cancellation/timeout', async () => {
   let seen: HttpRequest | undefined;
   const controller = new AbortController();
-  const source = new OllamaSource({ request: async (request, signal) => {
+  const source = new OllamaSource({ request: async request => {
     seen = request;
-    assert.equal(signal, controller.signal);
     return { status: 200, headers: {}, body };
   } }, async challenge => {
     assert.equal(challenge, `GET,/api/usage?ts=${Date.parse(now) / 1000}`);
@@ -34,6 +33,24 @@ test('Ollama signs the exact timestamped request URI and passes cancellation/tim
   assert.equal(seen?.headers?.Authorization, 'public:signature');
   assert.equal(seen?.timeoutMs, 4321);
   assert.equal(seen?.url, `https://ollama.com/api/usage?ts=${Date.parse(now) / 1000}`);
+  // The request signal is a deadline-scoped composite, so assert propagation, not identity.
+  let pending: AbortSignal | undefined;
+  const parent = new AbortController();
+  const cancelled = new OllamaSource({ request: (_request, signal) => {
+    pending = signal;
+    setTimeout(() => parent.abort(), 5);
+    return new Promise((_resolve, reject) => {
+      signal?.addEventListener('abort', () => reject(new SourceError('cancelled')), { once: true });
+    });
+  } }, async () => 'key', 5000, () => now);
+  await assert.rejects(cancelled.read(parent.signal), new SourceError('cancelled'));
+  assert.equal(pending?.aborted, true, 'parent abort must reach the request signal');
+  // The same signal cancels the request at the deadline, yet still reports a timeout.
+  const deadline = new OllamaSource({ request: (_request, signal) =>
+    new Promise((_resolve, reject) => {
+      signal?.addEventListener('abort', () => reject(new SourceError('cancelled')), { once: true });
+    }) }, async () => 'key', 50, () => now);
+  await assert.rejects(deadline.read(), new SourceError('timeout'));
 });
 test('Ollama normalizes status and transport failures without exposing credentials/body', async () => {
   for (const status of [401, 403, 429, 500]) {

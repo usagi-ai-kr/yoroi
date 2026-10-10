@@ -9,11 +9,10 @@ pnpm run install:global
 yoroi --version
 yoroi --help
 yoroi once --pretty
-yoroi watch --pretty
 pnpm remove -g yoroi
 ```
 
-- 서브커맨드 도움말(`yoroi once --help`·`-h`, `yoroi watch --help`·`-h`)은 각 명령의 사용법과 옵션을 stdout에 출력하고 exit 0으로 종료한다(다른 플래그보다 우선).
+- 서브커맨드 도움말(`yoroi once --help`·`-h`)은 각 명령의 사용법과 옵션을 stdout에 출력하고 exit 0으로 종료한다(다른 플래그보다 우선). 제거된 `watch`는 실행 시 안내와 함께 exit 2다.
 
 ## 전역 .env 병합 규칙
 
@@ -36,3 +35,20 @@ pnpm remove -g yoroi
 2. 합성 `.env` 한 줄만 둔 디렉터리: cwd·설치 사본 줄 둘 출력, 설치 사본은 남은 키만 적용.
 
 경로·키 이름·공급자 Status 첫 단어·종료 코드만 기록하고 값·수치는 남기지 않는다. 확인 뒤 임시 디렉터리를 지운다.
+
+## 전역 CLI 갱신 절차 (버전 변경 후)
+
+버전이 바뀐 변경이 main에 머지된 후 다음 절차를 수행한다.
+
+```bash
+pnpm run update:global
+```
+
+- `update:global`은 빌드 → 기존 `install:global` 재사용 → `yoroi --version`이 `package.json`과 같은지 확인하며,
+  다르면 exit 1로 종료한다.
+- 읽기 전용 비교는 `pnpm run update:global --check`를 사용한다. 같으면 0, 다르면 1, 미설치면 2다.
+- 경고 옵션 `--strict`로 엄모드 사용 가능(경고를 오류로 취급).
+- 버전 확인: `yoroi --version` 출력이 레포 `package.json` 버전과 일치해야 한다.
+- 롤백: `pnpm remove -g yoroi` 후 `pnpm run install:global`로 재설치.
+- `.env` 사본: 레포 `.env` 변경 시 `install:global` 재실행이 필요하며, `update:global`도 같은 경로를 재사용한다.
+- origin 미연결 시 `update:global`은 원격 버전 비교 불가 경고를 출력하고 로컬 버전만 확인한다.

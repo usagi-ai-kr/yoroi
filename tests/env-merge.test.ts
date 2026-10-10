@@ -43,11 +43,11 @@ test("keys missing from cwd .env are filled from the install copy", () => withTe
 
 test("real environment variables beat both files", () => withTemp((cwd, pkg) => {
   put(cwd, "YOROI_TIMEOUT_MS=1\n");
-  put(pkg, "YOROI_TIMEOUT_MS=2\nYOROI_INTERVAL_SECONDS=3\n");
+  put(pkg, "YOROI_TIMEOUT_MS=2\nYOROI_TEST_SETTING=3\n");
   const env: Env = { YOROI_TIMEOUT_MS: "9" };
   loadEnvFile({ cwd, packageRoot: pkg, env, load: loader(env) });
   assert.equal(env.YOROI_TIMEOUT_MS, "9");
-  assert.equal(env.YOROI_INTERVAL_SECONDS, "3");
+  assert.equal(env.YOROI_TEST_SETTING, "3");
 }));
 
 test("neither file present is skipped silently, same path loads once", () => withTemp((cwd, pkg) => {

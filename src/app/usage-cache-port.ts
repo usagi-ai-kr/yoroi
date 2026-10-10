@@ -20,7 +20,7 @@ export interface UsageCache {
   /** Hit iff observedAt <= now < observedAt + TTL; preserve observedAt.
    * Invalid timestamps, absent/expired/future rows are misses (undefined).
    * A corrupt row (bad JSON or failing createSnapshot) is a miss too; delete it if possible.
-   * Storage errors may throw; once/watch must treat them as misses. */
+   * Storage errors may throw; once must treat them as misses. */
   get(key: UsageCacheKey, now: number): UsageSnapshot | undefined;
   /** Successful normalized snapshots only; provider must match key.provider.
    * Expiry derives from observedAt, never the insertion time. */

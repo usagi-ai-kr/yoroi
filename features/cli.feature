@@ -1,4 +1,4 @@
-Feature: 5개 공급자 CLI once/watch 수용 시나리오
+Feature: 5개 공급자 CLI once 수용 시나리오
 
   Scenario: 모든 공급자가 성공하면 once는 5개 결과를 출력한다
     Given all 5 fake providers succeed
@@ -39,52 +39,15 @@ Feature: 5개 공급자 CLI once/watch 수용 시나리오
     Then the CLI exit code is 1
     And the CLI stdout contains "ollama-pro: error [timeout]"
 
-  Scenario: watch는 즉시 1회 수집하고 60초 단위로 반복한다
+  Scenario: watch는 제거 안내와 once 대안을 주고 인자 오류 2를 반환한다
     Given all 5 fake providers succeed
-    And fake scheduler stops after 2 sleeps
     When I run "watch"
-    Then the CLI exit code is 0
-    And stdout has 10 result lines
-    And scheduler slept "60000,60000"
-
-  Scenario: --interval 초를 지정하면 해당 주기로 수집한다
-    Given all 5 fake providers succeed
-    And fake scheduler stops after 1 sleeps
-    When I run "watch --interval 5"
-    Then the CLI exit code is 0
-    And scheduler slept "5000"
-
-  Scenario: 중간 주기 공급자 실패 후 다음 주기까지 계속된다
-    Given provider "agy" fails on read 2 then succeeds
-    And fake scheduler stops after 3 sleeps
-    When I run "watch"
-    Then the CLI exit code is 0
-    And "agy" result 1 is ok
-    And "agy" result 2 is an error
-    And "agy" result 3 is ok
-
-  Scenario: 종료 signal은 구독을 정리하고 정상 종료한다
-    Given all 5 fake providers succeed
-    And fake scheduler stops after 1 sleeps
-    When I run "watch"
-    Then the CLI exit code is 0
-    And stdout has 5 result lines
-    And the signal subscription is cleaned up
-
-  Scenario: 잘못된 --interval은 인자 오류 2를 반환한다
-    Given all 5 fake providers succeed
-    When I run "watch --interval 0"
     Then the CLI exit code is 2
-    And the CLI stderr contains "usage"
+    And the CLI stderr contains "removed"
+    And the CLI stderr contains "once"
 
   Scenario: once --help는 서브커맨드 사용법을 출력하고 0을 반환한다
     Given all 5 fake providers succeed
     When I run "once --help"
     Then the CLI exit code is 0
     And the CLI stdout contains "usage: yoroi once"
-
-  Scenario: watch -h는 서브커맨드 사용법을 출력하고 0을 반환한다
-    Given all 5 fake providers succeed
-    When I run "watch -h"
-    Then the CLI exit code is 0
-    And the CLI stdout contains "usage: yoroi watch"

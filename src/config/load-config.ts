@@ -13,7 +13,6 @@ export interface ProviderSettings {
 }
 export interface RuntimeConfig {
   readonly providers: readonly ProviderSettings[];
-  readonly intervalMs: number;
 }
 function positive(value: string | undefined, fallback: number, name: string, maximum = 86400000): number {
   if (value === undefined) return fallback;
@@ -30,7 +29,6 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): R
     throw new Error('Invalid provider selection');
   }
   const timeoutMs = positive(env.YOROI_TIMEOUT_MS, 10000, 'timeout');
-  const intervalMs = positive(env.YOROI_INTERVAL_SECONDS, 60, 'watch interval', 86400) * 1000;
   const settings = selected.map(value => {
     const id = value as ProviderId;
     const prefix = `YOROI_${id.toUpperCase().replaceAll('-', '_')}`;
@@ -61,5 +59,5 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): R
     }
     return setting;
   });
-  return { providers: settings, intervalMs };
+  return { providers: settings };
 }

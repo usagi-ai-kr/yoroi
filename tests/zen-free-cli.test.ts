@@ -11,7 +11,7 @@ function setup() {
   const store = new MemoryZenLockStore();
   const cli = createCli({ env: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) },
     sources: [{ provider: 'codex', read: async () => createSnapshot('codex', '2026-10-10T00:00:00Z', []) }],
-    zenLockStore: store, scheduler: { sleep: async () => {} }, subscribeSignals: () => () => {} });
+    zenLockStore: store, subscribeSignals: () => () => {} });
   return { cli, store, stdout, stderr };
 }
 
@@ -53,7 +53,7 @@ test('once keeps provider output when local Zen lookup fails', async () => {
     markExceeded: () => { throw new Error('unused'); }, markOk: () => ({ changed: false }), close: () => {} };
   const cli = createCli({ env: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) },
     sources: [{ provider: 'codex', read: async () => createSnapshot('codex', '2026-10-10T00:00:00Z', []) }],
-    zenLockStore: broken, scheduler: { sleep: async () => {} }, subscribeSignals: () => () => {} });
+    zenLockStore: broken, subscribeSignals: () => () => {} });
   assert.equal(await cli.run(['once']), 0);
   assert.ok(stdout.some(line => line.startsWith('codex: ok')));
   assert.deepEqual(stderr, []);

@@ -31,20 +31,6 @@ test('once shows unknown without creating a missing Zen database', async () => {
   }
 });
 
-test('watch never reads or closes an injected Zen store', async () => {
-  let reads = 0, closes = 0, signal: (() => void) | undefined;
-  const out = output();
-  const store = { get: () => { reads += 1; return undefined; }, markExceeded: () => { throw new Error(); },
-    markOk: () => ({ changed: false }), close: () => { closes += 1; } };
-  const code = await compose({ configEnv: { YOROI_PROVIDERS: 'codex' }, factories, output: out.output,
-    zenLockStore: store, scheduler: { sleep: async () => signal?.() }, subscribeSignals: handler => {
-      signal = handler; return () => {};
-    } }).run(['watch']);
-  assert.equal(code, 0);
-  assert.equal(reads, 0);
-  assert.equal(closes, 0);
-});
-
 test('injected store close errors preserve the CLI result code', async () => {
   const out = output();
   const store = { get: () => undefined, markExceeded: () => { throw new Error(); },

@@ -15,14 +15,18 @@ export interface UsagePersistence {
   close(): void;
 }
 const CONTRACTS = { claude: 'v1', codex: 'v1', agy: 'v1', 'ollama-pro': 'v1', 'opencode-go': 'v1' } as const;
-/** Configuration identity only: never inspect or hash credential contents. */
+/** Credential values contribute only via one-way SHA-256 digest; raw secrets never enter scope/log/DB. */
+function accountHash(value: string | undefined, absent: string): string {
+  if (value === undefined) return absent;
+  return `cred-${createHash('sha256').update(value, 'utf8').digest('hex').slice(0, 16)}`;
+}
 export function sourceIdentity(settings: ProviderSettings,
   env: Readonly<Record<string, string | undefined>>): UsageSourceIdentity {
   const prefix = `YOROI_${settings.id.toUpperCase().replaceAll('-', '_')}`;
   const material = [settings.id, settings.executable, settings.home ?? env.HOME ?? '',
     settings.configDir ?? '', settings.secureStorageConfigDir ?? '', settings.signingKeyPath ?? '',
-    settings.id === 'claude' ? (settings.oauthToken === undefined ? 'oauth-store' : 'oauth-env') : '',
-    settings.id === 'opencode-go' ? (settings.apiKey === undefined ? 'api-unset' : 'api-env') : '',
+    settings.id === 'claude' ? accountHash(settings.oauthToken, 'oauth-store') : '',
+    settings.id === 'opencode-go' ? accountHash(settings.apiKey, 'api-unset') : '',
     env[`${prefix}_PROFILE`] ?? '',
     settings.id === 'codex' ? env.CODEX_HOME ?? '' : '',
     settings.id === 'agy' ? env.AGY_CONFIG_DIR ?? '' : ''];

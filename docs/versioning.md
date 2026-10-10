@@ -44,8 +44,12 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
   원인과 남은 작업을 보고한다.
 - milestone은 계획, tag는 검증된 커밋, Release는 발행 기록이다.
 
-## 현재 운영 현황 (2026-10-08)
+## 현재 운영 현황 (2026-10-10)
 
-- 버전: `package.json` `0.1.2`. PR #66 병합 `4dfd4d7`, workflow_dispatch CI `37764517117` success.
+- 버전: `package.json` `0.2.0`(PR 준비, `--bump minor --apply`). 커밋·tag·Release는 아직 없다.
 - tag·Release: `v0.1.0`·`v0.1.1`·`v0.1.2` 발행 완료([v0.1.2](https://github.com/qus0in/yoroi/releases/tag/v0.1.2), target `4dfd4d7`).
-- milestone: `0.1.2` closed (#13·#14·#29 open 유지·이관 없음), `0.2.0` open (0.2.0 보류 상태).
+- milestone: `0.1.2` closed([#29](https://github.com/qus0in/yoroi/issues/29) open·hold 유지),
+  `0.2.0`(#5, [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76)), `0.2.1`(#8, [#77](https://github.com/qus0in/yoroi/issues/77)),
+  `0.3.0`(#6, [#71](https://github.com/qus0in/yoroi/issues/71)), `0.4.0`(#7, [#70](https://github.com/qus0in/yoroi/issues/70)).
+- 0.2.0은 PR 준비 단계다([#70](https://github.com/qus0in/yoroi/issues/70)·[#71](https://github.com/qus0in/yoroi/issues/71) 문서 초안 제외). 실제 OpenCode 로드·한도 이벤트·전역 설치는 미실행이며,
+  0.2.1([#77](https://github.com/qus0in/yoroi/issues/77))에서 실사용 검증한다. 발행은 사용자 요청 시 위 §릴리스 순서로 진행한다.

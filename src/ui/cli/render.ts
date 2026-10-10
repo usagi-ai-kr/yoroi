@@ -6,6 +6,8 @@ import { visibleWindows, show } from "./display.js";
 import { expectedSuffix } from "./expected.js";
 import { formatTimeLeft } from "./format.js";
 import { usageStatus, type UsageStatus } from "./pace.js";
+import type { ZenLockState } from "../../app/zen-lock-port.js";
+import { zenFreeRow } from "./zen-free.js";
 
 const statusColors: Readonly<Record<UsageStatus, (text: string) => string>> = {
   "optimal": (text) => pc.green(text),
@@ -48,13 +50,13 @@ export function formatUsage(window: UsageWindow): string {
   return "-";
 }
 
-export function renderPretty(results: readonly UsageResult[]): string[] {
+export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockState | null): string[] {
   const useColor = Boolean(pc.isColorSupported && process.env.FORCE_COLOR !== "0");
   const colors = pc.createColors(useColor);
   const head = ["Provider", "Status", "Window", "Usage", "Reset (KST)"];
   const table = new Table({
     head: head.map((h: string) => colors.bold(h)),
-    colWidths: [13, 22, 16, 22, 27],
+    colWidths: zenFree === undefined ? [13, 22, 16, 22, 27] : [20, 22, 16, 22, 27],
     wordWrap: true,
     style: { head: [], border: [] },
   });
@@ -76,6 +78,10 @@ export function renderPretty(results: readonly UsageResult[]): string[] {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);
       table.push([r.provider, err, "-", "-", "-"]);
     }
+  }
+  if (zenFree !== undefined) {
+    const zen = zenFreeRow(zenFree);
+    table.push(["opencode-zen-free", zen.status, "-", zen.detail, "-"]);
   }
   return table.toString().split("\n");
 }

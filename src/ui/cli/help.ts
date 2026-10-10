@@ -1,12 +1,13 @@
-export type Subcommand = "once" | "watch";
+export type Subcommand = "once" | "watch" | "zen-free";
 
 export const USAGE = [
-  "usage: yoroi <once|watch> [--interval <seconds>] [--pretty] [--help] [--version]",
+  "usage: yoroi <once|watch|zen-free> [--interval <seconds>] [--pretty] [--help] [--version]",
   "",
   "examples:",
   "  yoroi once --pretty",
   "  yoroi watch --pretty",
   "  yoroi watch --interval 30 --pretty",
+  "  yoroi zen-free",
   "",
   "providers: defaults to all 5 (ollama-pro,opencode-go,codex,agy,claude)",
   "  select: YOROI_PROVIDERS=<comma-separated-list>",
@@ -44,8 +45,22 @@ export const WATCH_HELP = [
   "  yoroi watch --interval 30 --pretty",
 ].join("\n");
 
+export const ZEN_FREE_HELP = [
+  "usage: yoroi zen-free [status|report [--exceeded|--ok]] [options]",
+  "",
+  "shows locally stored OpenCode Zen free usage status.",
+  "No network requests are made.",
+  "",
+  "options:",
+  "  --model <id>       model to associate with a report",
+  "  --reason <text>    reason for an exceeded report",
+  "  --retry-at <time>  expected retry time for an exceeded report",
+  "  -h, --help     show help for zen-free subcommand",
+].join("\n");
+
 export function getHelpText(subcommand?: Subcommand): string {
   if (subcommand === "once") return ONCE_HELP;
   if (subcommand === "watch") return WATCH_HELP;
+  if (subcommand === "zen-free") return ZEN_FREE_HELP;
   return USAGE;
 }

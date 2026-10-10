@@ -4,6 +4,8 @@ import { expectedMetrics } from "./expected.js";
 import { formatNumber, formatTimeLeft } from "./format.js";
 import { displayWindows, windowLabels } from "./labels.js";
 import { usageStatus } from "./pace.js";
+import { renderZenFreeStatus } from "./zen-free.js";
+import type { ZenLockState } from "../../app/zen-lock-port.js";
 
 export { displayWindows, windowLabels } from "./labels.js";
 
@@ -59,6 +61,7 @@ export function renderResult(result: UsageResult): string[] {
   return [`${result.provider}: error [${result.error.code}] ${result.error.message}`];
 }
 
-export function renderResults(results: readonly UsageResult[]): string[] {
-  return results.flatMap((result) => renderResult(result));
+export function renderResults(results: readonly UsageResult[], zenFree?: ZenLockState | null): string[] {
+  const lines = results.flatMap((result) => renderResult(result));
+  return zenFree === undefined ? lines : [...lines, renderZenFreeStatus(zenFree)];
 }

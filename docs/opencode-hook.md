@@ -32,6 +32,8 @@ OpenCode의 디렉터리 탐색은 비재귀이므로 보조 모듈은 독립 �
 
 ## 실행과 판별
 
+`zen-free status --json`의 저장소 오류는 stdout을 비우고 stderr에 `zen-free storage error`만 출력하며 exit 1로 끝난다.
+
 OpenCode 실행 환경에 `YOROI_BIN`을 지정하면 해당 실행 파일을 사용한다(기본 `yoroi`).
 공백이 있는 실행 파일 경로도 지원하며, 값은 명령 문자열이 아닌 단일 실행 파일 경로다.
 플래그나 셸 명령을 붙이지 않는다. `execFile`로 셸 없이 비동기 실행하며 6초 제한·출력 버퍼 제한을 둔다.

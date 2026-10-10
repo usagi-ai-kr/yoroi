@@ -7,6 +7,7 @@ import { renderResults, renderPretty } from "./render.js";
 import { getHelpText, USAGE } from "./help.js";
 import { getZenLock, markZenExceeded, markZenOk } from "../../app/zen-lock.js";
 import type { ZenLockStore } from "../../app/zen-lock-port.js";
+import { zenFreeJsonStatus } from "./zen-free.js";
 export { USAGE } from "./help.js";
 export interface CliEnvironment {
   stdout(text: string): void;
@@ -24,7 +25,6 @@ export interface CliDependencies {
 export interface CliProgram {
   run(argv: string[]): Promise<number>;
 }
-
 export const DEFAULT_INTERVAL_MS = 60_000;
 export function createCli(deps: CliDependencies): CliProgram {
   const { env } = deps;
@@ -56,7 +56,8 @@ export function createCli(deps: CliDependencies): CliProgram {
     }) : parsed.operation === "ok" ? markZenOk(deps.zenLockStore, {
       observedAt: now, ...(parsed.model && { model: parsed.model }),
     }).state : getZenLock(deps.zenLockStore);
-    env.stdout(renderResults([], state)[0]!);
+    if (parsed.json) { env.stdout(JSON.stringify(zenFreeJsonStatus(state ?? null))); return 0; }
+    env.stdout(renderResults([], state ?? null)[0]!);
     return 0;
   };
   const runWatch = async (intervalMs: number, pretty: boolean): Promise<number> => {
@@ -71,7 +72,6 @@ export function createCli(deps: CliDependencies): CliProgram {
       controller.abort();
     }
   };
-
   return {
     async run(argv: string[]): Promise<number> {
       const parsed = parseArgs(argv);

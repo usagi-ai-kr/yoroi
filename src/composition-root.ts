@@ -38,6 +38,11 @@ export function compose(options: CompositionOptions = {}): CliProgram {
       return createCli({ env, sources: [], scheduler, subscribeSignals, version: metadata.version }).run(argv);
     }
     if (parsed.kind === 'zen-free') {
+      if (parsed.operation === 'status' && !options.zenLockStore &&
+        !existsSync(join(resolveDataDir(process.env), DB_FILE_NAME))) {
+        const store = new MemoryZenLockStore();
+        return runWithStore(createCli({ env, sources: [], zenLockStore: store, scheduler, subscribeSignals }), argv, store, true);
+      }
       let store: ZenLockStore;
       try { store = options.zenLockStore ?? openZenLockStore(process.env); }
       catch { env.stderr('zen-free storage error\n'); return 1; }

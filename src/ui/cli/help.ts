@@ -46,7 +46,7 @@ export const WATCH_HELP = [
 ].join("\n");
 
 export const ZEN_FREE_HELP = [
-  "usage: yoroi zen-free [status|report [--exceeded|--ok]] [options]",
+  "usage: yoroi zen-free [status [--json]|report [--exceeded|--ok]] [options]",
   "",
   "shows locally stored OpenCode Zen free usage status.",
   "No network requests are made.",
@@ -54,7 +54,9 @@ export const ZEN_FREE_HELP = [
   "options:",
   "  --model <id>       model to associate with a report",
   "  --reason <text>    reason for an exceeded report",
+  "  --retry-in <초>    expected retry duration in seconds",
   "  --retry-at <time>  expected retry time for an exceeded report",
+  "  --json             output stable status JSON (status only)",
   "  -h, --help     show help for zen-free subcommand",
 ].join("\n");
 

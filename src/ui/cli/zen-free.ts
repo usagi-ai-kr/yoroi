@@ -15,6 +15,25 @@ export function zenFreeRow(state?: ZenLockState | null, now: Date = new Date()):
   return { status: state.state, detail: parts.join(' ') || '-' };
 }
 
+export interface ZenFreeJsonStatus {
+  state: 'locked' | 'clear' | 'unknown'; model: string | null; retryAt: string | null;
+  retryPassed: boolean; updatedAt: string | null;
+}
+
+function safeIso(value?: string): string | null {
+  if (!value || value.length > 64) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
+}
+
+export function zenFreeJsonStatus(state?: ZenLockState | null, now: Date = new Date()): ZenFreeJsonStatus {
+  const model = state?.model && safeText(state.model, 64);
+  const safeModel = model && /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,63}$/.test(model) ? model : null;
+  const retryAt = state?.state === 'locked' ? safeIso(state.retryAt) : null;
+  return { state: state?.state ?? 'unknown', model: safeModel, retryAt,
+    retryPassed: retryAt !== null && Date.parse(retryAt) < now.getTime(), updatedAt: safeIso(state?.updatedAt) };
+}
+
 export function renderZenFreeStatus(state?: ZenLockState | null, now: Date = new Date()): string {
   const row = zenFreeRow(state, now);
   return `opencode-zen-free: ${row.status} ${row.detail}`.trimEnd();

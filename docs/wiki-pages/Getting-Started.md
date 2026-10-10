@@ -14,7 +14,6 @@
 pnpm install --frozen-lockfile
 pnpm run dev --help
 pnpm run dev once
-pnpm run dev watch
 ```
 
 개발 실행은 Node의 `--env-file-if-exists=.env`를 사용합니다. 이미 셸이나 서비스에 설정된 환경 변수가 `.env`보다 우선합니다. `.env`는 로컬 전용이며 Git에 추가하지 마세요.
@@ -38,7 +37,6 @@ pnpm run install:global
 yoroi --version
 yoroi --help
 yoroi once --pretty
-yoroi watch --pretty
 ```
 
 전역 설치를 제거할 때는 다음 명령을 실행합니다. 설치 사본과 복사본 `.env`도 함께 삭제됩니다(실측).
@@ -58,6 +56,6 @@ pnpm remove -g yoroi
 ## 다음 단계
 
 - 인증 환경 변수 이름과 프로필 선택은 [공급자와 인증](Providers-and-Authentication)을 확인합니다.
-- 60초 `watch` 동작과 종료 방법은 [워커 운영](Worker-Operations)을 확인합니다.
+- 주기 실행이 필요하면 외부 스케줄러로 `yoroi once`를 실행합니다([워커 운영](Worker-Operations)).
 - 실행 결과의 사용량 상태(`under`·`optimal`·`over`·`n/a`) 표시도 [워커 운영](Worker-Operations)에 정리했습니다.
 - 개발 검증 명령은 [체크와 문제 해결](Checks-and-Troubleshooting)을 확인합니다.

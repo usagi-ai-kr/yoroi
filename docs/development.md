@@ -28,6 +28,7 @@ pnpm run check
 - `pnpm --silent`: pnpm 실행 배너를 억제해 pretty 표나 CLI 스냅샷 터미널 출력을 온전히 확인하기 위해 사용한다(배너가 무해한 일반 실행에는 생략).
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
+- 개별 테스트는 `node --import tsx --test tests/<파일>.test.ts`로 실행하며 node:test 컨텍스트가 데이터 경로를 임시 디렉터리로 격리한다.
 - 출력 테스트는 ANSI 제거 후 비교한다. CI를 위해 `FORCE_COLOR=1` 통과도 확인한다.
 - 테스트는 fake source/HTTP/process/scheduler와 fixture를 써서 실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.
 - dev는 Node의 `--env-file-if-exists=.env`로 로컬 설정을 읽고 `--import tsx`로 실행한다. 이미 지정된 환경 변수가 .env보다 우선하며 .env는 Git ignore 대상이다.

@@ -8,6 +8,8 @@ import { formatTimeLeft } from "./format.js";
 import { usageStatus, type UsageStatus } from "./pace.js";
 import type { ZenLockState } from "../../app/zen-lock-port.js";
 import { zenFreeRow } from "./zen-free.js";
+import { resultMeta } from "../../app/usage-result-meta.js";
+import { formatDelta, formatCacheHit } from "./delta-format.js";
 
 const statusColors: Readonly<Record<UsageStatus, (text: string) => string>> = {
   "optimal": (text) => pc.green(text),
@@ -64,6 +66,7 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
     if ("snapshot" in r) {
       const { provider, windows, observedAt } = r.snapshot;
       const { windows: visible, labels, hidden } = visibleWindows(provider, windows);
+      const deltas = resultMeta(r)?.deltas;
       const okText = colors.green("ok");
       if (visible.length === 0) table.push([provider, okText, "(none)",
         hidden > 0 ? `${hidden} hidden` : "-", "-"]);
@@ -71,8 +74,11 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
         const left = formatTimeLeft(w.resetAt, observedAt);
         const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
         const status = formatStatus(useColor, usageStatus(provider, w, visible, observedAt));
+        const delta = deltas?.[w.id];
+        const deltaSuffix = delta ? formatDelta(delta, w.unit) : undefined;
         table.push([provider, status, labels[index]!,
-          formatUsage(w) + expectedSuffix(provider, w, visible, observedAt), reset]);
+          formatUsage(w) + expectedSuffix(provider, w, visible, observedAt) +
+            (deltaSuffix ? `\n(${deltaSuffix})` : ""), reset]);
       });
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);
@@ -83,5 +89,10 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
     const zen = zenFreeRow(zenFree);
     table.push(["opencode-zen-free", zen.status, "-", zen.detail, "-"]);
   }
-  return table.toString().split("\n");
+  const cache = results.flatMap(r => {
+    const meta = resultMeta(r)?.cache;
+    return "snapshot" in r && meta?.hit ? [formatCacheHit(r.snapshot.provider, meta.ageMs)] : [];
+  });
+  const lines = table.toString().split("\n");
+  return cache.length ? [...lines, `cache: ${cache.join(", ")}`] : lines;
 }

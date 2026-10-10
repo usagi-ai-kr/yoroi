@@ -3,8 +3,13 @@ import test from 'node:test';
 import { compose } from '../src/composition-root.js';
 import { defaultFactories } from '../src/composition/sources.js';
 import type { HttpRequest } from '../src/infra/http-client.js';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-test('production Claude registry uses usage GET for once without any process invocation', async () => {
+test('production Claude registry uses usage GET for once without any process invocation', async t => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'yoroi-claude-composition-'));
+  t.after(() => rmSync(dataDir, { recursive: true, force: true }));
   const requests: HttpRequest[] = [], stdout: string[] = [];
   let processCalls = 0;
   const factories = defaultFactories({
@@ -16,7 +21,7 @@ test('production Claude registry uses usage GET for once without any process inv
       }) };
     } },
   });
-  const cli = compose({ configEnv: { YOROI_PROVIDERS: 'claude',
+  const cli = compose({ dataDir, configEnv: { YOROI_PROVIDERS: 'claude',
     YOROI_CLAUDE_OAUTH_TOKEN: 'synthetic-oauth-token' }, factories,
     output: { stdout: line => stdout.push(line), stderr: () => assert.fail('unexpected CLI error') },
     subscribeSignals: () => () => {},

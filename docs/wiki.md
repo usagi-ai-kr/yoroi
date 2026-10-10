@@ -13,10 +13,10 @@
 
 - PR #62 구현은 `1b3b02745ba2f1fe8c8e2f3b7ef05e856ada69ee`로 main에 병합됐고 PR CI run `37720540457`은 성공했다. root 보고: 단위 136, BDD 25시나리오/144 step, Python script 19, pretty 9 cases 통과; 5개 공급자 pretty smoke 확인.
 - Wiki 원본에는 coordination skill/scripts, P3 CI classifier/`validate-repo.py --ci`, version dry-run/apply·검증 SHA, pretty 호출/표 계약을 반영했다. docs-only는 app install/check를 생략하되 `ci` status는 유지하고 skill 변경은 full check다.
-- Wiki push는 root의 후속 docs-only cleanup PR fast-pass 검증과 최종 docs merge SHA 전달 뒤에만 진행한다. 현재 remote Wiki에는 commit/push하지 않는다.
+- 이 안내 초안은 0.3.0 병합 후 root가 remote Wiki에 게시한다. 이번 작업에서는 로컬 문서만 수정하며 push하지 않는다.
 - 이후 게시 명령:
   ```bash
-  git -C /tmp/yoroi-wiki-checkout add Home.md Getting-Started.md Providers-and-Authentication.md Worker-Operations.md Checks-and-Troubleshooting.md _Sidebar.md
+  git -C /tmp/yoroi-wiki-checkout add Home.md Getting-Started.md Providers-and-Authentication.md Worker-Operations.md Usage-Cache-and-Zen-Free.md Checks-and-Troubleshooting.md _Sidebar.md
   git -C /tmp/yoroi-wiki-checkout commit -m "docs: publish Yoroi wiki guides"
   git -C /tmp/yoroi-wiki-checkout push origin master
   ```

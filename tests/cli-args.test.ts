@@ -71,6 +71,12 @@ test("watch gives removal guidance to use once", () => {
   assert.match(parsed.kind === "error" ? parsed.message : "", /watch command removed/);
   assert.match(parsed.kind === "error" ? parsed.message : "", /yoroi once/);
 });
+test("refresh combines with pretty in either order and rejects duplicates", () => {
+  assert.deepEqual(parseArgs(['once', '--refresh']), { kind: 'once', refresh: true });
+  for (const flags of [['--refresh', '--pretty'], ['--pretty', '--refresh']])
+    assert.deepEqual(parseArgs(['once', ...flags]), { kind: 'once', pretty: true, refresh: true });
+  assert.equal(parseArgs(['once', '--refresh', '--refresh']).kind, 'error');
+});
 
 test("short and long help and version flags behave the same", () => {
   for (const argv of [["--help"], ["-h"]]) assert.deepEqual(parseArgs(argv), { kind: "help" });

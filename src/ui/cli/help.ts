@@ -12,12 +12,13 @@ export const USAGE = [
 ].join("\n");
 
 export const ONCE_HELP = [
-  "usage: yoroi once [--pretty] [--help]",
+  "usage: yoroi once [--pretty] [--refresh] [--help]",
   "",
   "collects usage snapshots once from configured providers.",
   "",
   "options:",
   "  --pretty       render visual card layout",
+  "  --refresh      bypass cached usage and collect fresh snapshots",
   "  -h, --help     show help for once subcommand",
   "",
   "examples:",

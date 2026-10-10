@@ -45,6 +45,8 @@ yoroi once --pretty
 pnpm remove -g yoroi
 ```
 
+버전 변경을 반영해 빌드·재설치하고 설치 버전을 검증할 때는 `pnpm run update:global`을 실행합니다. 읽기 전용 비교는 `pnpm run update:global --check`입니다.
+
 ## 전역 실행과 `.env`
 
 - `pnpm run install:global`은 레포를 pnpm pack으로 묶어 레포와 독립된 사본으로 전역 설치하고(디렉터리 직접 설치는 심볼릭 링크라 쓰지 않음), 설치 위치 루트에 레포 `.env`를 권한 600으로 복사합니다. `.env`가 없으면 조용히 건너뛰고, 재실행하면 재설치와 함께 복사본을 갱신합니다.
@@ -56,6 +58,6 @@ pnpm remove -g yoroi
 ## 다음 단계
 
 - 인증 환경 변수 이름과 프로필 선택은 [공급자와 인증](Providers-and-Authentication)을 확인합니다.
-- 주기 실행이 필요하면 외부 스케줄러로 `yoroi once`를 실행합니다([워커 운영](Worker-Operations)).
-- 실행 결과의 사용량 상태(`under`·`optimal`·`over`·`n/a`) 표시도 [워커 운영](Worker-Operations)에 정리했습니다.
+- 반복 실행용 `watch`는 제거됐습니다. 주기 실행이 필요하면 외부 스케줄러로 `yoroi once`를 호출합니다.
+- 사용량 캐시·`--refresh`·`--pretty` 변화량과 Zen Free 상태는 [사용량 캐시와 Zen Free](Usage-Cache-and-Zen-Free)를 확인합니다.
 - 개발 검증 명령은 [체크와 문제 해결](Checks-and-Troubleshooting)을 확인합니다.

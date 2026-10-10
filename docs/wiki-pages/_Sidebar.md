@@ -2,4 +2,5 @@
 * [Getting Started](Getting-Started)
 * [Providers and Authentication](Providers-and-Authentication)
 * [Worker Operations](Worker-Operations)
+* [Usage Cache and Zen Free](Usage-Cache-and-Zen-Free)
 * [Checks and Troubleshooting](Checks-and-Troubleshooting)

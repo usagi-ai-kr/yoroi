@@ -3,14 +3,20 @@ import { parseZenFree, type ZenFreeParsedArgs } from "./zen-free-args.js";
 export type ParsedArgs =
   | { readonly kind: "help"; readonly subcommand?: Subcommand }
   | { readonly kind: "version" }
-  | { readonly kind: "once"; readonly pretty?: boolean }
+  | { readonly kind: "once"; readonly pretty?: boolean; readonly refresh?: boolean }
   | ZenFreeParsedArgs
   | { readonly kind: "error"; readonly message: string };
 function parseOnce(args: readonly string[]): ParsedArgs {
   if (args.includes("--help") || args.includes("-h")) return { kind: "help", subcommand: "once" };
-  if (!args.length) return { kind: "once" };
-  if (args.length === 1 && args[0] === "--pretty") return { kind: "once", pretty: true };
-  return { kind: "error", message: `unexpected argument: ${args[0] === "--pretty" ? args[1] : args[0]}` };
+  const seen = new Set<string>();
+  for (const arg of args) {
+    if (!["--pretty", "--refresh"].includes(arg) || seen.has(arg)) {
+      return { kind: "error", message: `unexpected argument: ${arg}` };
+    }
+    seen.add(arg);
+  }
+  return { kind: "once", ...(seen.has("--pretty") && { pretty: true }),
+    ...(seen.has("--refresh") && { refresh: true }) };
 }
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const command = argv[0];

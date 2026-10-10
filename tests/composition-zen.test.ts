@@ -14,7 +14,7 @@ function output() {
   return { stdout, stderr, output: { stdout: (s: string) => stdout.push(s), stderr: (s: string) => stderr.push(s) } };
 }
 
-test('once shows unknown without creating a missing Zen database', async () => {
+test('once creates its cache DB and shows unknown without Zen reports', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-zen-once-'));
   const previous = process.env.YOROI_DATA_DIR;
   process.env.YOROI_DATA_DIR = dir;
@@ -24,7 +24,7 @@ test('once shows unknown without creating a missing Zen database', async () => {
       .run(['once']);
     assert.equal(code, 0);
     assert.ok(out.stdout.some(line => line.startsWith('opencode-zen-free: unknown')));
-    assert.equal(existsSync(join(dir, 'yoroi.db')), false);
+    assert.equal(existsSync(join(dir, 'yoroi.db')), true);
   } finally {
     if (previous === undefined) delete process.env.YOROI_DATA_DIR; else process.env.YOROI_DATA_DIR = previous;
     rmSync(dir, { recursive: true, force: true });

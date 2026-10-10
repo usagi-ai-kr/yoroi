@@ -24,6 +24,7 @@ test("subcommand help for once exits 0 with usage, options, and yoroi examples",
     assert.match(text, /usage: yoroi once/);
     assert.match(text, /options:/);
     assert.match(text, /--pretty/);
+    assert.match(text, /--refresh/);
     assert.match(text, /-h, --help/);
     assert.match(text, /yoroi once --pretty/);
     assert.ok(!text.includes("pnpm"), "pnpm string must not appear in help");

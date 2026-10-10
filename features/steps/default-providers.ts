@@ -19,7 +19,7 @@ Given("default configuration without credentials", () => {
 Given("API providers fail with authentication while others succeed", () => {});
 
 When("I run composed CLI {string}", async (cmd: string) => {
-  const cli = compose({ configEnv: world.configEnv, factories: createFactories(),
+  const cli = compose({ configEnv: world.configEnv, dataDir: process.env.YOROI_DATA_DIR!, factories: createFactories(),
     output: { stdout: text => world.stdout.push(text), stderr: () => {} } });
   world.exitCode = await cli.run(cmd.trim().split(/\s+/));
 });

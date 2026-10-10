@@ -5,6 +5,10 @@ import { nodeEnvironment, processSignals } from './ui/cli/runtime.js';
 import { parseArgs } from './ui/cli/args.js';
 import { loadConfig } from './config/load-config.js';
 import { createSources, type SourceFactories } from './composition/sources.js';
+import { cacheSources, openUsagePersistence, type UsagePersistence } from './composition/cache.js';
+import { dataEnvironment } from './composition/data-env.js';
+import { CachedSource } from './app/cached-source.js';
+import type { UsageClock } from './app/usage-cache-port.js';
 import type { ZenLockStore } from './app/zen-lock-port.js';
 import { MemoryZenLockStore } from './app/zen-lock-memory.js';
 import { openZenLockStore } from './infra/sqlite/zen-lock-store.js';
@@ -17,6 +21,9 @@ export interface CompositionOptions {
   readonly factories?: SourceFactories;
   readonly subscribeSignals?: (handler: () => void) => () => void;
   readonly zenLockStore?: ZenLockStore;
+  readonly openUsagePersistence?: () => UsagePersistence | undefined;
+  readonly dataDir?: string;
+  readonly clock?: UsageClock;
 }
 
 async function runWithStore(cli: CliProgram, argv: string[], store: ZenLockStore,
@@ -33,14 +40,15 @@ export function compose(options: CompositionOptions = {}): CliProgram {
     if (parsed.kind === 'help' || parsed.kind === 'version' || parsed.kind === 'error') {
       return createCli({ env, sources: [], subscribeSignals, version: metadata.version }).run(argv);
     }
+    const dataEnv = dataEnvironment(options.configEnv, options.dataDir);
     if (parsed.kind === 'zen-free') {
       if (parsed.operation === 'status' && !options.zenLockStore &&
-        !existsSync(join(resolveDataDir(process.env), DB_FILE_NAME))) {
+        !existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME))) {
         const store = new MemoryZenLockStore();
         return runWithStore(createCli({ env, sources: [], zenLockStore: store, subscribeSignals }), argv, store, true);
       }
       let store: ZenLockStore;
-      try { store = options.zenLockStore ?? openZenLockStore(process.env); }
+      try { store = options.zenLockStore ?? openZenLockStore(dataEnv); }
       catch { env.stderr('zen-free storage error\n'); return 1; }
       const cli = createCli({ env, sources: [], zenLockStore: store, subscribeSignals });
       return runWithStore(cli, argv, store, true);
@@ -51,17 +59,25 @@ export function compose(options: CompositionOptions = {}): CliProgram {
       env.stderr(error instanceof Error ? error.message : 'Invalid runtime configuration');
       return 2;
     }
-    const sources = createSources(config, options.factories);
+    const configEnv = options.configEnv ?? process.env;
+    let sources = createSources(config, options.factories);
+    let persistence: UsagePersistence | undefined;
+    try {
+      persistence = options.openUsagePersistence ? options.openUsagePersistence() : openUsagePersistence(dataEnv);
+      if (persistence) sources = cacheSources(sources, config, configEnv, persistence, Boolean(parsed.refresh), options.clock);
+    } catch { /* cache opening failures preserve provider collection */ }
     let store: ZenLockStore | undefined = options.zenLockStore;
     let shouldClose = Boolean(store);
     if (!store) {
-      const dbExists = existsSync(join(resolveDataDir(process.env), DB_FILE_NAME));
+      const dbExists = existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME));
       if (dbExists) {
-        try { store = openZenLockStore(process.env); shouldClose = true; } catch { /* keep provider output */ }
+        try { store = openZenLockStore(dataEnv); shouldClose = true; } catch { /* keep provider output */ }
       } else store = new MemoryZenLockStore();
     }
     const cli = createCli({ env, sources, ...(store && { zenLockStore: store }),
+      sourceMeta: source => source instanceof CachedSource ? source.meta : undefined,
       subscribeSignals, version: metadata.version });
-    return store ? runWithStore(cli, argv, store, shouldClose) : cli.run(argv);
+    try { return await (store ? runWithStore(cli, argv, store, shouldClose) : cli.run(argv)); }
+    finally { try { persistence?.close(); } catch { /* preserve the CLI result */ } }
   } };
 }

@@ -2,7 +2,7 @@
 name: agent-coordination
 description: 토큰 절약, 명시적 파일 소유권, 하위 worker 안정 위임, 공식 CLI 계약 사전 검증 및 결과 감사 프로토콜을 관리한다. Root-Worker 협업, 작업 패킷 분담, 컨텍스트 핸드오프 요청에 사용한다.
 metadata:
-  version: "1.1"
+  version: "1.2"
 ---
 
 # 에이전트 협업 및 작업 분담
@@ -49,6 +49,15 @@ Root는 직접 일하지 않고 **나누고 맡기고 확인**한다. 맥락은 
 4. Worker가 막히면 root가 대신 하지 않고 범위를 줄이거나 계약을 정정한 새 패킷을 발행한다.
 5. 진행 중 worker 목록(패킷 id·pane·상태)을 root가 한 곳에 유지해 중단·재개 시 사용한다.
 6. 중단 요청은 모든 worker에 전파한다. 절차는 `graceful-stop` 스킬을 따른다.
+7. 배정이 길어지면 루프 감시를 시작한다. 스크립트는 [watch_workers.sh](scripts/watch_workers.sh)다.
+
+   ```bash
+   bash <skill-dir>/scripts/watch_workers.sh --reports <report>... --panes <pane>... [--interval 20] [--max-polls 120] [--limit-pattern <ERE>]
+   ```
+
+   보고서 생성·감시 대상 pane의 `blocked`·모델 한도 문구 중 하나가 보이면 종료하고 그 화면을
+   함께 출력한다. 종료 코드는 감지 0, usage 오류 2, 변화 없음 3이라 root는 문자열을 보지 않고
+   구분한다. 한도 문구는 구체 문구만 기본값으로 쓰고 필요할 때 `--limit-pattern`으로 덮어쓴다.
 
 ## 3. 작업 흐름
 
@@ -68,4 +77,5 @@ Root는 직접 일하지 않고 **나누고 맡기고 확인**한다. 맥락은 
    ```
 
 자세한 운영 지침과 CLI 계약 정정 사례는 [플레이북](references/playbook.md)을 참조한다.
-관련 도구는 [task_packet.py](scripts/task_packet.py) 및 [report_audit.py](scripts/report_audit.py)에 있다.
+관련 도구는 [task_packet.py](scripts/task_packet.py), [report_audit.py](scripts/report_audit.py),
+[watch_workers.sh](scripts/watch_workers.sh)에 있다.

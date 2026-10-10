@@ -1,5 +1,6 @@
 import { collectOnce } from "../../app/collect-once.js";
 import type { UsageResult, UsageSource } from "../../app/usage-source.js";
+import type { UsageResultMeta } from "../../app/usage-result-meta.js";
 import { parseArgs } from "./args.js";
 import { renderResults, renderPretty } from "./render.js";
 import { getHelpText, USAGE } from "./help.js";
@@ -14,6 +15,7 @@ export interface CliEnvironment {
 export interface CliDependencies {
   readonly env: CliEnvironment;
   readonly sources: readonly UsageSource[];
+  readonly sourceMeta?: (source: UsageSource) => UsageResultMeta | undefined;
   readonly zenLockStore?: ZenLockStore;
   readonly subscribeSignals: (handler: () => void) => () => void;
   readonly version?: string;
@@ -36,7 +38,11 @@ export function createCli(deps: CliDependencies): CliProgram {
     const controller = new AbortController();
     const unsubscribe = deps.subscribeSignals(() => controller.abort());
     try {
-      const results = await collectOnce(deps.sources, controller.signal);
+      const collected = await collectOnce(deps.sources, controller.signal);
+      const results = collected.map((result, index) => {
+        const meta = 'snapshot' in result ? deps.sourceMeta?.(deps.sources[index]!) : undefined;
+        return meta ? { ...result, meta } : result;
+      });
       let zenFree;
       try { zenFree = deps.zenLockStore ? getZenLock(deps.zenLockStore) ?? null : undefined; }
       catch { zenFree = undefined; }

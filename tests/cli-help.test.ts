@@ -51,10 +51,27 @@ test("top-level help preserves exit 0, yoroi examples, and no pnpm string", asyn
     assert.equal(await cli.run([flag]), 0);
     assert.equal(stderr.length, 0);
     const text = stdout.join("\n");
-    assert.match(text, /usage: yoroi <once\|zen-free>/);
+    assert.match(text, /usage: yoroi <once\|zen-free\|detect>/);
+    assert.match(text, /yoroi detect --once/);
     assert.match(text, /yoroi once --pretty/);
     assert.doesNotMatch(text, /watch/);
     assert.ok(!text.includes("pnpm"), "top-level help has no pnpm string");
+    assert.ok(!SECRET_PATTERN.test(text), "no secret patterns in help");
+  }
+});
+
+test("detect help exits 0, documents the loop, once, json and status, and keeps supervision outside yoroi", async () => {
+  for (const argv of [["detect", "--help"], ["detect", "-h"], ["detect", "--once", "--help"], ["detect", "status", "-h"]]) {
+    const { cli, stdout, stderr } = runHelp(argv);
+    assert.equal(await cli.run(argv), 0);
+    assert.equal(stderr.length, 0);
+    const text = stdout.join("\n");
+    assert.match(text, /usage: yoroi detect \[--once\] \[--json\]/);
+    assert.match(text, /--once/);
+    assert.match(text, /--json/);
+    assert.match(text, /status/);
+    assert.match(text, /never daemonizes/);
+    assert.ok(!text.includes("pnpm"), "detect help has no pnpm string");
     assert.ok(!SECRET_PATTERN.test(text), "no secret patterns in help");
   }
 });

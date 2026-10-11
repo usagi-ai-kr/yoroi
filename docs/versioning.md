@@ -50,7 +50,9 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
   0.3.0은 캐시·이력(`update:global`)과 `watch` 제거를 담은 minor이며, 아직 tag를 쓰지 않았다.
 - tag·Release: `v0.1.0`·`v0.1.1`·`v0.1.2` 발행 완료([v0.1.2](https://github.com/qus0in/yoroi/releases/tag/v0.1.2), target `4dfd4d7`).
 - milestone: `0.1.2` closed([#29](https://github.com/qus0in/yoroi/issues/29) open·hold 유지),
-  `0.2.0`(#5, [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76)), `0.2.1`(#8, [#77](https://github.com/qus0in/yoroi/issues/77)),
-  `0.3.0`(#6, [#71](https://github.com/qus0in/yoroi/issues/71)), `0.4.0`(#7, [#70](https://github.com/qus0in/yoroi/issues/70)).
+  `0.2.0`(#5, [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76)), `0.3.0`(#6, [#71](https://github.com/qus0in/yoroi/issues/71)),
+  `0.3.1`(#8, [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88)), `0.4.0`(#10, [#89](https://github.com/qus0in/yoroi/issues/89) 감지),
+  `0.5.0`(#7, [#70](https://github.com/qus0in/yoroi/issues/70) 인사이트), `0.6.0`(#9, [#84](https://github.com/qus0in/yoroi/issues/84) trend).
+  2026-10-11 재번호: #7은 `0.4.0`→`0.5.0`, 감지 #10은 `0.4.0`, trend #9는 `0.6.0`. #8은 앞선 결정으로 `0.2.1`→`0.3.1`.
 - 0.3.0이 PR 준비 단계다(캐시·이력 #71 반영, 0.2.0 범위는 포함). 실제 OpenCode 로드·한도 이벤트·전역 설치는 미실행이며,
-  0.2.1([#77](https://github.com/qus0in/yoroi/issues/77))에서 실사용 검증한다. 발행은 사용자 요청 시 위 §릴리스 순서로 진행한다.
+  0.3.1([#77](https://github.com/qus0in/yoroi/issues/77))에서 실사용 검증한다. 발행은 사용자 요청 시 위 §릴리스 순서로 진행한다.

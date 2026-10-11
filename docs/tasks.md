@@ -7,7 +7,7 @@
 ## 현재 상태 (2026-10-10)
 
 - milestone(2026-10-10 사용자 결정): #5 `0.2.0`([#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76)),
-  #6 `0.3.0`([#71](https://github.com/qus0in/yoroi/issues/71)), #7 `0.4.0`([#70](https://github.com/qus0in/yoroi/issues/70)), #8 `0.2.1`([#77](https://github.com/qus0in/yoroi/issues/77) 0.2.0 실사용 검증·수정).
+  #6 `0.3.0`([#71](https://github.com/qus0in/yoroi/issues/71)), #7 `0.4.0`([#70](https://github.com/qus0in/yoroi/issues/70), 2026-10-11 재번호로 `0.5.0`), #8 `0.2.1`([#77](https://github.com/qus0in/yoroi/issues/77) 0.2.0 실사용 검증·수정, 이후 `0.3.1`).
   옛 milestone #2는 삭제, #30–#55·#69는 사용자(qus0in)가 2026-10-10 close(재개 아님).
 - #29는 0.1.2 milestone(#4, close)에 open·hold 유지. #13·#14는 2026-10-10 close.
 - 0.2.0 구현·보강 완료(미커밋): `src/app/zen-*.ts`, `src/infra/sqlite/`, `src/ui/cli/zen-free.ts`,
@@ -72,6 +72,7 @@
   - 회고: `report_audit.py`는 glob 소유 패턴을 펼치지 않아 오탐 FAIL을 낸다. root가 `git status`로 대조한다.
 - `0.1.2`: #13·#14·#29. milestone #4 closed, v0.1.2 발행. #13·#14는 2026-10-10 close, #29는 hold 유지.
 - `0.2.0`: [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76)(PR 준비·미발행, #72 close 예정). `0.2.1`: [#77](https://github.com/qus0in/yoroi/issues/77)(work).
-  `0.3.0`: [#71](https://github.com/qus0in/yoroi/issues/71)(plan). `0.4.0`: [#70](https://github.com/qus0in/yoroi/issues/70)(work).
+  `0.3.0`: [#71](https://github.com/qus0in/yoroi/issues/71)(plan). `0.4.0`: [#89](https://github.com/qus0in/yoroi/issues/89)(plan, 2026-10-11 재번호).
+  `0.5.0`: [#70](https://github.com/qus0in/yoroi/issues/70)(work, `0.4.0`에서 재번호). `0.6.0`: [#84](https://github.com/qus0in/yoroi/issues/84)(plan, 2026-10-11 신설).
   옛 #30–#55·#69·milestone #2는 사용자 종료(2026-10-10).
 - 상세: [issue-status.md](issue-status.md).

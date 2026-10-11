@@ -3,4 +3,5 @@
 * [Providers and Authentication](Providers-and-Authentication)
 * [Worker Operations](Worker-Operations)
 * [Usage Cache and Zen Free](Usage-Cache-and-Zen-Free)
+* [Detect](Detect)
 * [Checks and Troubleshooting](Checks-and-Troubleshooting)

@@ -82,8 +82,17 @@
   더 늦은 시각만 덮어쓰고 같은 DB에서 v2(캐시·이력)와 독립적으로 적용된다.
 - `yoroi zen-free status`는 둘째 줄에 `plugin-loaded: <UTC ISO>`를 표시하고 미기록이면 `plugin-loaded: not recorded`를 표시한다. `--json`에는 `loadedAt`(ISO 또는 `null`)이 추가된다.
   `once`의 Zen 행은 바뀌지 않는다.
-- 로드 표시는 프로세스별(인스턴스별) 로드마다 갱신되는 "마지막 로드 시각"이다. 어느 OpenCode 프로세스인지, 세션이 한도 이벤트를 받는지는 알려주지 않는다.
-- 기존 설치본에는 이 표시가 없다. `node scripts/opencode-hook.mjs install`로 다시 설치하고 OpenCode를 재시작해야 처음 기록된다(**미확인**: 실제 로드 기록 성공).
+- 로드 표시는 프로세스별(인스턴스별) 로드마다 갱신되는 "마지막 로드 시각"이다. 어느 OpenCode 프로세스인지, 세션이 한도 이벤트를 받는지는 알려주지 않는다. 기존 설치본에는 이 표시가 없다. `node scripts/opencode-hook.mjs install`로 다시 설치하고 OpenCode를 재시작해야 처음 기록된다(**미확인**: 실제 로드 기록 성공).
+
+## detect가 읽는 테이블 ([#89](https://github.com/qus0in/yoroi/issues/89))
+
+`yoroi detect`([운영 문서](detect.md))는 아래 테이블을 읽기만 하며 락 의미를 바꾸지 않는다. 커서·중복 억제 표식은 전용 `detect_state`에 저장한다.
+
+| 테이블 | 읽는 열 | 쓰임 |
+| --- | --- | --- |
+| `lock_events` | `id`·`kind`(exceeded/cleared)·`model`·`observed_at`·`retry_at` | id 커서 이후 전이만 이벤트로 낸다. 첫 실행은 현재 최대 id로 시작 |
+| `provider_locks` | `state`·`retry_at`·`model` | locked이고 `retry_at`이 지나면 `retry-passed`(해제 미검증) |
+| `plugin_loads` | `loaded_at` | 시작 분 이후 로드 표시가 없으면 `plugin-stale`(시작 시각은 `ps etime`으로 분 단위 추정) |
 
 ## 검증과 회고
 

@@ -1,4 +1,5 @@
 import { SourceError, type UsageSource } from '../app/usage-source.js';
+import { withRetryAfter } from '../domain/errors.js';
 import type { HttpClient } from './http-client.js';
 import { parseClaudeApiUsage } from './claude-api-parser.js';
 
@@ -22,6 +23,7 @@ export class ClaudeSource implements UsageSource {
       timeoutMs: this.timeoutMs,
     }, signal);
     if (response.status === 401 || response.status === 403) throw new SourceError('authentication');
+    if (response.status === 429) throw withRetryAfter(new SourceError('unavailable'), response.headers, Date.parse(this.now()));
     if (response.status !== 200) throw new SourceError('unavailable');
     return parseClaudeApiUsage(response.body, this.now());
   }

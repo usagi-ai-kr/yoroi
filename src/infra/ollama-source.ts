@@ -1,4 +1,5 @@
 import { SourceError, type UsageSource } from '../app/usage-source.js';
+import { withRetryAfter } from '../domain/errors.js';
 import type { HttpClient } from './http-client.js';
 import type { OllamaAuthorization } from './ollama-key.js';
 import { parseOllamaUsage } from './ollama-parser.js';
@@ -76,6 +77,7 @@ export class OllamaSource implements UsageSource {
       this.reclassify(error, scope, parent);
     }
     if (response.status === 401 || response.status === 403) throw new SourceError('authentication');
+    if (response.status === 429) throw withRetryAfter(new SourceError('unavailable'), response.headers, Date.parse(observedAt));
     if (response.status !== 200) throw new SourceError('unavailable');
     return response.body;
   }

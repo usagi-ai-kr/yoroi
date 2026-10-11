@@ -1,9 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { ZenLockState, ZenLockStore } from '../../app/zen-lock-port.js';
+import type { ZenLockEvent, ZenLockState, ZenLockStore } from '../../app/zen-lock-port.js';
 import { applyExceeded, applyOk } from '../../app/zen-lock-memory.js';
 import { resolveDbPath } from './data-dir.js';
 import { openDatabase } from './database.js';
 import { ZEN_MIGRATIONS } from './migrations.js';
+import { latestLockEventId, lockEventsSince } from './zen-lock-events.js';
 
 const MAX_EVENTS = 200;
 
@@ -72,9 +73,9 @@ export class SqliteZenLockStore implements ZenLockStore {
     return (this.db.prepare('SELECT loaded_at FROM plugin_loads WHERE scope = ?').get(scope) as { loaded_at?: string } | undefined)?.loaded_at;
   }
 
-  close(): void {
-    this.db.close();
-  }
+  eventsSince(scope: string, afterId: number, limit = MAX_EVENTS): readonly ZenLockEvent[] { return lockEventsSince(this.db, scope, afterId, limit); }
+  latestEventId(scope: string): number { return latestLockEventId(this.db, scope); }
+  close(): void { this.db.close(); }
 
   private addEvent(scope: string, kind: string, model: string | undefined, observedAt: string, retryAt?: string): void {
     this.db.prepare('INSERT INTO lock_events (scope, kind, model, observed_at, retry_at) VALUES (?, ?, ?, ?, ?)')
@@ -84,14 +85,8 @@ export class SqliteZenLockStore implements ZenLockStore {
 
   private transaction<T>(run: () => T): T {
     this.db.exec('BEGIN IMMEDIATE');
-    try {
-      const result = run();
-      this.db.exec('COMMIT');
-      return result;
-    } catch (error) {
-      this.db.exec('ROLLBACK');
-      throw error;
-    }
+    try { const result = run(); this.db.exec('COMMIT'); return result; }
+    catch (error) { this.db.exec('ROLLBACK'); throw error; }
   }
 }
 

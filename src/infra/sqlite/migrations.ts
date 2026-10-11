@@ -47,11 +47,23 @@ const V2: Migration = {
 };
 /** OpenCode 플러그인 로드 표시(#77). 락 상태가 아닌 사실이라 CHECK 제약이 있는 provider_locks/lock_events에 넣지 않는다. */
 const V3: Migration = { version: 3, sql: 'CREATE TABLE plugin_loads (scope TEXT PRIMARY KEY, loaded_at TEXT NOT NULL);' };
+/** yoroi detect(#89)의 상태 KV와 단일 실행 임대(행 1개). 값은 호출자가 비밀 없는 JSON으로 만든다. */
+const V4: Migration = {
+  version: 4,
+  sql: `
+    CREATE TABLE detect_state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE detect_lease (
+      id INTEGER PRIMARY KEY CHECK(id = 1), owner TEXT NOT NULL,
+      acquired_at_ms INTEGER NOT NULL, renewed_at_ms INTEGER NOT NULL, expires_at_ms INTEGER NOT NULL
+    );`,
+};
 /** openDatabase 기본값(Zen 락만). 테이블 추가는 usage 어댑터가 USAGE_MIGRATIONS로 적용한다. */
 export const MIGRATIONS: readonly Migration[] = [V1];
 export const USAGE_MIGRATIONS: readonly Migration[] = [V1, V2];
 /** Zen 락 저장소가 여는 연결: v1 락 테이블 + v3 로드 표시. v2(캐시·이력)와 독립이라 적용 순서에 의존하지 않는다. */
 export const ZEN_MIGRATIONS: readonly Migration[] = [V1, V3];
+/** detect 저장소가 여는 연결. 독립 테이블이라 v1~v3과 어떤 순서로 열어도 합집합이 된다. */
+export const DETECT_MIGRATIONS: readonly Migration[] = [V4];
 
 /** 미적용 버전만 순서대로 적용한다. 재실행해도 변경이 없다.
  * openDatabase는 원래 busy_timeout을 유지하며 SQLITE_BUSY 때 WAL부터 다시 시도한다.

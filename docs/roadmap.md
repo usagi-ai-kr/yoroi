@@ -15,9 +15,9 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 | 개발 기반 | Node/TypeScript CLI | 실행·빌드·단위/BDD·CI | 완료. 샘플 red→green 기록(#3) 실측 후 close |
 | 첫 기능 | 수집부터 CLI 표시 | 5개 어댑터·전체 계약 검증 | 구현 완료. Claude는 사용자 허가 GET으로 교체 |
 | 자동화 | 워커·CI 범위·버전 스크립트·Wiki 운영 | #56–#61 | 완료. #57·#59·#60·#61·#25 closed(PR #62). #58·#56 closed(Wiki 게시 검증 후) |
-| 웹·이력 | Zen Free 락·실사용 검증·캐시·인사이트 | [#70](https://github.com/qus0in/yoroi/issues/70)–[#89](https://github.com/qus0in/yoroi/issues/89) (0.2.0–0.6.0) | 0.2.0·0.3.0 발행 완료(v0.3.0 `f12f55a`), 0.3.1 로드 표시 [#77](https://github.com/qus0in/yoroi/issues/77)·실관측 [#88](https://github.com/qus0in/yoroi/issues/88), 0.4.0 감지 [#89](https://github.com/qus0in/yoroi/issues/89) work. 옛 milestone #2·#30–#55·#69 close(사용자, 2026-10-10) |
+| 웹·이력 | Zen Free 락·실사용 검증·캐시·인사이트 | [#70](https://github.com/qus0in/yoroi/issues/70)–[#89](https://github.com/qus0in/yoroi/issues/89) (0.2.0–0.6.0) | 0.2.0·0.3.0 발행 완료(v0.3.0 `f12f55a`), 0.3.1 로드 표시 [#77](https://github.com/qus0in/yoroi/issues/77)·실관측 [#88](https://github.com/qus0in/yoroi/issues/88), 0.4.0 감지 [#89](https://github.com/qus0in/yoroi/issues/89) v0.4.0 발행(main `4744fbc`, 스모크 대기로 #89 open). 옛 milestone #2·#30–#55·#69 close(사용자, 2026-10-10) |
 
-- `package.json`의 버전은 `0.1.2`(발행 완료)이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
+- `package.json`의 버전은 현재 `0.5.0`(직전 발행 v0.4.0, main `4744fbc`)이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
 - [0.1.2 milestone](https://github.com/qus0in/yoroi/milestone/4): 계약 확인 #13·#14·#29(당시 open 3 유지).
   PR #66 병합 `4dfd4d7`(.env 병합 로드 `68bce2f` 포함), workflow_dispatch CI `37764517117` success,
   tag `v0.1.2`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행, milestone close.
@@ -33,22 +33,23 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
   [#77](https://github.com/qus0in/yoroi/issues/77)(work, 실제 전역 설치·이벤트 관측).
 - [0.3.0 milestone](https://github.com/qus0in/yoroi/milestone/6): SQLite 60초 캐시와 관측 이력 [#71](https://github.com/qus0in/yoroi/issues/71)(Keyv 대신 `node:sqlite`, [#82](https://github.com/qus0in/yoroi/issues/82)). v0.3.0 발행(`f12f55a`, 2026-10-11).
   #71·[#83](https://github.com/qus0in/yoroi/issues/83) close는 별도 조치다. 설계는 [v0.3.0-cache-history-design.md](v0.3.0-cache-history-design.md), 옛 초안은 [v0.2.0/cache-design.md](v0.2.0/cache-design.md).
-- [0.4.0 milestone](https://github.com/qus0in/yoroi/milestone/10): 내장 10분 주기 감지 [#89](https://github.com/qus0in/yoroi/issues/89)(plan).
+- [0.4.0 milestone](https://github.com/qus0in/yoroi/milestone/10): 내장 10분 주기 감지 [#89](https://github.com/qus0in/yoroi/issues/89)(plan). v0.4.0 Release 발행 완료(main `4744fbc`, PR #91), 실환경 detect 스모크 대기로 #89·milestone open 유지.
   Zen Free 락·한도 초과/해제 관측과 공급자 usage 이상 감지를 다룬다(2026-10-11 재번호로 #10 신설).
 - [0.5.0 milestone](https://github.com/qus0in/yoroi/milestone/7): AI 데이터 소스 5곳 인사이트 레터 [#70](https://github.com/qus0in/yoroi/issues/70)(work)
-  (2026-10-11 재번호: `0.4.0`에서 `0.5.0`으로). 계약(0.5.0 범위)은 0.5.0 작업에서 문서로 추가한다.
+  (2026-10-11 재번호: `0.4.0`에서 `0.5.0`으로). 계약은 [insights/execution-contract.md](insights/execution-contract.md).
+- [0.5.1 milestone](https://github.com/qus0in/yoroi/milestone/11): Arena·AA 전체 수집 검증 [#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93), Hermes 매일 전달 검증 [#94](https://github.com/qus0in/yoroi/issues/94)(#70 기준 5·6 분리, 2026-10-11).
 - [0.6.0 milestone](https://github.com/qus0in/yoroi/milestone/9): SQLite 사용량 이력 기반 추세 보기 [#84](https://github.com/qus0in/yoroi/issues/84)(plan)(2026-10-11 재번호로 #9).
 - 옛 milestone #2는 삭제, #30–#55·#69·#13·#14는 사용자 close(2026-10-10). [v0.2.0-plan.md](v0.2.0-plan.md)는 기록으로 남긴다.
 - 첫 MVP 기능은 minor인 `0.1.0`으로 관리한다. 수정은 patch, 기능 추가는 minor로 증가한다.
   초기 `0.x`의 호환성 파괴는 minor와 마이그레이션 기록으로 관리한다.
   안정된 `1.x` 공개 계약 이후 호환성 파괴는 major다.
-- minor 증가 시 patch를 0으로 초기화한다. 직전 발행은 `0.1.2`(milestone #4 close), 다음 후보는 `0.1.3`이다.
+- minor 증가 시 patch를 0으로 초기화한다. 직전 발행은 `v0.4.0`(main `4744fbc`), 다음 후보는 `0.5.0`이다.
   기능 계획은 `0.2.0`–`0.6.0`([#70](https://github.com/qus0in/yoroi/issues/70)–[#89](https://github.com/qus0in/yoroi/issues/89))으로 분리했다(2026-10-11 재번호).
 - PR #67 병합(merge `62ef080`, 2026-10-08T13:16:52Z): 서브커맨드 도움말(`ff3371c`)·문서 정리(`3dadf92`) 반영 완료.
   PR CI `37780797515` success, main workflow_dispatch CI `37783139920` success.
-- 현재 상태 요약: **0.3.0 발행 완료**(tag `v0.3.0` → `f12f55a`, CI 38102185775). 0.2.0도 발행됐다.
+- 현재 상태 요약: **v0.4.0 발행 완료**(tag `v0.4.0` → `4744fbc`, main CI 38125929202). 0.3.0(`f12f55a`, CI 38102185775)·0.2.0도 발행됐다.
   0.3.1 로드 표시 [#77](https://github.com/qus0in/yoroi/issues/77)·실관측 [#88](https://github.com/qus0in/yoroi/issues/88),
-  0.4.0 감지 [#89](https://github.com/qus0in/yoroi/issues/89), 0.5.0 인사이트 [#70](https://github.com/qus0in/yoroi/issues/70), 0.6.0 trend [#84](https://github.com/qus0in/yoroi/issues/84) work.
+  0.4.0 감지 [#89](https://github.com/qus0in/yoroi/issues/89)(발행, 스모크 대기), 0.5.0 인사이트 [#70](https://github.com/qus0in/yoroi/issues/70)(dev → main PR 준비), 0.6.0 trend [#84](https://github.com/qus0in/yoroi/issues/84) work.
   [#29](https://github.com/qus0in/yoroi/issues/29)는 0.1.2(#4)에 open·hold 유지, #13·#14는 close(2026-10-10).
 - 다음 후보: PR #67 변경을 담을 0.1.3 tag·Release 필요 여부는 사용자 결정(주의: opencode worker는 무료 모델 소진 시 구 패킷 재실행 주의).
 - milestone은 릴리스 커밋의 원격 CI 확인 후 닫는다. 0.1.0·0.1.1·0.1.2는 close 완료. 이후 목표는 범위가 정해질 때 생성한다.

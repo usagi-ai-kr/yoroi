@@ -8,6 +8,7 @@ import { createSources, type SourceFactories } from './composition/sources.js';
 import { cacheSources, openUsagePersistence, type UsagePersistence } from './composition/cache.js';
 import { dataEnvironment } from './composition/data-env.js';
 import { runDetectCli, type DetectCliOptions } from './composition/detect-cli.js';
+import { runInsightsCli, type InsightsCliOptions } from './composition/insights-cli.js';
 import { CachedSource } from './app/cached-source.js';
 import type { UsageClock } from './app/usage-cache-port.js';
 import type { ZenLockStore } from './app/zen-lock-port.js';
@@ -25,7 +26,7 @@ export interface CompositionOptions {
   readonly openUsagePersistence?: () => UsagePersistence | undefined;
   readonly dataDir?: string;
   readonly clock?: UsageClock;
-  readonly detect?: DetectCliOptions;
+  readonly detect?: DetectCliOptions; readonly insights?: InsightsCliOptions;
 }
 
 async function runWithStore(cli: CliProgram, argv: string[], store: ZenLockStore, shouldClose: boolean): Promise<number> {
@@ -53,6 +54,7 @@ export function compose(options: CompositionOptions = {}): CliProgram {
     }
     const dataEnv = dataEnvironment(options.configEnv, options.dataDir);
     if (parsed.kind === 'detect') return runDetectCli(parsed, { env, subscribeSignals, configEnv: options.configEnv ?? process.env, dataEnv, ...(options.detect && { options: options.detect }) });
+    if (parsed.kind === 'insights') return runInsightsCli(parsed, { env, subscribeSignals, configEnv: options.configEnv ?? process.env, dataEnv, ...(options.insights && { options: options.insights }) });
     if (parsed.kind === 'zen-free') {
       if (parsed.operation === 'status' && !options.zenLockStore &&
         !existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME))) {

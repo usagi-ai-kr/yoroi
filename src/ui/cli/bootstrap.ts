@@ -81,6 +81,7 @@ export function createCli(deps: CliDependencies): CliProgram {
         return 0;
       }
       if (parsed.kind === "detect") return fail("detect must be started through the composition root");
+      if (parsed.kind === "insights") return fail("insights must be started through the composition root");
       if (parsed.kind === "zen-free") {
         try { return runZenFree(parsed); }
         catch { env.stderr("zen-free storage error\n"); return 1; }

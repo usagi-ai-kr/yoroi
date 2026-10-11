@@ -17,6 +17,7 @@ When('I report Zen free exceeded for model {string}', async (model: string) =>
 When('I read Zen free status', async () => run(['zen-free', 'status']));
 Given('Zen free is locally clear', async () => { await run(['zen-free', 'report', '--exceeded']); await run(['zen-free', 'report', '--ok']); });
 When('I run Zen free once in pretty mode', async () => run(['once', '--pretty']));
+When('the OpenCode plugin reports that it loaded', async () => run(['zen-free', 'report', '--loaded']));
 When('I open Zen free help', async () => run(['zen-free', '--help']));
 Then('the Zen free status is {string}', (expected: string) => {
   assert.ok(state.out.join('\n').includes(`opencode-zen-free: ${expected}`));

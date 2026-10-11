@@ -2,19 +2,17 @@ import type { DatabaseSync } from 'node:sqlite';
 import { USAGE_CACHE_TTL_MS, type UsageCache, type UsageCacheKey } from '../../app/usage-cache-port.js';
 import { createSnapshot, type UsageSnapshot, type UsageWindow } from '../../domain/usage.js';
 import { resolveDbPath } from './data-dir.js';
-import { openDatabase } from './database.js';
+import { isBusy, openDatabase } from './database.js';
 import { USAGE_MIGRATIONS } from './migrations.js';
 
 export const USAGE_BUSY_TIMEOUT_MS = 100;
 /** scope·contractVersion 형식(비밀 방어선): 이 밖의 값은 거부한다. */
 export const SAFE_ID = /^[A-Za-z0-9._:@-]{1,64}$/;
 
-/** SQLITE_BUSY(5)·SQLITE_LOCKED(6)는 캐시·이력 경로에서 miss/생략으로 취급한다. */
-export function isBusy(error: unknown): boolean {
-  const code = (error as { errcode?: unknown } | null)?.errcode;
-  return code === 5 || code === 6;
-}
-/** v1+v2를 적용하며 연결 직후부터 busy_timeout을 100ms로 제한한 연결(Zen 락 연결은 2000ms 유지). */
+/** SQLITE_BUSY(5)·SQLITE_LOCKED(6)는 캐시·이력 경로에서 miss/생략으로 취급한다. database.ts가 원본이다. */
+export { isBusy };
+/** v1+v2를 적용하며 연결 직후부터 busy_timeout을 100ms로 제한한 연결(Zen 락 연결은 2000ms 유지).
+ * WAL·마이그레이션도 같은 제한을 쓰며 SQLITE_BUSY만 총 3회 시도한다. */
 export function openUsageDatabase(path: string): DatabaseSync {
   return openDatabase(path, { busyTimeoutMs: USAGE_BUSY_TIMEOUT_MS, migrations: USAGE_MIGRATIONS });
 }

@@ -70,8 +70,20 @@
 - 외부 명령은 context `$`의 tagged template과 보간을 사용한다. 예: `await $\`yoroi zen-free report --ok\`. 실제 호출은 이번 조사에서 하지 않았다.
 - 출력 억제는 `.quiet()`, 비정상 종료를 값으로 받으려면 `.nothrow()`를 사용하고 `exitCode`를 확인한다. 실행 파일 부재·Promise rejection도 catch한다.
 - 이벤트 콜백 Promise는 소스에서 await하지 않는다. 자체 큐·timeout·실패 처리가 필요하며 원문 오류·헤더·대화·토큰을 명령 인수나 로그에 전달하지 않는다.
-- 전역 플러그인 실설치·로드·외부 명령 실행 성공은 **미확인**이다. 시작 시 의존성 설치가 가능하므로 조사에는 `opencode --version` 외 실행을 사용하지 않았다.
+- 전역 플러그인 실설치(2026-10-10 20:28 KST)는 확인했다. 설치 이후 시작한 opencode 프로세스 2개를 확인했으나(2026-10-11 조사) OpenCode 로그에 플러그인 로드 기록이 없고
+  `--ok`는 락이 없으면 DB에 흔적이 없어 **로드·외부 명령 실행 성공은 여전히 미확인**이다. 아래 로드 표시로 확인한다.
 근거: [탐색 경로](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/config/paths.ts), [XDG 경로](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/core/src/global.ts), [발견·중복 제거](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/config/plugin.ts), [초기화·이벤트 전달](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/plugin/index.ts).
+
+## 로드 표시 ([#77](https://github.com/qus0in/yoroi/issues/77))
+
+- 플러그인 진입(`yoroi-zen-free.js`)이 로드될 때 기존 `report` 경로로 `yoroi zen-free report --loaded`를 1회 실행한다. 대화·모델·오류·토큰은 전달하지 않는다.
+- 호출은 기다리지 않는다(fire-and-forget). `report`는 reject하지 않고 6초 timeout 뒤 강제 종료되며, yoroi 부재·실패·지연이 플러그인 로드와 이벤트 처리를 막지 않는다.
+- 저장은 `plugin_loads(scope, loaded_at)` 한 행뿐이다(마이그레이션 v3). `provider_locks`·`lock_events`는 CHECK 제약이 있는 락 전용이라 쓰지 않으며 락 의미(locked/ok/unknown)는 바뀌지 않는다.
+  더 늦은 시각만 덮어쓰고 같은 DB에서 v2(캐시·이력)와 독립적으로 적용된다.
+- `yoroi zen-free status`는 둘째 줄에 `plugin-loaded: <UTC ISO>`를 표시하고 미기록이면 `plugin-loaded: not recorded`를 표시한다. `--json`에는 `loadedAt`(ISO 또는 `null`)이 추가된다.
+  `once`의 Zen 행은 바뀌지 않는다.
+- 로드 표시는 프로세스별(인스턴스별) 로드마다 갱신되는 "마지막 로드 시각"이다. 어느 OpenCode 프로세스인지, 세션이 한도 이벤트를 받는지는 알려주지 않는다.
+- 기존 설치본에는 이 표시가 없다. `node scripts/opencode-hook.mjs install`로 다시 설치하고 OpenCode를 재시작해야 처음 기록된다(**미확인**: 실제 로드 기록 성공).
 
 ## 검증과 회고
 

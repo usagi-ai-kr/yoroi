@@ -24,11 +24,11 @@ test('new SQLite DB status and first ok report normalize missing rows to unknown
   t.after(() => store.close());
   const { cli, stdout } = setup(store);
   assert.equal(await cli.run(['zen-free', 'status']), 0);
-  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status');
+  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status\nplugin-loaded: not recorded');
   assert.equal(await cli.run(['zen-free', 'report', '--ok']), 0);
-  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status');
+  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status\nplugin-loaded: not recorded');
   assert.equal(await cli.run(['zen-free', 'status']), 0);
-  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status');
+  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status\nplugin-loaded: not recorded');
   assert.equal(await cli.run(['zen-free', 'report', '--exceeded']), 0);
   assert.equal(await cli.run(['zen-free', 'status']), 0);
   assert.match(stdout.at(-1) ?? '', /^opencode-zen-free: locked/);
@@ -47,10 +47,10 @@ test('composition keeps plain and JSON status read-only when the DB file is abse
   const stdout: string[] = [], stderr: string[] = [];
   const cli = compose({ output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) } });
   assert.equal(await cli.run(['zen-free', 'status']), 0);
-  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status');
+  assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status\nplugin-loaded: not recorded');
   assert.equal(await cli.run(['zen-free', 'status', '--json']), 0);
   assert.deepEqual(JSON.parse(stdout.at(-1)!), {
-    state: 'unknown', model: null, retryAt: null, retryPassed: false, updatedAt: null,
+    state: 'unknown', model: null, retryAt: null, retryPassed: false, updatedAt: null, loadedAt: null,
   });
   assert.deepEqual(stderr, []);
   await assert.rejects(fs.stat(dataDir));
@@ -58,11 +58,11 @@ test('composition keeps plain and JSON status read-only when the DB file is abse
 
 test('status JSON has stable safe fields for unknown, locked, and clear states', async () => {
   const { cli, stdout } = setup();
-  const keys = ['state', 'model', 'retryAt', 'retryPassed', 'updatedAt'];
+  const keys = ['state', 'model', 'retryAt', 'retryPassed', 'updatedAt', 'loadedAt'];
   assert.equal(await cli.run(['zen-free', 'status', '--json']), 0);
   assert.deepEqual(Object.keys(JSON.parse(stdout.at(-1)!) as object), keys);
   assert.deepEqual(JSON.parse(stdout.at(-1)!), {
-    state: 'unknown', model: null, retryAt: null, retryPassed: false, updatedAt: null,
+    state: 'unknown', model: null, retryAt: null, retryPassed: false, updatedAt: null, loadedAt: null,
   });
   assert.equal(await cli.run(['zen-free', 'report', '--exceeded', '--model', 'opencode/free-model',
     '--reason', 'secret raw detail', '--retry-at', '2000-01-01T00:00:00Z']), 0);

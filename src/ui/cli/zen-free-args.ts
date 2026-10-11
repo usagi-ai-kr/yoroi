@@ -1,7 +1,7 @@
 export type ZenFreeParsedArgs =
   | { readonly kind: "help"; readonly subcommand: "zen-free" }
   | { readonly kind: "error"; readonly message: string }
-  | { readonly kind: "zen-free"; readonly operation: "status" | "exceeded" | "ok";
+  | { readonly kind: "zen-free"; readonly operation: "status" | "exceeded" | "ok" | "loaded";
       readonly model?: string; readonly reason?: string; readonly retryAt?: string;
       readonly retryInSeconds?: number; readonly json?: boolean };
 
@@ -19,16 +19,16 @@ function validRetryAt(value: string): boolean {
 export function parseZenFree(argv: readonly string[]): ZenFreeParsedArgs {
   if (argv.includes("--help") || argv.includes("-h")) return { kind: "help", subcommand: "zen-free" };
   const args = argv[0] === "report" ? argv.slice(1) : argv;
-  let operation: "status" | "exceeded" | "ok" = "status", explicitStatus = false;
+  let operation: "status" | "exceeded" | "ok" | "loaded" = "status", explicitStatus = false;
   let model: string | undefined, reason: string | undefined, retryAt: string | undefined, json = false;
   let retryInSeconds: number | undefined;
   for (let i = 0; i < args.length; i += 1) {
     const flag = args[i];
     if (flag === "status") { if (explicitStatus || operation !== "status") return { kind: "error", message: "duplicate status" };
       explicitStatus = true; continue; }
-    if (flag === "--exceeded" || flag === "--ok") {
+    if (flag === "--exceeded" || flag === "--ok" || flag === "--loaded") {
       if (operation !== "status" || explicitStatus) return { kind: "error", message: "status does not accept write flags" };
-      operation = flag === "--exceeded" ? "exceeded" : "ok"; continue; }
+      operation = flag === "--exceeded" ? "exceeded" : flag === "--ok" ? "ok" : "loaded"; continue; }
     if (flag === "--json") { if (json) return { kind: "error", message: "duplicate --json" }; json = true; continue; }
     if (!["--model", "--reason", "--retry-in", "--retry-at"].includes(flag ?? "")) {
       return { kind: "error", message: `unexpected argument: ${flag}` };
@@ -51,6 +51,9 @@ export function parseZenFree(argv: readonly string[]): ZenFreeParsedArgs {
   }
   if (operation === "ok" && (reason || retryAt || retryInSeconds !== undefined)) {
     return { kind: "error", message: "retry options require --exceeded" };
+  }
+  if (operation === "loaded" && (model || reason || retryAt || retryInSeconds !== undefined)) {
+    return { kind: "error", message: "--loaded does not accept report options" };
   }
   if (json && operation !== "status") return { kind: "error", message: "--json is only available for status" };
   return { kind: "zen-free", operation, ...(model && { model }), ...(reason && { reason }),

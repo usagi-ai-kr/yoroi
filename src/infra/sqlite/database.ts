@@ -29,6 +29,30 @@ export interface OpenDatabaseOptions {
   readonly migrations?: readonly Migration[];
 }
 
+const MIGRATION_ATTEMPTS = 3;
+
+/** SQLITE_BUSY(5)·SQLITE_LOCKED(6). 다른 연결이 쓰기 잠금을 쥔 상태다. */
+export function isBusy(error: unknown): boolean {
+  const code = (error as { errcode?: unknown } | null)?.errcode;
+  return code === 5 || code === 6;
+}
+
+/** 원래 busy_timeout 유지. SQLITE_BUSY만 총 3회, 다음 대기 추정치를 포함해 900ms 미만일 때 재시도한다. */
+export function withMigrationRetry<T>(run: () => T): T {
+  const began = performance.now();
+  for (let attempt = 1; ; attempt += 1) {
+    const attemptBegan = performance.now();
+    try { return run(); }
+    catch (error) {
+      const now = performance.now();
+      const nextWait = Math.max(100, now - attemptBegan) + 10;
+      if ((error as { errcode?: unknown } | null)?.errcode !== 5 || attempt >= MIGRATION_ATTEMPTS ||
+        now - began + nextWait >= 900) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    }
+  }
+}
+
 /** 파일을 0600으로 만들고 WAL·busy_timeout·마이그레이션을 적용해 연다. */
 export function openDatabase(path: string, options: OpenDatabaseOptions = {}): DatabaseSync {
   const busyTimeoutMs = options.busyTimeoutMs ?? 2000;
@@ -40,8 +64,10 @@ export function openDatabase(path: string, options: OpenDatabaseOptions = {}): D
   const db = new (loadSqlite().DatabaseSync)(path);
   try {
     db.exec(`PRAGMA busy_timeout = ${busyTimeoutMs}`);
-    db.exec('PRAGMA journal_mode = WAL');
-    migrate(db, options.migrations);
+    withMigrationRetry(() => {
+      db.exec('PRAGMA journal_mode = WAL');
+      migrate(db, options.migrations);
+    });
   } catch (error) {
     db.close();
     throw error;

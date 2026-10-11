@@ -3,6 +3,7 @@ import type { ZenLockState, ZenLockStore } from '../../app/zen-lock-port.js';
 import { applyExceeded, applyOk } from '../../app/zen-lock-memory.js';
 import { resolveDbPath } from './data-dir.js';
 import { openDatabase } from './database.js';
+import { ZEN_MIGRATIONS } from './migrations.js';
 
 const MAX_EVENTS = 200;
 
@@ -61,6 +62,16 @@ export class SqliteZenLockStore implements ZenLockStore {
     });
   }
 
+  /** 늦게 도착한 기록이 더 최근 로드 시각을 되돌리지 않는다(ISO UTC 문자열 비교). */
+  markLoaded(input: { scope: string; observedAt: string }): void {
+    this.db.prepare(`INSERT INTO plugin_loads (scope, loaded_at) VALUES (?, ?)
+      ON CONFLICT(scope) DO UPDATE SET loaded_at = MAX(loaded_at, excluded.loaded_at)`).run(input.scope, input.observedAt);
+  }
+
+  loadedAt(scope: string): string | undefined {
+    return (this.db.prepare('SELECT loaded_at FROM plugin_loads WHERE scope = ?').get(scope) as { loaded_at?: string } | undefined)?.loaded_at;
+  }
+
   close(): void {
     this.db.close();
   }
@@ -85,5 +96,5 @@ export class SqliteZenLockStore implements ZenLockStore {
 }
 
 export function openZenLockStore(env: NodeJS.ProcessEnv): ZenLockStore {
-  return new SqliteZenLockStore(openDatabase(resolveDbPath(env)));
+  return new SqliteZenLockStore(openDatabase(resolveDbPath(env), { migrations: ZEN_MIGRATIONS }));
 }

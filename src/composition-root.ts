@@ -7,6 +7,7 @@ import { loadConfig } from './config/load-config.js';
 import { createSources, type SourceFactories } from './composition/sources.js';
 import { cacheSources, openUsagePersistence, type UsagePersistence } from './composition/cache.js';
 import { dataEnvironment } from './composition/data-env.js';
+import { runDetectCli, type DetectCliOptions } from './composition/detect-cli.js';
 import { CachedSource } from './app/cached-source.js';
 import type { UsageClock } from './app/usage-cache-port.js';
 import type { ZenLockStore } from './app/zen-lock-port.js';
@@ -24,16 +25,15 @@ export interface CompositionOptions {
   readonly openUsagePersistence?: () => UsagePersistence | undefined;
   readonly dataDir?: string;
   readonly clock?: UsageClock;
+  readonly detect?: DetectCliOptions;
 }
 
-async function runWithStore(cli: CliProgram, argv: string[], store: ZenLockStore,
-  shouldClose: boolean): Promise<number> {
+async function runWithStore(cli: CliProgram, argv: string[], store: ZenLockStore, shouldClose: boolean): Promise<number> {
   try { return await cli.run(argv); }
   finally { if (shouldClose) try { store.close(); } catch { /* preserve the CLI result */ } }
 }
 
-const HISTORY_RETENTION_DAYS = 90;
-const MAX_SAMPLES_PER_SERIES = 1000;
+const HISTORY_RETENTION_DAYS = 90, MAX_SAMPLES_PER_SERIES = 1000;
 /** once 종료 시 만료 캐시·오래된 이력을 정리한다. 실패는 공급자 조회/결과에 영향을 주지 않는다. */
 function prunePersistence(persistence: UsagePersistence, now: number): void {
   try { persistence.cache.prune(now); } catch { /* best effort */ }
@@ -52,6 +52,7 @@ export function compose(options: CompositionOptions = {}): CliProgram {
       return createCli({ env, sources: [], subscribeSignals, version: metadata.version }).run(argv);
     }
     const dataEnv = dataEnvironment(options.configEnv, options.dataDir);
+    if (parsed.kind === 'detect') return runDetectCli(parsed, { env, subscribeSignals, configEnv: options.configEnv ?? process.env, dataEnv, ...(options.detect && { options: options.detect }) });
     if (parsed.kind === 'zen-free') {
       if (parsed.operation === 'status' && !options.zenLockStore &&
         !existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME))) {

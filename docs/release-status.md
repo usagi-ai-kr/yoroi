@@ -73,7 +73,7 @@
 ## 2026-10-10 0.2.0 PR 준비 (미발행)
 
 - 버전: `package.json` `0.2.0`(`scripts/version.py --bump minor --apply`). 커밋·tag·Release는 아직 없다.
-- milestone 표기(2026-10-10 사용자 결정): #6 `0.3.0`([#71](https://github.com/qus0in/yoroi/issues/71)), #7 `0.4.0`([#70](https://github.com/qus0in/yoroi/issues/70)),
+- milestone 표기(2026-10-10 사용자 결정): #6 `0.3.0`([#71](https://github.com/qus0in/yoroi/issues/71)), #7 `0.4.0`([#70](https://github.com/qus0in/yoroi/issues/70), 2026-10-11 재번호로 `0.5.0`),
   #8 `0.2.1`([#77](https://github.com/qus0in/yoroi/issues/77), 2026-10-11에 `0.3.1`로 변경). [#72](https://github.com/qus0in/yoroi/issues/72)는 이 PR에서 close 예정(아직 아님).
 - 범위: [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76) OpenCode Zen Free 락(전역 error 훅 → yoroi SQLite, `zen-free` CLI·`once` 상태 표시).
   [#70](https://github.com/qus0in/yoroi/issues/70) 인사이트 레터·[#71](https://github.com/qus0in/yoroi/issues/71) 캐시·이력 문서 초안은 이번 PR에서 제외한다.

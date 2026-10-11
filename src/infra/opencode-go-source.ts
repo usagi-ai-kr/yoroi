@@ -1,4 +1,5 @@
 import { SourceError, type UsageSource } from '../app/usage-source.js';
+import { withRetryAfter } from '../domain/errors.js';
 import type { HttpClient } from './http-client.js';
 import { parseOpenCodeGoUsage } from './opencode-go-parser.js';
 
@@ -14,7 +15,7 @@ export class OpenCodeGoSource implements UsageSource {
       headers: { Authorization: `Bearer ${this.apiKey}`, Accept: 'application/json' },
       timeoutMs: this.timeoutMs }, signal);
     if (response.status === 401 || response.status === 403) throw new SourceError('authentication');
-    if (response.status === 429) throw new SourceError('unavailable');
+    if (response.status === 429) throw withRetryAfter(new SourceError('unavailable'), response.headers, Date.parse(this.now()));
     if (response.status !== 200) throw new SourceError('unavailable');
     return parseOpenCodeGoUsage(response.body, this.now());
   }

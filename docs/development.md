@@ -1,7 +1,7 @@
 # 개발과 검증
 
 Yoroi는 AI 사용량 모니터링 CLI다. Node 24.13.1·pnpm 12.10.1을 고정한다. TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD는 Cucumber다.
-버전 원본은 `package.json`의 `0.3.1`이며 [0.3.1 milestone](https://github.com/qus0in/yoroi/milestone/8)(#8)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
+버전 원본은 `package.json`의 `0.4.0`이며 [0.4.0 milestone](https://github.com/qus0in/yoroi/milestone/10)(#10)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
 
 ## 앱 실행과 검증
 
@@ -23,11 +23,13 @@ pnpm run check
 ```
 
 - `once`: 단발 조회. 성공/부분 성공은 0, 전체 공급자 실패는 1, 인자·설정 오류는 2.
+- `detect`: 내장 10분 감지 루프(포그라운드, 알림은 stdout 한 줄). `--once`·`--json`·`status`가 있고 정상 종료·신호 0, 인자 오류 2다. 운영은 [detect.md](detect.md).
 - `watch`는 0.3.0에서 제거됐다. 주기 실행이 필요하면 외부 스케줄러로 `yoroi once`를 실행한다(마이그레이션).
 - 도움말은 최상위 `yoroi --help`·`yoroi -h`와 서브명령 `yoroi once --help`·`-h` 모두 exit 0으로 사용법을 출력한다. 잘못된 인자는 exit 2다(실측).
 - `pnpm --silent`: pnpm 실행 배너를 억제해 pretty 표나 CLI 스냅샷 터미널 출력을 온전히 확인하기 위해 사용한다(배너가 무해한 일반 실행에는 생략).
 - SIGINT/SIGTERM에서 수집을 취소하고 자식 프로세스·timer·signal 구독을 정리한다.
 - `check`는 타입 검사·단위/통합·BDD·빌드다. 아래 레포 검증도 별도로 실행한다.
+- 시간 제한 실패의 재현 조건·판정·대응은 [불안정 테스트 기록](flaky-tests.md)을 따른다.
 - 개별 테스트는 `node --import tsx --test tests/<파일>.test.ts`로 실행하며 node:test 컨텍스트가 데이터 경로를 임시 디렉터리로 격리한다.
 - 출력 테스트는 ANSI 제거 후 비교한다. CI를 위해 `FORCE_COLOR=1` 통과도 확인한다.
 - 테스트는 fake source/HTTP/process/scheduler와 fixture를 써서 실제 계정·네트워크·설치된 공급자 CLI 없이 통과해야 한다.

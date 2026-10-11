@@ -1,4 +1,4 @@
-import type { ZenLockState, ZenLockStore } from './zen-lock-port.js';
+import type { ZenLockEvent, ZenLockState, ZenLockStore } from './zen-lock-port.js';
 
 type ExceededInput = { scope: string; model?: string; reason?: string; observedAt: string; retryAt?: string };
 type OkInput = { scope: string; model?: string; observedAt: string };
@@ -29,6 +29,8 @@ export function applyOk(prev: ZenLockState | undefined, input: OkInput): { chang
 export class MemoryZenLockStore implements ZenLockStore {
   private readonly states = new Map<string, ZenLockState>();
   private readonly loads = new Map<string, string>();
+  private readonly events: (ZenLockEvent & { scope: string })[] = [];
+  private nextEventId = 1;
 
   get(scope: string): ZenLockState | undefined {
     const state = this.states.get(scope);
@@ -37,13 +39,14 @@ export class MemoryZenLockStore implements ZenLockStore {
 
   markExceeded(input: ExceededInput): ZenLockState {
     const state = applyExceeded(this.states.get(input.scope), input);
-    if (state) this.states.set(input.scope, state);
+    if (state) { this.states.set(input.scope, state); this.log(input.scope, 'exceeded', input); }
     return { ...(state ?? this.states.get(input.scope)!) };
   }
 
   markOk(input: OkInput): { changed: boolean; state?: ZenLockState } {
     const result = applyOk(this.states.get(input.scope), input);
     if (result.state) this.states.set(input.scope, result.state);
+    if (result.changed) this.log(input.scope, 'cleared', input);
     return { changed: result.changed, ...(result.state && { state: { ...result.state } }) };
   }
 
@@ -54,5 +57,18 @@ export class MemoryZenLockStore implements ZenLockStore {
 
   loadedAt(scope: string): string | undefined { return this.loads.get(scope); }
 
+  eventsSince(scope: string, afterId: number, limit = 200): readonly ZenLockEvent[] {
+    return this.events.filter(e => e.scope === scope && e.id > afterId).slice(0, limit).map(({ scope: _s, ...event }) => event);
+  }
+
+  latestEventId(scope: string): number { return this.events.filter(e => e.scope === scope).at(-1)?.id ?? 0; }
+
   close(): void {}
+
+  /** Mirrors the SQLite lock_events log: exceeded/cleared only, the newest 200 kept. */
+  private log(scope: string, kind: 'exceeded' | 'cleared', input: { model?: string; observedAt: string; retryAt?: string }): void {
+    this.events.push({ scope, id: this.nextEventId++, kind, observedAt: input.observedAt,
+      ...(input.model && { model: input.model }), ...(kind === 'exceeded' && input.retryAt && { retryAt: input.retryAt }) });
+    if (this.events.length > 200) this.events.shift();
+  }
 }

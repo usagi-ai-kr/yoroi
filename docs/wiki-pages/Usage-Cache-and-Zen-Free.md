@@ -36,3 +36,5 @@ yoroi zen-free report --ok
 - `status`는 읽기 전용입니다. 상태가 없으면 `unknown`을 반환하고 데이터베이스를 새로 만들지 않습니다.
 
 저장소 오류나 `--json` 오류 계약은 [체크와 문제 해결](Checks-and-Troubleshooting)을 확인하세요.
+
+주기 감지(Zen 락 전이·사용량 이상)는 [Detect](Detect) 페이지를 참고하세요.

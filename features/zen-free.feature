@@ -14,3 +14,11 @@ Feature: OpenCode Zen free local lock
     When I open Zen free help
     Then the Zen free exit code is 0
     And the Zen free output contains "usage: yoroi zen-free"
+
+  Scenario: plugin load mark is shown explicitly and never changes the lock
+    When I read Zen free status
+    Then the Zen free output contains "plugin-loaded: not recorded"
+    When the OpenCode plugin reports that it loaded
+    And I read Zen free status
+    Then the Zen free output contains "plugin-loaded: 20"
+    And the Zen free status is "unknown"

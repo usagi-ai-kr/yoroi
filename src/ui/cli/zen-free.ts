@@ -17,7 +17,7 @@ export function zenFreeRow(state?: ZenLockState | null, now: Date = new Date()):
 
 export interface ZenFreeJsonStatus {
   state: 'locked' | 'clear' | 'unknown'; model: string | null; retryAt: string | null;
-  retryPassed: boolean; updatedAt: string | null;
+  retryPassed: boolean; updatedAt: string | null; loadedAt: string | null;
 }
 
 function safeIso(value?: string): string | null {
@@ -26,15 +26,20 @@ function safeIso(value?: string): string | null {
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
 }
 
-export function zenFreeJsonStatus(state?: ZenLockState | null, now: Date = new Date()): ZenFreeJsonStatus {
+export function zenFreeJsonStatus(state?: ZenLockState | null, now: Date = new Date(), loadedAt?: string): ZenFreeJsonStatus {
   const model = state?.model && safeText(state.model, 64);
   const safeModel = model && /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,63}$/.test(model) ? model : null;
   const retryAt = state?.state === 'locked' ? safeIso(state.retryAt) : null;
   return { state: state?.state ?? 'unknown', model: safeModel, retryAt,
-    retryPassed: retryAt !== null && Date.parse(retryAt) < now.getTime(), updatedAt: safeIso(state?.updatedAt) };
+    retryPassed: retryAt !== null && Date.parse(retryAt) < now.getTime(), updatedAt: safeIso(state?.updatedAt), loadedAt: safeIso(loadedAt) };
 }
 
 export function renderZenFreeStatus(state?: ZenLockState | null, now: Date = new Date()): string {
   const row = zenFreeRow(state, now);
   return `opencode-zen-free: ${row.status} ${row.detail}`.trimEnd();
+}
+
+/** `zen-free` 명령 전용 출력: 상태 한 줄 + 마지막 플러그인 로드 시각(미기록은 명시). `once` 행에는 쓰지 않는다. */
+export function renderZenFreeCommand(state?: ZenLockState | null, loadedAt?: string, now: Date = new Date()): string {
+  return `${renderZenFreeStatus(state, now)}\nplugin-loaded: ${safeIso(loadedAt) ?? 'not recorded'}`;
 }

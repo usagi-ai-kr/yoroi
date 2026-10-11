@@ -27,7 +27,7 @@ export const ONCE_HELP = [
 ].join("\n");
 
 export const ZEN_FREE_HELP = [
-  "usage: yoroi zen-free [status [--json]|report [--exceeded|--ok]] [options]",
+  "usage: yoroi zen-free [status [--json]|report [--exceeded|--ok|--loaded]] [options]",
   "",
   "shows locally stored OpenCode Zen free usage status.",
   "No network requests are made.",
@@ -37,6 +37,7 @@ export const ZEN_FREE_HELP = [
   "  --reason <text>    reason for an exceeded report",
   "  --retry-in <초>    expected retry duration in seconds",
   "  --retry-at <time>  expected retry time for an exceeded report",
+  "  --loaded           record that the OpenCode plugin loaded (time only; used by the plugin)",
   "  --json             output stable status JSON (status only)",
   "  -h, --help     show help for zen-free subcommand",
 ].join("\n");

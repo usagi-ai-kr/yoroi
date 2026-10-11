@@ -64,7 +64,7 @@ test('clear status hides retry and rendered model/reason are sanitized and bound
   await cli.run(['zen-free', 'report', '--exceeded', '--model', `m\u001b[31m${'x'.repeat(80)}`,
     '--reason', `line\n${'r'.repeat(150)}`, '--retry-at', '2026-10-10T01:00:00.000Z']);
   await cli.run(['zen-free', 'report', '--ok']);
-  const line = stdout.at(-1) ?? '';
+  const line = (stdout.at(-1) ?? '').split('\n')[0]!;
   assert.match(line, /opencode-zen-free: clear/);
   assert.ok(!line.includes('retry='));
   assert.ok(!/[\u0000-\u001f\u007f-\u009f]/.test(line));

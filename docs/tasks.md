@@ -20,6 +20,7 @@
 
 ## 남은 작업
 
+- [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) 수동 대기(close 안 함): Zen 무료 한도 초과가 자연 발생하면 `yoroi zen-free status`가 locked이고 로드 시각이 찍히는지, 다음 정상 응답 뒤 해제되는지 확인해 이슈에 기록한다.
 - PR #86 후속(미착수): 토큰 갱신으로 이력 시리즈가 분리될 때(자격 증명에 사용자 id가 없는 경우)
   `n/a: no-previous`와 구분되는 "이력 끊김" 표시. 계정 다이제스트 값은 출력·로그에 싣지 않는다.
 - PR #86 후속(미착수): 실환경 1회 검증 — macOS Keychain 계정 A→B 교체(TTL 이내), Linux 설정 경로 2종 불일치.

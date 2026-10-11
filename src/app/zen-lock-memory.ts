@@ -28,6 +28,7 @@ export function applyOk(prev: ZenLockState | undefined, input: OkInput): { chang
 
 export class MemoryZenLockStore implements ZenLockStore {
   private readonly states = new Map<string, ZenLockState>();
+  private readonly loads = new Map<string, string>();
 
   get(scope: string): ZenLockState | undefined {
     const state = this.states.get(scope);
@@ -45,6 +46,13 @@ export class MemoryZenLockStore implements ZenLockStore {
     if (result.state) this.states.set(input.scope, result.state);
     return { changed: result.changed, ...(result.state && { state: { ...result.state } }) };
   }
+
+  markLoaded(input: { scope: string; observedAt: string }): void {
+    const prev = this.loads.get(input.scope);
+    if (!prev || Date.parse(input.observedAt) >= Date.parse(prev)) this.loads.set(input.scope, input.observedAt);
+  }
+
+  loadedAt(scope: string): string | undefined { return this.loads.get(scope); }
 
   close(): void {}
 }

@@ -45,11 +45,17 @@ const V2: Migration = {
     CREATE INDEX idx_obs_latest ON observation_samples(provider, account_scope, window_id, observed_at DESC);
     CREATE INDEX idx_obs_reset ON observation_samples(provider, reset_at);`,
 };
+/** OpenCode 플러그인 로드 표시(#77). 락 상태가 아닌 사실이라 CHECK 제약이 있는 provider_locks/lock_events에 넣지 않는다. */
+const V3: Migration = { version: 3, sql: 'CREATE TABLE plugin_loads (scope TEXT PRIMARY KEY, loaded_at TEXT NOT NULL);' };
 /** openDatabase 기본값(Zen 락만). 테이블 추가는 usage 어댑터가 USAGE_MIGRATIONS로 적용한다. */
 export const MIGRATIONS: readonly Migration[] = [V1];
 export const USAGE_MIGRATIONS: readonly Migration[] = [V1, V2];
+/** Zen 락 저장소가 여는 연결: v1 락 테이블 + v3 로드 표시. v2(캐시·이력)와 독립이라 적용 순서에 의존하지 않는다. */
+export const ZEN_MIGRATIONS: readonly Migration[] = [V1, V3];
 
-/** 미적용 버전만 순서대로 적용한다. 재실행해도 변경이 없다. */
+/** 미적용 버전만 순서대로 적용한다. 재실행해도 변경이 없다.
+ * openDatabase는 원래 busy_timeout을 유지하며 SQLITE_BUSY 때 WAL부터 다시 시도한다.
+ * 버전별 schema_migrations 台帳이라 ZEN_MIGRATIONS·USAGE_MIGRATIONS을 어떤 순서로 열어도 합집합이 된다. */
 export function migrate(db: DatabaseSync, migrations: readonly Migration[] = MIGRATIONS): void {
   db.exec('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
   const applied = new Set(

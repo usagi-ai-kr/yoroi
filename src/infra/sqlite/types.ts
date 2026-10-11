@@ -31,4 +31,6 @@ export interface ZenLockStore extends StorageConnection {
   get(scope: string): ZenLockState | undefined;
   markExceeded(input: ZenLockExceededInput): ZenLockState;
   markOk(input: ZenLockOkInput): { changed: boolean; state?: ZenLockState };
+  markLoaded?(input: { scope: string; observedAt: string }): void;
+  loadedAt?(scope: string): string | undefined;
 }

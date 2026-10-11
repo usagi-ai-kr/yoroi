@@ -1,6 +1,6 @@
 # 0.1.0 준비 상태 (2026-10-08)
 
-- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.3.0`(v0.1.0·v0.1.1·v0.1.2·v0.2.0·v0.3.0 발행 완료).
+- 버전 원본: `package.json`, private 유지. v0.1.0 발행 시점 `0.1.0`, 현재 `0.3.1`(v0.1.0·v0.1.1·v0.1.2·v0.2.0·v0.3.0 발행 완료, 0.3.1 준비).
 - 원격 목표: [0.1.0 milestone](https://github.com/qus0in/yoroi/milestone/1), #1–#12·#18–#28·#56–#61 연결.
   #13–#17·#29는 [0.1.1 milestone](https://github.com/qus0in/yoroi/milestone/3)으로 이동했다.
 - 범위: 5개 공급자 once/watch CLI, pnpm 실행·빌드·CI, 실계정 인증 검증.
@@ -74,11 +74,12 @@
 
 - 버전: `package.json` `0.2.0`(`scripts/version.py --bump minor --apply`). 커밋·tag·Release는 아직 없다.
 - milestone 표기(2026-10-10 사용자 결정): #6 `0.3.0`([#71](https://github.com/qus0in/yoroi/issues/71)), #7 `0.4.0`([#70](https://github.com/qus0in/yoroi/issues/70)),
-  #8 `0.2.1`([#77](https://github.com/qus0in/yoroi/issues/77)). [#72](https://github.com/qus0in/yoroi/issues/72)는 이 PR에서 close 예정(아직 아님).
+  #8 `0.2.1`([#77](https://github.com/qus0in/yoroi/issues/77), 2026-10-11에 `0.3.1`로 변경). [#72](https://github.com/qus0in/yoroi/issues/72)는 이 PR에서 close 예정(아직 아님).
 - 범위: [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76) OpenCode Zen Free 락(전역 error 훅 → yoroi SQLite, `zen-free` CLI·`once` 상태 표시).
   [#70](https://github.com/qus0in/yoroi/issues/70) 인사이트 레터·[#71](https://github.com/qus0in/yoroi/issues/71) 캐시·이력 문서 초안은 이번 PR에서 제외한다.
 - 검증(worker 보고): `pnpm run check` 254 tests·BDD 32 통과. p2 리뷰 결함 15건+교차 리뷰 결함 2건 수정.
-- 미실행: 실제 OpenCode 로드, 한도 초과 이벤트 실측, 전역 설치(`~/.config/opencode/plugins/`). 0.2.1([#77](https://github.com/qus0in/yoroi/issues/77))에서 검증한다.
+- 미실행: 실제 OpenCode 로드, 한도 초과 이벤트 실측, 전역 설치(`~/.config/opencode/plugins/`). 0.3.1에서 검증한다
+  — [#77](https://github.com/qus0in/yoroi/issues/77)이 로드 표시 패치, 실관측은 [#88](https://github.com/qus0in/yoroi/issues/88)로 분리(2026-10-11).
 - 다음: 사용자 발행 요청 시 dev → main PR → CI → tag·Release 순서(versioning.md §릴리스 순서)를 따른다.
 
 ## 2026-10-11 0.3.0 발행 완료 (SQLite 캐시·관측 이력)
@@ -90,3 +91,10 @@
 - 도구 결정 [#82](https://github.com/qus0in/yoroi/issues/82) (a): Keyv 대신 `node:sqlite` 자체 캐시. in-flight 병합은 watch 제거로 해당 없음.
 - 사후 감사(2026-10-11): #71 수용 기준 7개 중 6개 충족, 이력 보존 정책 문서화만 미충족이었고 이 문서 보완으로 기록했다.
   #71·#83·milestone 0.3.0 close는 별도 조치다(이 기록 시점에 open).
+
+## 2026-10-11 0.3.1 준비 (Zen Free 로드 표시)
+
+- 버전: `package.json` `0.3.1`. main은 이미 v0.3.0(`f12f55a`)이므로 다음 patch를 0.3.1로 정했다.
+- milestone #8을 `0.2.1` → `0.3.1`로 이름 변경(2026-10-11 사용자 결정). [#77](https://github.com/qus0in/yoroi/issues/77)은 로드 표시 패치,
+  자연 발생 실관측은 [#88](https://github.com/qus0in/yoroi/issues/88)로 분리했다(둘 다 open). 커밋·tag·Release는 아직 없다.
+- 다음: dev → main PR → CI → tag·Release 순서(versioning.md §릴리스 순서). 남은 정리: #77 제목이 `0.2.0`으로 남아 있고 #88은 milestone 미지정이다.

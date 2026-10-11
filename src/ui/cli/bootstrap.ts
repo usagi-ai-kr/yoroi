@@ -4,9 +4,9 @@ import type { UsageResultMeta } from "../../app/usage-result-meta.js";
 import { parseArgs } from "./args.js";
 import { renderResults, renderPretty } from "./render.js";
 import { getHelpText, USAGE } from "./help.js";
-import { getZenLock, markZenExceeded, markZenOk } from "../../app/zen-lock.js";
+import { getZenLoadedAt, getZenLock, markZenExceeded, markZenLoaded, markZenOk } from "../../app/zen-lock.js";
 import type { ZenLockStore } from "../../app/zen-lock-port.js";
-import { zenFreeJsonStatus } from "./zen-free.js";
+import { renderZenFreeCommand, zenFreeJsonStatus } from "./zen-free.js";
 export { USAGE } from "./help.js";
 export interface CliEnvironment {
   stdout(text: string): void;
@@ -58,14 +58,16 @@ export function createCli(deps: CliDependencies): CliProgram {
     const now = new Date().toISOString();
     const retryAt = parsed.retryAt ?? (parsed.retryInSeconds !== undefined
       ? new Date(Date.parse(now) + parsed.retryInSeconds * 1000).toISOString() : undefined);
+    if (parsed.operation === "loaded") markZenLoaded(deps.zenLockStore, { observedAt: now });
     const state = parsed.operation === "exceeded" ? markZenExceeded(deps.zenLockStore, {
       observedAt: now, ...(parsed.model && { model: parsed.model }),
       ...(parsed.reason && { reason: parsed.reason }), ...(retryAt && { retryAt }),
     }) : parsed.operation === "ok" ? markZenOk(deps.zenLockStore, {
       observedAt: now, ...(parsed.model && { model: parsed.model }),
     }).state : getZenLock(deps.zenLockStore);
-    if (parsed.json) { env.stdout(JSON.stringify(zenFreeJsonStatus(state ?? null))); return 0; }
-    env.stdout(renderResults([], state ?? null)[0]!);
+    const loadedAt = getZenLoadedAt(deps.zenLockStore);
+    if (parsed.json) { env.stdout(JSON.stringify(zenFreeJsonStatus(state ?? null, new Date(), loadedAt))); return 0; }
+    env.stdout(renderZenFreeCommand(state ?? null, loadedAt));
     return 0;
   };
   return {

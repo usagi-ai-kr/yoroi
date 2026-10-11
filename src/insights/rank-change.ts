@@ -5,6 +5,8 @@ export interface InsightRankSnapshot {
   readonly records: readonly ValidatedInsightRecord[];
   /** False for missing pages/failed rows/truncated cohorts; absence then proves no entry or exit. */
   readonly complete: boolean;
+  /** Fixed cohort window size if collection is limited (e.g. top 20). */
+  readonly windowSize?: number;
 }
 export interface InsightRankChange {
   readonly modelId: string;
@@ -14,6 +16,7 @@ export interface InsightRankChange {
   /** Positive means moved upward. Unknown or incomparable ranks have no numeric change. */
   readonly rankChange: number | null;
   readonly missingFrom?: 'current' | 'previous' | 'cohort';
+  readonly windowSize?: number;
 }
 export type InsightRankResult = { readonly comparable: true; readonly changes: readonly InsightRankChange[] } |
   { readonly comparable: false; readonly reason: ComparisonUnavailable | 'n/a: 순위 자료 없음' |
@@ -50,7 +53,8 @@ function ranks(records: readonly ValidatedInsightRecord[], order: 'ascending' | 
 /** Caller supplies one requestScope per pair. Order is explicit: cost/rank and score differ.
  * Empty/other-only cohorts are insufficient evidence, never mass entries or exits. */
 export function computeInsightRankChanges(current: InsightRankSnapshot, previous: InsightRankSnapshot | undefined,
-  order: 'ascending' | 'descending'): InsightRankResult {
+  order: 'ascending' | 'descending', options?: { readonly windowSize?: number }): InsightRankResult {
+  const windowSize = options?.windowSize ?? current.windowSize ?? previous?.windowSize;
   const now = current.records.filter(value => !other(value));
   const before = previous?.records.filter(value => !other(value)) ?? [];
   if (!now.length) return { comparable: false, reason: 'n/a: 순위 자료 없음' };
@@ -64,19 +68,20 @@ export function computeInsightRankChanges(current: InsightRankSnapshot, previous
   const issue = cohortIssue(now) ?? cohortIssue(before);
   if (issue) return { comparable: false, reason: issue };
   const currentRanks = ranks(now, order), previousRanks = ranks(before, order);
+  const win = windowSize !== undefined ? { windowSize } : {};
   const changes = [...new Set([...currentRanks.keys(), ...previousRanks.keys()])].sort().map(modelId => {
     const c = currentRanks.get(modelId), p = previousRanks.get(modelId);
     const currentRank = current.complete ? c ?? null : null;
     const previousRank = previous!.complete ? p ?? null : null;
     if (c !== undefined && p !== undefined) {
       return current.complete && previous!.complete
-        ? { modelId, status: 'ranked' as const, currentRank, previousRank, rankChange: p - c }
-        : { modelId, status: 'missing' as const, currentRank, previousRank, rankChange: null, missingFrom: 'cohort' as const };
+        ? { modelId, status: 'ranked' as const, currentRank, previousRank, rankChange: p - c, ...win }
+        : { modelId, status: 'missing' as const, currentRank, previousRank, rankChange: null, missingFrom: 'cohort' as const, ...win };
     }
     const entered = c !== undefined;
     const known = entered ? previous!.complete : current.complete;
     return { modelId, status: known ? (entered ? 'entered' as const : 'exited' as const) : 'missing' as const,
-      currentRank, previousRank, rankChange: null,
+      currentRank, previousRank, rankChange: null, ...win,
       ...(!known ? { missingFrom: entered ? 'previous' as const : 'current' as const } : {}) };
   });
   return { comparable: true, changes };

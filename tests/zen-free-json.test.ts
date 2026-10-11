@@ -50,7 +50,7 @@ test('composition keeps plain and JSON status read-only when the DB file is abse
   assert.equal(stdout.at(-1), 'opencode-zen-free: unknown no local status\nplugin-loaded: not recorded');
   assert.equal(await cli.run(['zen-free', 'status', '--json']), 0);
   assert.deepEqual(JSON.parse(stdout.at(-1)!), {
-    state: 'unknown', model: null, retryAt: null, retryPassed: false, updatedAt: null, loadedAt: null,
+    state: 'unknown', model: null, lockedForSeconds: null, retryAt: null, retryPassed: false, retryInSeconds: null, updatedAt: null, loadedAt: null,
   });
   assert.deepEqual(stderr, []);
   await assert.rejects(fs.stat(dataDir));
@@ -58,27 +58,27 @@ test('composition keeps plain and JSON status read-only when the DB file is abse
 
 test('status JSON has stable safe fields for unknown, locked, and clear states', async () => {
   const { cli, stdout } = setup();
-  const keys = ['state', 'model', 'retryAt', 'retryPassed', 'updatedAt', 'loadedAt'];
+  const keys = ['state', 'model', 'lockedForSeconds', 'retryAt', 'retryPassed', 'retryInSeconds', 'updatedAt', 'loadedAt'];
   assert.equal(await cli.run(['zen-free', 'status', '--json']), 0);
   assert.deepEqual(Object.keys(JSON.parse(stdout.at(-1)!) as object), keys);
   assert.deepEqual(JSON.parse(stdout.at(-1)!), {
-    state: 'unknown', model: null, retryAt: null, retryPassed: false, updatedAt: null, loadedAt: null,
+    state: 'unknown', model: null, lockedForSeconds: null, retryAt: null, retryPassed: false, retryInSeconds: null, updatedAt: null, loadedAt: null,
   });
   assert.equal(await cli.run(['zen-free', 'report', '--exceeded', '--model', 'opencode/free-model',
     '--reason', 'secret raw detail', '--retry-at', '2000-01-01T00:00:00Z']), 0);
   assert.equal(await cli.run(['zen-free', 'status', '--json']), 0);
   const locked = JSON.parse(stdout.at(-1)!);
   assert.deepEqual(Object.keys(locked), keys);
-  assert.deepEqual({ state: locked.state, model: locked.model, retryAt: locked.retryAt, retryPassed: locked.retryPassed },
-    { state: 'locked', model: 'opencode/free-model', retryAt: '2000-01-01T00:00:00.000Z', retryPassed: true });
+  assert.deepEqual({ state: locked.state, model: locked.model, retryAt: locked.retryAt, retryPassed: locked.retryPassed, retryInSeconds: locked.retryInSeconds },
+    { state: 'locked', model: 'opencode/free-model', retryAt: '2000-01-01T00:00:00.000Z', retryPassed: true, retryInSeconds: null });
+  assert.ok(typeof locked.lockedForSeconds === 'number' && locked.lockedForSeconds >= 0);
   assert.ok(!stdout.at(-1)!.includes('secret raw detail'));
   assert.equal(await cli.run(['zen-free', 'report', '--ok']), 0);
   assert.equal(await cli.run(['zen-free', 'status', '--json']), 0);
   const clear = JSON.parse(stdout.at(-1)!);
   assert.deepEqual(Object.keys(clear), keys);
-  assert.equal(clear.state, 'clear');
-  assert.equal(clear.retryAt, null);
-  assert.equal(clear.retryPassed, false);
+  assert.deepEqual({ state: clear.state, lockedForSeconds: clear.lockedForSeconds, retryAt: clear.retryAt, retryPassed: clear.retryPassed, retryInSeconds: clear.retryInSeconds },
+    { state: 'clear', lockedForSeconds: null, retryAt: null, retryPassed: false, retryInSeconds: null });
 });
 
 test('status JSON is documented and unavailable for write actions', async () => {

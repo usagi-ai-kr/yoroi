@@ -72,7 +72,8 @@ export function summarizeLetter(rows: readonly LetterEvidence[], groups: readonl
       evidenceIds: [row.id] }] : []);
   for (const group of groups) if (group.result.comparable) for (const change of group.result.changes) {
     if ((change.status === 'ranked' && !change.rankChange) || change.status === 'missing') continue;
-    const detail = change.status === 'entered' ? '진입' : change.status === 'exited' ? '이탈' : `순위 ${change.rankChange! > 0 ? '상승' : '하락'}`;
+    const win = change.windowSize ? `상위 ${change.windowSize} ` : '';
+    const detail = change.status === 'entered' ? `${win}진입` : change.status === 'exited' ? `${win}이탈` : `순위 ${change.rankChange! > 0 ? '상승' : '하락'}`;
     items.push({ text: `${group.sourceName} · ${group.metric} · ${change.modelId}: ${detail}`, evidenceIds: [group.id] });
   }
   if (items.length) return items.slice(0, 5);

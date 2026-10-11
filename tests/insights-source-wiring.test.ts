@@ -9,7 +9,7 @@ const KEY = 'synthetic-aa-key-must-not-leak', observedAt = '2026-10-11T00:00:00.
 const env = (name: string) => ({ YOROI_AA_API_KEY: KEY, YOROI_OPENROUTER_API_KEY: 'synthetic-or-key' } as Record<string, string>)[name];
 const json = (value: unknown, status = 200, headers: Record<string, string> = {}): HttpResponse => ({ status, headers, body: JSON.stringify(value) });
 const aaPage = (page: number, total: number, id: string) => ({ tier: 'free', intelligence_index_version: 3, pagination: { page, page_size: 1, total_pages: total, has_more: page < total },
-  data: [{ id, slug: id, name: id, release_date: '2025-01-01', model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 40 + page }, pricing: {}, performance: {} }] });
+  data: [{ id, slug: id, name: id, release_date: '2025-01-01', model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 40 + page, artificial_analysis_coding_index: 30 + page }, pricing: {}, performance: {} }] });
 const arenaRow = (i: number, category = 'overall') => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i, rating_lower: 1490, rating_upper: 1510, variance: 2, vote_count: 10 + i, rank: i + 1, category, leaderboard_publish_date: '2026-10-08' });
 function harness(respond: (request: HttpRequest, n: number) => HttpResponse) {
   const requests: HttpRequest[] = []; let clock = 1_000_000; const sleeps: number[] = [];
@@ -25,10 +25,11 @@ test('the registry still excludes OpenCode Data and Vals AI; only the four appro
   assert.deepEqual([...harness(() => json({})).ports.keys()], ['arena', 'artificial-analysis', 'openrouter', 'cognition']);
 });
 test('Arena goes through the /rows transport and the existing parser with no key and no extra headers', async () => {
-  const h = harness(request => { const offset = Number(of(request.url, 'offset')); const rows = [...Array.from({ length: 120 }, (_, i) => arenaRow(i)), arenaRow(0, 'coding')].slice(offset, offset + 100);
-    return json({ rows: rows.map(row => ({ row })), num_rows_total: 121, partial: false }); });
+  const h = harness(request => { const offset = Number(of(request.url, 'offset'));
+    const rows = Array.from({ length: 21 }, (_, i) => arenaRow(i)).slice(offset, offset + 100);
+    return json({ rows: rows.map(row => ({ row })), num_rows_total: 21, partial: false }); });
   const result = await collectInsightSource(h.ports.get('arena')!, observedAt);
-  assert.ok(result.ok && result.rows.length === 120 && result.rows.every(r => r.ok)); assert.equal(h.requests.length, 2);
+  assert.ok(result.ok && result.rows.length === 20 && result.rows.every(r => r.ok)); assert.equal(h.requests.length, 1);
   assert.ok(h.requests.every(r => r.headers === undefined && of(r.url, 'config') === 'text'));
 });
 test('AA pages are fetched with the key on every request, merged by H3, and the key never appears in URLs or errors', async () => {

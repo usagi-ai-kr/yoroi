@@ -11,7 +11,7 @@ export function limitError(error) {
     }
   } catch {}
   return typeof data?.message === 'string' && data.message.length <= 4096 &&
-    /^Free usage exceeded(?:\b|,)/i.test(data.message);
+    /^(?:Free usage exceeded(?:\b|,)|Rate limit exceeded(?:\b|\.|$))/i.test(data.message);
 }
 
 export function retryAt(data, now = Date.now()) {

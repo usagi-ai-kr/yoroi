@@ -22,3 +22,12 @@ Feature: OpenCode Zen free local lock
     And I read Zen free status
     Then the Zen free output contains "plugin-loaded: 20"
     And the Zen free status is "unknown"
+
+  Scenario: report exceeded with retry duration shows remaining time
+    When I report Zen free exceeded with retry in 1800 seconds
+    Then the Zen free status is "locked"
+    And the Zen free output contains "locked_for="
+    And the Zen free output contains "retry_in=30m"
+    When I read Zen free status
+    Then the Zen free output contains "locked_for="
+    And the Zen free output contains "retry_in=30m"

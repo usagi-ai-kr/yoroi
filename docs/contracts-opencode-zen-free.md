@@ -1,7 +1,6 @@
 # OpenCode Zen Free 플러그인 계약
 
-확인일: 2026-10-10. [#73](https://github.com/qus0in/yoroi/issues/73)·[상위 #72](https://github.com/qus0in/yoroi/issues/72)를 `gh issue view`로 읽고 조사했다.
-모델 요청·한도 유발 시험·사용량 조회·전역 설정 수정 없이 정적 근거만 확인했다. 실제 이벤트 수신은 **미확인**이다.
+확인일: 2026-10-10. [#73](https://github.com/qus0in/yoroi/issues/73)·[상위 #72](https://github.com/qus0in/yoroi/issues/72)를 `gh issue view`로 읽고 조사했다. 모델 요청·한도 유발 시험·사용량 조회·전역 설정 수정 없이 정적 근거만 확인했다. 실제 이벤트 수신은 **미확인**이다.
 
 ## 버전과 근거
 
@@ -55,6 +54,7 @@
 - 무료 모델은 읽기 전용 카탈로그의 provider `opencode` 모델 비용(input/output 0)으로 확인한다. `-free` 접미사만 쓰면 무료 `big-pickle`·`grok-code`를 놓친다(로컬 공개 모델 캐시에서 확인).
 - 가격 0 메타데이터는 카탈로그 기준이며 미래 가격·계정별 무료 자격은 **미확인**이다. 미등록 모델은 무료로 추측하지 않는다.
 - #72 요구: 초기 `unlockPending=true`; 초과 관측 시 true; 첫 정상 완료 보고 성공 후 false. 보고 진행 중 중복 호출을 막고 실패 시 재시도 가능하게 유지한다.
+- Zen Free 한도 범위(전역/모델별) UNVERIFIED, 현재는 전역 해제.
 - 한 인스턴스의 여러 세션 이벤트가 겹칠 수 있으므로 메모리 갱신·외부 보고를 직렬화한다. 프로세스 간 멱등성은 yoroi 저장소가 담당한다.
 근거: [완료 정리](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/processor.ts#L609), [완료 후 오류 처리](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/prompt.ts#L1295), [idle 발행](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/status.ts), [무료 모델 선택](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/provider/provider.ts#L221).
 

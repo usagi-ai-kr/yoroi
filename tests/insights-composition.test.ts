@@ -11,6 +11,7 @@ import { openInsightsHistory } from '../src/infra/sqlite/insights-store.js';
 import { openUsageDatabase } from '../src/infra/sqlite/usage-cache-store.js';
 import { openZenLockStore } from '../src/infra/sqlite/zen-lock-store.js';
 import { parseArenaRows } from '../src/insights/arena-parser.js';
+import { fetchArenaRows } from '../src/insights/arena-transport.js';
 import type { InsightSourcePort } from '../src/insights/source-port.js';
 
 const AA_KEY = 'synthetic-aa-key-must-not-leak', OR_KEY = 'synthetic-or-key-must-not-leak';
@@ -18,9 +19,9 @@ const clock = () => Date.parse('2026-10-08T15:30:00Z');   // 2026-10-09 00:30 in
 const arenaRow = (i: number) => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i, rating_lower: 1490, rating_upper: 1510, variance: 2,
   vote_count: 10 + i, rank: i + 1, category: 'overall', leaderboard_publish_date: '2026-10-08' });
 const bodies: Record<string, unknown> = {
-  'datasets-server.huggingface.co': { rows: [0, 1, 2].map(i => ({ row: arenaRow(i) })), num_rows_total: 3, partial: false },
+  'datasets-server.huggingface.co': { rows: Array.from({ length: 21 }, (_, i) => ({ row: arenaRow(i) })), num_rows_total: 21, partial: false },
   'artificialanalysis.ai': { tier: 'free', intelligence_index_version: 3, pagination: { page: 1, page_size: 10, total_pages: 1, has_more: false },
-    data: [{ id: 'a', slug: 'a', name: 'A', release_date: null, model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 42 }, pricing: {}, performance: {} }] },
+    data: [{ id: 'a', slug: 'a', name: 'A', release_date: null, model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 42, artificial_analysis_coding_index: 38 }, pricing: {}, performance: {} }] },
   'openrouter.ai': { meta: { as_of: '2026-10-07T00:00:00Z', start_date: '2026-10-01', end_date: '2026-10-07', version: 'v1' }, data: [{ date: '2026-10-07', model_permaslug: 'gpt-5', total_tokens: 123 }] },
   'cognition.com': { v1_1: { models: ['M'], subsets: { main: 100 }, data: { M: { high: { main: { correct: 0.5, cost: 1.25 } } } } } },
 };
@@ -47,6 +48,7 @@ test('a run opens its own database, stores per KST day, reuses on rerun and repl
   assert.ok(again.sources.every(r => r.status === 'reused')); assert.equal(h.requests.length, 4);
   const refreshed = await runInsights({ ...s, http: h.client, clock, refresh: true });
   assert.ok(refreshed.sources.every(r => r.status === 'collected' && r.saved === true)); assert.equal(h.requests.length, 8);
+  assert.equal((await fetchArenaRows(http().client)).boundary, 'rank-above-top');
 });
 test('a missing key fails only that source before any request; exit stays 0', async t => {
   const s = setup(t), h = http(), { YOROI_AA_API_KEY: _omitted, ...env } = s.env;

@@ -72,14 +72,27 @@ test('clear status hides retry and rendered model/reason are sanitized and bound
   store.close();
 });
 
-test('expired retry stays locked and is marked unverified using the injected clock', () => {
+test('expired retry stays locked, shows retry passed, and hides retry_in', () => {
   const state = { scope: 'opencode-zen:free', state: 'locked' as const,
     retryAt: '2026-10-10T01:00:00.000Z', updatedAt: '2026-10-10T00:00:00.000Z' };
   const now = new Date('2026-10-10T01:00:01.000Z');
   const row = zenFreeRow(state, now);
   assert.equal(row.status, 'locked');
   assert.match(row.detail, /retry passed \(unverified\)/);
+  assert.doesNotMatch(row.detail, /retry_in=/);
   assert.match(renderZenFreeStatus(state, now), /locked .*retry passed \(unverified\)/);
-  assert.doesNotMatch(zenFreeRow(state, new Date('2026-10-10T01:00:00.000Z')).detail,
-    /retry passed/);
+  assert.doesNotMatch(renderZenFreeStatus(state, now), /retry_in=/);
+  assert.doesNotMatch(zenFreeRow(state, new Date('2026-10-10T01:00:00.000Z')).detail, /retry passed/);
+  const futureRow = zenFreeRow(state, new Date('2026-10-10T00:30:00.000Z'));
+  assert.match(futureRow.detail, /retry_in=30m/);
+  assert.doesNotMatch(futureRow.detail, /retry passed/);
+  assert.match(renderZenFreeStatus(state, new Date('2026-10-10T00:30:00.000Z')), /locked .*retry_in=30m/);
+});
+
+test('zen-free status and report display retry_in when locked with future retry', async () => {
+  const { cli, stdout } = setup();
+  assert.equal(await cli.run(['zen-free', 'report', '--exceeded', '--retry-in', '1800']), 0);
+  assert.match(stdout.at(-1) ?? '', /retry_in=30m/);
+  assert.equal(await cli.run(['zen-free', 'status']), 0);
+  assert.match(stdout.at(-1) ?? '', /retry_in=30m/);
 });

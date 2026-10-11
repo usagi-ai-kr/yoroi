@@ -12,11 +12,11 @@ export const DEFAULT_SCHEMA_VERSIONS: Readonly<Record<InsightSource, string>> = 
   arena: 'arena-hf-v1', 'artificial-analysis': 'aa-v2-free', openrouter: 'openrouter-rankings-v1', cognition: 'cognition-frontiercode-v1' });
 /** Opaque, secret-free request scope per source (subset/period/filter/tier); part of every history key. */
 export const DEFAULT_REQUEST_SCOPES: Readonly<Record<InsightSource, string>> = Object.freeze({
-  arena: 'hf-rows:text:latest:overall', 'artificial-analysis': 'aa-v2:free:language-models',
+  arena: 'hf-rows:text:latest:overall-top20', 'artificial-analysis': 'aa-v2:free:language-models:coding-top20',
   openrouter: 'rankings-daily:day', cognition: 'frontiercode:data-json' });
 /** Metric whose ordering defines rank changes per source; same-source cohorts only. */
 export const RANK_COHORTS: Readonly<Record<InsightSource, { readonly metric: string; readonly order: 'ascending' | 'descending' }>> = Object.freeze({
-  arena: { metric: 'rating', order: 'descending' }, 'artificial-analysis': { metric: 'artificial_analysis_intelligence_index', order: 'descending' },
+  arena: { metric: 'rating', order: 'descending' }, 'artificial-analysis': { metric: 'artificial_analysis_coding_index', order: 'descending' },
   openrouter: { metric: 'total_tokens', order: 'descending' }, cognition: { metric: 'correct', order: 'descending' } });
 
 /** Source/validation failure to the letter's failure kind: transport → fetch, bad rows → parse, nothing usable → empty. */
@@ -50,10 +50,11 @@ export function buildRanks(history: InsightHistoryPort, scope: string, publicati
   const first = success.records[0]?.record;
   const previous = first && history.getDaily({ source: success.source, publicationDate: shiftInsightDate(publicationDate, -1), requestScope: scope, schemaVersion: first.schemaVersion });
   const categories = [...new Set(mine.map(value => value.record.category))].slice(0, limit);
+  const window = success.source === 'arena' || success.source === 'artificial-analysis' ? { windowSize: 20 } : {};
   return categories.map(category => {
     const records = mine.filter(value => value.record.category === category);
     const before = previous ? previous.records.filter(value => value.record.metric === cohort.metric && value.record.category === category) : [];
     return { reference: records[0]!, previousDate: before[0]?.comparisonDate ?? null,
-      result: computeInsightRankChanges({ records, complete }, before.length ? { records: before, complete: true } : undefined, cohort.order) };
+      result: computeInsightRankChanges({ records, complete }, before.length ? { records: before, complete: true } : undefined, cohort.order, window) };
   });
 }

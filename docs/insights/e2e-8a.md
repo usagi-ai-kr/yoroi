@@ -32,3 +32,15 @@
   - Artificial Analysis: [#93](https://github.com/qus0in/yoroi/issues/93) (마일스톤 없음)
 - [#89](https://github.com/qus0in/yoroi/issues/89) 실환경 detect 스모크는 별도 승인 대기 유지.
 - 0.4.0 tag/Release 재발행 금지 및 커밋 생성 금지 원칙 유지.
+
+## 4. 0.5.1 상위 20 실검증 (2026-10-11 21:19:57–21:19:59 KST)
+
+- **실행 개요**: HTTP 요청 총 5회(Arena 1회, AA 4회). 429 0건, 재시도 0회, 응답 원문 미보존(저장 0).
+- **사전 탐색**: coding 지표 확인 목적 사전 2요청(statistics 엔드포인트 200 반환하였으나 계측 구조 미인식, filter 적용 시 transport-error 발생) 확인 후 본 수집 진행.
+- **Arena 결과**:
+  - overall 상위 20행 추출, 경계 조건 rank-above-top 정상 수집.
+  - 게시일 2026-10-08 단일 확인, num_rows_total 10,974건 중 1회 호출로 상위 20건 확보 완료.
+- **Artificial Analysis 결과**:
+  - 4쪽 수집(각 200, 200, 200, 97행), page 파라미터 실지원 확인.
+  - 중복 0건, 총 고유 모델 697개 중 coding_index 미제공 모델 439개 제외.
+  - coding_index 기준 상위 20개 선택 완료(동점 모델 포함 실선택 21개).

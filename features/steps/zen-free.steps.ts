@@ -14,6 +14,8 @@ async function run(argv: string[]): Promise<void> {
 }
 When('I report Zen free exceeded for model {string}', async (model: string) =>
   run(['zen-free', 'report', '--exceeded', '--model', model]));
+When('I report Zen free exceeded with retry in {int} seconds', async (seconds: number) =>
+  run(['zen-free', 'report', '--exceeded', '--retry-in', String(seconds)]));
 When('I read Zen free status', async () => run(['zen-free', 'status']));
 Given('Zen free is locally clear', async () => { await run(['zen-free', 'report', '--exceeded']); await run(['zen-free', 'report', '--ok']); });
 When('I run Zen free once in pretty mode', async () => run(['once', '--pretty']));

@@ -2,79 +2,87 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SourceError } from '../src/app/usage-source.js';
 import type { HttpClient, HttpRequest, HttpResponse } from '../src/infra/http-client.js';
-import { ARENA_LIMITS, fetchArenaRows, readArena } from '../src/insights/arena-transport.js';
+import { fetchArenaRows, readArena } from '../src/insights/arena-transport.js';
 
-const row = (i: number, category = 'overall', date = '2026-10-08') => ({ model_name: `synthetic-model-${i}`, organization: 'synthetic-org',
-  license: 'Proprietary', rating: 1500 - i, rating_lower: 1490 - i, rating_upper: 1510 - i, variance: 20, vote_count: 1000 + i, rank: i + 1,
-  category, leaderboard_publish_date: date });
-/** Dataset of `overall` rows followed by `other` rows of another category, served 100 per /rows page. */
-function dataset(overall: number, other = 0, date = '2026-10-08') {
-  const all = [...Array.from({ length: overall }, (_, i) => row(i, 'overall', date)), ...Array.from({ length: other }, (_, i) => row(i, 'coding', date))];
+const rowFor = (rank: unknown, category = 'overall') => ({ model_name: `synthetic-model-${String(rank)}`, organization: 'synthetic-org',
+  license: 'Proprietary', rating: 1500, rating_lower: 1490, rating_upper: 1510, variance: 20, vote_count: 1000,
+  rank, category, leaderboard_publish_date: '2026-10-08' });
+const ranks = (list: unknown[]): unknown[] => list.map(rank => rowFor(rank));
+const seq = (from: number, to: number): unknown[] => Array.from({ length: to - from + 1 }, (_, i) => rowFor(from + i));
+function serve(all: unknown[], total = all.length) {
   return (request: HttpRequest): HttpResponse => {
     const url = new URL(request.url), offset = Number(url.searchParams.get('offset')), length = Number(url.searchParams.get('length'));
-    const rows = all.slice(offset, offset + length).map((r, i) => ({ row_idx: offset + i, row: r, truncated_cells: [] }));
-    return { status: 200, headers: {}, body: JSON.stringify({ features: [], rows, num_rows_total: all.length, num_rows_per_page: 100, partial: false }) };
+    return { status: 200, headers: {}, body: JSON.stringify({ features: [],
+      rows: all.slice(offset, offset + length).map((row, i) => ({ row_idx: offset + i, row })), num_rows_total: total, num_rows_per_page: 100, partial: false }) };
   };
 }
 function fake(respond: (request: HttpRequest, n: number) => HttpResponse | Error) {
   const requests: HttpRequest[] = []; let clock = 1_000_000; const sleeps: number[] = [];
   const client: HttpClient = { async request(request) { requests.push(request); const out = respond(request, requests.length); if (out instanceof Error) throw out; return out; } };
-  return { client, requests, sleeps, options: { now: () => clock, sleep: async (ms: number) => { sleeps.push(ms); clock += ms; } }, advance: (ms: number) => { clock += ms; } };
+  return { client, requests, sleeps, options: { now: () => clock, sleep: async (ms: number) => { sleeps.push(ms); clock += ms; } } };
 }
-const code = (want: string) => (e: unknown) => e instanceof SourceError && e.code === want;
+const code = (want: string) => (error: unknown) => error instanceof SourceError && error.code === want;
 
-test('early stop: overall rows end mid-page, no further request, rows feed the existing Arena parser', async () => {
-  const f = fake(dataset(250, 400));
+test('one page: collect ranks 1..20 and stop at the same page rank-21 boundary', async () => {
+  const f = fake(serve(seq(1, 100), 500));
   const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, result.requests, f.requests.length, result.totalRows, result.publishDate], [250, 3, 3, 650, '2026-10-08']);
-  const parsed = await readArena(fake(dataset(120, 50)).client, '2026-10-11T00:00:00Z');
-  assert.equal(parsed.length, 120); assert.ok(parsed.every(r => r.ok && r.records.length === 6 && r.records[0]!.source === 'arena' && r.records[0]!.sourceAsOf === '2026-10-08'));
+  assert.deepEqual([result.rows.length, result.requests, f.requests.length, result.boundary, result.totalRows, result.publishDate],
+    [20, 1, 1, 'rank-above-top', 500, '2026-10-08']);
+  const parsed = await readArena(fake(serve(seq(1, 100))).client, '2026-10-11T00:00:00Z');
+  assert.equal(parsed.length, 20); assert.ok(parsed.every(row => row.ok && row.records.length === 6));
+  const url = new URL(f.requests[0]!.url);
+  assert.deepEqual([f.requests[0]!.method, f.requests[0]!.headers, url.searchParams.get('config'), url.searchParams.get('split'), url.searchParams.get('length')],
+    ['GET', undefined, 'text', 'latest', '100']);
 });
-test('requests are anonymous GETs for dataset, text subset, latest split and 100-row offsets', async () => {
-  const f = fake(dataset(150, 10)); await fetchArenaRows(f.client, f.options);
-  const urls = f.requests.map(r => new URL(r.url));
-  assert.deepEqual(f.requests.map(r => [r.method, r.headers]), [['GET', undefined], ['GET', undefined]]);
-  assert.deepEqual(urls.map(u => [u.origin + u.pathname, u.searchParams.get('dataset'), u.searchParams.get('config'), u.searchParams.get('split'), u.searchParams.get('offset'), u.searchParams.get('length')]),
-    [0, 100].map(o => ['https://datasets-server.huggingface.co/rows', 'lmarena-ai/leaderboard-dataset', 'text', 'latest', String(o), '100']));
-  assert.ok(f.requests.every(r => r.timeoutMs <= ARENA_LIMITS.pageTimeoutMs));
+test('ties at rank 20 are all collected; the following rank 22 still confirms the boundary', async () => {
+  const all = [...seq(1, 19), rowFor(20), rowFor(20), ...seq(22, 100)];
+  const f = fake(serve(all));
+  const result = await fetchArenaRows(f.client, f.options);
+  assert.deepEqual([result.rows.length, result.requests, result.boundary], [21, 1, 'rank-above-top']);
 });
-test('the dataset end stops paging when overall fills the whole split; a block ending exactly on a page edge costs one more page', async () => {
-  const end = fake(dataset(150)); assert.equal((await fetchArenaRows(end.client, end.options)).requests, 2);
-  const edge = fake(dataset(200, 5)); assert.deepEqual([(await fetchArenaRows(edge.client, edge.options)).rows.length, edge.requests.length], [200, 3]);
+test('a non-overall row ends the overall block and confirms the boundary with fewer than 20 rows', async () => {
+  const all = [...seq(1, 5), rowFor(1, 'coding'), rowFor(2, 'coding')];
+  const f = fake(serve(all));
+  const result = await fetchArenaRows(f.client, f.options);
+  assert.deepEqual([result.rows.length, result.requests, result.boundary], [5, 1, 'category-change']);
 });
-test('more than 600 overall rows fails instead of returning a cut-off ranking', async () => {
-  const f = fake(dataset(700)); await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable')); assert.equal(f.requests.length, 7);
-  const exact = fake(dataset(600, 50)); assert.equal((await fetchArenaRows(exact.client, exact.options)).rows.length, 600);
-});
-test('the per-run request cap stops paging; a 429 with Retry-After retries once and a second 429 fails', async () => {
-  const capped = fake(dataset(500)); await assert.rejects(fetchArenaRows(capped.client, { ...capped.options, limits: { policy: { maxRequests: 2 } } }), code('unavailable'));
-  assert.equal(capped.requests.length, 2);
-  const page = dataset(50, 5), limited = fake((r, n) => (n === 1 ? { status: 429, headers: { 'Retry-After': '2' }, body: '{}' } : page(r)));
-  assert.equal((await fetchArenaRows(limited.client, limited.options)).rows.length, 50); assert.deepEqual(limited.sleeps, [2000]);
-  const twice = fake(() => ({ status: 429, headers: {}, body: '{}' })); await assert.rejects(fetchArenaRows(twice.client, twice.options), code('unavailable'));
-  assert.equal(twice.requests.length, 2);
-});
-test('the 60 second budget stops the run', async () => {
-  const page = dataset(500), f = fake((r) => page(r));
-  const timed = { ...f.options, now: (() => { let t = 0; return () => (t += 25_000); })() };
-  await assert.rejects(fetchArenaRows(f.client, timed), code('unavailable')); assert.ok(f.requests.length <= 3);
-});
-test('inconsistent or unusable pages fail as a whole: total change, mixed dates, partial, oversize, bad shape, no overall rows', async () => {
-  const base = dataset(250, 0), changing = fake((r, n) => { const out = base(r); return n === 2 ? { ...out, body: out.body.replace('"num_rows_total":250', '"num_rows_total":251') } : out; });
-  await assert.rejects(fetchArenaRows(changing.client, changing.options), code('unavailable'));
-  const mixed = dataset(150, 0), withOldDate = fake((r, n) => { const out = mixed(r); return n === 2 ? { ...out, body: out.body.replaceAll('2026-10-08', '2026-10-07') } : out; });
-  await assert.rejects(fetchArenaRows(withOldDate.client, withOldDate.options), code('unavailable'));
-  for (const [patch, want] of [[{ partial: true }, 'unavailable'], [{ rows: 'x' }, 'parse'], [{ num_rows_total: 'x' }, 'parse'], [{ rows: [{ row: { ...row(0), category: 5 } }] }, 'parse'],
-    [{ rows: [{ row: row(0, 'coding') }], num_rows_total: 1 }, 'parse'], [{ rows: [{ row: { ...row(0), model_name: 'x'.repeat(300 * 1024) } }], num_rows_total: 1 }, 'unavailable']] as const) {
-    const f = fake(() => ({ status: 200, headers: {}, body: JSON.stringify({ rows: [row(0)], num_rows_total: 1, partial: false, ...patch }) }));
-    await assert.rejects(fetchArenaRows(f.client, f.options), code(want), JSON.stringify(patch).slice(0, 40));
+test('rank inversion or an invalid rank fails the page as unavailable', async () => {
+  const inversion = fake(serve(ranks([1, 3, 2, 4])));
+  await assert.rejects(fetchArenaRows(inversion.client, inversion.options), code('unavailable'));
+  assert.equal(inversion.requests.length, 1);
+  for (const bad of [0, -1, 1.5, 'x', undefined]) {
+    const f = fake(serve(ranks([1, bad, 3])));
+    await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'), String(bad));
   }
 });
-test('cancellation before and during paging stops without further requests; errors never expose the URL or values', async () => {
-  const done = new AbortController(); done.abort(); const pre = fake(dataset(10));
-  await assert.rejects(fetchArenaRows(pre.client, { ...pre.options, signal: done.signal }), code('cancelled')); assert.equal(pre.requests.length, 0);
-  const live = new AbortController(), page = dataset(500), f = fake((r, n) => { if (n === 2) live.abort(); return page(r); });
-  await assert.rejects(fetchArenaRows(f.client, { ...f.options, signal: live.signal }), code('cancelled')); assert.equal(f.requests.length, 2);
-  const broken = fake(() => new SourceError('network')); const error = await fetchArenaRows(broken.client, broken.options).catch((e: Error) => e);
-  assert.ok(error instanceof SourceError && !error.message.includes('huggingface') && !error.message.includes('lmarena'));
+test('a first row above the top N leaves no overall rows and fails as parse', async () => {
+  const f = fake(serve(seq(21, 120)));
+  await assert.rejects(fetchArenaRows(f.client, f.options), code('parse'));
+});
+test('no boundary inside the page ends unavailable after the 2-request cap, retry counted', async () => {
+  const tiePage = serve(ranks(Array.from({ length: 100 }, () => 1)), 10_974);
+  const f = fake((request, n) => n === 1 ? { status: 429, headers: { 'Retry-After': '2' }, body: '{}' } : tiePage(request));
+  await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
+  assert.deepEqual([f.requests.length, f.sleeps], [2, [2000]]);
+});
+test('one 429 retry is allowed inside the budget and then the single page succeeds', async () => {
+  const page = serve(seq(1, 100));
+  const f = fake((request, n) => n === 1 ? { status: 429, headers: { 'Retry-After': '1' }, body: '{}' } : page(request));
+  const result = await fetchArenaRows(f.client, f.options);
+  assert.deepEqual([result.rows.length, result.requests, f.sleeps], [20, 2, [1000]]);
+});
+test('the whole received block is rank-validated after the boundary; nothing beyond rank 20 is collected', async () => {
+  const f = fake(serve([...seq(1, 20), ...seq(21, 100)]));
+  const result = await fetchArenaRows(f.client, f.options);
+  assert.deepEqual([result.rows.length, result.requests, result.boundary], [20, 1, 'rank-above-top']);
+});
+test('an inversion after the boundary row fails as unavailable without another request', async () => {
+  const f = fake(serve([...seq(1, 20), rowFor(21), rowFor(20), rowFor(22)]));
+  await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
+  assert.equal(f.requests.length, 1);
+});
+test('an invalid rank after the boundary row fails as unavailable without another request', async () => {
+  const f = fake(serve([...seq(1, 20), rowFor(21), rowFor('x')]));
+  await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
+  assert.equal(f.requests.length, 1);
 });

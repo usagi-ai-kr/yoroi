@@ -6,17 +6,15 @@
 
 ## 현재 상태 (2026-10-11)
 
-- 0.4.0 머지 완료(PR #91 `4744fbc`, main CI run 38125929202 success). 전역 CLI 0.4.0 갱신 완료. 외부 작업으로 [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0) 발행 관측.
-- Milestone 10(0.4.0) 및 [#89](https://github.com/qus0in/yoroi/issues/89) open 유지: 실환경 `detect` 스모크 1회 미실행 상태이며 완료 기준 보존을 위해 분리하지 않고 유지.
-- 0.5.0([#70](https://github.com/qus0in/yoroi/issues/70)) 미커밋 진행 중: 내부 stdout 레터 CLI 파이프라인 구현 및 인수인계 문서([docs/insights/handover.md](insights/handover.md)) 작성 완료. 전체 검증(pnpm check 592 tests, BDD 34 scenarios / 404 steps, build, validate-repo 398 files / 6 skills) 통과.
-  8-A 실측 후 사용자 결정에 따라 0.5.0 검증 범위는 단일 호출 2소스(OpenRouter, Cognition 부분성공: accepted 1530 metric, rejected 20)로 정리를 완료함. Arena·AA는 4소스 코드 지원을 유지하며 후속 이슈([#92](https://github.com/qus0in/yoroi/issues/92), [#93](https://github.com/qus0in/yoroi/issues/93))로 분리함. 미커밋 변경 머지 및 코테츠 전달이 남아있어 #70은 open 유지.
+- 0.4.0: #89 실환경 스모크 2026-10-11 19:17:56 KST 1회 exit 0 성공, zen:plugin-stale 1건 관측(#77 근거로 계속 관측), #89 및 0.4.0 milestone close 완료.
+- 0.5.0: PR #95 머지(e34f217), main CI 38132032129 success, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행, 전역 CLI 0.5.0 갱신, #70 close, 0.5.0 milestone close 완료.
+- 0.5.1: 마감 준비 (#92 Arena top20 다중페이지, [#93](https://github.com/qus0in/yoroi/issues/93) AA top20 다중페이지, [#96](https://github.com/qus0in/yoroi/issues/96) Zen Free 리셋/남은시간, [#97](https://github.com/qus0in/yoroi/issues/97) OpenCode 락 복구 구현 완료, [#94](https://github.com/qus0in/yoroi/issues/94)는 0.6.0 이동).
 
 ## 남은 작업
 
-- 0.4.0 스모크: 별도 사용자 승인 후 실환경 `yoroi detect --once` 1회 검증 및 #89·Milestone 10 close.
-- 0.5.0: PR 머지 및 코테츠(Hermes) 인계 문서 전달 후 #70 정리.
-- 후속 이슈: Arena 다중 페이지 수집([#92](https://github.com/qus0in/yoroi/issues/92)), AA 다중 페이지 수집([#93](https://github.com/qus0in/yoroi/issues/93)) — 마일스톤 없음.
-- [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) 자연 발생 실관측 대기: Zen 무료 한도 초과/해제 및 로드 시각 확인.
+- 0.5.1: dev → main PR 생성, CI 통과 확인 및 릴리스.
+- 0.6.0 milestone(9): [#94](https://github.com/qus0in/yoroi/issues/94)(Hermes 전달/운영문서) 및 [#84](https://github.com/qus0in/yoroi/issues/84)(trend) 진행.
+- [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) 자연 발생 실관측 대기(locked/clear 전이 및 로드 시각 확인 유지).
 - [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지.
 - PR #86 후속(미착수): 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 미노출.
 
@@ -39,7 +37,7 @@
 - `0.2.0`: [#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76) 검증 후 [v0.2.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.2.0) 발행 완료.
 - `0.3.0`: [#71](https://github.com/qus0in/yoroi/issues/71) 반영, [v0.3.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.3.0) 발행 완료 (`f12f55a`).
 - `0.3.1`: [#77](https://github.com/qus0in/yoroi/issues/77) 로드 표시, [v0.3.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.3.1) 발행 완료 (`56413de`).
-- `0.4.0`: [#89](https://github.com/qus0in/yoroi/issues/89) 감지(PR #91 머지 완료, [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0) 발행 관측, 스모크 대기로 milestone 10 / #89 open 유지).
-- `0.5.0`: [#70](https://github.com/qus0in/yoroi/issues/70) 인사이트 레터 (2소스 기준 검증 정리 완료, 머지/인계 대기로 open 유지).
-- 후속: [#92](https://github.com/qus0in/yoroi/issues/92) (Arena), [#93](https://github.com/qus0in/yoroi/issues/93) (AA).
-- `0.6.0`: [#84](https://github.com/qus0in/yoroi/issues/84) trend (0.5.0 완료 후 진행).
+- `0.4.0`: [#89](https://github.com/qus0in/yoroi/issues/89) 감지 (스모크 exit 0 확인, #89 close, milestone 10 close, [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0) 발행 완료).
+- `0.5.0`: [#70](https://github.com/qus0in/yoroi/issues/70) 인사이트 레터 (PR #95 머지 e34f217, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행, 전역 CLI 갱신, #70 close, milestone 7 close).
+- `0.5.1`: milestone 11 ([#92](https://github.com/qus0in/yoroi/issues/92) Arena top20, [#93](https://github.com/qus0in/yoroi/issues/93) AA top20, [#96](https://github.com/qus0in/yoroi/issues/96) Zen 리셋/남은시간, [#97](https://github.com/qus0in/yoroi/issues/97) OpenCode 락 복구 구현 완료).
+- `0.6.0`: milestone 9 ([#94](https://github.com/qus0in/yoroi/issues/94) Hermes 전달/운영문서, [#84](https://github.com/qus0in/yoroi/issues/84) trend).

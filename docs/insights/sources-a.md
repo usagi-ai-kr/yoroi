@@ -30,3 +30,7 @@
 - 집계 주기: 시간별. 일/주 단위는 UTC 기준.
 - 사용자/세션: 근사치 (distinct users, OpenCode sessions).
 - 비용: 세션 평균 비용 + 모델 catalog list price.
+
+## 2026-10-11 최신 override — AA coding 상위 20
+- AA는 free tier 전체 페이지(실측 4쪽)를 수집한 뒤 `artificial_analysis_coding_index` 상위20(동점 포함)만 저장·비교하고 순위 코호트도 `coding_index`다. 정렬·필터·page_size 축소는 여전히 UNVERIFIED(요청 축소 없음, 저장 축소만).
+- requestScope는 `aa-v2:free:language-models:coding-top20`(전환일 비교는 의도된 '이전 기록 없음'). 알려진 한계(review-051-096 medium): 20위 동점이면 저장 모델이 20개를 넘을 수 있어 레터 근거표 20행 상한과 요약이 어긋날 수 있다.

@@ -39,3 +39,6 @@ style control 기본값. 웹 페이지 스크래핑은 약관 금지이므로 HF
   범용 성능 순위로 혼동하지 않는다. 모델 식별자(`model_name` vs `org_model`)는 어댑터에서 매핑한다.
 - Vals AI 점수는 비공개 테스트셋 기반이므로 외부 재현이 불가하고, Arena 점수는 공개 투표 집계다.
 - 두 소스 모두 공식 수집 경로 내에서만 일 1회 조회하고 원문 대량 저장은 하지 않는다.
+
+## 2026-10-11 최신 override — Arena overall 상위 20
+- Arena coding 카테고리 탐색(`/statistics`+공식 `where` `/filter` 2요청)은 결론 없이 종료(halt)됐고, 수집은 overall rank≤20(20위 동점 포함, 첫 쪽 경계 확인 목표, maxRequests2·재시도 포함)으로 대체됐다. 600행 상한 결정은 불필요해졌다(arena-transport.md §10).

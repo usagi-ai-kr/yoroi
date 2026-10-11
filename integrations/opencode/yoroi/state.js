@@ -33,7 +33,18 @@ export async function createHooks({ loadFreeModels, report, now = Date.now }) {
       event.type === 'session.status' && status?.type === 'retry' &&
       status?.action?.reason === 'free_tier_limit' && status.action.provider === 'opencode';
     if (event.type === 'session.error') m.failed = true;
+    const ensureFree = async () => {
+      if (!free.has(m.model) && !reloaded && now() >= nextReloadAt) {
+        nextReloadAt = now() + 300000;
+        try {
+          const refreshed = await loadFreeModels();
+          if (refreshed.size > 0) { free = refreshed; reloaded = true; }
+        } catch {}
+      }
+      return free.has(m.model);
+    };
     if (exceeded) {
+      if (!await ensureFree()) return;
       unlockPending = true;
       const at = event.type === 'session.error' ? retryAt(p.error?.data) : undefined;
       if (!m.exceeded || (at && !m.timed)) {
@@ -49,14 +60,7 @@ export async function createHooks({ loadFreeModels, report, now = Date.now }) {
       (event.type === 'session.status' && status?.type === 'idle');
     if (idle && unlockPending && !m.failed &&
         Number.isFinite(m.completed) && m.finish === 'stop') {
-      if (!free.has(m.model) && !reloaded && now() >= nextReloadAt) {
-        nextReloadAt = now() + 300000;
-        try {
-          const refreshed = await loadFreeModels();
-          if (refreshed.size > 0) { free = refreshed; reloaded = true; }
-        } catch {}
-      }
-      if (free.has(m.model) && await send(['--ok', '--model', m.model])) unlockPending = false;
+      if (await ensureFree() && await send(['--ok', '--model', m.model])) unlockPending = false;
     }
   }
   return { event: input => {

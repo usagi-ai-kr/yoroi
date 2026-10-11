@@ -24,7 +24,7 @@ const aaPayload = { tier: 'free', intelligence_index_version: 3,
   pagination: { page: 1, page_size: 10, total_pages: 1, has_more: false },
   data: [{ id: 'm1', slug: 'gpt-oss-20b', name: 'GPT-OSS 20B', release_date: '2025-01-01',
     model_creator: { id: 'openai', name: 'OpenAI' },
-    evaluations: { artificial_analysis_intelligence_index: 42 }, pricing: {}, performance: {} }] };
+    evaluations: { artificial_analysis_intelligence_index: 42, artificial_analysis_coding_index: 38 }, pricing: {}, performance: {} }] };
 const orPayload = { meta: { as_of: '2026-10-09T00:00:00Z', start_date: '2026-10-01',
   end_date: '2026-10-09', version: 'v1' },
   data: [{ date: '2026-10-09', model_permaslug: 'gpt-5', total_tokens: 123 }] };

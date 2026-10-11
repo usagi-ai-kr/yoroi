@@ -1,4 +1,6 @@
-# Go/No-Go 결정: AI 인사이트 소스 (0.4.0)
+# Go/No-Go 결정: AI 인사이트 소스 (0.5.0)
+
+> 버전 표기는 2026-10-11 재번호로 `0.5.0`(milestone #7)로 갱신했다. 아래 Go/No-Go **결정 내용과 조사일은 2026-10-10 기록 그대로**다.
 
 기준: [#70](https://github.com/qus0in/yoroi/issues/70) 완료 기준 1번 + [sources-a.md](sources-a.md) + [sources-b.md](sources-b.md) + [sources-c.md](sources-c.md) + p3/pA 브리프. 조사일 2026-10-10.
 
@@ -12,10 +14,10 @@
 | Artificial Analysis | **Go (키 설정 완료, [#79](https://github.com/qus0in/yoroi/issues/79))** | 공식 V2 API + Free tier(100 req/24h). API key `.env` 설정 완료, attribution 필수. robots 전체 허용 | [API docs](https://artificialanalysis.ai/data-api/docs), [Terms](https://artificialanalysis.ai/docs/legal/Terms-of-Use.pdf) |
 | OpenRouter Rankings | **Go (키 설정 완료, [#79](https://github.com/qus0in/yoroi/issues/79))** | 공식 API 존재, CC BY 4.0로 재배포 명시적 허용. API key `.env` 설정 완료 | [API ref](https://openrouter.ai/docs/api/api-reference/datasets/get-rankings-daily) |
 | Cognition FrontierCode | **Go (내부 전용, 사용자 결정 2026-10-10)** | 공개 JSON(무인증)·robots `/data/` 허용. 약관 §3.1은 personal use 한정·상업적 재배포 금지 → 내부 전용으로만 사용 | [JSON](https://cognition.com/data/frontiercode-leaderboard/data.json), [Terms](https://cognition.com/legal/website-terms-of-use) |
-| OpenCode Data | **모니터링 제외 (결정 완료, [#80](https://github.com/qus0in/yoroi/issues/80))** | 이용약관 제한 5번 "automatically or programmatically extracts data"·11번 crawl/scrape 금지 → 0.4.0 수집 제외 | [약관](https://opencode.ai/legal/terms-of-service), [Data](https://opencode.ai/ko/data) |
-| Vals AI | **모니터링 제외 (결정 완료, [#81](https://github.com/qus0in/yoroi/issues/81))** | 공식 API 부재, HTML 파싱 불안정, 약관 미게시 → 0.4.0 수집 제외 | [robots](https://www.vals.ai/robots.txt), [Index](https://www.vals.ai/benchmarks/vals_index) |
+| OpenCode Data | **모니터링 제외 (결정 완료, [#80](https://github.com/qus0in/yoroi/issues/80))** | 이용약관 제한 5번 "automatically or programmatically extracts data"·11번 crawl/scrape 금지 → 0.5.0 수집 제외 | [약관](https://opencode.ai/legal/terms-of-service), [Data](https://opencode.ai/ko/data) |
+| Vals AI | **모니터링 제외 (결정 완료, [#81](https://github.com/qus0in/yoroi/issues/81))** | 공식 API 부재, HTML 파싱 불안정, 약관 미게시 → 0.5.0 수집 제외 | [robots](https://www.vals.ai/robots.txt), [Index](https://www.vals.ai/benchmarks/vals_index) |
 
-## 0.4.0 소스 (4곳 확정)
+## 0.5.0 소스 (4곳 확정)
 
 - **Arena** — 공식 HF 데이터셋(CC-BY-4.0), 무인증
 - **Artificial Analysis** — 공식 V2 API, 키 `.env` 설정 완료
@@ -35,7 +37,7 @@
 
 - Artificial Analysis: Commercial tier 범위, 재배포 권리 세부 조항
 - OpenRouter: 무료 사용 가능 여부 (rate limit만 명시)
-- OpenCode Data: 자동 추출 금지 예외·오픈 데이터 라이선스 (0.4.0 제외로 실사용 무관)
-- Vals AI: 공개 약관·재배포 정책 미게시 (0.4.0 제외로 실사용 무관)
+- OpenCode Data: 자동 추출 금지 예외·오픈 데이터 라이선스 (0.5.0 제외로 실사용 무관)
+- Vals AI: 공개 약관·재배포 정책 미게시 (0.5.0 제외로 실사용 무관)
 - Arena: 데이터셋 갱신 주기(데일리 여부) 미공지
 - Cognition: JSON 갱신 시각·스키마 버전 계약, 자동 수집 약관 명시 여부

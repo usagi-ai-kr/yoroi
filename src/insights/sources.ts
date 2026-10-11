@@ -1,11 +1,12 @@
 import { SourceError } from '../app/usage-source.js';
 import type { HttpClient } from '../infra/http-client.js';
-import { parseAaResponse } from './aa-parser.js';
 import { parseCognitionResponse } from './cognition-parser.js';
-import { fetchJson, type JsonFetchSpec } from './fetch-json.js';
+import { fetchJsonWithPolicy, type JsonFetchSpec, type PolicyFetchOptions, type SourceRequestSession } from './fetch-json.js';
 import { parseOpenRouterResponse } from './openrouter-parser.js';
 import type { InsightSource } from './record.js';
 import type { InsightSourcePort } from './source-port.js';
+import { fetchAaPages, parseAaPages } from './sources-aa.js';
+import { fetchArena, parseArena } from './sources-arena.js';
 import type { ParseRowResult } from './parse-utils.js';
 
 type AuthKind = 'x-api-key' | 'bearer' | 'none';
@@ -14,9 +15,9 @@ type AuthKind = 'x-api-key' | 'bearer' | 'none';
 export interface InsightSourceEntry {
   readonly id: InsightSource;
   readonly displayName: string;
-  /** Access URL form. Arena defines the HF dataset URL only (parquet is a follow-up). */
+  /** Access URL. Arena lists the HF dataset page (attribution); its rows come from the datasets-server /rows API. */
   readonly url: string;
-  readonly pipeline: 'http-json' | 'hf-parquet-deferred';
+  readonly pipeline: 'http-json' | 'hf-rows' | 'aa-pages';
   readonly auth: AuthKind;
   /** Candidate env var name (docs/insights/sources-a.md, #79); user .env key name unconfirmed. */
   readonly authEnvName: string | null;
@@ -28,11 +29,11 @@ export interface InsightSourceEntry {
 export const INSIGHT_SOURCES: readonly InsightSourceEntry[] = [
   { id: 'arena', displayName: 'lmarena-ai LMArena Leaderboard Dataset',
     url: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset',
-    pipeline: 'hf-parquet-deferred', auth: 'none', authEnvName: null, timeoutMs: 20000,
-    license: 'CC-BY-4.0', note: 'HF dataset URL only; parquet row pipeline is a follow-up' },
+    pipeline: 'hf-rows', auth: 'none', authEnvName: null, timeoutMs: 20000,
+    license: 'CC-BY-4.0', note: 'datasets-server /rows, subset text, category overall (arena-transport.md)' },
   { id: 'artificial-analysis', displayName: 'Artificial Analysis',
     url: 'https://artificialanalysis.ai/api/v2/language/models/free',
-    pipeline: 'http-json', auth: 'x-api-key', authEnvName: 'YOROI_AA_API_KEY', timeoutMs: 10000,
+    pipeline: 'aa-pages', auth: 'x-api-key', authEnvName: 'YOROI_AA_API_KEY', timeoutMs: 10000,
     license: null, note: 'V2 free tier; attribution required' },
   { id: 'openrouter', displayName: 'OpenRouter',
     url: 'https://openrouter.ai/api/v1/datasets/rankings-daily?period=day',
@@ -53,26 +54,38 @@ function authHeaders(entry: InsightSourceEntry, env: EnvLookup): Record<string, 
   return entry.auth === 'x-api-key' ? { 'x-api-key': value } : { Authorization: `Bearer ${value}` };
 }
 
-/** Builds one port per registered source from an injected HttpClient and env lookup.
- * Key values come from env only and are never logged; Arena stays deferred. */
-export function createInsightSourcePorts(client: HttpClient, env: EnvLookup):
+export type InsightPortOptions = PolicyFetchOptions;
+
+/** Builds one port per registered source for ONE execution: every port gets its own request session that starts at
+ * the shared run start (creation time), so the per-source 4-A request/time caps count pages and retries together.
+ * Key values come from env only and are never logged. */
+export function createInsightSourcePorts(client: HttpClient, env: EnvLookup, options: InsightPortOptions = {}):
   readonly InsightSourcePort[] {
-  return INSIGHT_SOURCES.map(entry => ({
-    id: entry.id,
-    async fetch(signal?: AbortSignal): Promise<unknown> {
-      if (entry.pipeline === 'hf-parquet-deferred') throw new SourceError('unavailable');
+  const startedAtMs = (options.now ?? (() => Date.now()))();
+  return INSIGHT_SOURCES.map(entry => {
+    const session: SourceRequestSession = { startedAtMs, requestsMade: 0, retriesMade: 0 };
+    const spec = (): JsonFetchSpec => {
       const headers = authHeaders(entry, env);
-      const spec: JsonFetchSpec = { url: entry.url, timeoutMs: entry.timeoutMs,
-        ...(headers !== undefined ? { headers } : {}) };
-      return fetchJson(client, spec, signal);
-    },
-    parse(payload: unknown, observedAt: string): readonly ParseRowResult[] {
-      switch (entry.id) {
-        case 'artificial-analysis': return parseAaResponse(payload, observedAt);
-        case 'openrouter': return parseOpenRouterResponse(payload, observedAt);
-        case 'cognition': return parseCognitionResponse(payload, observedAt);
-        default: throw new SourceError('parse');
-      }
-    },
-  }));
+      return { url: entry.url, timeoutMs: entry.timeoutMs, ...(headers !== undefined ? { headers } : {}) };
+    };
+    return {
+      id: entry.id,
+      async fetch(signal?: AbortSignal): Promise<unknown> {
+        switch (entry.pipeline) {
+          case 'hf-rows': return fetchArena(client, { ...options, ...(signal && { signal }) });
+          case 'aa-pages': return fetchAaPages(client, spec(), session, options, signal);
+          default: return fetchJsonWithPolicy(client, spec(), session, options, signal);
+        }
+      },
+      parse(payload: unknown, observedAt: string): readonly ParseRowResult[] {
+        switch (entry.id) {
+          case 'arena': return parseArena(payload, observedAt);
+          case 'artificial-analysis': return parseAaPages(payload, observedAt, options);
+          case 'openrouter': return parseOpenRouterResponse(payload, observedAt);
+          case 'cognition': return parseCognitionResponse(payload, observedAt);
+          default: throw new SourceError('parse');
+        }
+      },
+    };
+  });
 }

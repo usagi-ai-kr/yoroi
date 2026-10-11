@@ -64,6 +64,8 @@ export const USAGE_MIGRATIONS: readonly Migration[] = [V1, V2];
 export const ZEN_MIGRATIONS: readonly Migration[] = [V1, V3];
 /** detect 저장소가 여는 연결. 독립 테이블이라 v1~v3과 어떤 순서로 열어도 합집합이 된다. */
 export const DETECT_MIGRATIONS: readonly Migration[] = [V4];
+/** 인사이트(#70) 저장소 연결: 정의는 insights-migration.ts(v5), 독립 테이블이라 어떤 순서로 열어도 합집합이 된다. */
+export { INSIGHTS_MIGRATIONS } from './insights-migration.js';
 
 /** 미적용 버전만 순서대로 적용한다. 재실행해도 변경이 없다.
  * openDatabase는 원래 busy_timeout을 유지하며 SQLITE_BUSY 때 WAL부터 다시 시도한다.

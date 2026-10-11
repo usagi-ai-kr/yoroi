@@ -1,12 +1,15 @@
-export type Subcommand = "once" | "zen-free" | "detect";
+import { INSIGHTS_HELP } from "./insights-help.js";
+
+export type Subcommand = "once" | "zen-free" | "detect" | "insights";
 
 export const USAGE = [
-  "usage: yoroi <once|zen-free|detect> [--pretty] [--help] [--version]",
+  "usage: yoroi <once|zen-free|detect|insights> [--pretty] [--help] [--version]",
   "",
   "examples:",
   "  yoroi once --pretty",
   "  yoroi zen-free",
   "  yoroi detect --once",
+  "  yoroi insights once",
   "",
   "providers: defaults to all 5 (ollama-pro,opencode-go,codex,agy,claude)",
   "  select: YOROI_PROVIDERS=<comma-separated-list>",
@@ -61,5 +64,6 @@ export function getHelpText(subcommand?: Subcommand): string {
   if (subcommand === "once") return ONCE_HELP;
   if (subcommand === "zen-free") return ZEN_FREE_HELP;
   if (subcommand === "detect") return DETECT_HELP;
+  if (subcommand === "insights") return INSIGHTS_HELP;
   return USAGE;
 }

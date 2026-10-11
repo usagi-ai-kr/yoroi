@@ -32,16 +32,14 @@ const cogPayload = { v1_1: { models: ['M'], subsets: { main: 100 },
   data: { M: { high: { main: { correct: 0.5, cost: 1.25 } } } } } };
 
 test('registry holds the four go sources and excludes opencode/vals', () => {
-  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id),
-    ['arena', 'artificial-analysis', 'openrouter', 'cognition']);
+  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['arena', 'artificial-analysis', 'openrouter', 'cognition']);
   const byId = new Map(INSIGHT_SOURCES.map(e => [e.id, e]));
   assert.equal(byId.get('artificial-analysis')?.url, 'https://artificialanalysis.ai/api/v2/language/models/free');
   assert.equal(byId.get('openrouter')?.url, 'https://openrouter.ai/api/v1/datasets/rankings-daily?period=day');
   assert.equal(byId.get('cognition')?.url, 'https://cognition.com/data/frontiercode-leaderboard/data.json');
   assert.match(byId.get('arena')?.url ?? '', /^https:\/\/huggingface\.co\/datasets\//);
-  assert.equal(byId.get('arena')?.pipeline, 'hf-parquet-deferred');
-  assert.deepEqual(INSIGHT_SOURCES.filter(e => e.authEnvName !== null).map(e => e.authEnvName),
-    ['YOROI_AA_API_KEY', 'YOROI_OPENROUTER_API_KEY']);
+  assert.deepEqual([...byId].map(([id, e]) => [id, e.pipeline]), [['arena', 'hf-rows'], ['artificial-analysis', 'aa-pages'], ['openrouter', 'http-json'], ['cognition', 'http-json']]);
+  assert.deepEqual(INSIGHT_SOURCES.filter(e => e.authEnvName !== null).map(e => e.authEnvName), ['YOROI_AA_API_KEY', 'YOROI_OPENROUTER_API_KEY']);
 });
 
 test('fetchJson passes spec through and classifies status and body errors', async () => {
@@ -63,7 +61,7 @@ test('fetchJson passes spec through and classifies status and body errors', asyn
     (error: SourceError) => error instanceof SourceError && error.code === 'cancelled');
 });
 
-test('ports add auth headers from env without leaking keys and map deferred arena', async () => {
+test('ports add auth headers from env without leaking keys; arena sends none and rejects a non-rows payload', async () => {
   const fake = fakeClient();
   fake.respond(() => ({ status: 200, headers: {}, body: '{}' }));
   const ports = new Map(createInsightSourcePorts(fake.client, env).map(p => [p.id, p]));
@@ -75,7 +73,9 @@ test('ports add auth headers from env without leaking keys and map deferred aren
   await ports.get('cognition')!.fetch();
   assert.equal(fake.requests.at(-1)!.headers, undefined);
   await assert.rejects(ports.get('arena')!.fetch(),
-    (error: SourceError) => error instanceof SourceError && error.code === 'unavailable');
+    (error: SourceError) => error instanceof SourceError && error.code === 'parse');
+  assert.equal(fake.requests.at(-1)!.headers, undefined);
+  assert.match(fake.requests.at(-1)!.url, /^https:\/\/datasets-server\.huggingface\.co\/rows\?/);
   const noKey = createInsightSourcePorts(fake.client, () => undefined)
     .find(p => p.id === 'artificial-analysis')!;
   await assert.rejects(noKey.fetch(),
@@ -84,7 +84,7 @@ test('ports add auth headers from env without leaking keys and map deferred aren
 
 test('collectInsightSource wires each parser and returns instead of throwing', async () => {
   const fake = fakeClient();
-  const ports = new Map(createInsightSourcePorts(fake.client, env).map(p => [p.id, p]));
+  const ports = new Map(createInsightSourcePorts(fake.client, env, { sleep: async () => {} }).map(p => [p.id, p]));
   fake.respond(request => ({ status: 200, headers: {},
     body: JSON.stringify(request.url.includes('openrouter') ? orPayload :
       request.url.includes('cognition') ? cogPayload : aaPayload) }));

@@ -71,3 +71,10 @@
 - 계정 다이제스트는 사용자 단위 id(`email`·`accountId`·`userId` 등)의 SHA-256이며, 없으면 토큰 다이제스트다.
   조직·구독 id는 여러 사용자가 공유하므로 쓰지 않는다. id가 없으면 토큰 갱신 때 scope가 바뀌어 이력이 분리된다(격리 우선).
 - app은 infra를 import하지 않는다. 주체 해석은 `CachedSource`의 `principal` 훅(`src/app/claude-scope.ts`)으로 주입한다.
+
+## 이력 보존 정책 (#71, 0.3.0)
+
+- `once` 종료 시 `observed_at`이 90일보다 오래된 관측 이력, 시리즈(provider·scope·contract·window·unit)당 1000건 초과분,
+  만료된 캐시 행을 삭제한다(`src/composition-root.ts`의 상수). Zen 락 테이블은 정리하지 않는다.
+- 값은 상수이며 설정할 수 없다. 정리 실패는 조회 결과와 종료 코드에 영향을 주지 않는다.
+- 백업·내보내기 기능은 없다. 필요하면 `yoroi.db`(권한 0600)를 사용자가 직접 복사한다.

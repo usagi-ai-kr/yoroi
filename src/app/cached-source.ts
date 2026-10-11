@@ -1,6 +1,7 @@
 import { computeUsageDelta } from '../domain/usage-delta.js';
 import type { UsageDelta } from '../domain/usage-delta-types.js';
 import type { UsageSnapshot } from '../domain/usage.js';
+import { principalKey, type PrincipalResolver } from './claude-scope.js';
 import type { UsageCache, UsageCacheKey, UsageClock } from './usage-cache-port.js';
 import type { UsageHistory } from './usage-history-port.js';
 import type { UsageResultMeta } from './usage-result-meta.js';
@@ -12,6 +13,9 @@ export interface CachedSourceOptions {
   readonly history?: UsageHistory;
   readonly clock?: UsageClock;
   readonly refresh?: boolean;
+  /** Account known only after authentication: resolved once before the cache lookup, which then uses
+   * `key.scope + principal`. If it fails the cache and history are bypassed and the source reports the error. */
+  readonly principal?: PrincipalResolver;
 }
 
 /** Same format the SQLite adapters enforce, checked at construction so configuration errors surface early. */
@@ -42,38 +46,49 @@ export class CachedSource implements UsageSource {
   async read(signal?: AbortSignal): Promise<UsageSnapshot> {
     this.lastMeta = undefined;
     if (signal?.aborted) throw new SourceError('cancelled');
+    const key = await this.resolveKey(signal);
+    if (!key) return this.source.read(signal);
     const now = this.clock();
     let hit: UsageSnapshot | undefined;
     if (!this.options.refresh) {
-      try { hit = this.options.cache.get(this.options.key, now); } catch { /* miss */ }
+      try { hit = this.options.cache.get(key, now); } catch { /* miss */ }
     }
     if (hit && !(Date.parse(hit.observedAt) <= now)) hit = undefined; // future/invalid rows are misses
     if (hit) {
       this.lastMeta = { cache: { hit: true, ageMs: now - Date.parse(hit.observedAt) },
-        ...this.deltas(hit) };
+        ...this.deltas(hit, key) };
       return hit;
     }
     const snapshot = await this.source.read(signal);
     if (signal?.aborted) throw new SourceError('cancelled');
     if (snapshot.provider !== this.provider) throw new SourceError('parse');
-    try { this.options.cache.set(this.options.key, snapshot); } catch { /* preserve collection */ }
+    try { this.options.cache.set(key, snapshot); } catch { /* preserve collection */ }
     let recorded = false;
     if (this.options.history) {
-      try { this.options.history.record(snapshot, this.options.key); recorded = true; }
+      try { this.options.history.record(snapshot, key); recorded = true; }
       catch { /* no stale delta after a failed history write */ }
     }
     this.lastMeta = { cache: { hit: false,
       ageMs: Math.max(0, this.clock() - Date.parse(snapshot.observedAt)) },
-      ...(recorded ? this.deltas(snapshot) : {}) };
+      ...(recorded ? this.deltas(snapshot, key) : {}) };
     return snapshot;
   }
 
-  private deltas(snapshot: UsageSnapshot): Pick<UsageResultMeta, 'deltas'> {
+  private async resolveKey(signal?: AbortSignal): Promise<UsageCacheKey | undefined> {
+    const { key, principal } = this.options;
+    if (!principal) return key;
+    let resolved: UsageCacheKey | undefined;
+    try { resolved = principalKey(key, await principal(signal)); } catch { /* the source read reports it */ }
+    if (signal?.aborted) throw new SourceError('cancelled');
+    return resolved;
+  }
+
+  private deltas(snapshot: UsageSnapshot, key: UsageCacheKey): Pick<UsageResultMeta, 'deltas'> {
     if (!this.options.history) return {};
     const deltas: Record<string, ReturnType<typeof computeUsageDelta>> = Object.create(null);
     for (const window of snapshot.windows) {
       try {
-        const pair = this.options.history.latestTwo({ ...this.options.key, windowId: window.id, unit: window.unit });
+        const pair = this.options.history.latestTwo({ ...key, windowId: window.id, unit: window.unit });
         const stale = pair[0] !== undefined && Date.parse(pair[0].observedAt) !== Date.parse(snapshot.observedAt);
         deltas[window.id] = stale ? NOT_COMPARABLE : computeUsageDelta(pair);
       } catch { /* omit only the unavailable series */ }

@@ -20,6 +20,8 @@
 
 ## 남은 작업
 
+- PR #86 후속(미착수): 토큰 갱신으로 이력 시리즈가 분리될 때(자격 증명에 사용자 id가 없는 경우)
+  `n/a: no-previous`와 구분되는 "이력 끊김" 표시. 계정 다이제스트 값은 출력·로그에 싣지 않는다.
 - 0.2.0 PR: 커밋·tag·Release 없음(준비 단계). [#72](https://github.com/qus0in/yoroi/issues/72)는 0.2.0 PR에서 close 예정(아직 아님).
 - [#70](https://github.com/qus0in/yoroi/issues/70)·[#71](https://github.com/qus0in/yoroi/issues/71) 문서 초안은 이번 0.2.0 PR에서 제외한다.
   0.2.1([#77](https://github.com/qus0in/yoroi/issues/77))에서 실제 전역 설치·이벤트 관측을 검증한다.

@@ -58,3 +58,16 @@
   스냅샷·사용량 원본·추정치·비밀값을 담지 않는다. rolling window 추정치도 발행하지 않는다.
 - 의존 방향: app은 domain·app만 import한다(infra·ui import 금지, tests/architecture.test.ts로 검증).
   0.2.0 저장·WS·Zod 연결은 다음 단위 범위다.
+
+## Claude 캐시 계정 격리 계약 (PR #86)
+
+- macOS이고 env 토큰이 없는 Claude는 Keychain이 인증 1순위라 캐시 키만으로는 계정을 알 수 없다.
+  이 경로는 "인증 먼저, 캐시 나중"이다. 수집마다 자격 증명을 1회 읽어 계정 다이제스트를 얻고,
+  scope를 `<경로·프로필 해시>.<stable|cred>-<hex16>`로 확정한 뒤 `cache.get`을 호출한다.
+- 계약 변경: 이 경로의 캐시 hit는 Keychain 읽기 1회·HTTP 0회다(이전 "hit 시 외부 읽기 0"에서 변경).
+  Keychain 읽기는 인증 읽기로 해석한다. miss는 같은 읽기를 재사용해 Keychain 읽기 1회·HTTP 1회다.
+  캐시용 별도 Keychain 사전 조회는 없다. env 토큰·비-darwin 경로는 기존대로 hit 시 외부 읽기 0이다.
+- 인증이 실패하면 캐시·이력을 건너뛰고 `authentication` 오류를 그대로 낸다(유효한 캐시가 있어도 만료 자격 증명은 오류).
+- 계정 다이제스트는 사용자 단위 id(`email`·`accountId`·`userId` 등)의 SHA-256이며, 없으면 토큰 다이제스트다.
+  조직·구독 id는 여러 사용자가 공유하므로 쓰지 않는다. id가 없으면 토큰 갱신 때 scope가 바뀌어 이력이 분리된다(격리 우선).
+- app은 infra를 import하지 않는다. 주체 해석은 `CachedSource`의 `principal` 훅(`src/app/claude-scope.ts`)으로 주입한다.

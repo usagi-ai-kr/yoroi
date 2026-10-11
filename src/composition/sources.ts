@@ -14,14 +14,16 @@ import type { HttpClient } from '../infra/http-client.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 
 export type SourceFactories = Partial<Record<ProviderId, (settings: ProviderSettings) => UsageSource>>;
-export function defaultFactories(ports: { http?: HttpClient; runner?: ProcessRunner } = {}): SourceFactories {
+export function defaultFactories(ports: { http?: HttpClient; runner?: ProcessRunner; platform?: string } = {}): SourceFactories {
   const runner = ports.runner ?? new NodeProcessRunner();
   const client = ports.http ?? new NodeHttpClient();
   return {
     codex: settings => new CodexSource(runner, settings.executable, settings.timeoutMs),
     agy: settings => new AgySource(runner, settings.executable, settings.timeoutMs),
-    claude: settings => new ClaudeSource(client,
-      claudeAuthorization(settings, runner), settings.timeoutMs),
+    claude: settings => {
+      const authorize = claudeAuthorization(ports.platform ? { ...settings, platform: ports.platform } : settings, runner);
+      return Object.assign(new ClaudeSource(client, authorize, settings.timeoutMs), { principal: authorize.principal });
+    },
     'opencode-go': settings => new OpenCodeGoSource(client, settings.apiKey ?? '', settings.timeoutMs),
     'ollama-pro': settings => new OllamaSource(client,
       fileOllamaAuthorization(settings.signingKeyPath ?? ''), settings.timeoutMs),

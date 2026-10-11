@@ -32,6 +32,17 @@ async function runWithStore(cli: CliProgram, argv: string[], store: ZenLockStore
   finally { if (shouldClose) try { store.close(); } catch { /* preserve the CLI result */ } }
 }
 
+const HISTORY_RETENTION_DAYS = 90;
+const MAX_SAMPLES_PER_SERIES = 1000;
+/** once 종료 시 만료 캐시·오래된 이력을 정리한다. 실패는 공급자 조회/결과에 영향을 주지 않는다. */
+function prunePersistence(persistence: UsagePersistence, now: number): void {
+  try { persistence.cache.prune(now); } catch { /* best effort */ }
+  try {
+    const before = new Date(now - HISTORY_RETENTION_DAYS * 86_400_000).toISOString();
+    persistence.history.prune({ before, maxSamples: MAX_SAMPLES_PER_SERIES });
+  } catch { /* best effort */ }
+}
+
 export function compose(options: CompositionOptions = {}): CliProgram {
   const env = options.output ?? nodeEnvironment;
   const subscribeSignals = options.subscribeSignals ?? processSignals;
@@ -78,6 +89,9 @@ export function compose(options: CompositionOptions = {}): CliProgram {
       sourceMeta: source => source instanceof CachedSource ? source.meta : undefined,
       subscribeSignals, version: metadata.version });
     try { return await (store ? runWithStore(cli, argv, store, shouldClose) : cli.run(argv)); }
-    finally { try { persistence?.close(); } catch { /* preserve the CLI result */ } }
+    finally {
+      if (persistence) prunePersistence(persistence, options.clock?.() ?? Date.now());
+      try { persistence?.close(); } catch { /* preserve the CLI result */ }
+    }
   } };
 }

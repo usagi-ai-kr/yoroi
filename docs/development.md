@@ -1,7 +1,7 @@
 # 개발과 검증
 
 Yoroi는 AI 사용량 모니터링 CLI다. Node 24.13.1·pnpm 12.10.1을 고정한다. TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD는 Cucumber다.
-버전 원본은 `package.json`의 `0.1.2`이며 [0.1.2 milestone](https://github.com/qus0in/yoroi/milestone/4)(#4, close)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
+버전 원본은 `package.json`의 `0.3.0`이며 [0.3.0 milestone](https://github.com/qus0in/yoroi/milestone/6)(#6)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
 
 ## 앱 실행과 검증
 

@@ -1,15 +1,16 @@
 import { computeRoleTop10, SECTION_HEADINGS, type RoleList, type RoleLists } from './letter-top10-unified.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
-import { renderPlanOptimalLines } from './plan-optimal.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
+import { SCORE_FORMULA_LINES } from './letter-markdown-format.js';
 import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 
 export interface Top10LetterInput {
   readonly publicationDate: string; // YYYY-MM-DD
   readonly lists: RoleLists;
   readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
-  readonly planOptimal?: readonly string[]; readonly partialSources?: readonly string[];
+  readonly partialSources?: readonly string[];
 }
+
 const ATTRIBUTIONS = ['출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)', '출처: OpenRouter (CC-BY-4.0)',
   '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
   '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)'] as const;
@@ -29,8 +30,8 @@ function section(role: OptimalZoneRole, list: RoleList): string[] {
   if (!list.entries.length) lines.push('자료 부족: 존을 통과한 접근 가능 모델이 없습니다.');
   for (const e of list.entries) {
     const refs = [e.openrouterRankText, e.arenaRankText, e.isPareto ? '★' : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
-    lines.push(`${e.rank}. ${clean(e.modelId, NAME_LIMIT)}${e.both ? ' ↔' : ''} · effort ${clean(e.repEffort, 12)} · ${clean(e.indexText, 80)}` +
-      ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' · off-peak' : ''} · ${clean(e.costEffRankText, 40)} · 접근 ${e.plans.map(p => clean(p, 40)).join('+') || '미상'}` +
+    lines.push(`${e.rank}. ${clean(e.modelId, NAME_LIMIT)}${e.both ? ' ↔' : ''} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${clean(e.indexText, 80)}` +
+      ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' · off-peak' : ''} · 접근 ${e.plans.map(p => clean(p, 40)).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
       `${e.successorOf ? ` · AA 미수록 · 선행 지수 하한(${clean(e.successorOf, 40)})` : ''} · ${fmtChg(e.change)}`);
   }
@@ -61,15 +62,15 @@ export function renderTop10Letter(data: Top10LetterInput): string {
     ...section('orchestrator', data.lists.orchestrator),
     '',
     ...section('worker', data.lists.worker),
-    ...(data.planOptimal?.length ? ['', ...data.planOptimal] : ['']),
     '## 출처 및 안내',
     ...ATTRIBUTIONS,
     data.failedSources && data.failedSources.length > 0
       ? `수집 실패 소스: ${data.failedSources.slice(0, FAILURE_LIMIT).map(s => clean(s, 40)).join(', ')}` +
         (data.failedSources.length > FAILURE_LIMIT ? ` 외 ${data.failedSources.length - FAILURE_LIMIT}개` : '') : '전 소스 정상 수집',
     ...(data.partialSources?.length ? [`부분 수집 소스: ${data.partialSources.slice(0, FAILURE_LIMIT).map(s => clean(s, 40)).join(', ')}`] : []),
-    '혼합 단가=(3×입력+출력)/4 USD/1M · 가성비=지수÷max(단가,0.01)',
-    `정렬: 가성비 중 큰 값 → OR 사용량 → 속도 → 지수 · ${EXCLUSION_NOTE}`,
+    '혼합 단가=(3×입력+출력)/4 USD/1M',
+    ...SCORE_FORMULA_LINES,
+    `정렬: 스코어 내림차순(동점 시 지수) · ${EXCLUSION_NOTE}`,
     '상세 지표는 SQLite 이력에서 확인할 수 있습니다.',
     ...(data.notes ?? []).map(note => clean(note, 160)),
   ];
@@ -92,9 +93,8 @@ export interface CompactLetterInput { readonly publicationDate: string; readonly
 export function renderTop10FromRecords(input: CompactLetterInput): string {
   const options = { ...(input.arenaRecords && { arenaRecords: input.arenaRecords }), ...(input.openrouterRecords && { openrouterRecords: toRankedRecords(input.openrouterRecords) }),
     ...(input.previousRanks && { previousCohort: input.previousRanks }) };
-  const planOptimal = renderPlanOptimalLines(input.records);
   return renderTop10Letter({ publicationDate: input.publicationDate, lists: computeRoleTop10(input.records, options),
     ...(input.failedSources && { failedSources: input.failedSources }),
-    ...(input.notes && { notes: input.notes }), ...(planOptimal.length && { planOptimal }),
+    ...(input.notes && { notes: input.notes }),
     ...(input.partialSources && { partialSources: input.partialSources }) });
 }

@@ -29,13 +29,13 @@ export interface InsightSourceReport {
   readonly reason?: string; readonly failure?: LetterFailure;
   readonly rejectedRows?: number; readonly partial?: boolean; readonly saved?: boolean;
 }
-export interface InsightTop10Row { readonly modelId: string; readonly value?: number; readonly metric?: string; readonly rank?: number;
+export interface InsightTop10Row { readonly modelId: string; readonly modelAlias?: string; readonly value?: number; readonly metric?: string; readonly rank?: number;
   readonly priceInput?: number; readonly priceOutput?: number }
 export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly arenaRecords: readonly InsightTop10Row[]; readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
   readonly previousRanks: readonly { readonly modelId: string; readonly rank: number; readonly metric: string }[];
   readonly observedAt?: string; readonly nowUtc?: string }
 const top10Row = (value: ValidatedInsightRecord, metric: string, prices?: ModelPrices): InsightTop10Row =>
-  ({ modelId: value.record.modelId, value: value.record.value, metric,
+  ({ modelId: value.record.modelId, ...(value.record.modelAlias && { modelAlias: value.record.modelAlias }), value: value.record.value, metric,
     ...(prices?.input !== undefined && { priceInput: prices.input }), ...(prices?.output !== undefined && { priceOutput: prices.output }),
     ...(typeof value.record.metadata?.successorOf === 'string' && { successorOf: value.record.metadata.successorOf }) });
 export interface InsightRunResult {
@@ -74,7 +74,7 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
     return run && run.report.status !== 'failed' && run.report.partial !== true && (run.report.rejectedRows ?? 0) === 0; };
   const aa = withSuccessors(success('artificial-analysis')?.records ?? []);
   const first = aa[0]?.record, prices = buildPriceMap(aa);
-  const records = aa.filter(v => ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index', 'median_output_tokens_per_second'].includes(v.record.metric)).map(v => top10Row(v, v.record.metric, prices.get(v.record.modelId)));
+  const records = aa.filter(v => ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index', 'median_output_tokens_per_second', 'intelligence_index_cost_per_task'].includes(v.record.metric)).map(v => top10Row(v, v.record.metric, prices.get(v.record.modelId)));
   let previous: InsightSuccess | undefined;  try { previous = first && deps.history.getDaily({ source: 'artificial-analysis', publicationDate: shiftInsightDate(publicationDate, -1),
     requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'], schemaVersion: first.schemaVersion }) || undefined; } catch { previous = undefined; }
   const arenaRecords = intact('arena') ? (success('arena')?.records ?? []).filter(v => v.record.metric === 'rank').map(v => ({ modelId: v.record.modelId, rank: v.record.value, metric: 'rank' })) : [];

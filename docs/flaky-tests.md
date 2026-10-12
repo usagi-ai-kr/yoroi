@@ -31,10 +31,14 @@
 ## SQLite WAL 동시 첫 열기: `tests/sqlite-migration-concurrency.test.ts`
 
 - 조건: detect·Zen·usage가 같은 새 DB를 동시에 처음 연다. 각 연결은 busy_timeout 설정 뒤 `PRAGMA journal_mode = WAL`과 마이그레이션을 수행한다.
-- 코드 판정: WAL 전환은 `withMigrationRetry` 호출 안에 있다. `errcode === 5`(SQLITE_BUSY)만 최대 3회 시도하며, 다음 시도 예상치가 시작 후 900ms 미만일 때만 재시도한다. 재시도 사이 실제 대기는 10ms, busy_timeout은 연결별 기존 설정을 유지한다. SQLITE_LOCKED(6)는 이 helper에서 재시도하지 않는다.
+- 초기 코드 판정(재오픈 전): WAL 전환은 `withMigrationRetry` 호출 안에 있었다. `errcode === 5`(SQLITE_BUSY)만 최대 3회 시도하고, 다음 시도 예상치가 시작 후 900ms 미만일 때 재시도했다. 재시도 사이 대기는 10ms였으며 SQLITE_LOCKED(6)는 재시도하지 않았다.
 - 2026-10-12 로컬 단독 반복: detect·Zen·usage 3자 경합 테스트 20회, **20/20 통과**. 매회 내부 20라운드로 400개 동시 초기화 라운드에서 누락 테이블 및 `database is locked` 실패 0회. 전체 반복 시간은 약 1.45–2.01초/회였다.
-- 판정: 로컬에서는 재현하지 못했다. CI의 메시지 문자열만으로 SQLITE_BUSY(5)와 SQLITE_LOCKED(6)를 구분할 수 없으므로 오류 코드는 미확인이다. 현재 코드의 SQLITE_BUSY 재시도 경로는 WAL 전환에도 적용된다.
-- 대응: 3자 신선 DB 경합을 테스트에 포함했다. 시간 제한·재시도 상한은 유지한다. 동일 CI 오류가 반복되면 실제 `errcode`와 재시도 횟수를 확보해 SQLITE_LOCKED 여부를 확인한다.
+- 초기 판정·대응(재오픈 전): 로컬 단독 반복에서 재현하지 못해 3자 경합 테스트만 유지하고 시간·재시도 상한을 보존했다. CI 원문 로그가 없어 오류 코드는 당시 미확인이었다.
+- 2026-10-12 CI [run 38247171932](https://github.com/qus0in/yoroi/actions/runs/38247171932) attempt 1은 `tests/detect-state-store.test.ts`의 lease 경합·첫 열기 2건이 실패했고 attempt 2는 성공했다. WAL 예외는 `code=ERR_SQLITE_ERROR`, `errcode=5`(SQLITE_BUSY), `errstr='database is locked'`였으며 SQLITE_LOCKED(6)은 이 로그에서 관측되지 않았다. 같은 attempt의 `tests/sqlite-migration-concurrency.test.ts` 20라운드는 통과했다.
+- 원인·수정: `busy_timeout`은 WAL 전환 전 적용됐고 전환도 retry 블록 안이었지만, 100ms timeout 연결에서 시도 상한 3회가 약 300ms 만에 먼저 소진되어 900ms 예산을 활용하지 못했다. 최대 6회로 늘리고, extended 5/6 코드·SQLite busy/locked 문자열도 분류하며, 현재 모드가 WAL이면 전환 호출을 생략한다. 900ms 예산과 10ms 대기는 유지했다.
+- lease 경합 테스트는 3회 각각 `START_AT`까지 약 1초 기다려 총 3604ms가 걸렸으며 별도 테스트 시간 제한 실패는 아니다. 실패는 자식 오류 출력 마지막 줄 `Node.js v24.13.1`을 JSON으로 파싱한 것이고, 같은 attempt에서 WAL 잠금으로 자식이 종료된 별도 첫 열기 실패가 확인됐다.
+- 수정 전 강화 로컬 스트레스: CPU 바운더 2개와 DB당 8개 프로세스(detect·Zen·usage 혼합), 새 DB 12라운드(96회 첫 열기)에서 실패 0회. 로컬 무재현은 CI attempt 1 실패를 반박하지 않는다.
+- 수정 후 검증: 같은 CPU·프로세스 스트레스 96회에서 실패 0회, WAL 첫 열기와 lease 경합 CI 실패 테스트 각각 20/20 반복 통과. 로컬 `tsc -p tsconfig.json --noEmit` 통과; pnpm 경로는 고정 버전 서명 확인을 위한 registry fetch 실패로 실행되지 않았다. 테스트 임계값은 바꾸지 않았다.
 
 ## 재현 명령과 결과 기록
 

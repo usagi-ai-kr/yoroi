@@ -1,8 +1,7 @@
 import { computeRoleTop10, SECTION_HEADINGS, type RoleList, type RoleLists } from './letter-top10-unified.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
-import { renderPlanOptimalMarkdown } from './letter-markdown-plan.js';
-import { SOURCE_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
+import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 
 export { escapeShields, OMISSION_MARK, MARKDOWN_LIMIT } from './letter-markdown-format.js';
@@ -10,14 +9,14 @@ export type { RoleLists, RoleList, RoleEntry, RoleExit } from './letter-top10-un
 
 const fmtChg = (c: string): string =>
   c === '신규' ? '🆕 신규' : c.startsWith('▲') ? `🔼 ${c.slice(1)}` : c.startsWith('▼') ? `🔽 ${c.slice(1)}` : c;
-const TABLE_HEAD = '| 순위 | 모델 | 추천 effort | 지수 | 혼합 단가 | 가성비 | 접근 요금제 | 변동 |\n| --- | --- | --- | --- | --- | --- | --- | --- |';
+const TABLE_HEAD = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 접근 요금제 | 변동 |\n| --- | --- | --- | --- | --- | --- | --- | --- |';
 
 function renderTable(role: OptimalZoneRole, list: RoleList): string {
   const rows = list.entries.map(e => {
     const rank = e.isPareto ? `⭐ ${e.rank}` : String(e.rank);
     const successor = e.successorOf ? ` (${e.successorOf} 선행)` : '';
-    return `| ${rank} | ${e.modelId}${successor}${e.both ? ' ↔' : ''} | ${e.repEffort} | ${e.indexText} | ` +
-      `${e.blendedCostText} | ${e.costEffRankText} | ${e.plans.join('+')} | ${fmtChg(e.change)} |`;
+    return `| ${rank} | ${e.modelId}${successor}${e.both ? ' ↔' : ''} | ${e.repEffort} | ${e.scoreText ?? '-'} | ` +
+      `${e.indexText} | ${e.blendedCostText} | ${e.plans.join('+')} | ${fmtChg(e.change)} |`;
   });
   const exits = list.exits.map(x => `• 이탈: ${x.modelId} (전일 ${x.previousRank}위)`);
   return [`${SECTION_HEADINGS[role]}\n\n${TABLE_HEAD}`, ...rows, ...(exits.length ? ['', ...exits] : [])].join('\n');
@@ -40,7 +39,7 @@ function summarize(lists: RoleLists): string {
 export function renderTop10Markdown(data: {
   readonly publicationDate: string; readonly lists: RoleLists;
   readonly failedSources?: readonly string[]; readonly partialSources?: readonly string[]; readonly notes?: readonly string[];
-}, planSection?: readonly string[]): string {
+}): string {
   const failed = data.failedSources ?? [], partial = data.partialSources ?? [], notes = data.notes ?? [];
   const badges = [
     `![date](https://img.shields.io/badge/date-${escapeShields(data.publicationDate)}-blue)`,
@@ -49,11 +48,10 @@ export function renderTop10Markdown(data: {
   ].join('\n');
 
   const formulas = [
-    '- 두 목록 Top10: 오케스트레이터 존(지능 ≥ 후보 최고 85%)·워커 존(코딩 ≥ 후보 최고 75%) 통과 + 보유 요금제 접근 가능 모델만',
-    '- 가성비 최적 존: 지수 ≥ 최고의 85%(오케스트레이터)/75%(워커) 중 가성비 순 · ★ 파레토 최적',
+    '- 자격: 오케스트레이터 지능 ≥ 후보 최고 85% · 워커 코딩 ≥ 후보 최고 75% · 보유 요금제 접근 모델만',
     '- 교집합: 두 목록에 모두 오르는 모델은 모델 칸에 ↔ 표시',
-    '- 혼합 단가=(3×입력+출력)/4 USD/1M · 가성비=지수÷max(단가,0.01)',
-    '- 정렬: 가성비 중 큰 값 → OR 사용량 → 속도 → 지수, 단가 미상 후순위',
+    '- 혼합 단가=(3×입력+출력)/4 USD/1M',
+    ...SCORE_FORMULA_LINES,
     `- ${EXCLUSION_NOTE}`,
     '- ★ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태',
   ].join('\n');
@@ -68,7 +66,6 @@ export function renderTop10Markdown(data: {
     summarize(data.lists),
     renderTable('orchestrator', data.lists.orchestrator),
     renderTable('worker', data.lists.worker),
-    ...(planSection?.length ? [planSection.join('\n')] : []),
     details,
   ];
   return truncateAtRowBoundary(parts.join('\n\n'));
@@ -92,5 +89,5 @@ export function renderTop10MarkdownFromRecords(input: MarkdownLetterInput): stri
     ...(input.failedSources && { failedSources: input.failedSources }),
     ...(input.partialSources && { partialSources: input.partialSources }),
     ...(input.notes && { notes: input.notes }),
-  }, renderPlanOptimalMarkdown(input.records));
+  });
 }

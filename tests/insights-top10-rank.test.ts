@@ -9,7 +9,6 @@ test('effort grouping & representative variant selection', () => {
   const { base: b2, effort: e2 } = splitBaseAndEffort('gpt-4o');
   assert.equal(b2, 'gpt-4o');
   assert.equal(e2, 'default');
-
   const variants: ModelVariant[] = [
     { modelId: 'm-high', baseModelId: 'm', effort: 'high', value: 90, blendedCost: 3.0, costEfficiency: 30 },
     { modelId: 'm-low', baseModelId: 'm', effort: 'low', value: 80, blendedCost: 1.0, costEfficiency: 80 },
@@ -34,7 +33,6 @@ test('Pareto frontier identification', () => {
   assert.equal(g2.isPareto, false); // dominated by m1
   assert.equal(g3.isPareto, true); // highest value, not dominated
 });
-
 const group = (id: string, value: number, cost?: number, orTokens?: number): ModelGroup => {
   const eff = cost === undefined ? undefined : calcCostEfficiency(value, cost);
   return groupVariants([{ modelId: id, baseModelId: id, effort: 'default', value, ...(cost !== undefined && eff !== undefined && { blendedCost: cost, costEfficiency: eff }),
@@ -51,21 +49,23 @@ test('the 85%/75% threshold is inclusive exactly at the boundary and excludes be
   const work = ids(selectOptimalZone(groups, 'worker').map(s => s.group));
   assert.deepEqual(work, ['max', 'at85', 'below85', 'at75']);
 });
-test('inside the zone a low-cost mid-index model ranks first: cost-efficiency before index', () => {
+test('inside the zone the normalized composite score ranks the low-cost mid-index model first', () => {
   const groups = [group('max', 100, 100), group('mid', 90, 1), group('low', 86, 10)];
   const order = ids(selectOptimalZone(groups, 'orchestrator').map(s => s.group));
-  assert.deepEqual(order, ['mid', 'low', 'max']); // eff 90 > 8.6 > 1
+  assert.deepEqual(order, ['mid', 'max', 'low']); // 복합 score가 지수·비용을 함께 반영
 });
-test('free beats a cheaper-efficiency paid model, and unknown cost is last', () => {
+test('composite score replaces the former free-first tier; unknown cost gets no cost credit', () => {
   const groups = [group('free', 86, 0), group('paid', 90, 0.01), group('max', 100, 100), group('unknown', 95)];
   const order = ids(selectOptimalZone(groups, 'orchestrator').map(s => s.group));
-  assert.deepEqual(order, ['free', 'paid', 'max', 'unknown']);
+  assert.deepEqual(order, ['paid', 'max', 'free', 'unknown']);
 });
-test('equal cost-efficiency ties fall back to OpenRouter usage rank, then index', () => {
+test('usage contributes to the score; exact ties use index then model ID', () => {
   const tied = [group('a', 96, 12, 100), group('b', 90, 11.25, 200)]; // eff 8 = 8, OR: b > a
   assert.deepEqual(ids(selectOptimalZone(tied, 'orchestrator').map(s => s.group)), ['b', 'a']);
-  const noOr = [group('a2', 96, 12), group('b2', 90, 11.25)];
-  assert.deepEqual(ids(selectOptimalZone(noOr, 'orchestrator').map(s => s.group)), ['a2', 'b2']);
+  const usage = [group('less', 90, 1, 100), group('more', 90, 1, 1000)];
+  assert.deepEqual(ids(selectOptimalZone(usage, 'orchestrator').map(s => s.group)), ['more', 'less']);
+  const exactTie = [group('z', 90, 1, 100), group('a', 90, 1, 100)];
+  assert.deepEqual(ids(selectOptimalZone(exactTie, 'orchestrator').map(s => s.group)), ['a', 'z']);
   assert.deepEqual(computeRanks([10, 20, 20, 5]), [3, 1, 1, 4]);
 });
 test('fewer than ten in the zone are shown as-is per list; previous comparison works end to end', () => {
@@ -77,15 +77,15 @@ test('fewer than ten in the zone are shown as-is per list; previous comparison w
     { modelId: 'gpt-6-1-sol', value: 82, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_coding_index' }];
   const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }] });
   assert.equal(lists.orchestrator.entries.length, 3); // 존 컷(지능 80.75) 통과 3개, 채우기 없음
-  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5', 'claude-haiku-5-5']); // 가성비 136 > 72 > 15.2
+  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // 단일 종합 점수 순
   assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']); // 코딩 66 통과 2개
   assert.ok(lists.orchestrator.entries.some(e => e.isPareto));
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.both, true);
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, false);
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.change, '진입');
-  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '\u25bc1'); // 전일 1위 -> 2위
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '유지'); // 종합 점수에서도 1위 유지
 });
-test('output tokens/s breaks an efficiency tie before index, but OR usage still comes first', () => {
+test('output tokens/s and OR usage contribute to the role composite score', () => {
   const metric = 'artificial_analysis_intelligence_index', speed = 'median_output_tokens_per_second';
   const records = [{ modelId: 'claude-opus-5-5', value: 96, priceInput: 12, priceOutput: 12, metric },
     { modelId: 'gpt-6-1-sol', value: 90, priceInput: 11.25, priceOutput: 11.25, metric },

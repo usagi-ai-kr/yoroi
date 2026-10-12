@@ -62,6 +62,12 @@
 - #107 SQLite WAL 동시 오픈 재현 실패 기록: 400라운드에서 실패 0회.
 - 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
 
+## 0.8.1 발행 및 0.8.2 준비 (2026-10-13)
+
+- v0.8.1 발행 완료: PR #112 → main `57b379d`, main CI [38247171932](https://github.com/qus0in/yoroi/actions/runs/38247171932) attempt 2 success, [v0.8.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.1), 전역 CLI 0.8.1.
+- 0.8.2 milestone: [#113](https://github.com/qus0in/yoroi/issues/113) 레터 종합 스코어 정렬 및 사용자 피드백 4건, 재오픈한 [#107](https://github.com/qus0in/yoroi/issues/107) SQLite WAL 첫 열기 재시도 수정.
+- 0.8.2는 위 두 이슈를 묶어 dev → main PR 준비 중이다.
+
 ## 버전 이력 요약
 
 - **0.1.0**–**0.1.2** (2026-10-08): MVP, CLI 개선, .env 병합 로드 완료 및 발행.

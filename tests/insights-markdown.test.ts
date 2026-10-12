@@ -6,22 +6,22 @@ import { EXCLUSION_NOTE } from '../src/insights/top10-policy.js';
 import { SOURCE_LINES } from '../src/insights/letter-markdown-format.js';
 
 const entry = (e: Partial<RoleEntry> & Pick<RoleEntry, 'rank' | 'modelId' | 'indexText' | 'change'>): RoleEntry =>
-  ({ repEffort: 'high', blendedCostText: '$1.50', costEffRankText: `가성비 ${e.rank}위`,
+  ({ repEffort: 'high', blendedCostText: '$1.50', costEffRankText: '-', scoreText: (100 - e.rank).toFixed(1),
     plans: ['ChatGPT Plus'], isPareto: false, both: false, ...e });
 const LISTS: RoleLists = {
   orchestrator: {
     entries: [
       entry({ rank: 1, modelId: 'provider/orch-model', indexText: '85.5', repEffort: 'high',
-        blendedCostText: '$1.50', costEffRankText: '가성비 1위', openrouterRankText: 'OpenRouter 3위',
+        blendedCostText: '$1.50', scoreText: '78.4', openrouterRankText: 'OpenRouter 3위',
         arenaRankText: 'Arena 2위', isPareto: true, both: true, change: '신규' }),
       entry({ rank: 2, modelId: 'provider/orch-up', indexText: '80.0', repEffort: 'default',
-        blendedCostText: '$0.50', costEffRankText: '가성비 2위', change: '▲2' }),
+        blendedCostText: '$0.50', scoreText: '71.2', change: '▲2' }),
     ],
     exits: [{ modelId: 'provider/orch-old', previousRank: 5 }],
   },
   worker: {
     entries: [entry({ rank: 1, modelId: 'provider/worker-down', indexText: '75.0', repEffort: 'default',
-      blendedCostText: '$0.20', costEffRankText: '가성비 1위', plans: ['Ollama Cloud Pro'], change: '▼1' })],
+      blendedCostText: '$0.20', scoreText: '66.9', plans: ['Ollama Cloud Pro'], change: '▼1' })],
     exits: [],
   },
 };
@@ -40,40 +40,40 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
   const fixture = makeFixture();
   const md = renderTop10Markdown(fixture);
 
-  // 1. shields.io 배지 (date, sources, status)
   assert.ok(md.includes('![date](https://img.shields.io/badge/date-2026--10--12-blue)'));
   assert.ok(md.includes(`![sources](https://img.shields.io/badge/sources-${SOURCE_LINES.length}_total-informational)`));
   assert.ok(md.includes('![status](https://img.shields.io/badge/status-1_failed-critical)'));
 
-  // all healthy status badge
   const healthyMd = renderTop10Markdown({ ...fixture, failedSources: [] });
   assert.ok(healthyMd.includes('![status](https://img.shields.io/badge/status-all_healthy-success)'));
 
-  // 2. 이모지 6종 검증 (🧭, 🛠️, ⭐, 🆕, 🔼, 🔽)
   for (const emoji of ['🧭', '🛠️', '⭐', '🆕', '🔼', '🔽']) {
     assert.ok(md.includes(emoji), `Expected markdown to include ${emoji}`);
   }
 
-  // 3. 두 섹션 마크다운 테이블 문법 검증 (추천 역할 열 폐기)
   assert.ok(md.includes('## 🧭 오케스트레이터 Top10 (판단·계획 / Intelligence Index)'));
   assert.ok(md.includes('## 🛠️ 워커 Top10 (실행·코딩 / Coding Index)'));
-  const expectedHeader = '| 순위 | 모델 | 추천 effort | 지수 | 혼합 단가 | 가성비 | 접근 요금제 | 변동 |';
+  const expectedHeader = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 접근 요금제 | 변동 |';
   assert.ok(md.includes(expectedHeader));
   assert.ok(md.includes('| --- | --- | --- | --- | --- | --- | --- | --- |'));
-  assert.ok(md.includes('| ⭐ 1 | provider/orch-model ↔ | high | 85.5 | $1.50 | 가성비 1위 | ChatGPT Plus | 🆕 신규 |'));
-  assert.ok(md.includes('| 2 | provider/orch-up | default | 80.0 | $0.50 | 가성비 2위 | ChatGPT Plus | 🔼 2 |'));
-  assert.ok(md.includes('| 1 | provider/worker-down | default | 75.0 | $0.20 | 가성비 1위 | Ollama Cloud Pro | 🔽 1 |'));
+  assert.ok(md.includes('| ⭐ 1 | provider/orch-model ↔ | high | 78.4 | 85.5 | $1.50 | ChatGPT Plus | 🆕 신규 |'));
+  assert.ok(md.includes('| 2 | provider/orch-up | default | 71.2 | 80.0 | $0.50 | ChatGPT Plus | 🔼 2 |'));
+  assert.ok(md.includes('| 1 | provider/worker-down | default | 66.9 | 75.0 | $0.20 | Ollama Cloud Pro | 🔽 1 |'));
   assert.ok(md.includes('• 이탈: provider/orch-old (전일 5위)'));
 
-  // 4. <details> 산출 공식 및 정책 검증 (폐기된 가중합 제거 확인)
   assert.ok(md.includes('<details><summary>출처 및 산출 공식</summary>'));
   assert.ok(!md.includes('오케스트레이터 점수 = 지수 50%'));
   assert.ok(!md.includes('워커 점수 = 코딩 35%'));
-  assert.ok(md.includes('가성비 최적 존: 지수 ≥ 최고의 85%(오케스트레이터)/75%(워커) 중 가성비 순 · ★ 파레토 최적'));
-  assert.ok(md.includes('- 두 목록 Top10: 오케스트레이터 존(지능 ≥ 후보 최고 85%)·워커 존(코딩 ≥ 후보 최고 75%) 통과 + 보유 요금제 접근 가능 모델만'));
+  assert.ok(md.includes('- 자격: 오케스트레이터 지능 ≥ 후보 최고 85% · 워커 코딩 ≥ 후보 최고 75% · 보유 요금제 접근 모델만'));
   assert.ok(md.includes('- 교집합: 두 목록에 모두 오르는 모델은 모델 칸에 ↔ 표시'));
-  assert.ok(md.includes('혼합 단가=(3×입력+출력)/4 USD/1M · 가성비=지수÷max(단가,0.01)'));
-  assert.ok(md.includes('정렬: 가성비 중 큰 값 → OR 사용량 → 속도 → 지수, 단가 미상 후순위'));
+  assert.ok(md.includes('- 혼합 단가=(3×입력+출력)/4 USD/1M'));
+  assert.ok(!md.includes('가성비=지수÷max'));
+  assert.ok(md.includes('- 스코어 = 100 × Σ(가중치 × 정규화값), 스코어 내림차순 정렬(동점 시 지수)'));
+  assert.ok(md.includes('- 가중치 오케스트레이터: 지수 0.4 · 비용 0.4 · 사용량 0.15 · 속도 0.05 / 워커: 지수 0.3 · 비용 0.4 · 사용량 0.1 · 속도 0.2'));
+  assert.ok(md.includes('- 정규화: 역할별 후보 풀 min-max(비용·사용량·속도는 log10, 싼 쪽·빠른 쪽 1), 단가 결측 0·사용량 결측 0·속도 결측 중앙값'));
+  assert.ok(md.includes('- 추천 effort: 변형별 실효 단가(혼합 단가 × cost_per_task 비율)로 스코어링한 최고 변형'));
+  assert.ok(md.includes('- default: AA에 effort 변형 또는 cost_per_task가 없어 단일 구성으로 평가'));
+  assert.ok(!md.includes('정렬: 가성비 중 큰 값'));
   assert.ok(md.includes(`- ${EXCLUSION_NOTE}`));
   assert.ok(md.includes('★ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태'));
   assert.ok(md.includes('⚠️ synthetic-source'));
@@ -83,7 +83,6 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
   assert.ok(md.includes('Cognition FrontierCode'));
   assert.ok(md.includes('</details>'));
 
-  // 5. 65,536자 이하 검증
   assert.ok(md.length <= 65536 && md.length > 0);
 });
 

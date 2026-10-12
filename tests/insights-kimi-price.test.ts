@@ -21,9 +21,9 @@ test('AA Kimi K3 input $3 / output $15 keeps the $6.00/1M blended cost in both l
   const kimi = top10.records.find(r => r.modelId === 'kimi-k3' && r.metric === 'artificial_analysis_coding_index')!;
   assert.deepEqual([kimi.priceInput, kimi.priceOutput], [3, 15]);
   const compact = renderTop10FromRecords({ publicationDate: run.publicationDate, ...top10 });
-  assert.match(compact, /kimi-k3 · effort \S+ · 76\.2 · \$6\.00\/1M/);
+  assert.match(compact, /kimi-k3 · effort \S+ · 스코어 \S+ · 76\.2 · \$6\.00\/1M/);
   const md = renderTop10MarkdownFromRecords({ publicationDate: run.publicationDate, ...top10 });
-  assert.match(md, /\| kimi-k3 \| \S+ \| 76\.2 \| \$6\.00\/1M \|/);
+  assert.match(md, /\| kimi-k3 \| \S+ \| \S+ \| 76\.2 \| \$6\.00\/1M \|/);
 });
 test('a one-sided or missing AA price never invents a blended cost', async () => {
   const oneSided = { ...aaData, data: [{ ...aaData.data[0]!, pricing: { price_1m_input_tokens: 3 } }] };

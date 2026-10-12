@@ -45,10 +45,10 @@ test('composition compact path covers the unified AA top ten, unified previous c
   assert.match(text, /claude-opus-5-5 .*유지/, 'per-role previous cohort keeps the leader at rank 1');
   assert.match(text, /mistral-large-4/, 'orchestrator list must keep the mid-ranked model');
   const orch = text.slice(text.indexOf('## 🧭 오케스트레이터'), text.indexOf('## 🛠️ 워커'));
-  const work = text.slice(text.indexOf('## 🛠️ 워커'), text.indexOf('## 요금제상 최적'));
+  const work = text.slice(text.indexOf('## 🛠️ 워커'), text.indexOf('## 출처 및 안내'));
   assert.equal((orch.match(/^\d+\. /gm) ?? []).length, 10, 'orchestrator top10 must have 10 rows');
   assert.equal((work.match(/^\d+\. /gm) ?? []).length, 10, 'worker top10 must have 10 rows');
-  assert.match(text, /• 이탈: gpt-6-1-sol \(전일 2위\)/, 'the worker list alone carries that exit');
+  assert.match(text, /10\. gpt-6-1-sol .*🔽 8/, 'the worker list keeps the previous rank-2 model at rank 10 under the score policy');
   assert.ok(text.includes(' ↔'), 'intersection models are marked in both lists');
   assert.doesNotMatch(text, /인사이트: /);
   stdout.length = 0; stderr.length = 0;

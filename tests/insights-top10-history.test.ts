@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { buildPreviousRanks } from '../src/insights/letter-top10-history.js';
-import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
+import { computeRoleTop10, previousRanks } from '../src/insights/letter-top10-unified.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import { validateInsightRecord, type ValidatedInsightRecord } from '../src/insights/validation.js';
 import type { InsightRecord } from '../src/insights/record.js';
@@ -49,4 +49,23 @@ test('missing previous OR data yields an explicit hold instead of an estimated c
   const build = buildPreviousRanks(new MemoryInsightHistory(), '2026-10-12', undefined, 'rankings-daily:day:top50', 'openrouter-rankings-v1', true);
   assert.deepEqual(build.ranks, []);
   assert.match(build.warnings[0]!, /전일 OpenRouter 자료 없음/);
+});
+
+test('historical successor takes predecessor rank through the shared candidate pipeline', () => {
+  const history = new MemoryInsightHistory(), date = '2026-10-12', code = 'artificial_analysis_coding_index';
+  const aa = [rec('deepseek-v4-flash', code, 69, date), rec('deepseek-v4-flash', 'price_1m_input_tokens', 0.3, date),
+    rec('deepseek-v4-flash', 'price_1m_output_tokens', 1.2, date), rec('glm-5-3-flash', code, 71.5, date),
+    rec('glm-5-3-flash', 'price_1m_input_tokens', 0.01, date), rec('glm-5-3-flash', 'price_1m_output_tokens', 0.01, date),
+    rec('deepseek-v4-1-flash', 'price_1m_input_tokens', 0.3, date), rec('deepseek-v4-1-flash', 'price_1m_output_tokens', 1.2, date)];
+  const baseline = previousRanks([{ modelId: 'deepseek-v4-flash', metric: code, value: 69, priceInput: 0.3, priceOutput: 1.2 },
+    { modelId: 'glm-5-3-flash', metric: code, value: 71.5, priceInput: 0.01, priceOutput: 0.01 }]);
+  const build = buildPreviousRanks(history, '2026-10-13', { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: aa },
+    'rankings-daily:day:top50', undefined, false);
+  const oldRank = baseline.worker.get('deepseek-v4-flash'), inherited = build.ranks.find(r => r.metric === 'worker' && r.modelId === 'deepseek-v4-1-flash');
+  assert.equal(inherited?.rank, oldRank);
+  assert.ok(!build.ranks.some(r => r.metric === 'worker' && r.modelId === 'deepseek-v4-flash'));
+  const today = computeRoleTop10([{ modelId: 'deepseek-v4-1-flash', metric: code, value: 75, priceInput: 0.3, priceOutput: 1.2 },
+    { modelId: 'glm-5-3-flash', metric: code, value: 71.5, priceInput: 12, priceOutput: 12 }], { previousCohort: build.ranks });
+  assert.equal(today.worker.entries[0]!.change, '▲1');
+  assert.ok(!today.worker.exits.some(row => row.modelId === 'deepseek-v4-flash'));
 });

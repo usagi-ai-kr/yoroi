@@ -38,7 +38,7 @@ const child = (which: 'detect' | 'zen' | 'usage' | 'hold', dir: string, marker?:
     proc.on('close', code => resolve({ code, out }));
   });
 
-test('migration retries SQLITE_BUSY up to three attempts without changing the timeout', t => {
+test('migration retries SQLite busy/locked errors within budget without changing the timeout', t => {
   const root = mkdtempSync(join(tmpdir(), 'yoroi-d1-retry-'));
   const db = openUsageDatabase(join(root, 'yoroi.db'));
   try {
@@ -50,16 +50,15 @@ test('migration retries SQLITE_BUSY up to three attempts without changing the ti
     });
     assert.equal(result, 'ready');
     assert.equal(calls, 3);
-    for (const errcode of [5, 6, 1, undefined]) {
-      calls = 0;
-      const error = Object.assign(new Error('failure'), { errcode });
-      assert.throws(() => withMigrationRetry(() => { calls++; throw error; }), value => value === error);
-      assert.equal(calls, errcode === 5 ? 3 : 1);
+    for (const [errcode, code, message, attempts] of [
+      [5, undefined, 'busy', 6], [261, undefined, 'busy', 6], [6, undefined, 'locked', 6], [262, undefined, 'locked', 6],
+      [undefined, 'SQLITE_BUSY_SNAPSHOT', 'failure', 6], [undefined, undefined, 'database is locked', 6], [1, undefined, 'failure', 1], [undefined, undefined, 'failure', 1],
+    ] as const) {
+      calls = 0; const error = Object.assign(new Error(message), { errcode, code });
+      assert.throws(() => withMigrationRetry(() => { calls++; throw error; }), value => value === error); assert.equal(calls, attempts);
     }
-    const ticks = [0, 0, 700];
-    const clock = t.mock.method(performance, 'now', () => ticks.shift() ?? 700);
-    calls = 0;
-    const busy = Object.assign(new Error('busy'), { errcode: 5 });
+    const ticks = [0, 0, 700], clock = t.mock.method(performance, 'now', () => ticks.shift() ?? 700);
+    calls = 0; const busy = Object.assign(new Error('busy'), { errcode: 5 });
     assert.throws(() => withMigrationRetry(() => { calls++; throw busy; }), value => value === busy);
     assert.equal(calls, 1, 'a slow BUSY must not consume another wait');
     clock.mock.restore();

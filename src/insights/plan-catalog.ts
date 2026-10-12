@@ -1,17 +1,33 @@
 /** 사용자 보유 5개 요금제 → 사용 가능 모델 매핑. 근거는 공식 pricing/플랜 페이지 1회 조회(2026-10-12)이며,
  *  항목마다 sourceUrl·checkedOn·verified를 가진다. 페이지에서 확인되지 않은 모델은 넣지 않는다(보고서 '미확인').
  *  modelId는 AA 정규화 이름(소문자·점→하이픈) 기준이다. */
+export interface UsageLimit {
+  readonly count: number;
+  readonly period: string;
+  readonly note?: string;
+  readonly sourceUrl: string;
+  readonly checkedOn: string;
+}
 export interface PlanModelEntry {
   readonly modelId: string;
   readonly displayName: string;
   readonly sourceUrl: string;
   readonly checkedOn: string;
   readonly verified: boolean;
+  readonly usageLimit?: UsageLimit;
+}
+export interface PlanUsagePolicy {
+  readonly credit: string;
+  readonly pricingModel: string;
+  readonly concurrency: number;
+  readonly sourceUrl: string;
+  readonly checkedOn: string;
 }
 export interface PlanCatalogEntry {
   readonly planId: string;
   readonly planName: string;
   readonly models: readonly PlanModelEntry[];
+  readonly usagePolicy?: PlanUsagePolicy;
 }
 
 const CHECKED_ON = '2026-10-12';
@@ -32,15 +48,18 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     'Claude Haiku 5.5|claude-haiku-5-5'].map(s => m(s.split('|')[1]!, s.split('|')[0]!, ANTHROPIC)) },
   { planId: 'google-ai-pro', planName: 'Google AI Pro', models: ['Gemini 3.1 Pro|gemini-3-1-pro', 'Gemini 3 Pro|gemini-3-pro']
     .map(s => m(s.split('|')[1]!, s.split('|')[0]!, GOOGLE)) },
-  { planId: 'ollama-cloud-pro', planName: 'Ollama Cloud Pro', models: ['DeepSeek V4.1 Flash|deepseek-v4-1-flash', 'DeepSeek V4 Pro|deepseek-v4-pro',
+  { planId: 'ollama-cloud-pro', planName: 'Ollama Cloud Pro',
+    usagePolicy: { credit: '$60/월', pricingModel: '토큰 단가 차감', concurrency: 3, sourceUrl: OLLAMA, checkedOn: CHECKED_ON },
+    models: ['DeepSeek V4.1 Flash|deepseek-v4-1-flash', 'DeepSeek V4 Pro|deepseek-v4-pro',
     'Gemma 4|gemma4', 'GLM-5.3|glm-5-3', 'GLM-5.3-Flash|glm-5-3-flash', 'GLM-5.2|glm-5-2', 'gpt-oss:120b|gpt-oss-120b',
     'gpt-oss:20b|gpt-oss-20b', 'Kimi K3|kimi-k3', 'Kimi K2.7 Code|kimi-k2-7-code', 'Kimi K2.6|kimi-k2-6', 'MiniMax M3|minimax-m3',
     'MiniMax M2.7|minimax-m2-7', 'Mistral Large 4|mistral-large-4', 'Mistral Large 3|mistral-large-3', 'Nemotron 3 Nano|nemotron-3-nano',
     'Nemotron 3 Super|nemotron-3-super', 'Nemotron 3 Ultra|nemotron-3-ultra'].map(s => m(s.split('|')[1]!, s.split('|')[0]!, OLLAMA)) },
-  { planId: 'opencode-go-plus', planName: 'OpenCode Go Plus', models: ['Kimi K3|kimi-k3', 'Kimi K2.7 Code|kimi-k2-7-code',
-    'Space Bunny|space-bunny', 'MiniMax M3|minimax-m3', 'Claude Haiku 5.5|claude-haiku-5-5', 'GPT 6 Luna|gpt-6-luna',
-    'Qwen3.7 Plus|qwen3-7-plus', 'GLM-5.3-Flash|glm-5-3-flash', 'DeepSeek V4.1 Flash|deepseek-v4-1-flash',
+  { planId: 'opencode-go-plus', planName: 'OpenCode Go Plus', models: [
+    { ...m('kimi-k3', 'Kimi K3', OPENCODE), usageLimit: { count: 440, period: '5h', note: 'Est. requests / 5h: 440 (Plus)', sourceUrl: OPENCODE, checkedOn: CHECKED_ON } },
+    ...['Kimi K2.7 Code|kimi-k2-7-code', 'Space Bunny|space-bunny', 'MiniMax M3|minimax-m3', 'Claude Haiku 5.5|claude-haiku-5-5',
+    'GPT 6 Luna|gpt-6-luna', 'Qwen3.7 Plus|qwen3-7-plus', 'GLM-5.3-Flash|glm-5-3-flash', 'DeepSeek V4.1 Flash|deepseek-v4-1-flash',
     'MiMo-V2.6-Flash|mimo-v2-6-flash', 'Muse Spark 1.3 Contributor|muse-spark-1-3-contributor',
     'LongCat 2.5 Preview Free|longcat-2-5-preview-free', 'Step 5 Preview Free|step-5-preview-free']
-    .map(s => m(s.split('|')[1]!, s.split('|')[0]!, OPENCODE)) },
+    .map(s => m(s.split('|')[1]!, s.split('|')[0]!, OPENCODE))] },
 ];

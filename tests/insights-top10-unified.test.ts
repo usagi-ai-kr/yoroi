@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeUnifiedTop10, previousRanks } from '../src/insights/letter-top10-unified.js';
+import { computeRoleTop10, previousRanks } from '../src/insights/letter-top10-unified.js';
+import { renderTop10FromRecords } from '../src/insights/letter-top10-render.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index';
@@ -13,39 +14,73 @@ const RECORDS: readonly Top10RecordInput[] = [
   row('unlisted-mega-model', INTEL, 99, [1, 1]), row('unlisted-mega-model', CODE, 99, [1, 1]),
   row('fable-pro', INTEL, 95, [1, 1]), row('fable-pro', CODE, 95, [1, 1]),
 ];
+const cohortOf = (records: readonly Top10RecordInput[]) => {
+  const pr = previousRanks(records);
+  return (['orchestrator', 'worker'] as const)
+    .flatMap(role => [...pr[role]].map(([modelId, rank]) => ({ modelId, rank, metric: role })));
+};
 
-test('unified top10 marks roles per passed zone and drops non-accessible or non-passing models', () => {
-  const { entries } = computeUnifiedTop10(RECORDS);
-  const ids = entries.map(e => e.modelId);
-  assert.ok(ids.includes('claude-opus-5-5') && ids.includes('gpt-6-1-sol') && ids.includes('claude-haiku-5-5'));
-  assert.ok(!ids.includes('unlisted-mega-model')); // 보유 요금제 미접근
-  assert.ok(!ids.includes('fable-pro'));           // 제외 계열은 존 계산 전에 걸러진다
-  const opus = entries.find(e => e.modelId === 'claude-opus-5-5')!;
-  assert.deepEqual(opus.roles, ['orchestrator', 'worker']);
-  assert.equal(opus.roleLabel, '🧭+🛠️ 둘 다');
-  assert.ok(opus.indexText.includes('오케 90.0') && opus.indexText.includes('워커 70.0'));
-  assert.ok(entries.every(e => e.plans.length > 0));
-  assert.equal(entries[0]!.rank, 1);
+test('one candidate pool feeds both lists: intersection appears twice, excluded/inaccessible never', () => {
+  const { orchestrator, worker } = computeRoleTop10(RECORDS);
+  assert.deepEqual(orchestrator.entries.map(e => e.modelId), ['claude-haiku-5-5', 'gpt-6-1-sol', 'claude-opus-5-5']);
+  assert.deepEqual(worker.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
+  assert.deepEqual(worker.entries.map(e => e.both), [true, true], 'intersection models are marked ↔');
+  assert.deepEqual(orchestrator.entries.map(e => e.both), [false, true, true]);
+  assert.ok(!orchestrator.entries.some(e => e.modelId === 'unlisted-mega-model'), '보유 요금제 미접근');
+  assert.ok(!worker.entries.some(e => e.modelId === 'unlisted-mega-model'), '보유 요금제 미접근');
+  assert.ok(!orchestrator.entries.some(e => e.modelId === 'fable-pro'), '제외 계열은 존 계산 전에 걸러진다');
+  assert.ok(orchestrator.entries.every(e => e.plans.length > 0));
+  assert.equal(orchestrator.entries[0]!.rank, 1);
+  assert.equal(orchestrator.entries[0]!.indexText, '86.0');
+  assert.equal(worker.entries[0]!.indexText, '80.0');
 });
-test('a model below both cutoffs is excluded; haiku passes only the orchestrator zone', () => {
-  const haiku = computeUnifiedTop10(RECORDS).entries.find(e => e.modelId === 'claude-haiku-5-5')!;
-  assert.deepEqual(haiku.roles, ['orchestrator']); // 코딩 40 < 80*0.75
-  assert.equal(haiku.roleLabel, '🧭 오케');
-  const solo = computeUnifiedTop10([row('claude-haiku-5-5', CODE, 40, [0.8, 4])]).entries;
-  assert.deepEqual(solo.map(e => e.roles), [['worker']]); // 단독 후보는 자기 존을 통과한다
+
+test('missing OpenRouter rank never renders total tokens as a rank', () => {
+  const openrouterRecords = [{ modelId: 'claude-opus-5-5', metric: 'total_tokens', value: 264308530787 }];
+  const lists = computeRoleTop10(RECORDS, { openrouterRecords });
+  const entry = lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5');
+  assert.equal(entry?.openrouterRankText, undefined);
 });
-test('previous comparison recomputes with the same unified policy', () => {
-  const prevRows = [...previousRanks(RECORDS)].map(([modelId, rank]) => ({ modelId, rank, metric: 'rank' }));
-  const withPrev = computeUnifiedTop10(RECORDS, { previousCohort: prevRows });
-  assert.ok(withPrev.entries.every(e => e.change === '유지'));
-  assert.equal(withPrev.exits.length, 0);
-  const shrunken = computeUnifiedTop10([RECORDS[0]!, RECORDS[2]!], { previousCohort: prevRows });
-  assert.ok(shrunken.exits.some(x => x.modelId === 'claude-haiku-5-5'));
-  assert.deepEqual([...previousRanks(RECORDS)], [['claude-haiku-5-5', 1], ['gpt-6-1-sol', 2], ['claude-opus-5-5', 3]]);
+
+test('a newer accessible model on another metric removes older GPT grades from the worker pool', () => {
+  const records = [row('gpt-6-1-sol', INTEL, 90), row('gpt-5-6-luna', CODE, 84), row('gpt-5-6-terra', CODE, 83), row('gpt-5-6-sol', CODE, 82)];
+  const lists = computeRoleTop10(records);
+  assert.deepEqual(lists.worker.entries.map(e => e.modelId), []);
+  assert.doesNotMatch(renderTop10FromRecords({ publicationDate: '2026-10-12', records }), /gpt-5-6/);
 });
-test('successorOf rows are labeled with the predecessor-index lower bound', () => {
-  const rows = RECORDS.map(r => r.modelId === 'claude-haiku-5-5' && r.metric === INTEL
-    ? { ...r, successorOf: 'claude-sonnet-5-5' } : r);
-  const haiku = computeUnifiedTop10(rows).entries.find(e => e.modelId === 'claude-haiku-5-5')!;
-  assert.equal(haiku.successorOf, 'claude-sonnet-5-5');
+
+test('a model below the worker cutoff stays orchestrator-only; a solo candidate passes its own zone', () => {
+  const lists = computeRoleTop10(RECORDS);
+  assert.ok(lists.orchestrator.entries.some(e => e.modelId === 'claude-haiku-5-5'));
+  assert.ok(!lists.worker.entries.some(e => e.modelId === 'claude-haiku-5-5'), '코딩 40 < 80*0.75');
+  const solo = computeRoleTop10([row('claude-haiku-5-5', CODE, 40, [0.8, 4])]);
+  assert.deepEqual(solo.worker.entries.map(e => e.modelId), ['claude-haiku-5-5']);
+  assert.deepEqual(solo.orchestrator.entries, []);
+});
+
+test('previous comparison and exits are recomputed per list with the same policy', () => {
+  const cohort = cohortOf(RECORDS);
+  const lists = computeRoleTop10(RECORDS, { previousCohort: cohort });
+  assert.ok(lists.orchestrator.entries.every(e => e.change === '유지'));
+  assert.ok(lists.worker.entries.every(e => e.change === '유지'));
+  assert.equal(lists.orchestrator.exits.length, 0);
+  const shrunken = computeRoleTop10([row('claude-opus-5-5', INTEL, 90, [3, 15]), row('gpt-6-1-sol', INTEL, 88, [1.1, 4.4])],
+    { previousCohort: cohort });
+  assert.deepEqual(shrunken.orchestrator.exits.map(x => [x.modelId, x.previousRank]), [['claude-haiku-5-5', 1]]);
+  assert.deepEqual(shrunken.worker.exits.map(x => x.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
+  assert.deepEqual([...previousRanks(RECORDS).orchestrator], [['claude-haiku-5-5', 1], ['gpt-6-1-sol', 2], ['claude-opus-5-5', 3]]);
+  assert.deepEqual([...previousRanks(RECORDS).worker], [['gpt-6-1-sol', 1], ['claude-opus-5-5', 2]]);
+});
+
+test('successor rows keep the predecessor-index lower bound in both lists', () => {
+  const rows: Top10RecordInput[] = [
+    { ...row('deepseek-v4.1-flash', INTEL, 69.1, [0.3, 1.2]), successorOf: 'deepseek-v4-flash' },
+    { ...row('deepseek-v4.1-flash', CODE, 75, [0.3, 1.2]), successorOf: 'deepseek-v4-flash' },
+    row('claude-opus-5-5', INTEL, 80, [3, 15]), row('claude-opus-5-5', CODE, 90, [3, 15])];
+  const lists = computeRoleTop10(rows);
+  const orch = lists.orchestrator.entries.find(e => e.modelId === 'deepseek-v4.1-flash');
+  const worker = lists.worker.entries.find(e => e.modelId === 'deepseek-v4.1-flash');
+  assert.equal(orch?.successorOf, 'deepseek-v4-flash');
+  assert.equal(worker?.successorOf, 'deepseek-v4-flash');
+  assert.equal(orch?.both, true, '두 존을 모두 통과하면 두 목록에 나온다');
 });

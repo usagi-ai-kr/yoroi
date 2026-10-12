@@ -6,6 +6,15 @@
 
 ## 현재 상태 (2026-10-12)
 
+- 0.8.0: PR #109 머지(`a54af3e`), main CI 38232400154 success, [v0.8.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.0) 발행, 전역 CLI 0.8.0 태그 worktree 설치 완료.
+- 0.8.0의 통합 Top10(#108)은 사용자 의도 오해로 [#111](https://github.com/qus0in/yoroi/issues/111)에서 오케스트레이터/워커 Top10 별도 유지(이중 자격 모델은 양쪽 표시)로 정정 중이다.
+- [#110](https://github.com/qus0in/yoroi/issues/110) 레터는 통합 형식으로 발행됐으므로 #111 갱신본 반영 후 재발행 예정이다.
+- 0.8.1 준비: #111 정정 + #110 갱신본 재발행을 묶어 dev → main PR 예정(package.json 0.8.1).
+- #111 범위: 오케스트레이터·워커 Top10 별도 유지, 교집합은 `↔`; GPT 6.x 세대가 있으면 지표 무관 전체 접근 모델 기준으로 GPT 5.6 luna·terra·sol 제외.
+- Kimi K3 참고 한도(2026-10-12): OpenCode Go Plus 440회/5h 추정([opencode.ai/go](https://opencode.ai/go)); Ollama Cloud Pro 크레딧 $60/월·토큰 차감·동시 3([ollama.com/pricing](https://ollama.com/pricing)).
+- #107 재현 실패 기록: SQLite WAL 동시 오픈 테스트 400라운드, 실패 0회.
+- 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
+
 - 0.4.0: #89 실환경 스모크 2026-10-11 19:17:56 KST 1회 exit 0 성공, zen:plugin-stale 1건 관측(#77 근거로 계속 관측), #89 및 0.4.0 milestone close 완료.
 - 0.5.0: PR #95 머지(e34f217), main CI 38132032129 success, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행, 전역 CLI 0.5.0 갱신, #70 close, 0.5.0 milestone close 완료.
 - 0.5.1: PR #98 머지(2536baa), main CI 38141050373 success, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행, 전역 CLI 0.5.1 동기화, OpenCode 플러그인 재설치 installed(재시작 대기), #92·#93·#96·#97 close, 0.5.1 milestone close 완료.

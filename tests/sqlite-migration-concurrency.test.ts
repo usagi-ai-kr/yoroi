@@ -7,16 +7,18 @@ import test from 'node:test';
 import { openDatabase, withMigrationRetry } from '../src/infra/sqlite/database.js';
 import { openUsageDatabase, USAGE_BUSY_TIMEOUT_MS } from '../src/infra/sqlite/usage-cache-store.js';
 
-const NEEDED = ['cache_entries', 'observation_samples', 'plugin_loads'];
+const NEEDED = ['cache_entries', 'observation_samples', 'plugin_loads', 'detect_state', 'detect_lease'];
 const sleepSync = (ms: number) => { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); };
 const tables = (dir: string): string[] => {
   const db = openDatabase(join(dir, 'yoroi.db'));
   try { return (db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[])
     .map(row => row.name); } finally { db.close(); }
 };
-const child = (which: 'zen' | 'usage' | 'hold', dir: string, marker?: string) => new Promise<{ code: number | null; out: string }>(
+const child = (which: 'detect' | 'zen' | 'usage' | 'hold', dir: string, marker?: string) => new Promise<{ code: number | null; out: string }>(
   resolve => {
-    const open = which === 'zen'
+    const open = which === 'detect'
+      ? `const { openDetectStateStore } = await import('./src/infra/sqlite/detect-state-store.ts'); openDetectStateStore(process.env).close();`
+      : which === 'zen'
       ? `const { openZenLockStore } = await import('./src/infra/sqlite/zen-lock-store.ts'); openZenLockStore(process.env).close();`
       : which === 'usage'
         ? `const { openUsageDatabase } = await import('./src/infra/sqlite/usage-cache-store.ts'); const { resolveDbPath } = await import('./src/infra/sqlite/data-dir.ts'); openUsageDatabase(resolveDbPath(process.env)).close();`
@@ -63,7 +65,6 @@ test('migration retries SQLITE_BUSY up to three attempts without changing the ti
     clock.mock.restore();
   } finally { db.close(); rmSync(root, { recursive: true, force: true }); }
 });
-
 test('a held writer fails usage initialization within one second and reopening recovers', async t => {
   const root = mkdtempSync(join(tmpdir(), 'yoroi-d1-hold-'));
   const marker = join(root, 'held');
@@ -85,12 +86,13 @@ test('a held writer fails usage initialization within one second and reopening r
   } finally { db.close(); }
 });
 
-test('zen and usage first opens on one fresh database never leave a table missing', async t => {
+test('detect, Zen and usage first opens on one fresh database converge without missing tables', async t => {
   const root = mkdtempSync(join(tmpdir(), 'yoroi-d1-race-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (let round = 0; round < 20; round += 1) {
     const dir = join(root, `run-${round}`);
-    const [zen, usage] = await Promise.all([child('zen', dir), child('usage', dir)]);
+    const [detect, zen, usage] = await Promise.all([child('detect', dir), child('zen', dir), child('usage', dir)]);
+    assert.equal(detect.code, 0, `round ${round} detect: ${detect.out}`);
     assert.equal(zen.code, 0, `round ${round} zen: ${zen.out}`);
     assert.equal(usage.code, 0, `round ${round} usage: ${usage.out}`);
     assert.deepEqual(NEEDED.filter(name => !tables(dir).includes(name)), [], `round ${round} left tables missing`);

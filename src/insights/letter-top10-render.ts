@@ -1,22 +1,18 @@
-import { computeUnifiedTop10, type UnifiedResult } from './letter-top10-unified.js';
+import { computeRoleTop10, SECTION_HEADINGS, type RoleList, type RoleLists } from './letter-top10-unified.js';
+import type { OptimalZoneRole } from './letter-top10-worker.js';
 import { renderPlanOptimalLines } from './plan-optimal.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
-import type { Top10RecordInput } from './letter-top10-rank.js';
+import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 
 export interface Top10LetterInput {
   readonly publicationDate: string; // YYYY-MM-DD
-  readonly unified: UnifiedResult;
-  readonly failedSources?: readonly string[];
-  readonly notes?: readonly string[]; readonly planOptimal?: readonly string[]; readonly partialSources?: readonly string[];
+  readonly lists: RoleLists;
+  readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
+  readonly planOptimal?: readonly string[]; readonly partialSources?: readonly string[];
 }
-
-const ATTRIBUTIONS = [
-  '출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)',
-  '출처: OpenRouter (CC-BY-4.0)',
-  '출처: Artificial Analysis (라이선스 미상)',
-  '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
-  '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)',
-] as const;
+const ATTRIBUTIONS = ['출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)', '출처: OpenRouter (CC-BY-4.0)',
+  '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
+  '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)'] as const;
 
 /** Control/bidi characters removed and credential-like fragments redacted, like the legacy renderer. */
 const clean = (value: string, limit = 120): string => value
@@ -28,40 +24,43 @@ const clean = (value: string, limit = 120): string => value
 const NAME_LIMIT = 120, EXIT_LIMIT = 5, FAILURE_LIMIT = 3;
 const fmtChg = (c: string): string => c === '신규' ? '🆕 신규' : c.startsWith('▲') ? `🔼 ${c.slice(1)}` : c.startsWith('▼') ? `🔽 ${c.slice(1)}` : c;
 
-function renderSection(result: UnifiedResult): string[] {
-  const lines = ['## 🏆 통합 Top10 (추천 역할 · 지수 · 가성비)'];
-  if (!result.entries.length) lines.push('자료 부족: 존을 통과한 접근 가능 모델이 없습니다.');
-  for (const e of result.entries) {
+function section(role: OptimalZoneRole, list: RoleList): string[] {
+  const lines = [SECTION_HEADINGS[role]];
+  if (!list.entries.length) lines.push('자료 부족: 존을 통과한 접근 가능 모델이 없습니다.');
+  for (const e of list.entries) {
     const refs = [e.openrouterRankText, e.arenaRankText, e.isPareto ? '★' : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
-    lines.push(`${e.rank}. ${clean(e.modelId, NAME_LIMIT)} · ${e.roleLabel} · effort ${clean(e.repEffort, 12)} · ${clean(e.indexText, 80)}` +
+    lines.push(`${e.rank}. ${clean(e.modelId, NAME_LIMIT)}${e.both ? ' ↔' : ''} · effort ${clean(e.repEffort, 12)} · ${clean(e.indexText, 80)}` +
       ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' · off-peak' : ''} · ${clean(e.costEffRankText, 40)} · 접근 ${e.plans.map(p => clean(p, 40)).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
       `${e.successorOf ? ` · AA 미수록 · 선행 지수 하한(${clean(e.successorOf, 40)})` : ''} · ${fmtChg(e.change)}`);
   }
-  for (const x of result.exits.slice(0, EXIT_LIMIT))
-    lines.push(`• 이탈: ${clean(x.modelId, NAME_LIMIT)} (전일 ${x.previousRank}위)`);
-  if (result.exits.length > EXIT_LIMIT) lines.push(`• 그 외 이탈 ${result.exits.length - EXIT_LIMIT}개`);
+  for (const x of list.exits.slice(0, EXIT_LIMIT)) lines.push(`• 이탈: ${clean(x.modelId, NAME_LIMIT)} (전일 ${x.previousRank}위)`);
+  if (list.exits.length > EXIT_LIMIT) lines.push(`• 그 외 이탈 ${list.exits.length - EXIT_LIMIT}개`);
   return lines;
 }
-function summarize(result: UnifiedResult): string[] {
-  const leader = result.entries[0];
-  const lead = leader ? `선두: ${leader.modelId} (${leader.indexText})` : '선두: 자료 부족';
-  const items = result.entries, exits = result.exits.length;
-  const changed = items.filter(e => e.change !== '유지' && e.change !== '신규').length;
+const changeNote = (label: string, list: RoleList): string => {
+  const items = list.entries, changed = items.filter(e => e.change !== '유지' && e.change !== '신규').length;
   const newCount = items.filter(e => e.change === '신규').length;
-  const newSuffix = newCount > 0 ? ` (신규 ${newCount}개)` : '';
-  const note = items.length === 0 ? '자료 부족: 통합 Top10에 측정값이 없습니다.'
-    : items.every(e => e.change === '신규') ? '변동: 첫 집계: 전일 비교 기록 없음'
-    : `변동: 상위권 ${items.length}개 중 ${changed}개 순위·진입 변동${newSuffix}, 이탈 ${exits}개`;
-  return ['## 요약', `- ${lead}`, `- ${note}`, '- 사실 기준 요약이며 추정 동향은 넣지 않습니다.'];
+  if (!items.length) return `${label} 자료 부족`;
+  if (items.every(e => e.change === '신규')) return `${label} 첫 집계: 전일 비교 기록 없음`;
+  return `${label} 상위권 ${items.length}개 중 ${changed}개 순위·진입 변동${newCount ? ` (신규 ${newCount}개)` : ''}, 이탈 ${list.exits.length}개`;
+};
+function summarize(lists: RoleLists): string[] {
+  const o = lists.orchestrator.entries[0], w = lists.worker.entries[0];
+  return ['## 요약',
+    `- 선두: 오케스트레이터 ${o ? `${o.modelId} (${o.indexText})` : '자료 부족'} · 워커 ${w ? `${w.modelId} (${w.indexText})` : '자료 부족'}`,
+    `- 변동: ${changeNote('오케스트레이터', lists.orchestrator)} · ${changeNote('워커', lists.worker)}`,
+    '- 사실 기준 요약이며 추정 동향은 넣지 않습니다.'];
 }
 export function renderTop10Letter(data: Top10LetterInput): string {
   const lines: string[] = [
     `[AI 인사이트 데일리: ${data.publicationDate} KST (내부 전용)]`,
-    '통합 Top10: 오케스트레이터 존(지능 ≥ 후보 최고 85%)·워커 존(코딩 ≥ 후보 최고 75%) 통과 모델, 보유 요금제 접근 가능만',
-    ...summarize(data.unified),
+    '두 목록 Top10: 오케스트레이터 존(지능 ≥ 후보 최고 85%)·워커 존(코딩 ≥ 후보 최고 75%) 통과 모델, 보유 요금제 접근 가능만',
+    ...summarize(data.lists),
     '',
-    ...renderSection(data.unified),
+    ...section('orchestrator', data.lists.orchestrator),
+    '',
+    ...section('worker', data.lists.worker),
     ...(data.planOptimal?.length ? ['', ...data.planOptimal] : ['']),
     '## 출처 및 안내',
     ...ATTRIBUTIONS,
@@ -75,12 +74,13 @@ export function renderTop10Letter(data: Top10LetterInput): string {
     ...(data.notes ?? []).map(note => clean(note, 160)),
   ];
   let text = lines.join('\n');
-  if (text.length > 3000) { // 필수 필드(역할/지수/접근)를 지키기 위해 이름을 먼저 줄인다(원문 저장은 유지)
-    text = text.replace(/^(\d+\. )([^\n]{70,}?)( · )/gm, (_m, head, name, tail) => `${head}${name.slice(0, 24)}…${tail}`)
-      .replace(/^(- 선두: )([^\n]{70,})$/m, (_m, head, name) => `${head}${name.slice(0, 24)}…`);
+  if (text.length > 3600) { // 필수 필드(effort·지수·접근)를 지키기 위해 모델 이름만 줄인다(원문 저장은 유지)
+    const clip = (s: string): string => [...s].length > 24 ? `${[...s].slice(0, 24).join('')}…` : s;
+    text = text.replace(/^(\d+\. )([^\n]+?)( · effort )/gm, (_m, h, n, t) => `${h}${clip(n)}${t}`)
+      .replace(/^(- 선두: 오케스트레이터 )([^ ]+)( · 워커 )([^ ]+)$/m, (_m, a, b, c, d) => `${a}${clip(b)}${c}${clip(d)}`);
   }
-  if (text.length > 3000) { text = text.replace(/ · 변형 [^\n]*/g, ''); text += '\n안내: 길이 예산으로 변형 나열을 생략했습니다.'; }
-  if (text.length > 3000) { text = text.replace(/ · (?:OpenRouter|Arena) \d+위/g, ''); text += '\n안내: 길이 예산으로 참고순위를 생략했습니다.'; }
+  if (text.length > 3600) { const c = text.replace(/ · 변형 [^\n]*/g, ''); if (c !== text) text = `${c}\n안내: 길이 예산으로 변형 나열을 생략했습니다.`; }
+  if (text.length > 3600) { const c = text.replace(/ · (?:OpenRouter|Arena) \d+위/g, ''); if (c !== text) text = `${c}\n안내: 길이 예산으로 참고순위를 생략했습니다.`; }
   return text;
 }
 
@@ -88,12 +88,12 @@ export interface CompactLetterInput { readonly publicationDate: string; readonly
   readonly arenaRecords?: readonly Top10RecordInput[]; readonly openrouterRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
   readonly partialSources?: readonly string[] }
-/** Builds the compact letter from letter rows (no I/O): unified zone policy over AA indices. */
+/** Builds the compact letter from letter rows (no I/O): per-role zone policy over AA indices. */
 export function renderTop10FromRecords(input: CompactLetterInput): string {
-  const options = { ...(input.arenaRecords && { arenaRecords: input.arenaRecords }), ...(input.openrouterRecords && { openrouterRecords: input.openrouterRecords }),
+  const options = { ...(input.arenaRecords && { arenaRecords: input.arenaRecords }), ...(input.openrouterRecords && { openrouterRecords: toRankedRecords(input.openrouterRecords) }),
     ...(input.previousRanks && { previousCohort: input.previousRanks }) };
   const planOptimal = renderPlanOptimalLines(input.records);
-  return renderTop10Letter({ publicationDate: input.publicationDate, unified: computeUnifiedTop10(input.records, options),
+  return renderTop10Letter({ publicationDate: input.publicationDate, lists: computeRoleTop10(input.records, options),
     ...(input.failedSources && { failedSources: input.failedSources }),
     ...(input.notes && { notes: input.notes }), ...(planOptimal.length && { planOptimal }),
     ...(input.partialSources && { partialSources: input.partialSources }) });

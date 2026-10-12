@@ -33,6 +33,13 @@ export function toRefMap(records?: readonly Top10RecordInput[] | null, metric?: 
   for (const n of amb) map.delete(n);
   return map;
 }
+/** 공식 순위(정수)가 없는 OpenRouter 사용량 레코드에는 사용량 내림차순 정수 순위(1..N)를 부여해
+ *  참고 순위 자리에 토큰 값(예: OpenRouter 264308530787위)이 찍히지 않게 한다. */
+export function toRankedRecords(records: readonly Top10RecordInput[]): readonly Top10RecordInput[] {
+  if (!records.length || records.every(r => Number.isSafeInteger(r.rank) && (r.rank ?? 0) > 0)) return records;
+  const ranks = new Map(assignCompetitionRanks(records).map(({ item, rank }) => [item, rank]));
+  return records.map(r => ({ ...r, rank: Number.isSafeInteger(r.rank) && (r.rank ?? 0) > 0 ? r.rank! : ranks.get(r) ?? 1 }));
+}
 /** 지표 행을 variants로 만들고 제외 계열(Fable·Astra·Grok)·최신 버전만·off-peak 단가 규칙을 적용한다. */
 export function buildVariants(records: readonly Top10RecordInput[], metric: string, opts?: Top10Options): ModelVariant[] {
   const orMap = toRefMap(opts?.openrouterRecords, 'total_tokens'), arenaMap = toRefMap(opts?.arenaRecords, 'rating');

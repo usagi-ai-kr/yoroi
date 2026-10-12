@@ -20,16 +20,17 @@ yoroi CLI 간의 발행 계약이다.
     - 날짜 배지: `![date](https://img.shields.io/badge/date-YYYY--MM--DD-blue)` (`--` 이스케이프)
     - 소스 수 배지: `![sources](https://img.shields.io/badge/sources-5_total-informational)` (`INSIGHT_SOURCES` 레지스트리 기준)
     - 상태 배지: `![status](https://img.shields.io/badge/status-all_healthy-success)` (실패 시 `N_failed-critical`, 부분 수집 시 `N_partial-warning`)
-  - **1부 요약**: 선두 모델 및 상위권 변동·신규·이탈 통계.
+  - **1부 요약**: 두 목록의 선두 모델과 목록별 상위권 변동·신규·이탈 통계.
   - **2부 🧭 오케스트레이터 Top 10** (판단·계획 / Intelligence Index): 마크다운 테이블.
   - **3부 🛠️ 워커 Top 10** (실행·코딩 / Coding Index): 마크다운 테이블.
-  - **테이블 열 규격**:
-    `| 순위 | 모델 | 추천 effort | 지수 | 혼합 단가 | 가성비 | OR 사용량 | 변동 |`
+  - **테이블 열 규격** (두 섹션 공통 · `추천 역할` 열은 두 목록 분리로 폐기):
+    `| 순위 | 모델 | 추천 effort | 지수 | 혼합 단가 | 가성비 | 접근 요금제 | 변동 |`
+    - 모델: 후보 풀(요금제 접근·제외·최신만)을 두 목록이 공유하므로 교집합 모델은 `↔`를 붙여 양쪽에 함께 오른다.
     - 순위: 파레토 최적 시 `⭐ 순위` (예: `⭐ 1`), 비파레토는 일반 숫자.
     - 변동: `🆕 신규`, `🔼 N`, `🔽 N`, `유지` 이모지 표기.
     - 테이블 하단: 이탈 목록 (`• 이탈: 모델명 (전일 N위)`).
   - **4부 접힘 블록**: `<details><summary>출처 및 산출 공식</summary>...`
-    - 산출 공식 및 정책: 가성비 최적 존(85%/75% 임계 + 가성비 순), 혼합 단가 `(3×입력+출력)/4`, 가성비 `지수/max(단가,0.01)`, 정렬 및 제외 규칙, ★ 파레토 최적.
+    - 산출 공식 및 정책: 두 목록 진입 조건(오케스트레이터 지수 ≥ 후보 최고 85% · 워커 코딩 ≥ 75% + 보유 요금제 접근)과 교집합 모델 ↔ 표기, 가성비 최적 존 임계 + 가성비 순, 혼합 단가 `(3×입력+출력)/4`, 가성비 `지수/max(단가,0.01)`, 정렬 및 제외 규칙, ★ 파레토 최적.
     - 실패 소스 안내: 정상 시 `모든 소스 정상 수집 완료`, 실패 시 `⚠️ 소스명`, 부분 수집(일부 행 거절) 시 `⚠️ 부분 수집 소스: ...`가 함께 표시된다.
     - 경고: 전일 자료 부족 등 수집 경고가 있으면 `### 경고` 블록에 나열한다.
     - 출처 5사 라이선스 명시 (LMArena, OpenRouter, AA, Cognition, OpenCode Data (내부 참조 · 약관상 자동 추출 제한)).
@@ -48,9 +49,9 @@ yoroi CLI 간의 발행 계약이다.
 ![status](https://img.shields.io/badge/status-all_healthy-success)
 
 ## 🧭 오케스트레이터 Top10 (판단·계획 / Intelligence Index)
-| 순위 | 모델 | 추천 effort | 지수 | 혼합 단가 | 가성비 | OR 사용량 | 변동 |
+| 순위 | 모델 | 추천 effort | 지수 | 혼합 단가 | 가성비 | 접근 요금제 | 변동 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ⭐ 1 | anthropic/claude-3-7-sonnet | high | 85.2 | $3.75 | 3위 | 1위 | 유지 |
+| ⭐ 1 | anthropic/claude-3-7-sonnet ↔ | high | 85.2 | $3.75 | 가성비 3위 | Claude Pro | 유지 |
 
 <details><summary>출처 및 산출 공식</summary>...</details>
 ```

@@ -1,100 +1,81 @@
 import { groupVariants, type ModelGroup } from './letter-top10-group.js';
 import { plansForModel } from './letter-top10-plans.js';
 import { buildVariants, normalizeModelName, toRefMap, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { OPTIMAL_ZONE_THRESHOLDS, type OptimalZoneRole } from './letter-top10-worker.js';
+import { buildCandidatePool } from './letter-top10-candidates.js';
+import { selectOptimalZone, type OptimalZoneRole } from './letter-top10-worker.js';
 
-const METRICS: Readonly<Record<OptimalZoneRole, string>> = { orchestrator: 'artificial_analysis_intelligence_index', worker: 'artificial_analysis_coding_index' };
-export const UNIFIED_TOP_N = 10;
-export type UnifiedChange = '유지' | `▲${number}` | `▼${number}` | '진입' | '신규';
-export interface UnifiedEntry {
-  readonly rank: number; readonly modelId: string; readonly roles: readonly OptimalZoneRole[]; readonly roleLabel: string;
-  readonly indexText: string; readonly repEffort: string; readonly blendedCostText: string; readonly costEffRankText: string;
-  readonly plans: readonly string[]; readonly change: UnifiedChange; readonly isPareto: boolean; readonly offPeak?: boolean;
-  readonly arenaRankText?: string; readonly openrouterRankText?: string; readonly variantsText?: string; readonly successorOf?: string;
+/** 후보 지표: 오케스트레이터=intelligence, 워커=coding. 임계 상수는 letter-top10-worker의 OPTIMAL_ZONE_THRESHOLDS. */
+const METRICS: Readonly<Record<OptimalZoneRole, string>> = {
+  orchestrator: 'artificial_analysis_intelligence_index', worker: 'artificial_analysis_coding_index' };
+export const TOP_N = 10;
+export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = {
+  orchestrator: '## 🧭 오케스트레이터 Top10 (판단·계획 / Intelligence Index)',
+  worker: '## 🛠️ 워커 Top10 (실행·코딩 / Coding Index)' };
+export type RoleChange = '유지' | `▲${number}` | `▼${number}` | '진입' | '신규';
+export interface RoleEntry {
+  readonly rank: number; readonly modelId: string; readonly indexText: string; readonly repEffort: string;
+  readonly blendedCostText: string; readonly costEffRankText: string; readonly plans: readonly string[];
+  readonly change: RoleChange; readonly isPareto: boolean; readonly both: boolean; readonly offPeak?: boolean;
+  readonly arenaRankText?: string; readonly openrouterRankText?: string; readonly variantsText?: string;
+  readonly successorOf?: string;
 }
-export interface UnifiedExit { readonly modelId: string; readonly previousRank: number }
-export interface UnifiedResult { readonly entries: readonly UnifiedEntry[]; readonly exits: readonly UnifiedExit[] }
-interface Pass { readonly role: OptimalZoneRole; readonly group: ModelGroup; readonly value: number }
-interface Row { readonly key: string; readonly list: readonly Pass[]; readonly plans: readonly string[]; readonly rep: ModelGroup; readonly successorOf?: string }
-const ROLE_LABEL: Readonly<Record<OptimalZoneRole, string>> = { orchestrator: '🧭 오케', worker: '🛠️ 워커' };
-const successorOfOf = (row: Top10RecordInput): string | undefined => row.successorOf;
+export interface RoleExit { readonly modelId: string; readonly previousRank: number }
+export interface RoleList { readonly entries: readonly RoleEntry[]; readonly exits: readonly RoleExit[] }
+export interface RoleLists { readonly orchestrator: RoleList; readonly worker: RoleList }
+
 const costTextOf = (cost?: number): string => cost === undefined ? '단가 -' : cost === 0 ? '무료' : `$${cost.toFixed(2)}/1M`;
-const tierOf = (cost?: number): number => cost === undefined ? 2 : cost === 0 ? 0 : 1;
-const best = (list: readonly Pass[], pick: (p: Pass) => number | undefined): number => Math.max(...list.map(p => pick(p) ?? Number.NEGATIVE_INFINITY));
-const repOf = (list: readonly Pass[]): ModelGroup => (list.find(p => p.role === 'orchestrator') ?? list[0]!).group;
-/** 정렬: 단가 tier → 가성비 중 큰 값 → OR 사용량 → 속도 → 지수(전부 내림/오름 규칙은 best 부호로 표현). */
-const sortRows = <T extends { key: string; list: readonly Pass[]; rep: ModelGroup }>(rows: T[]): T[] =>
-  rows.sort((a, b) => tierOf(a.rep.repVariant.blendedCost) - tierOf(b.rep.repVariant.blendedCost) ||
-    best(b.list, p => p.group.repVariant.costEfficiency) - best(a.list, p => p.group.repVariant.costEfficiency) ||
-    best(b.list, p => p.group.repVariant.openrouterTokens) - best(a.list, p => p.group.repVariant.openrouterTokens) ||
-    best(b.list, p => p.group.repVariant.outputTokensPerSecond) - best(a.list, p => p.group.repVariant.outputTokensPerSecond) ||
-    best(b.list, p => p.value) - best(a.list, p => p.value) || a.key.localeCompare(b.key));
+/** 같은 후보 풀(제외·최신만·off-peak → 단가 → 후속 하한 → 보유 요금제 접근)에서 역할 지표만 다시 군집화한다. */
+const zoneGroups = (records: readonly Top10RecordInput[], role: OptimalZoneRole, opts?: Top10Options): ModelGroup[] =>
+  groupVariants(buildVariants(records, METRICS[role], opts)).filter(g => plansForModel(g.baseModelId).length > 0);
 
-function zonePasses(records: readonly Top10RecordInput[], opts?: Top10Options): Map<string, Pass[]> {
-  const passes = new Map<string, Pass[]>();
-  for (const role of ['orchestrator', 'worker'] as const) {
-    const groups = groupVariants(buildVariants(records, METRICS[role], opts))
-      .filter(g => plansForModel(g.baseModelId).length > 0); // 접근 불가 모델은 임계 기준에서도 제외
-    if (!groups.length) continue;
-    const cutoff = Math.max(...groups.map(g => g.repVariant.value)) * OPTIMAL_ZONE_THRESHOLDS[role];
-    for (const group of groups) {
-      if (group.repVariant.value < cutoff) continue;
-      const key = normalizeModelName(group.baseModelId);
-      passes.set(key, [...(passes.get(key) ?? []), { role, group, value: group.repVariant.value }]);
-    }
-  }
-  return passes;
-}
-function toRows(records: readonly Top10RecordInput[], opts?: Top10Options): readonly Row[] {
-  const successorOf = new Map<string, string>();
-  for (const r of records) { const of = successorOfOf(r); if (of !== undefined) successorOf.set(normalizeModelName(r.modelId), of); }
-  return sortRows([...zonePasses(records, opts).entries()].flatMap(([key, list]) => {
-    const plans = [...new Set(list.flatMap(p => plansForModel(p.group.baseModelId)))];
-    if (!plans.length) return [];
-    const of = successorOf.get(key);
-    return [{ key, list, plans, rep: repOf(list), ...(of !== undefined && { successorOf: of }) }];
-  }));
-}
-/** 존 통과 키만(접근 필터 전) — 테스트·진단용. */
-export const computeZonePasses = (records: readonly Top10RecordInput[], opts?: Top10Options): Map<string, Pass[]> =>
-  zonePasses(records, opts);
-
-/** 통합 Top10: 모델이 오케스트레이터 존(지능 ≥ 후보 최고 85%)·워커 존(코딩 ≥ 후보 최고 75%) 중
- *  통과한 역할로 추천 역할을 붙이고, 한 곳도 못 통과하거나 보유 요금제로 접근 불가하면 제외한다.
- *  정렬: 가성비 중 큰 값 → OR 사용량 → 속도 → 지수. 전일 비교도 같은 정책으로 재계산한다. */
-export function computeUnifiedTop10(records: readonly Top10RecordInput[], opts?: Top10Options): UnifiedResult {
-  const rows = toRows(records, opts).slice(0, UNIFIED_TOP_N);
-  let rank = 0, seen = 0, previousEff = Number.NaN;
-  const entries = rows.map(row => {
-    const eff = best(row.list, p => p.group.repVariant.costEfficiency);
-    seen += 1;
-    if (eff !== previousEff) { rank = seen; previousEff = eff; }
-    const rep = row.rep.repVariant, roles = row.list.map(p => p.role);
-    const orRank = (opts?.openrouterRecords ?? []).find(o => normalizeModelName(o.modelId) === row.key);
-    const vText = row.rep.variants.length > 1 ? row.rep.variants.slice(0, 3).map(v => `${v.effort} ${v.value.toFixed(1)}`).join(' · ') +
-      (row.rep.variants.length > 3 ? ` 외 ${row.rep.variants.length - 3}개` : '') : undefined;
-    return { rank, modelId: row.rep.baseModelId, roles, roleLabel: roles.length > 1 ? '🧭+🛠️ 둘 다' : ROLE_LABEL[roles[0]!]!,
-      indexText: row.list.map(p => `${p.role === 'orchestrator' ? '오케' : '워커'} ${p.value.toFixed(1)}`).join(' · '),
-      repEffort: rep.effort, blendedCostText: costTextOf(rep.blendedCost),
-      costEffRankText: rep.costEfficiency === undefined ? '가성비 n/a' : `가성비 ${rank}위`, plans: row.plans,
-      isPareto: row.list.some(p => p.group.isPareto), ...(row.list.some(p => p.group.repVariant.offPeak === true) && { offPeak: true }),
+function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, opts?: Top10Options): RoleList {
+  const successors = new Map<string, string>();
+  for (const r of records) if (r.successorOf !== undefined) successors.set(normalizeModelName(r.modelId), r.successorOf);
+  const selected = selectOptimalZone(zoneGroups(records, role, opts), role).slice(0, TOP_N);
+  const entries = selected.map((s, i) => {
+    const g = s.group, rep = g.repVariant, key = normalizeModelName(g.baseModelId);
+    const or = (opts?.openrouterRecords ?? []).find(o => normalizeModelName(o.modelId) === key);
+    const orRank = or?.rank;
+    const vs = g.variants.length > 1 ? g.variants.slice(0, 3).map(v => `${v.effort} ${v.value.toFixed(1)}`).join(' · ') +
+      (g.variants.length > 3 ? ` 외 ${g.variants.length - 3}개` : '') : undefined;
+    const of = successors.get(key);
+    return { rank: i + 1, modelId: g.baseModelId, indexText: rep.value.toFixed(1), repEffort: rep.effort,
+      blendedCostText: costTextOf(rep.blendedCost),
+      costEffRankText: s.costEffRank === 0 ? '가성비 n/a' : `가성비 ${s.costEffRank}위`,
+      plans: plansForModel(g.baseModelId), isPareto: g.isPareto, both: false,
+      ...(rep.offPeak === true && { offPeak: true }),
       ...(rep.arenaRank !== undefined && { arenaRankText: `Arena ${rep.arenaRank}위` }),
-      ...(orRank !== undefined && { openrouterRankText: `OpenRouter ${orRank.rank ?? orRank.value}위` }),
-      ...(vText !== undefined && { variantsText: vText }), ...(row.successorOf !== undefined && { successorOf: row.successorOf }) };
+      ...(typeof orRank === 'number' && Number.isSafeInteger(orRank) && orRank > 0 &&
+        { openrouterRankText: `OpenRouter ${orRank}위` }),
+      ...(vs !== undefined && { variantsText: vs }), ...(of !== undefined && { successorOf: of }) };
   });
-  const prev = opts?.previousCohort?.length ? toRefMap(opts.previousCohort) : null;
-  const curKeys = new Set(entries.map(e => normalizeModelName(e.modelId)));
-  const exits = prev ? [...prev].filter(([key, pRank]) => pRank <= UNIFIED_TOP_N && !curKeys.has(key))
-    .map(([key, previousRank]) => ({ modelId: key, previousRank })).sort((a, b) => a.previousRank - b.previousRank) : [];
+  const prev = opts?.previousCohort?.length ? toRefMap(opts.previousCohort, role) : null;
+  const cur = new Set(entries.map(e => normalizeModelName(e.modelId)));
+  const exits = prev ? [...prev].filter(([key, p]) => p <= TOP_N && !cur.has(key))
+    .map(([modelId, previousRank]) => ({ modelId, previousRank })).sort((a, b) => a.previousRank - b.previousRank) : [];
   return { entries: entries.map(e => {
-    const pRank = prev?.get(normalizeModelName(e.modelId));
-    const change: UnifiedChange = !prev ? '신규' : pRank === undefined || pRank > UNIFIED_TOP_N ? '진입' :
-      e.rank === pRank ? '유지' : e.rank < pRank ? `▲${pRank - e.rank}` : `▼${e.rank - pRank}`;
+    const p = prev?.get(normalizeModelName(e.modelId));
+    const change: RoleChange = !prev ? '신규' : p === undefined || p > TOP_N ? '진입'
+      : e.rank === p ? '유지' : e.rank < p ? `▲${p - e.rank}` : `▼${e.rank - p}`;
     return { ...e, change };
   }), exits };
 }
-/** 전일 비교용: 접근 필터를 포함한 같은 존·정렬 정책으로 전일 순위를 계산한다. */
-export function previousRanks(records: readonly Top10RecordInput[], opts?: Top10Options): Map<string, number> {
-  const rows = toRows(records, opts).slice(0, UNIFIED_TOP_N);
-  return new Map(rows.map((row, idx) => [row.key, idx + 1]));
+const markBoth = (list: RoleList, other: ReadonlySet<string>): RoleList =>
+  ({ ...list, entries: list.entries.map(e => ({ ...e, both: other.has(normalizeModelName(e.modelId)) })) });
+
+/** 역할별 Top10: 같은 후보 풀에서 오케스트레이터 존·워커 존을 각각 임계 통과 → 가성비 순으로 뽑는다.
+ *  교집합 모델은 두 목록에 모두 나오고(both=true), 전일 비교·이탈도 목록별로 재계산한다. */
+export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: Top10Options): RoleLists {
+  const candidates = buildCandidatePool(records).accessibleRecords;
+  const orchestrator = buildList(candidates, 'orchestrator', opts), worker = buildList(candidates, 'worker', opts);
+  const oKeys = new Set(orchestrator.entries.map(e => normalizeModelName(e.modelId)));
+  const wKeys = new Set(worker.entries.map(e => normalizeModelName(e.modelId)));
+  return { orchestrator: markBoth(orchestrator, wKeys), worker: markBoth(worker, oKeys) };
+}
+/** 전일 비교용: 목록별 순위 맵. 접근 필터를 포함한 같은 존·정렬 정책으로 재계산한다. */
+export function previousRanks(records: readonly Top10RecordInput[], opts?: Top10Options): Record<OptimalZoneRole, Map<string, number>> {
+  const lists = computeRoleTop10(records, opts);
+  const toMap = (list: RoleList): Map<string, number> =>
+    new Map(list.entries.map(e => [normalizeModelName(e.modelId), e.rank]));
+  return { orchestrator: toMap(lists.orchestrator), worker: toMap(lists.worker) };
 }

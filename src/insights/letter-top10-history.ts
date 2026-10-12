@@ -24,7 +24,8 @@ export function buildPreviousRanks(history: InsightHistoryPort, publicationDate:
       v.record.metadata?.aggregate !== true && v.record.modelId.trim().toLowerCase() !== 'other')
       .map(v => ({ modelId: v.record.modelId, value: v.record.value, metric: 'total_tokens' }));
   }
-  const ranks = [...previousRanks(aaInputs, orInputs.length ? { openrouterRecords: orInputs } : {})]
-    .map(([modelId, rank]) => ({ modelId, rank, metric: 'unified' }));
+  const pr = previousRanks(aaInputs, orInputs.length ? { openrouterRecords: orInputs } : {});
+  const ranks = (['orchestrator', 'worker'] as const)
+    .flatMap(role => [...pr[role]].map(([modelId, rank]) => ({ modelId, rank, metric: role })));
   return { ranks, warnings: [] };
 }

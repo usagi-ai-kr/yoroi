@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { buildPreviousRanks } from '../src/insights/letter-top10-history.js';
-import { computeUnifiedTop10 } from '../src/insights/letter-top10-unified.js';
+import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import { validateInsightRecord, type ValidatedInsightRecord } from '../src/insights/validation.js';
 import type { InsightRecord } from '../src/insights/record.js';
@@ -35,15 +35,15 @@ test('identical AA+OR snapshots compare with OR on both sides: eff tie broken by
     { modelId: 'gpt-6-1-sol', value: 90, metric: idx, priceInput: 10, priceOutput: 10 },
     { modelId: 'claude-opus-5-5', value: 80, metric: idx, priceInput: 12, priceOutput: 12 },
     { modelId: 'claude-haiku-5-5', value: 60, metric: idx, priceInput: 1, priceOutput: 1 }];
-  const noOr = computeUnifiedTop10(current).entries.map(e => `${e.modelId}${e.rank}`);
+  const noOr = computeRoleTop10(current).orchestrator.entries.map(e => `${e.modelId}${e.rank}`);
   assert.deepEqual(noOr, ['gpt-6-1-sol1', 'claude-opus-5-52']); // 가성비 9 > 6.67
   const build = buildPreviousRanks(history, '2026-10-12', { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: aa },
     'rankings-daily:day:top50', 'openrouter-rankings-v1', true);
   assert.deepEqual(build.warnings, []);
   const orInputs: Top10RecordInput[] = or.map(v => ({ modelId: v.record.modelId, value: v.record.value, metric: 'total_tokens' }));
-  const withOr = computeUnifiedTop10(current, { openrouterRecords: orInputs, previousCohort: build.ranks });
-  assert.deepEqual(withOr.entries.map(e => [e.modelId, e.rank, e.change]), [['gpt-6-1-sol', 1, '유지'], ['claude-opus-5-5', 2, '유지']]);
-  assert.deepEqual(withOr.exits, []);
+  const withOr = computeRoleTop10(current, { openrouterRecords: orInputs, previousCohort: build.ranks });
+  assert.deepEqual(withOr.orchestrator.entries.map(e => [e.modelId, e.rank, e.change]), [['gpt-6-1-sol', 1, '유지'], ['claude-opus-5-5', 2, '유지']]);
+  assert.deepEqual(withOr.orchestrator.exits, []);
 });
 test('missing previous OR data yields an explicit hold instead of an estimated comparison', () => {
   const build = buildPreviousRanks(new MemoryInsightHistory(), '2026-10-12', undefined, 'rankings-daily:day:top50', 'openrouter-rankings-v1', true);

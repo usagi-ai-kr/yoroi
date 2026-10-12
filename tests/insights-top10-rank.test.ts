@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { splitBaseAndEffort, calcCostEfficiency, groupVariants, type ModelVariant, type ModelGroup } from '../src/insights/letter-top10-group.js';
-import { selectOptimalZone, computeRanks, OPTIMAL_ZONE_THRESHOLDS } from '../src/insights/letter-top10-worker.js';
-import { computeUnifiedTop10 } from '../src/insights/letter-top10-unified.js';
+import { selectOptimalZone, computeRanks, OPTIMAL_ZONE_THRESHOLDS } from '../src/insights/letter-top10-worker.js'; import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js'; import { toRankedRecords } from '../src/insights/letter-top10-rank.js';
 test('effort grouping & representative variant selection', () => {
   const { base: b1, effort: e1 } = splitBaseAndEffort('claude-3-5-sonnet-high');
   assert.equal(b1, 'claude-3-5-sonnet');
@@ -69,27 +68,33 @@ test('equal cost-efficiency ties fall back to OpenRouter usage rank, then index'
   assert.deepEqual(ids(selectOptimalZone(noOr, 'orchestrator').map(s => s.group)), ['a2', 'b2']);
   assert.deepEqual(computeRanks([10, 20, 20, 5]), [3, 1, 1, 4]);
 });
-test('fewer than ten in the zone are shown as-is; unified roles and previous comparison work end to end', () => {
+test('fewer than ten in the zone are shown as-is per list; previous comparison works end to end', () => {
   const records = [
     { modelId: 'claude-opus-5-5', value: 90, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'gpt-6-1-sol', value: 85, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'claude-haiku-5-5', value: 95, priceInput: 5, priceOutput: 10, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'claude-opus-5-5', value: 88, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_coding_index' },
     { modelId: 'gpt-6-1-sol', value: 82, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_coding_index' }];
-  const { entries } = computeUnifiedTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }] });
-  assert.equal(entries.length, 3); // 존 컷(지능 80.75·코딩 66) 통과 3개, 채우기 없음
-  assert.deepEqual(entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5', 'claude-haiku-5-5']); // 가성비 136 > 72 > 15.2
-  assert.ok(entries.some(e => e.isPareto));
-  assert.deepEqual(entries.find(e => e.modelId === 'claude-opus-5-5')!.roles, ['orchestrator', 'worker']);
-  assert.equal(entries.find(e => e.modelId === 'claude-haiku-5-5')!.change, '진입');
-  assert.equal(entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '\u25bc1'); // 전일 1위 -> 2위
+  const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }] });
+  assert.equal(lists.orchestrator.entries.length, 3); // 존 컷(지능 80.75) 통과 3개, 채우기 없음
+  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5', 'claude-haiku-5-5']); // 가성비 136 > 72 > 15.2
+  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']); // 코딩 66 통과 2개
+  assert.ok(lists.orchestrator.entries.some(e => e.isPareto));
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.both, true);
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, false);
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.change, '진입');
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '\u25bc1'); // 전일 1위 -> 2위
 });
 test('output tokens/s breaks an efficiency tie before index, but OR usage still comes first', () => {
   const metric = 'artificial_analysis_intelligence_index', speed = 'median_output_tokens_per_second';
   const records = [{ modelId: 'claude-opus-5-5', value: 96, priceInput: 12, priceOutput: 12, metric },
     { modelId: 'gpt-6-1-sol', value: 90, priceInput: 11.25, priceOutput: 11.25, metric },
     { modelId: 'claude-opus-5-5', value: 50, metric: speed }, { modelId: 'gpt-6-1-sol', value: 80, metric: speed }];
-  assert.deepEqual(computeUnifiedTop10(records).entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
+  assert.deepEqual(computeRoleTop10(records).orchestrator.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
   const or = [{ modelId: 'claude-opus-5-5', value: 300, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 100, metric: 'total_tokens' }];
-  assert.deepEqual(computeUnifiedTop10(records, { openrouterRecords: or }).entries.map(e => e.modelId), ['claude-opus-5-5', 'gpt-6-1-sol']);
+  assert.deepEqual(computeRoleTop10(records, { openrouterRecords: or }).orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'gpt-6-1-sol']);
+});
+test('total_tokens records get 1..N usage ranks so the token value never becomes a rank', () => {
+  const or = [{ modelId: 'claude-sonnet-5-5', value: 530462835686, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 264308530787, metric: 'total_tokens' }];
+  assert.deepEqual(toRankedRecords(or).map(r => r.rank), [1, 2]);
 });

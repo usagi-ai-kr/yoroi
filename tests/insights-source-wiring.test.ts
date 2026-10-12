@@ -26,10 +26,10 @@ test('the registry still excludes OpenCode Data and Vals AI; only the four appro
 });
 test('Arena goes through the /rows transport and the existing parser with no key and no extra headers', async () => {
   const h = harness(request => { const offset = Number(of(request.url, 'offset'));
-    const rows = Array.from({ length: 21 }, (_, i) => arenaRow(i)).slice(offset, offset + 100);
-    return json({ rows: rows.map(row => ({ row })), num_rows_total: 21, partial: false }); });
+    const rows = Array.from({ length: 51 }, (_, i) => arenaRow(i)).slice(offset, offset + 100);
+    return json({ rows: rows.map(row => ({ row })), num_rows_total: 51, partial: false }); });
   const result = await collectInsightSource(h.ports.get('arena')!, observedAt);
-  assert.ok(result.ok && result.rows.length === 20 && result.rows.every(r => r.ok)); assert.equal(h.requests.length, 1);
+  assert.ok(result.ok && result.rows.length === 50 && result.rows.every(r => r.ok)); assert.equal(h.requests.length, 1);
   assert.ok(h.requests.every(r => r.headers === undefined && of(r.url, 'config') === 'text'));
 });
 test('AA pages are fetched with the key on every request, merged by H3, and the key never appears in URLs or errors', async () => {

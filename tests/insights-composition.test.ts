@@ -19,7 +19,7 @@ const clock = () => Date.parse('2026-10-08T15:30:00Z');   // 2026-10-09 00:30 in
 const arenaRow = (i: number) => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i, rating_lower: 1490, rating_upper: 1510, variance: 2,
   vote_count: 10 + i, rank: i + 1, category: 'overall', leaderboard_publish_date: '2026-10-08' });
 const bodies: Record<string, unknown> = {
-  'datasets-server.huggingface.co': { rows: Array.from({ length: 21 }, (_, i) => ({ row: arenaRow(i) })), num_rows_total: 21, partial: false },
+  'datasets-server.huggingface.co': { rows: Array.from({ length: 51 }, (_, i) => ({ row: arenaRow(i) })), num_rows_total: 51, partial: false },
   'artificialanalysis.ai': { tier: 'free', intelligence_index_version: 3, pagination: { page: 1, page_size: 10, total_pages: 1, has_more: false },
     data: [{ id: 'a', slug: 'a', name: 'A', release_date: null, model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 42, artificial_analysis_coding_index: 38 }, pricing: {}, performance: {} }] },
   'openrouter.ai': { meta: { as_of: '2026-10-07T00:00:00Z', start_date: '2026-10-01', end_date: '2026-10-07', version: 'v1' }, data: [{ date: '2026-10-07', model_permaslug: 'gpt-5', total_tokens: 123 }] },

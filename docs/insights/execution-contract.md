@@ -96,5 +96,5 @@ Yoroi 인계 항목 제안: 명령·env 변수명·출력 예시·exit 표·일�
 남은 미결정: Arena subset/수집 경로·decoder, 모델 alias·유의 변화 기준. 이 문서는 이를 확정하지 않는다.
 확정된 계약을 버전 순서에 맞춰 구현 패킷으로 나누고, 합성 날짜/결측/중복/취소/권리 경계·CLI 종료 코드 테스트로 검증한다.
 B안을 다시 검토하려면 별도 이슈를 만들고 새 근거를 붙인다. 문서만으로는 선택을 뒤집지 않는다.
-## 2026-10-11 top20 override (최신, 위 확정 조항을 대체하지 않고 범위만 갱신)
-- Arena=overall rank≤20(동점 포함, 1요청 목표, maxRequests2·재시도 포함)·경계 미확인/역전 unavailable·600행 한도 결정 불필요; AA=4쪽 전체 수집 후 `coding_index` 상위20(동점 포함)만 저장, 순위 코호트 `coding_index`; 순위는 상위20 진입/이탈 표기; requestScope `overall-top20`/`coding-top20` 변경으로 전환일 비교는 의도적 '이전 기록 없음'; 알려진 한계: 20위 동점 시 근거표 20행 상한과 요약 불일치 가능(Arena 경계 2쪽이면 재시도 여력 0).
+## 2026-10-12 top50 override (최신, [top50-decision.md](top50-decision.md), 확정 조항 대체 없이 수집·순위창 범위 갱신)
+- 전 소스 상위 50(Arena overall rank≤50 첫쪽 경계, AA coding·intel 합집합, OR 토큰, Cognition category별); scope `overall-top50`/`coding-intel-top50`/`top50` 전환일 리셋; 기본 레터는 Top10 압축(`--full` 상세); 세부: [top50-decision.md](top50-decision.md).

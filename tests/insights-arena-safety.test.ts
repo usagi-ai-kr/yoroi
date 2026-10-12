@@ -8,7 +8,7 @@ const rowFor = (rank: unknown, date: unknown = '2026-10-08', extra: Record<strin
   model_name: 'synthetic-model', organization: 'synthetic-org', license: 'Proprietary', rating: 1500,
   rating_lower: 1490, rating_upper: 1510, variance: 20, vote_count: 1000, rank, category: 'overall',
   leaderboard_publish_date: date, ...extra });
-const ties = (n: number, rank = 20): unknown[] => Array.from({ length: n }, () => rowFor(rank));
+const ties = (n: number, rank = 50): unknown[] => Array.from({ length: n }, () => rowFor(rank));
 const seq = (from: number, to: number): unknown[] => Array.from({ length: to - from + 1 }, (_, i) => rowFor(from + i));
 const body = (rows: unknown[], total: number, partial = false): string =>
   JSON.stringify({ features: [], rows: rows.map((row, i) => ({ row_idx: i, row })), num_rows_total: total, num_rows_per_page: 100, partial });
@@ -30,20 +30,19 @@ test('a partial page fails as a whole', async () => {
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
   assert.equal(f.requests.length, 1);
 });
-test('100 rows tied at rank 20 need a second page; a changed total there fails unavailable', async () => {
-  const f = fake((request, n) => n === 1 ? serve(ties(100), 200)(request, n)
-    : { status: 200, headers: {}, body: body(seq(21, 30), 201) });
+test('100 rank-50 ties without a first-page boundary fail unavailable without a second fetch', async () => {
+  const f = fake(serve(ties(100), 200));
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
-  assert.equal(f.requests.length, 2);
+  assert.equal(f.requests.length, 1);
 });
-test('the second page may confirm the boundary after 100 rank-20 ties without collecting more rows', async () => {
+test('a boundary only available on a later page is not fetched: the first page must confirm top 50', async () => {
   const f = fake((request, n) => n === 1 ? serve(ties(100), 150)(request, n)
-    : { status: 200, headers: {}, body: body(seq(21, 50), 150) });
-  const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, result.requests, result.boundary], [100, 2, 'rank-above-top']);
+    : { status: 200, headers: {}, body: body(seq(51, 80), 150) });
+  await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
+  assert.equal(f.requests.length, 1);
 });
 test('mixed publication dates inside the collected top rows fail unavailable', async () => {
-  const rows = Array.from({ length: 20 }, (_, i) => rowFor(i + 1, i % 2 ? '2026-10-07' : '2026-10-08')).concat(rowFor(21));
+  const rows = Array.from({ length: 50 }, (_, i) => rowFor(i + 1, i % 2 ? '2026-10-07' : '2026-10-08')).concat(rowFor(51));
   const f = fake(serve(rows, 500));
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
   assert.equal(f.requests.length, 1);
@@ -59,15 +58,14 @@ test('bad shapes fail as parse: rows, total, category value', async () => {
     await assert.rejects(fetchArenaRows(f.client, f.options), code('parse'), JSON.stringify(patch).slice(0, 40));
   }
 });
-test('cancellation before and after the first page stops without further requests', async () => {
+test('cancellation before the page and a cancelled fetch stop without retry or extra requests', async () => {
   const pre = new AbortController(); pre.abort();
   const early = fake(serve(seq(1, 100), 500));
   await assert.rejects(fetchArenaRows(early.client, { ...early.options, signal: pre.signal }), code('cancelled'));
   assert.equal(early.requests.length, 0);
-  const live = new AbortController();
-  const f = fake((request, n) => { if (n === 1) live.abort(); return serve(ties(100), 200)(request, n); });
-  await assert.rejects(fetchArenaRows(f.client, { ...f.options, signal: live.signal }), code('cancelled'));
-  assert.equal(f.requests.length, 1);
+  const aborting = fake(() => new SourceError('cancelled'));
+  await assert.rejects(fetchArenaRows(aborting.client, aborting.options), code('cancelled'));
+  assert.equal(aborting.requests.length, 1);
 });
 test('the 60 second budget stops paging before a second dispatch', async () => {
   const f = fake(serve(ties(100), 10_000));

@@ -89,12 +89,12 @@
 - `overall` 블록의 실제 행 수(쪽 수 3~6은 추정, 600행 상한을 넘으면 실패)와 100행 이후의 정렬 보장, 데이터셋 갱신 주기, datasets-server 공개 rate limit 수치, `/filter` 500의 원인.
   A1 구현 뒤 별도 승인된 실조회(V1)에서만 확인한다.
 
-## 10. 2026-10-11 최신 override — overall 상위 20 (사용자 결정)
+## 10. 2026-10-12 최신 override — overall 상위 50 (사용자 승인, [top50-decision.md](top50-decision.md))
 
-- Arena coding 탐색(`/statistics` 1회 + 공식 `where` `/filter` 1회)은 결론 없이 종료(halt)됐다. §1~§9의 확정·미확인 기록은 역사로 보존하며 본 절이 수집 범위를 대체한다.
-- 수집은 text/latest overall의 rank≤20만(20위 동점 포함, 비내림차순). 첫 페이지에서 rank>20 또는 non-overall 경계 확인 시 정상 종료(통상 1요청).
-- 경계 미확인·rank 역전·무효 rank는 `unavailable`, overall 0행은 `parse`. 경계 확인 뒤에도 같은 수신 페이지의 연속 overall 블록 rank를 검증한다(수집 없음).
-- 예산은 policy maxRequests 2(재시도 1회 포함)·pageRows 100 유지. §4·§8의 600행 상한·8요청 결정은 불필요해졌다(역사 보존).
-- requestScope는 `hf-rows:text:latest:overall-top20` — 이전 overall 스코프 기록과 분리되어 전환일 순위 비교는 '이전 기록 없음'(의도된 리셋).
-- 알려진 한계(review-051-096 medium): 경계가 2쪽에 있는 구성(첫 쪽 rank20 동점 100행)에서는 2요청 예산이 경계 확인에 소모되어 429 재시도 여력이 없다.
+- Arena coding 탐색은 결론 없이 종료됐다. §1~§9 및 상위 20 기록은 역사로 보존하며 본 절이 최신 상위 50 수집 범위를 대체한다.
+- 수집: text/latest overall의 rank≤50(50위 동점 포함, 비내림차순). 첫 100행 안에서 rank>50 또는 non-overall 경계가 확인되어야 성공.
+- 경계 미확인 시 2쪽 추가 조회 없이 unavailable(잘린 상위 50 반환 금지). rank 역전·무효 rank는 unavailable, overall 0행은 parse.
+- 예산: policy maxRequests 2는 429/5xx 재시도 1회 포함 상한으로만 쓰며 pageRows 100 유지. §4·§8의 600행 상한·8요청 결정은 불필요(역사 보존).
+- requestScope는 `hf-rows:text:latest:overall-top50` — 이전 overall 스코프 기록과 분리되어 전환일 순위 비교는 '이전 기록 없음'(의도된 리셋).
+- 첫 쪽 100행 안에서 경계 미확인 시 2쪽 미조회 unavailable 규칙으로 변경되어 2쪽 경계 소모 한계는 해소됨([top50-decision.md](top50-decision.md)).
 - 구현·검증: `src/insights/arena-transport.ts`, `tests/insights-arena-transport.test.ts`·`insights-arena-boundary.test.ts`·`insights-arena-safety.test.ts`.

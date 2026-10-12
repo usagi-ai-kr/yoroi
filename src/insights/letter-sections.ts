@@ -1,6 +1,6 @@
 import { compareInsightPrevious, type InsightComparison } from './comparison.js';
 import type { InsightRankResult } from './rank-change.js';
-import type { InsightTrendResult } from './trend.js';
+import type { InsightTrendPoint, InsightTrendResult } from './trend.js';
 import type { InsightSource } from './record.js';
 import type { ValidatedInsightRecord } from './validation.js';
 
@@ -47,14 +47,31 @@ export type LetterSection =
     readonly source: InsightSource; readonly reason: string }[] } |
   { readonly kind: 'limitations'; readonly title: string; readonly items: readonly string[] };
 
+/** Display-only rounding: comparisons keep full precision; tiny non-zero costs keep significant digits. */
+const displayValue = (value: number): number => !Number.isFinite(value) ? value
+  : value !== 0 && Math.abs(value) < 1 ? Number(value.toPrecision(4)) : Number(value.toFixed(4));
+/** Display-only: runs of >=2 missing days become one `first~last` point (trend.ts keeps its seven ISO points). */
+function compactTrendView(trend: InsightTrendResult): InsightTrendResult {
+  if (trend.status === 'unavailable') return trend;
+  const points: InsightTrendPoint[] = [];
+  for (let index = 0; index < trend.points.length; index += 1) {
+    const point = trend.points[index]!;
+    if (point.value !== null) { points.push(point); continue; }
+    let end = index;
+    while (end + 1 < trend.points.length && trend.points[end + 1]!.value === null) end += 1;
+    points.push(end > index ? { date: `${point.date}~${trend.points[end]!.date}`, value: null, change: null } : point);
+    index = end;
+  }
+  return { ...trend, points };
+}
 export function evidenceRow(input: LetterMeasurement, id: string): LetterEvidence {
   const { record: r, comparisonDate } = input.measurement;
   return { id, source: r.source, sourceName: r.sourceName, modelId: r.modelId, metric: r.metric,
-    category: r.category, schemaVersion: r.schemaVersion, value: r.value, unit: r.unit,
+    category: r.category, schemaVersion: r.schemaVersion, value: displayValue(r.value), unit: r.unit,
     sourceUrl: r.sourceUrl, sourceAsOf: comparisonDate === null ? '미상' : r.sourceAsOf, comparisonDate, observedAt: r.observedAt,
     license: r.license, attributionText: r.attributionText,
     comparison: comparisonDate === null ? compareInsightPrevious(input.measurement, undefined) : input.comparison,
-    trend: comparisonDate === null ? { status: 'unavailable', reason: 'n/a: 기준일 미상' } : input.trend };
+    trend: comparisonDate === null ? { status: 'unavailable', reason: 'n/a: 기준일 미상' } : compactTrendView(input.trend) };
 }
 export function rankRow(input: LetterRankInput, id: string): LetterRankEvidence {
   const r = input.reference.record;
@@ -68,8 +85,8 @@ export function rankRow(input: LetterRankInput, id: string): LetterRankEvidence 
 }
 export function summarizeLetter(rows: readonly LetterEvidence[], groups: readonly LetterRankEvidence[]): readonly LetterSummaryItem[] {
   const items: LetterSummaryItem[] = rows.flatMap(row => row.comparison.comparable && row.comparison.absoluteChange !== 0
-    ? [{ text: `${row.sourceName} · ${row.modelId} · ${row.metric}: 전일 대비 ${row.comparison.absoluteChange} ${row.unit}`,
-      evidenceIds: [row.id] }] : []);
+    ? [{ text: `${row.sourceName} · ${row.modelId} · ${row.metric}: 전일 대비 ${row.comparison.absoluteChange} ${row.unit}`
+      + ` (${row.comparison.previousDate}→${row.comparison.currentDate})`, evidenceIds: [row.id] }] : []);
   for (const group of groups) if (group.result.comparable) for (const change of group.result.changes) {
     if ((change.status === 'ranked' && !change.rankChange) || change.status === 'missing') continue;
     const win = change.windowSize ? `상위 ${change.windowSize} ` : '';

@@ -1,4 +1,5 @@
 import { runInsights } from './insights.js';
+import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
 import type { InsightHistoryPort } from '../insights/history-port.js';
 import type { InsightSourcePort } from '../insights/source-port.js';
 import type { InsightPortOptions } from '../insights/sources.js';
@@ -38,7 +39,10 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
         ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
         ...(refresh && { refresh: true }), ...(signal && { signal }) });
       const letter: InsightLetterView = outcome.letter;
-      return { letter, storage: outcome.storage };
+      const top10 = outcome.top10 ?? { records: [], arenaRecords: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
+      const warnings = (top10 as { warnings?: readonly string[] }).warnings;
+      return { letter, storage: outcome.storage,
+        compact: renderTop10FromRecords({ publicationDate: outcome.publicationDate, ...top10, ...(warnings && warnings.length ? { notes: warnings } : {}) }) };
     },
   };
   return runInsightsCommand(parsed, deps, ctx.env);

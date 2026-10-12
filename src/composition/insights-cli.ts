@@ -40,8 +40,9 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
         ...(refresh && { refresh: true }), ...(signal && { signal }) });
       const letter: InsightLetterView = outcome.letter;
       const top10 = outcome.top10 ?? { records: [], arenaRecords: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
+      const warnings = (top10 as { warnings?: readonly string[] }).warnings;
       return { letter, storage: outcome.storage,
-        compact: renderTop10FromRecords({ publicationDate: outcome.publicationDate, ...top10 }) };
+        compact: renderTop10FromRecords({ publicationDate: outcome.publicationDate, ...top10, ...(warnings && warnings.length ? { notes: warnings } : {}) }) };
     },
   };
   return runInsightsCommand(parsed, deps, ctx.env);

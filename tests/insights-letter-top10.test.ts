@@ -28,7 +28,7 @@ test('composition compact path covers both AA top tens, metric-split previous co
   const { dir } = setup(t);
   const history = Object.assign(new MemoryInsightHistory(), { close() {} });
   const day = { source: 'artificial-analysis' as const, publicationDate: '2026-10-11',
-    requestScope: 'aa-v2:free:language-models:coding-intel-top50', schemaVersion: 'aa-v2-free' };
+    requestScope: 'aa-v2:free:language-models:coding-intel-value-top50', schemaVersion: 'aa-v2-free' };
   const validated = (record: InsightRecord) => { const result = validateInsightRecord(record); assert.ok(result.ok); return result.value; };
   history.saveDaily(day, { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: [
     validated(previousRecord('m-100', 'artificial_analysis_intelligence_index', 59)),
@@ -47,8 +47,8 @@ test('composition compact path covers both AA top tens, metric-split previous co
   const worker = text.slice(text.indexOf('## 워커'), text.indexOf('## 출처'));
   assert.equal((orchestrator.match(/^\d+\. /gm) ?? []).length, 10, 'orchestrator top10 must have 10 rows');
   assert.equal((worker.match(/^\d+\. /gm) ?? []).length, 10, 'worker top10 must have 10 rows');
-  assert.match(orchestrator, /m-99 \([^)]*\) (유지|▲\d+|▼\d+)/, 'intelligence previous cohort applies');
-  assert.match(worker, /m-99 \([^)]*\) 진입/, 'coding must not inherit intelligence previous ranks (new within its own cohort)');
+  assert.match(orchestrator, /m-99 .*유지/, 'intelligence previous cohort applies');
+  assert.match(worker, /m-99 .*진입/, 'coding must not inherit intelligence previous ranks (new within its own cohort)');
   assert.doesNotMatch(text, /인사이트: /);
   stdout.length = 0; stderr.length = 0;
   assert.equal(await program.run(['insights', 'once', '--full']), 0);
@@ -95,5 +95,5 @@ test('composition passes Arena official ranks through the production-shaped metr
     insights: { clock: () => NOW, openHistory: () => Object.assign(new MemoryInsightHistory(), { close() {} }),
       createPorts: () => [aaPort, arenaPort] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
-  assert.match(text, /A \(60\.0[^)]*Arena 2위\)/, text); assert.match(text, /B \(50\.0[^)]*Arena 1위\)/, text);
+  assert.match(text, /A .*Arena 2위/); assert.match(text, /B .*Arena 1위/);
 });

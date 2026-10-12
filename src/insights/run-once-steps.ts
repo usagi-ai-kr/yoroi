@@ -12,7 +12,7 @@ export const DEFAULT_SCHEMA_VERSIONS: Readonly<Record<InsightSource, string>> = 
   arena: 'arena-hf-v1', 'artificial-analysis': 'aa-v2-free', openrouter: 'openrouter-rankings-v1', cognition: 'cognition-frontiercode-v1' });
 /** Opaque, secret-free request scope per source (subset/period/filter/tier); part of every history key. */
 export const DEFAULT_REQUEST_SCOPES: Readonly<Record<InsightSource, string>> = Object.freeze({
-  arena: 'hf-rows:text:latest:overall-top50', 'artificial-analysis': 'aa-v2:free:language-models:coding-intel-top50',
+  arena: 'hf-rows:text:latest:overall-top50', 'artificial-analysis': 'aa-v2:free:language-models:coding-intel-value-top50',
   openrouter: 'rankings-daily:day:top50', cognition: 'frontiercode:data-json:top50' });
 /** Metric whose ordering defines rank changes per source; same-source cohorts only. */
 export const RANK_COHORTS: Readonly<Record<InsightSource, { readonly metric: string; readonly order: 'ascending' | 'descending';

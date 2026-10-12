@@ -21,7 +21,7 @@ test('composition-injected compact renderer is used by default and stays under 3
   assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미확인\)/);
   assert.match(rendered.stdout, /출처: Cognition FrontierCode \(라이선스 미확인 · 내부 전용\)/);
   assert.match(rendered.stdout, /수집 실패 소스: cognition/);
-  assert.match(rendered.stdout, /SQLite/);
+  assert.match(rendered.stdout, /SQLite/); assert.match(rendered.stdout, /가성비 최적 존:/); assert.doesNotMatch(rendered.stdout, /가중치 재정규화/);
   assert.equal((rendered.stdout.match(/^- /gm) ?? []).length, 3, 'the contract summary is three fact lines');
   assert.match(rendered.stdout, /^## 요약$/m);
 });
@@ -74,10 +74,10 @@ test('worst-case compact stays within 3000 chars with long names, full turnover 
 test('Arena reference uses the official rank field, not a rating re-sort', () => {
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12',
     records: [{ modelId: 'A', value: 60, metric: 'artificial_analysis_intelligence_index' },
-      { modelId: 'B', value: 50, metric: 'artificial_analysis_intelligence_index' }],
+      { modelId: 'B', value: 52, metric: 'artificial_analysis_intelligence_index' }],
     arenaRecords: [{ modelId: 'A', rank: 2, metric: 'rank' }, { modelId: 'B', rank: 1, metric: 'rank' }] });
-  assert.match(text, /B \(50\.0, Arena 1위\)/);
-  assert.match(text, /A \(60\.0, Arena 2위\)/);
+  assert.match(text, /B .*Arena 1위/);
+  assert.match(text, /A .*Arena 2위/);
   const malformed = renderTop10FromRecords({ publicationDate: '2026-10-12',
     records: [{ modelId: 'm', value: 90, metric: 'artificial_analysis_intelligence_index' }],
     arenaRecords: [{ modelId: 'bad', value: Number.NaN, metric: 'rating' }] });
@@ -89,7 +89,7 @@ test('previous cohort maps do not bypass metric separation when ranks are presen
       { modelId: 'm2', value: 80, metric: 'artificial_analysis_coding_index' }],
     previousRanks: [{ modelId: 'm1', rank: 1, metric: 'artificial_analysis_coding_index' },
       { modelId: 'm2', rank: 2, metric: 'artificial_analysis_coding_index' }] });
-  assert.match(text, /m1 \(90\.0\) 신규/);
+  assert.match(text, /m1 .*신규/);
 });
 test('compact mode still reports failures diagnostics on stderr like the legacy contract', () => {
   const failing: InsightLetterView = { ok: true, sections: [

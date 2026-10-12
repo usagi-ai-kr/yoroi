@@ -32,7 +32,13 @@
 - composition/source-wiring fixture: Arena 21행 → 51행(50 수집 + 경계).
 - 신규: insights-aa-top50.test.ts, insights-openrouter-top50.test.ts, insights-cognition-top50.test.ts, insights-source-top50.test.ts.
 
-## 후속(반영 완료)
+## 후속 및 가성비 최적 존 연계
 
 - `src/insights/letter.ts` 한계 노트는 상위 50으로 갱신되었고, 렌더링은 기본 Top 10 압축 레터(오케스트레이터·워커 Top 10) 및 `--full` 옵션 시 상세 레터 유지 체계로 구현됐다([letter-issue.md](letter-issue.md)).
 - 문서 파일(`docs/insights/execution-contract.md`, `arena-transport.md`, `sources-a.md`, `sources-b.md`)도 100줄 상한을 준수하며 상위 50 및 기본 Top 10 레터 계약으로 정정을 완료했다.
+- 가성비 최적 존(혼합 단가, 가성비 지수, 추천 effort, ★ 파레토 경계, 가중합 결측 재정규화) 공식 및 설계 결정은 [top10-scoring.md](top10-scoring.md)에 상술했다.
+
+## AA 선택 확장과 후보 정책 (2026-10-12 사용자 승인)
+- AA는 coding/intelligence 지수 각 top50 ∪ 각 지수의 가성비(지수÷혼합단가) top50 합집합(동점 포함)으로 선택한다(aa-value-top.ts). 가격(입출력) 결측 모델은 가성비 코호트에서 제외되지만 지수 코호트로 남을 수 있고, 모든 metric은 보존된다. 실제 0/0은 유효한 무료로 가성비 계산에 포함한다. 4쪽 완전성 규칙은 그대로다.
+- requestScope는 `aa-v2:free:language-models:coding-intel-value-top50`. 신 스코프에는 오늘 저장분(기존 코호트 73모델)이 없으므로, 오프라인 렌더는 `deps.requestScopes` override로 기존 스코프의 같은 날 저장분만 읽고(수집·DB 복제 없음), 다음 실제 수집부터 후보가 확장된다.
+- 지수 상위권 밖 고효율 모델의 top10 진입은 보장하지 않는다: indexWeight 0.5 > costEffWeight 0.4인 현재 가중치의 선택 결과이며, 지수 value 컷 제거로 요구(후보 컷 제거)는 충족한다(가중치 변경·추가 승인 불요).

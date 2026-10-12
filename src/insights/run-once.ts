@@ -4,10 +4,10 @@ import { buildInsightLetter, type InsightLetterResult } from './letter.js';
 import type { LetterFailure, LetterSourceInput } from './letter-sections.js';
 import type { InsightSource } from './record.js';
 import { buildMeasurements, buildRanks, DEFAULT_REQUEST_SCOPES, DEFAULT_SCHEMA_VERSIONS, failureKind } from './run-once-steps.js';
-import { assignCompetitionRanks } from './letter-top10-rank.js';
+import { buildPriceMap } from './letter-top10-price.js';
+import { buildPreviousRanks } from './letter-top10-history.js';
 import { collectInsightSource, type InsightSourcePort } from './source-port.js';
 import { validateInsightRows } from './validation.js';
-
 export interface InsightRunDeps {
   readonly ports: readonly InsightSourcePort[];
   readonly history: InsightHistoryPort;
@@ -28,12 +28,13 @@ export interface InsightSourceReport {
   readonly reason?: string; readonly failure?: LetterFailure;
   readonly rejectedRows?: number; readonly partial?: boolean; readonly saved?: boolean;
 }
-export interface InsightTop10Row { readonly modelId: string; readonly value?: number; readonly metric?: string; readonly rank?: number }
-export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly arenaRecords: readonly InsightTop10Row[];
-  readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
+export interface InsightTop10Row { readonly modelId: string; readonly value?: number; readonly metric?: string; readonly rank?: number;
+  readonly priceInput?: number; readonly priceOutput?: number }
+export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly arenaRecords: readonly InsightTop10Row[]; readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
   readonly previousRanks: readonly { readonly modelId: string; readonly rank: number; readonly metric: string }[] }
-const top10Row = (value: ValidatedInsightRecord, metric: string): InsightTop10Row => ({ modelId: value.record.modelId, value: value.record.value, metric });
-
+const top10Row = (value: ValidatedInsightRecord, metric: string, prices?: { input?: number; output?: number }): InsightTop10Row =>
+  ({ modelId: value.record.modelId, value: value.record.value, metric,
+    ...(prices?.input !== undefined && { priceInput: prices.input }), ...(prices?.output !== undefined && { priceOutput: prices.output }) });
 export interface InsightRunResult {
   /** 1-A: success and partial success 0; every source failed 1. Argument errors (2) belong to the CLI. */
   readonly exitCode: 0 | 1; readonly publicationDate: string; readonly letter: InsightLetterResult;
@@ -69,20 +70,18 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
   const success = (source: InsightSource) => runs.find(r => r.report.source === source)?.success;
   const intact = (source: InsightSource) => { const run = runs.find(r => r.report.source === source);
     return run && run.report.status !== 'failed' && run.report.partial !== true && (run.report.rejectedRows ?? 0) === 0; };
-  const aa = success('artificial-analysis')?.records ?? [], first = aa[0]?.record;
-  const records = aa.filter(v => v.record.metric === 'artificial_analysis_intelligence_index' || v.record.metric === 'artificial_analysis_coding_index').map(v => top10Row(v, v.record.metric));
+  const aa = success('artificial-analysis')?.records ?? [], first = aa[0]?.record, prices = buildPriceMap(aa);
+  const records = aa.filter(v => v.record.metric === 'artificial_analysis_intelligence_index' || v.record.metric === 'artificial_analysis_coding_index').map(v => top10Row(v, v.record.metric, prices.get(v.record.modelId)));
   let previous: InsightSuccess | undefined;  try { previous = first && deps.history.getDaily({ source: 'artificial-analysis', publicationDate: shiftInsightDate(publicationDate, -1),
     requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'], schemaVersion: first.schemaVersion }) || undefined; } catch { previous = undefined; }
-  const previousRanks = ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index'].flatMap(metricName =>
-    assignCompetitionRanks((previous?.records ?? []).filter(v => v.record.metric === metricName).map(v => ({ modelId: v.record.modelId, value: v.record.value, metric: metricName })))
-      .map(({ item, rank }) => ({ modelId: item.modelId, rank, metric: metricName })));
-  const arenaRecords = intact('arena') ? (success('arena')?.records ?? []).filter(v => v.record.metric === 'rank')
-    .map(v => ({ modelId: v.record.modelId, rank: v.record.value, metric: 'rank' })) : [];
+  const arenaRecords = intact('arena') ? (success('arena')?.records ?? []).filter(v => v.record.metric === 'rank').map(v => ({ modelId: v.record.modelId, rank: v.record.value, metric: 'rank' })) : [];
   const orRecords = intact('openrouter') ? (success('openrouter')?.records ?? []) : [];
   const latest = orRecords.map(v => v.comparisonDate).filter((date): date is string => date !== null).sort().at(-1) ?? null;
-  const openrouterRecords = orRecords.filter(v => v.record.metric === 'total_tokens' && v.comparisonDate === latest).map(v => top10Row(v, 'total_tokens'));
-  return { records, arenaRecords, openrouterRecords, previousRanks,
-    failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source) };
+  const openrouterRecords = orRecords.filter(v => v.record.metric === 'total_tokens' && v.comparisonDate === latest && v.record.metadata?.aggregate !== true && v.record.modelId.trim().toLowerCase() !== 'other').map(v => top10Row(v, 'total_tokens'));
+  const prev = buildPreviousRanks(deps.history, publicationDate, previous, DEFAULT_REQUEST_SCOPES['openrouter'],
+    success('openrouter')?.records[0]?.record.schemaVersion, openrouterRecords.length > 0);
+  return { records, arenaRecords, openrouterRecords, previousRanks: prev.ranks, failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source),
+    ...(prev.warnings.length && { warnings: prev.warnings }) };
 }
 
 /** One internal-only run: collect/reuse → validate → store → compare → letter. No rendering, delivery or LLM. */

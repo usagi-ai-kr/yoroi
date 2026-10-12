@@ -4,7 +4,7 @@ import { SourceError } from '../src/app/usage-source.js';
 import { parseAaPages, selectAaTopModels } from '../src/insights/sources-aa.js';
 
 const AT = '2026-10-12T00:00:00.000Z';
-const model = (slug: string, coding: number | null, intel = 50) => ({
+const model = (slug: string, coding: number | null, intel: number | null = 50) => ({
   id: `id-${slug}`, slug, name: `Model ${slug}`, release_date: null,
   model_creator: { id: 'c1', name: 'Creator' },
   evaluations: {
@@ -19,33 +19,31 @@ const page = (n: number, rows: ReturnType<typeof model>[], total = 1) => ({
   pagination: { page: n, page_size: 50, total_pages: total, has_more: n < total },
 });
 
-test('top 20 selection: 25 models (100~76) keeps top 20 (100~81) and drops 5 (80~76)', () => {
+test('top 50 selection: 25 models are all kept (union covers the whole set)', () => {
   const models = Array.from({ length: 25 }, (_, i) => model(`m-${100 - i}`, 100 - i));
   const parsed = parseAaPages([{ page: 1, payload: page(1, models) }], AT, {});
-  assert.equal(parsed.length, 20);
-  const slugs = parsed.map(p => p.ok ? p.records[0]!.modelId : '');
-  const expected = Array.from({ length: 20 }, (_, i) => `m-${100 - i}`);
-  assert.deepEqual(slugs, expected);
-  for (let s = 80; s >= 76; s -= 1) assert.ok(!slugs.includes(`m-${s}`));
+  assert.equal(parsed.length, 25);
+  assert.deepEqual(parsed.map(p => p.ok ? p.records[0]!.modelId : ''),
+    Array.from({ length: 25 }, (_, i) => `m-${100 - i}`));
 });
 
-test('top 20 ties: 19 at 100~82, 3 at 81 yields all 22 models and drops lower', () => {
+test('small sets with ties are all kept under the top 50 union', () => {
   const top19 = Array.from({ length: 19 }, (_, i) => model(`m-${100 - i}`, 100 - i));
   const ties3 = ['tie-a', 'tie-b', 'tie-c'].map(s => model(s, 81));
   const lower = [model('low-80', 80), model('low-75', 75)];
   const parsed = parseAaPages([{ page: 1, payload: page(1, [...top19, ...ties3, ...lower]) }], AT, {});
-  assert.equal(parsed.length, 22);
+  assert.equal(parsed.length, 24);
   const slugs = parsed.map(p => p.ok ? p.records[0]!.modelId : '');
-  for (const s of ['tie-a', 'tie-b', 'tie-c']) assert.ok(slugs.includes(s));
-  assert.ok(!slugs.includes('low-80') && !slugs.includes('low-75'));
+  for (const s of ['tie-a', 'tie-b', 'tie-c', 'low-80', 'low-75']) assert.ok(slugs.includes(s));
 });
 
-test('models with null/missing coding_index are excluded from ranking and output', () => {
+test('missing coding keeps a model when intelligence exists; models without any score are dropped', () => {
   const withScore = [model('valid-1', 95), model('valid-2', 85)];
-  const withoutScore = [model('no-coding-null', null, 99), model('no-coding-undef', null, 70)];
-  const parsed = parseAaPages([{ page: 1, payload: page(1, [...withScore, ...withoutScore]) }], AT, {});
-  assert.equal(parsed.length, 2);
-  assert.deepEqual(parsed.map(p => p.ok ? p.records[0]!.modelId : '').sort(), ['valid-1', 'valid-2']);
+  const intelOnly = [model('intel-only-1', null, 99), model('intel-only-2', null, 70)];
+  const noScore = [model('no-scores', null, null)];
+  const parsed = parseAaPages([{ page: 1, payload: page(1, [...withScore, ...intelOnly, ...noScore]) }], AT, {});
+  assert.deepEqual(parsed.map(p => p.ok ? p.records[0]!.modelId : '').sort(),
+    ['intel-only-1', 'intel-only-2', 'valid-1', 'valid-2']);
 });
 
 test('selected models preserve other metrics including intelligence_index, pricing and performance', () => {

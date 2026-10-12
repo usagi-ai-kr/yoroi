@@ -1,6 +1,7 @@
 import type { InsightRecord } from './record.js';
 import { isObject, isText, isIsoDate, isIsoTimestamp, unknownFields,
   type ParseRowResult } from './parse-utils.js';
+import { filterOpenRouterTop50 } from './openrouter-top50.js';
 
 const sourceUrl = 'https://openrouter.ai/rankings';
 export class OpenRouterParseError extends Error {
@@ -17,7 +18,7 @@ export function parseOpenRouterResponse(payload: unknown, observedAt: string): r
   const common = [...unknownFields(payload, ['data', 'meta'], 'response'),
     ...unknownFields(meta, ['as_of', 'start_date', 'end_date', 'version'], 'meta')];
   const seen = new Map<string, number>();
-  return payload.data.map((row: unknown, index): OpenRouterRowResult => {
+  return filterOpenRouterTop50(payload.data.map((row: unknown, index): OpenRouterRowResult => {
     const warnings = [...common];
     try {
       if (!isObject(row)) throw new OpenRouterParseError('invalid-row');
@@ -45,5 +46,5 @@ export function parseOpenRouterResponse(payload: unknown, observedAt: string): r
       seen.set(identity, value);
       return { ok: true, index, records: [record], warnings };
     } catch { return { ok: false, index, reason: 'OpenRouter invalid-row', warnings }; }
-  });
+  }))
 }

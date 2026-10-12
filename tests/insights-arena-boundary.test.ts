@@ -23,29 +23,29 @@ function fake(respond: (request: HttpRequest, n: number) => HttpResponse | Error
 }
 const code = (want: string) => (error: unknown) => error instanceof SourceError && error.code === want;
 
-test('defaults are top20 with a 2-request policy; the source wrapper needs no override', async () => {
-  assert.deepEqual([ARENA_TOP_N, ARENA_LIMITS.topN, ARENA_LIMITS.policy.maxRequests], [20, 20, 2]);
+test('defaults are top50 with a 2-request policy; the source wrapper needs no override', async () => {
+  assert.deepEqual([ARENA_TOP_N, ARENA_LIMITS.topN, ARENA_LIMITS.policy.maxRequests], [50, 50, 2]);
   const f = fake(serve(seq(1, 100), 500));
   const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, result.requests, result.boundary], [20, 1, 'rank-above-top']);
+  assert.deepEqual([result.rows.length, result.requests, result.boundary], [50, 1, 'rank-above-top']);
   const g = fake(serve(seq(1, 100), 500));
   const rows = await fetchArena(g.client, g.options);
-  assert.deepEqual([rows.length, g.requests.length], [20, 1]);
+  assert.deepEqual([rows.length, g.requests.length], [50, 1]);
 });
-test('600/601 boundary intent superseded: a 601-row overall block stops at rank 21 after one request', async () => {
+test('600/601 boundary intent superseded: a 601-row overall block stops at rank 51 after one request', async () => {
   const f = fake(serve(seq(1, 601)));
   const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, f.requests.length, result.boundary], [20, 1, 'rank-above-top']);
+  assert.deepEqual([result.rows.length, f.requests.length, result.boundary], [50, 1, 'rank-above-top']);
 });
 test('the dataset total (10974) stays separate from the collected top rows', async () => {
   const f = fake(serve(seq(1, 100), 10_974));
   const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, result.totalRows, result.requests], [20, 10_974, 1]);
+  assert.deepEqual([result.rows.length, result.totalRows, result.requests], [50, 10_974, 1]);
 });
-test('the collected top rows feed the existing parser (20 rows, 6 metrics each)', async () => {
+test('the collected top rows feed the existing parser (50 rows, 6 metrics each)', async () => {
   const f = fake(serve(seq(1, 100), 500));
   const parsed = await (await import('../src/insights/arena-transport.js')).readArena(f.client, '2026-10-11T00:00:00Z');
-  assert.equal(parsed.length, 20);
+  assert.equal(parsed.length, 50);
   assert.ok(parsed.every(row => row.ok && row.records.length === 6 && row.records[0]!.source === 'arena'
     && row.records[0]!.sourceAsOf === '2026-10-08'));
 });
@@ -54,8 +54,8 @@ test('two retryable failures exhaust the 2-request budget without a third dispat
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
   assert.equal(f.requests.length, 2); assert.equal(f.sleeps.length, 1);
 });
-test('a dataset that ends at rank 20 fails unavailable because no boundary confirmed the block', async () => {
-  const f = fake(serve(seq(1, 20), 20));
+test('a dataset that ends at rank 50 fails unavailable because no boundary confirmed the block', async () => {
+  const f = fake(serve(seq(1, 50), 50));
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
   assert.equal(f.requests.length, 1);
 });

@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseInsights } from '../src/ui/cli/insights-args.js';
 
-test('insights once accepts only pretty and refresh, in any order and without duplicates', () => {
+test('insights once accepts pretty, refresh, and full in any order without duplicates', () => {
   assert.deepEqual(parseInsights(['once']), { kind: 'insights', operation: 'once' });
   assert.deepEqual(parseInsights(['once', '--pretty']), { kind: 'insights', operation: 'once', pretty: true });
-  assert.deepEqual(parseInsights(['once', '--refresh', '--pretty']),
-    { kind: 'insights', operation: 'once', pretty: true, refresh: true });
+  assert.deepEqual(parseInsights(['once', '--full']), { kind: 'insights', operation: 'once', full: true });
+  assert.deepEqual(parseInsights(['once', '--refresh', '--pretty', '--full']),
+    { kind: 'insights', operation: 'once', pretty: true, refresh: true, full: true });
 });
 
 test('insights help wins over any other argument', () => {

@@ -1,6 +1,7 @@
 import type { InsightRecord } from './record.js';
 import { isObject, isText, isIsoTimestamp, isFiniteNumber, unknownFields,
   type ParseRowResult } from './parse-utils.js';
+import { filterCognitionTop50 } from './cognition-top50.js';
 
 const dataUrl = 'https://cognition.com/data/frontiercode-leaderboard/data.json';
 const revisions = ['v1', 'v1_1'] as const;
@@ -67,5 +68,5 @@ export function parseCognitionResponse(payload: unknown, observedAt: string): re
       }
     }
   }
-  return results;
+  return filterCognitionTop50(results);
 }

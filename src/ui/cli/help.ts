@@ -1,15 +1,16 @@
 import { INSIGHTS_HELP } from "./insights-help.js";
 
-export type Subcommand = "once" | "zen-free" | "detect" | "insights";
+export type Subcommand = "once" | "zen-free" | "detect" | "insights" | "trend";
 
 export const USAGE = [
-  "usage: yoroi <once|zen-free|detect|insights> [--pretty] [--help] [--version]",
+  "usage: yoroi <once|zen-free|detect|insights|trend> [--pretty] [--help] [--version]",
   "",
   "examples:",
   "  yoroi once --pretty",
   "  yoroi zen-free",
   "  yoroi detect --once",
   "  yoroi insights once",
+  "  yoroi trend --since 7d",
   "",
   "providers: defaults to all 5 (ollama-pro,opencode-go,codex,agy,claude)",
   "  select: YOROI_PROVIDERS=<comma-separated-list>",
@@ -60,10 +61,30 @@ export const DETECT_HELP = [
   "  -h, --help     show help for detect subcommand",
 ].join("\n");
 
+export const TREND_HELP = [
+  "usage: yoroi trend [--provider <id>] [--window <id>] [--since 24h|7d|30d] [--pretty] [--json] [-h|--help]",
+  "",
+  "shows usage trends and change rates based on observation history.",
+  "",
+  "options:",
+  "  --provider <id>     filter by provider id",
+  "  --window <id>       filter by window id",
+  "  --since 24h|7d|30d  time window to query (defaults to 24h and 7d)",
+  "  --pretty            render table view with sparkline",
+  "  --json              output JSONL format (one line per series)",
+  "  -h, --help          show help for trend subcommand",
+  "",
+  "examples:",
+  "  yoroi trend",
+  "  yoroi trend --provider claude --since 7d",
+  "  yoroi trend --pretty",
+].join("\n");
+
 export function getHelpText(subcommand?: Subcommand): string {
   if (subcommand === "once") return ONCE_HELP;
   if (subcommand === "zen-free") return ZEN_FREE_HELP;
   if (subcommand === "detect") return DETECT_HELP;
   if (subcommand === "insights") return INSIGHTS_HELP;
+  if (subcommand === "trend") return TREND_HELP;
   return USAGE;
 }

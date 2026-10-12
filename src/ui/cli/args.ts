@@ -2,6 +2,7 @@ import type { Subcommand } from "./help.js";
 import { parseDetect, type DetectParsedArgs } from "./detect-args.js";
 import { parseInsights, type InsightsParsedArgs } from "./insights-args.js";
 import { parseZenFree, type ZenFreeParsedArgs } from "./zen-free-args.js";
+import { parseTrend, type TrendParsedArgs } from "./trend-args.js";
 export type ParsedArgs =
   | { readonly kind: "help"; readonly subcommand?: Subcommand }
   | { readonly kind: "version" }
@@ -9,6 +10,7 @@ export type ParsedArgs =
   | ZenFreeParsedArgs
   | Exclude<DetectParsedArgs, { kind: "help" | "error" }>
   | Exclude<InsightsParsedArgs, { kind: "help" | "error" }>
+  | TrendParsedArgs
   | { readonly kind: "error"; readonly message: string };
 function parseOnce(args: readonly string[]): ParsedArgs {
   if (args.includes("--help") || args.includes("-h")) return { kind: "help", subcommand: "once" };
@@ -32,6 +34,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   if (command === "zen-free") return parseZenFree(argv.slice(1));
   if (command === "detect") return parseDetect(argv.slice(1));
   if (command === "insights") return parseInsights(argv.slice(1));
+  if (command === "trend") return parseTrend(argv.slice(1));
   if (command === "watch") return { kind: "error", message: "watch command removed; use yoroi once" };
   return { kind: "error", message: `unknown command: ${command}` };
 }

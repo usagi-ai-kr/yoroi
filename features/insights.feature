@@ -1,8 +1,15 @@
 Feature: yoroi insights letter CLI
-  Scenario: insights once prints the internal letter to stdout only
+  Scenario: insights once prints the compact top10 letter to stdout only
     When I run insights once with a synthetic Arena source
     Then the insights exit code is 0
-    And the insights stdout contains "AI 인사이트 레터"
+    And the insights stdout contains "오케스트레이터 Top10"
+    And the insights stdout contains "출처:"
+    And the insights stderr is empty
+
+  Scenario: insights once --full keeps the detailed letter
+    When I run insights once --full with a synthetic Arena source
+    Then the insights exit code is 0
+    And the insights stdout contains "[AI 인사이트 레터]"
     And the insights stdout contains "발행일(KST): 2026-10-09"
     And the insights stderr is empty
 

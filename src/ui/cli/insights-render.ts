@@ -44,9 +44,23 @@ function trend(row: Evidence): string {
     (value.initialLoad ? ' / 초기 적재: 이력 부족' : '') + ' / ' + limited(value.points)
       .map(point => `${clean(point.date, 32)}:${point.value === null ? '결측' : number(point.value)}`).join(', ');
 }
-/** Pure channel separation: caller writes stdout/stderr and applies exitCode. Never prints itself. */
-export function renderInsights(result: InsightLetterView, pretty = false): { stdout: string; stderr: string; exitCode: 0 | 1 } {
-  if (!result.ok) return { stdout: '', stderr: `인사이트: 전체 소스 실패 (${limited(result.failedSources).map(label).join(', ')})\n`, exitCode: 1 };
+export interface RenderInsightsOptions { readonly pretty?: boolean; readonly full?: boolean;
+  /** Composition-injected compact renderer (ui must not import the insights core directly). */
+  readonly compact?: (letter: InsightLetterView) => string }
+const failure = (result: Extract<InsightLetterView, { ok: false }>) =>
+  ({ stdout: '', stderr: `인사이트: 전체 소스 실패 (${limited(result.failedSources).map(label).join(', ')})\n`, exitCode: 1 as const });
+/** Default/--pretty: compact top-10 letter; --full (or legacy boolean pretty): detailed letter. */
+export function renderInsights(result: InsightLetterView,
+  options: boolean | RenderInsightsOptions = {}): { stdout: string; stderr: string; exitCode: 0 | 1 } {
+  const opts: RenderInsightsOptions = typeof options === 'boolean' ? { pretty: options, full: true } : options;
+  if (!result.ok) return failure(result);
+  if (opts.full !== true && opts.compact !== undefined) {
+    const diagnostics = result.sections.flatMap(section => section.kind === 'failures' ? section.entries : [])
+      .map(entry => `인사이트: ${label(entry.source)}: ${clean(entry.reason)}`).slice(0, 20);
+    return { stdout: `${opts.compact(result)}\n`,
+      stderr: diagnostics.length ? diagnostics.join('\n') + '\n' : '', exitCode: 0 };
+  }
+  const pretty = Boolean(opts.pretty);
   const lines: string[] = [], diagnostics: string[] = [];
   const heading = (title: string): void => { lines.push(pretty ? `【${clean(title)}】` : `[${clean(title)}]`); };
   for (const section of result.sections.slice(0, 12)) {

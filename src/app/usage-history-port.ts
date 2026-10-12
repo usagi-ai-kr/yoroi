@@ -26,6 +26,11 @@ export interface UsageHistoryRetention {
    * newest first. Never a global cap: it would evict slowly updated windows entirely. */
   readonly maxSamples: number;
 }
+export interface UsageObservationFilter {
+  readonly sinceIso?: string;
+  readonly provider?: ProviderId;
+  readonly windowId?: string;
+}
 /** All methods are synchronous and must never query an external provider. */
 export interface UsageHistory {
   /** Call only after actual successful collection, never a cache hit.
@@ -35,6 +40,8 @@ export interface UsageHistory {
   /** Match all key fields exactly; return latest and previous real samples.
    * Cache hits compute the same pair, not current minus itself. */
   latestTwo(key: UsageHistoryKey): UsageObservationPair;
+  /** Query observations ordered chronologically (ASC) per series. */
+  queryObservations?(filter?: UsageObservationFilter): readonly UsageObservation[];
   /** Prune history only, independent of cache TTL; return rows removed. */
   prune(retention: UsageHistoryRetention): number;
   /** Release owned resources only; borrowed shared connections remain open. */

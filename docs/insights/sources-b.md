@@ -40,5 +40,8 @@ style control 기본값. 웹 페이지 스크래핑은 약관 금지이므로 HF
 - Vals AI 점수는 비공개 테스트셋 기반이므로 외부 재현이 불가하고, Arena 점수는 공개 투표 집계다.
 - 두 소스 모두 공식 수집 경로 내에서만 일 1회 조회하고 원문 대량 저장은 하지 않는다.
 
-## 2026-10-11 최신 override — Arena overall 상위 20
-- Arena coding 카테고리 탐색(`/statistics`+공식 `where` `/filter` 2요청)은 결론 없이 종료(halt)됐고, 수집은 overall rank≤20(20위 동점 포함, 첫 쪽 경계 확인 목표, maxRequests2·재시도 포함)으로 대체됐다. 600행 상한 결정은 불필요해졌다(arena-transport.md §10).
+## 2026-10-12 최신 override — Arena 및 전 소스 상위 50 (사용자 승인, [top50-decision.md](top50-decision.md))
+- Arena coding 탐색 halt 및 구 상위 20 결정은 역사로 보존하며, 전 소스 수집·순위창이 상위 50(rank<=50)으로 갱신됐다.
+- Arena: overall rank≤50(동점 포함, 첫 100행 안 경계 확인, 2쪽 미조회 unavailable, maxRequests 2 유지), requestScope `hf-rows:text:latest:overall-top50`. 600행 상한 불필요(역사 보존).
+- 연계 스코프: OpenRouter `rankings-daily:day:top50`, Cognition `frontiercode:data-json:top50`, AA `coding-intel-top50`. 전환일 비교는 '이전 기록 없음'.
+- 레터: 기본 출력은 Top 10 압축 레터(오케스트레이터·워커 Top10, Arena/OR 참고 순위 표기), `--full` 플래그 지정 시 전체 순위 상세 레터를 출력한다.

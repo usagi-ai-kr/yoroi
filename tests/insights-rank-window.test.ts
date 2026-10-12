@@ -21,10 +21,10 @@ const snapshot = (pairs: readonly (readonly [string, number])[], date: string, w
 
 test('window of top 20: disappeared model indicates exit from top 20 window (rank > 20)', () => {
   const priorPairs = Array.from({ length: 20 }, (_, i) => [`M${String(i + 1).padStart(2, '0')}`, 100 - i] as const);
-  const priorSnap = snapshot(priorPairs, '2026-10-09', 20);
+  const priorSnap = snapshot(priorPairs, '2026-10-09', 50);
 
   const currPairs = [...priorPairs.slice(0, 19), ['NewM', 80.5] as const];
-  const currSnap = snapshot(currPairs, '2026-10-10', 20);
+  const currSnap = snapshot(currPairs, '2026-10-10', 50);
 
   const result = computeInsightRankChanges(currSnap, priorSnap, 'descending');
   assert.ok(result.comparable);
@@ -43,8 +43,8 @@ test('window of top 20: disappeared model indicates exit from top 20 window (ran
 });
 
 test('summarizeLetter reflects top window entry and exit notes', () => {
-  const priorSnap = snapshot([['M1', 100], ['M2', 90]], '2026-10-09', 20);
-  const currSnap = snapshot([['M1', 100], ['M3', 95]], '2026-10-10', 20);
+  const priorSnap = snapshot([['M1', 100], ['M2', 90]], '2026-10-09', 50);
+  const currSnap = snapshot([['M1', 100], ['M3', 95]], '2026-10-10', 50);
   const result = computeInsightRankChanges(currSnap, priorSnap, 'descending');
   assert.ok(result.comparable);
 
@@ -53,9 +53,9 @@ test('summarizeLetter reflects top window entry and exit notes', () => {
   const summary = summarizeLetter([], [group]);
 
   const m2Summary = summary.find(s => s.text.includes('M2'));
-  assert.ok(m2Summary?.text.includes('상위 20 이탈'));
+  assert.ok(m2Summary?.text.includes('상위 50 이탈'));
   const m3Summary = summary.find(s => s.text.includes('M3'));
-  assert.ok(m3Summary?.text.includes('상위 20 진입'));
+  assert.ok(m3Summary?.text.includes('상위 50 진입'));
 });
 
 test('letter limitations include top 20 window notes explicitly', () => {
@@ -72,10 +72,10 @@ test('letter limitations include top 20 window notes explicitly', () => {
 
   assert.ok(letter.ok);
   const limitations = letter.sections.find(s => s.kind === 'limitations')!;
-  assert.ok(limitations.items.some(it => it.includes('상위 20(Arena overall, AA 코딩 지수)만')));
+  assert.ok(limitations.items.some(it => it.includes('상위 50(Arena overall, AA intelligence·coding 지수)만')));
 });
 
-test('run-once buildRanks synthesizes top 20 labels in summary', () => {
+test('run-once buildRanks synthesizes top 50 labels in summary', () => {
   const store = new MemoryInsightHistory();
   const k = { source: 'arena' as const, publicationDate: '2026-10-09', requestScope: 'overall', schemaVersion: 'v1' };
   store.saveDaily(k, { ok: true, source: 'arena', records: [baseRecord('M1', 100, '2026-10-09'), baseRecord('M2', 90, '2026-10-09')], rejectedRows: 0 });
@@ -85,6 +85,6 @@ test('run-once buildRanks synthesizes top 20 labels in summary', () => {
   const letter = buildInsightLetter([{ source: 'arena', ok: true, measurements: [m], ranks }], '2026-10-11T12:00:00Z');
   assert.ok(letter.ok);
   const summary = letter.sections.find(s => s.kind === 'summary')!;
-  assert.ok(summary.items.some(it => it.text.includes('M2: 상위 20 이탈')));
-  assert.ok(summary.items.some(it => it.text.includes('M3: 상위 20 진입')));
+  assert.ok(summary.items.some(it => it.text.includes('M2: 상위 50 이탈')));
+  assert.ok(summary.items.some(it => it.text.includes('M3: 상위 50 진입')));
 });

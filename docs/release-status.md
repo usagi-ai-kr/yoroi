@@ -22,12 +22,23 @@
 - 검증 기준은 OpenRouter와 Cognition 2소스다(유효 metric 각 1,530건, Cognition 탈락 20행 부분 수집). 네 소스 E2E 완전 통과는 주장하지 않는다.
 - Arena·Artificial Analysis는 단일 요청 예산(`maxRequests=1`)에서 페이지 완전성 실패였다. 4소스 코드 지원은 유지하고 [#92](https://github.com/qus0in/yoroi/issues/92)(Arena)·[#93](https://github.com/qus0in/yoroi/issues/93)(AA)로 분리했다.
 - 완료 기준 5·6(Hermes 매일 실행·전달 검증, 운영 문서화)은 [#94](https://github.com/qus0in/yoroi/issues/94)로 분리하고 [#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93)과 함께 [0.5.1](https://github.com/qus0in/yoroi/milestone/11)에 배정했다(2026-10-11 사용자 결정).
-## 0.5.1 준비 상태 (2026-10-11)
+## 0.5.1 머지 및 발행 완료 (2026-10-11)
 
-- [#92](https://github.com/qus0in/yoroi/issues/92)(Arena top20 다중페이지)·[#93](https://github.com/qus0in/yoroi/issues/93)(AA top20 다중페이지) 구현 및 검증 완료.
-- [#96](https://github.com/qus0in/yoroi/issues/96)(Zen Free 리셋 시각·남은 시간 표시) 구현 및 검증 완료.
-- [#97](https://github.com/qus0in/yoroi/issues/97)(OpenCode Zen Free 락 복구) 구현 완료. 플러그인은 main 머지 후 재설치 및 OpenCode 재시작 필요.
-- [#94](https://github.com/qus0in/yoroi/issues/94)(Hermes 매일 전달·운영 문서화)는 0.6.0 마일스톤으로 이동.
+- PR [#98](https://github.com/qus0in/yoroi/pull/98) 병합 커밋 `2536baa69f88647a9ef75704bb4ee3729e248b11`(main).
+- main CI [run 38141050373](https://github.com/qus0in/yoroi/actions/runs/38141050373) success.
+- [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행 완료 (tag `v0.5.1`).
+- 전역 CLI 0.5.1 동기화 완료 (`yoroi --version` 0.5.1 일치).
+- OpenCode 플러그인 재설치 installed 완료 (운영 반영은 사용자 OpenCode 재시작 대기).
+- [#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93)·[#96](https://github.com/qus0in/yoroi/issues/96)·[#97](https://github.com/qus0in/yoroi/issues/97) close 및 [Milestone 0.5.1](https://github.com/qus0in/yoroi/milestone/11) close 완료.
+- 0.6.0 착수: [#94](https://github.com/qus0in/yoroi/issues/94) 레터 이슈 발행, [#84](https://github.com/qus0in/yoroi/issues/84) trend 착수.
+
+## 0.6.0 준비 상태 (2026-10-12)
+
+- [#84](https://github.com/qus0in/yoroi/issues/84) trend: 24h·7d 병행 사용량 추세 보기 구현 완료.
+- Top50 수집·Top10 압축 레터 체계 구축 (`--full` 상세 플래그 유지).
+- [#94](https://github.com/qus0in/yoroi/issues/94) Hermes 레터: 첫 수동 발행 [#99](https://github.com/qus0in/yoroi/issues/99), 크론 첫 자동 발행 [#100](https://github.com/qus0in/yoroi/issues/100), Top10 갱신본 반영([#100](https://github.com/qus0in/yoroi/issues/100) 댓글 2026-10-12 10:31 KST).
+- 크론 스케줄 등록 완료: `yoroi-letter-daily` (일간 레터), `yoroi-weekly-report` (주간 보고).
+- [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) Zen Free 락 해제 실관측 (2026-10-12 00:22Z) 확인으로 close 예정.
 
 ## 버전 이력 요약
 
@@ -37,4 +48,5 @@
 - **0.3.1** (2026-10-11): Zen Free 로드 표시([#77](https://github.com/qus0in/yoroi/issues/77)), 전역 0.3.1 동기화, [v0.3.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.3.1) 발행 완료. 실관측은 [#88](https://github.com/qus0in/yoroi/issues/88)로 분리.
 - **0.4.0** (2026-10-11): 내장 10분 주기 감지기(#89) PR #91 머지 완료, 전역 0.4.0 동기화 완료. 외부 작업으로 [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0) 발행 완료 관측.
 - **0.5.0** (2026-10-11): 크롤러 2소스 검증(#70) PR #95 머지 완료, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행 완료, 전역 0.5.0 동기화 완료.
-- **0.5.1** (진행 중): #92·#93·#96·#97 구현 완료, #94 0.6.0 이동, dev → main PR 준비 중.
+- **0.5.1** (2026-10-11): Arena·AA top20(#92·#93), Zen 리셋/남은시간(#96), OpenCode 락 복구(#97) PR #98 머지 완료, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행 완료, 전역 0.5.1 동기화 완료.
+- **0.6.0** (준비 중): trend 24h·7d(#84), Top50 수집·Top10 압축 레터(#94, #99·#100), 크론 자동 발행, #77·#88 해제 실관측 반영.

@@ -1,20 +1,20 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { UsageHistory, UsageHistoryContext, UsageHistoryKey, UsageHistoryRetention,
-  UsageObservation, UsageObservationPair } from '../../app/usage-history-port.js';
+  UsageObservation, UsageObservationFilter, UsageObservationPair } from '../../app/usage-history-port.js';
 import type { ProviderId, UsageSnapshot, UsageWindow } from '../../domain/usage.js';
 import { resolveDbPath } from './data-dir.js';
 import { isBusy, openUsageDatabase, SAFE_ID } from './usage-cache-store.js';
+import { loadSqlite } from './database.js';
 
 interface Row {
-  provider: string; account_scope: string; contract_version: string; window_id: string; unit: string;
-  observed_at: string; period_start: string | null; reset_at: string | null;
+  provider: string; account_scope: string; contract_version: string; window_id: string; unit: string; observed_at: string;
+  period_start: string | null; reset_at: string | null;
   used: number | null; remaining: number | null; limit_value: number | null; percent: number | null;
 }
 /** observed_at는 UTC ISO(ms)로 정규화해 저장하므로 문자열 순서가 시간 순서와 같다. */
 function canonical(value: string): string {
   const time = Date.parse(value);
-  if (!Number.isFinite(time)) throw new RangeError('Invalid observation time');
-  return new Date(time).toISOString();
+  if (!Number.isFinite(time)) throw new RangeError('Invalid observation time'); return new Date(time).toISOString();
 }
 function assertIdentity(value: UsageHistoryContext): void {
   if (!SAFE_ID.test(value.scope) || !SAFE_ID.test(value.contractVersion)) throw new RangeError('Invalid usage history identity');
@@ -58,6 +58,16 @@ export class SqliteUsageHistory implements UsageHistory {
     } catch (error) { if (isBusy(error)) return []; throw error; }
   }
 
+  queryObservations(filter?: UsageObservationFilter): readonly UsageObservation[] {
+    const clauses: string[] = [], params: (string | number | null)[] = [];
+    if (filter?.sinceIso) { clauses.push('observed_at >= ?'); params.push(canonical(filter.sinceIso)); }
+    if (filter?.provider) { clauses.push('provider = ?'); params.push(filter.provider); }
+    if (filter?.windowId) { clauses.push('window_id = ?'); params.push(filter.windowId); }
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const sql = `SELECT * FROM observation_samples ${where} ORDER BY provider, account_scope, contract_version, window_id, unit, observed_at ASC`;
+    return (this.db.prepare(sql).all(...params) as unknown as Row[]).map(toObservation);
+  }
+
   prune(retention: UsageHistoryRetention): number {
     if (!Number.isSafeInteger(retention.maxSamples) || retention.maxSamples < 1) throw new RangeError('Invalid maxSamples');
     const before = canonical(retention.before);
@@ -84,3 +94,6 @@ export class SqliteUsageHistory implements UsageHistory {
 export function openUsageHistory(env: NodeJS.ProcessEnv): UsageHistory {
   return new SqliteUsageHistory(openUsageDatabase(resolveDbPath(env)), true);
 }
+/** `trend` 전용 읽기 전용 연결: WAL·마이그레이션·prune·chmod 없이 열고, 파일이 없으면 throw한다. */
+export const openUsageHistoryReadonly = (env: NodeJS.ProcessEnv): UsageHistory =>
+  new SqliteUsageHistory(new (loadSqlite().DatabaseSync)(resolveDbPath(env), { readOnly: true }), true);

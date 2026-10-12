@@ -5,11 +5,11 @@ import { fetchJsonWithPolicy, type PolicyFetchOptions } from './fetch-json.js';
 import { isIsoDate, isObject, type ParseRowResult } from './parse-utils.js';
 import type { RequestPolicy } from './request-policy.js';
 
-/** Top-N Arena design (2026-10-11): collect only the overall block up to rank 20 (ties included) and stop
- * as soon as the same page shows a rank above 20 or the next category. One request is the normal case. */
+/** Top-N Arena design (2026-10-11): collect only the overall block up to rank 50 (ties included) and stop
+ * as soon as the same page shows a rank above 50 or the next category. One request is the normal case. */
 export const ARENA_ROWS_URL = 'https://datasets-server.huggingface.co/rows';
 export const ARENA_DATASET = 'lmarena-ai/leaderboard-dataset';
-export const ARENA_TOP_N = 20;
+export const ARENA_TOP_N = 50;
 export const ARENA_LIMITS = Object.freeze({ config: 'text', split: 'latest', category: 'overall', pageRows: 100,
   topN: ARENA_TOP_N, maxPageChars: 256 * 1024, pageTimeoutMs: 20_000, policy: { maxRequests: 2, budgetMs: 60_000 } });
 
@@ -57,7 +57,10 @@ export async function fetchArenaRows(client: HttpClient, options: ArenaFetchOpti
       if (lastRank > limits.topN) { boundary = 'rank-above-top'; done = true; continue; }
       rows.push(row);
     }
-    if (!done && (offset + limits.pageRows >= total || page.rows.length === 0)) done = true;
+    /** The user contract requires the top-N boundary inside the first 100-row page: never fetch another page
+     * to complete the ranking (a cut-off top 50 must not be reported as success). maxRequests 2 = retry only. */
+    if (boundary === undefined) fail('unavailable');
+    done = true;
   }
   if (!rows.length) fail('parse');
   if (!boundary) fail('unavailable');

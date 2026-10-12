@@ -23,22 +23,22 @@ function fake(respond: (request: HttpRequest, n: number) => HttpResponse | Error
 }
 const code = (want: string) => (error: unknown) => error instanceof SourceError && error.code === want;
 
-test('one page: collect ranks 1..20 and stop at the same page rank-21 boundary', async () => {
+test('one page: collect ranks 1..50 and stop at the same page rank-51 boundary', async () => {
   const f = fake(serve(seq(1, 100), 500));
   const result = await fetchArenaRows(f.client, f.options);
   assert.deepEqual([result.rows.length, result.requests, f.requests.length, result.boundary, result.totalRows, result.publishDate],
-    [20, 1, 1, 'rank-above-top', 500, '2026-10-08']);
+    [50, 1, 1, 'rank-above-top', 500, '2026-10-08']);
   const parsed = await readArena(fake(serve(seq(1, 100))).client, '2026-10-11T00:00:00Z');
-  assert.equal(parsed.length, 20); assert.ok(parsed.every(row => row.ok && row.records.length === 6));
+  assert.equal(parsed.length, 50); assert.ok(parsed.every(row => row.ok && row.records.length === 6));
   const url = new URL(f.requests[0]!.url);
   assert.deepEqual([f.requests[0]!.method, f.requests[0]!.headers, url.searchParams.get('config'), url.searchParams.get('split'), url.searchParams.get('length')],
     ['GET', undefined, 'text', 'latest', '100']);
 });
-test('ties at rank 20 are all collected; the following rank 22 still confirms the boundary', async () => {
-  const all = [...seq(1, 19), rowFor(20), rowFor(20), ...seq(22, 100)];
+test('ties at rank 50 are all collected; the following rank 51 still confirms the boundary', async () => {
+  const all = [...seq(1, 49), rowFor(50), rowFor(50), ...seq(51, 100)];
   const f = fake(serve(all));
   const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, result.requests, result.boundary], [21, 1, 'rank-above-top']);
+  assert.deepEqual([result.rows.length, result.requests, result.boundary], [51, 1, 'rank-above-top']);
 });
 test('a non-overall row ends the overall block and confirms the boundary with fewer than 20 rows', async () => {
   const all = [...seq(1, 5), rowFor(1, 'coding'), rowFor(2, 'coding')];
@@ -56,10 +56,10 @@ test('rank inversion or an invalid rank fails the page as unavailable', async ()
   }
 });
 test('a first row above the top N leaves no overall rows and fails as parse', async () => {
-  const f = fake(serve(seq(21, 120)));
+  const f = fake(serve(seq(51, 150)));
   await assert.rejects(fetchArenaRows(f.client, f.options), code('parse'));
 });
-test('no boundary inside the page ends unavailable after the 2-request cap, retry counted', async () => {
+test('no boundary inside the first page ends unavailable; the retry budget is used only for the 429', async () => {
   const tiePage = serve(ranks(Array.from({ length: 100 }, () => 1)), 10_974);
   const f = fake((request, n) => n === 1 ? { status: 429, headers: { 'Retry-After': '2' }, body: '{}' } : tiePage(request));
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
@@ -69,20 +69,20 @@ test('one 429 retry is allowed inside the budget and then the single page succee
   const page = serve(seq(1, 100));
   const f = fake((request, n) => n === 1 ? { status: 429, headers: { 'Retry-After': '1' }, body: '{}' } : page(request));
   const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, result.requests, f.sleeps], [20, 2, [1000]]);
+  assert.deepEqual([result.rows.length, result.requests, f.sleeps], [50, 2, [1000]]);
 });
-test('the whole received block is rank-validated after the boundary; nothing beyond rank 20 is collected', async () => {
-  const f = fake(serve([...seq(1, 20), ...seq(21, 100)]));
+test('the whole received block is rank-validated after the boundary; nothing beyond rank 50 is collected', async () => {
+  const f = fake(serve([...seq(1, 50), ...seq(51, 100)]));
   const result = await fetchArenaRows(f.client, f.options);
-  assert.deepEqual([result.rows.length, result.requests, result.boundary], [20, 1, 'rank-above-top']);
+  assert.deepEqual([result.rows.length, result.requests, result.boundary], [50, 1, 'rank-above-top']);
 });
 test('an inversion after the boundary row fails as unavailable without another request', async () => {
-  const f = fake(serve([...seq(1, 20), rowFor(21), rowFor(20), rowFor(22)]));
+  const f = fake(serve([...seq(1, 50), rowFor(51), rowFor(50), rowFor(52)]));
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
   assert.equal(f.requests.length, 1);
 });
 test('an invalid rank after the boundary row fails as unavailable without another request', async () => {
-  const f = fake(serve([...seq(1, 20), rowFor(21), rowFor('x')]));
+  const f = fake(serve([...seq(1, 50), rowFor(51), rowFor('x')]));
   await assert.rejects(fetchArenaRows(f.client, f.options), code('unavailable'));
   assert.equal(f.requests.length, 1);
 });

@@ -8,10 +8,14 @@ export interface InsightsRunView {
   readonly letter: InsightLetterView;
   /** `memory` means the database could not be opened: the letter still works without history. */
   readonly storage: "sqlite" | "memory";
+  /** Composition-built compact top-10 text (uncapped records); used for the default/pretty output. */
+  readonly compact?: string;
 }
 export interface InsightsCommandDeps {
   readonly run: (options: { readonly refresh?: boolean; readonly signal?: AbortSignal }) => Promise<InsightsRunView>;
   readonly subscribeSignals: (handler: () => void) => () => void;
+  /** Optional compact top-10 renderer injected by the composition layer (ui keeps no insights import). */
+  readonly renderCompact?: (letter: InsightLetterView) => string;
 }
 
 /** stdout carries only the letter (contract 1-A); diagnostics go to stderr and never change the exit code.
@@ -32,7 +36,9 @@ export async function runInsightsCommand(parsed: Extract<InsightsParsedArgs, { k
       env.stderr("insights: storage unavailable; history reuse and comparisons are disabled\n");
     }
     if (controller.signal.aborted) env.stderr("insights: cancelled; partial results follow if available\n");
-    const rendered = renderInsights(view.letter, Boolean(parsed.pretty));
+    const compact = view.compact !== undefined ? () => view.compact! : deps.renderCompact;
+    const rendered = renderInsights(view.letter, { pretty: Boolean(parsed.pretty), full: Boolean(parsed.full),
+      ...(compact && { compact }) });
     if (rendered.stderr) env.stderr(rendered.stderr);
     if (rendered.stdout) env.stdout(rendered.stdout);
     return rendered.exitCode;

@@ -51,7 +51,7 @@ test("top-level help preserves exit 0, yoroi examples, and no pnpm string", asyn
     assert.equal(await cli.run([flag]), 0);
     assert.equal(stderr.length, 0);
     const text = stdout.join("\n");
-    assert.match(text, /usage: yoroi <once\|zen-free\|detect\|insights>/);
+    assert.match(text, /usage: yoroi <once\|zen-free\|detect\|insights\|trend>/);
     assert.match(text, /yoroi detect --once/);
     assert.match(text, /yoroi insights once/);
     assert.match(text, /yoroi once --pretty/);

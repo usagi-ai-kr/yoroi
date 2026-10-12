@@ -44,6 +44,8 @@
 
 ## 배운 점 (2026-10-10)
 
+- 상태 문서 갱신 패킷은 버전 줄을 옛 값으로 두거나 재번호·이동 이력을 지우는 일이 반복됐다(2026-10-11·12). root는 머지 전 버전 줄과 삭제된 줄(`git diff | grep '^-'`)을 직접 대조한다.
+
 - 작업 중 pane은 `herdr agent read --source visible`만 통한다(recent 읽기는 실패). 전송 전·진행 중 확인도 visible을 쓴다.
 - zsh에서 `set -- $x` 반복 전송은 단어 분리가 안 돼 빈 프롬프트가 된다. 전송 전에 인자 분리·내용을 검증한다.
 - 루프 감시는 스킬 스크립트로 일반화했다([watch_workers.sh](../.agents/skills/agent-coordination/scripts/watch_workers.sh)).

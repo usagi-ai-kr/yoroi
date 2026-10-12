@@ -9,6 +9,7 @@ import { cacheSources, openUsagePersistence, type UsagePersistence } from './com
 import { dataEnvironment } from './composition/data-env.js';
 import { runDetectCli, type DetectCliOptions } from './composition/detect-cli.js';
 import { runInsightsCli, type InsightsCliOptions } from './composition/insights-cli.js';
+import { runTrendCli } from './composition/trend-cli.js';
 import { CachedSource } from './app/cached-source.js';
 import type { UsageClock } from './app/usage-cache-port.js';
 import type { ZenLockStore } from './app/zen-lock-port.js';
@@ -45,27 +46,25 @@ function prunePersistence(persistence: UsagePersistence, now: number): void {
 }
 
 export function compose(options: CompositionOptions = {}): CliProgram {
-  const env = options.output ?? nodeEnvironment;
-  const subscribeSignals = options.subscribeSignals ?? processSignals;
+  const env = options.output ?? nodeEnvironment, subscribeSignals = options.subscribeSignals ?? processSignals;
   return { async run(argv) {
     const parsed = parseArgs(argv);
     if (parsed.kind === 'help' || parsed.kind === 'version' || parsed.kind === 'error') {
       return createCli({ env, sources: [], subscribeSignals, version: metadata.version }).run(argv);
     }
     const dataEnv = dataEnvironment(options.configEnv, options.dataDir);
+    if (parsed.kind === 'trend') return runTrendCli(parsed, { env, dataEnv });
     if (parsed.kind === 'detect') return runDetectCli(parsed, { env, subscribeSignals, configEnv: options.configEnv ?? process.env, dataEnv, ...(options.detect && { options: options.detect }) });
     if (parsed.kind === 'insights') return runInsightsCli(parsed, { env, subscribeSignals, configEnv: options.configEnv ?? process.env, dataEnv, ...(options.insights && { options: options.insights }) });
     if (parsed.kind === 'zen-free') {
-      if (parsed.operation === 'status' && !options.zenLockStore &&
-        !existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME))) {
+      if (parsed.operation === 'status' && !options.zenLockStore && !existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME))) {
         const store = new MemoryZenLockStore();
         return runWithStore(createCli({ env, sources: [], zenLockStore: store, subscribeSignals }), argv, store, true);
       }
       let store: ZenLockStore;
       try { store = options.zenLockStore ?? openZenLockStore(dataEnv); }
       catch { env.stderr('zen-free storage error\n'); return 1; }
-      const cli = createCli({ env, sources: [], zenLockStore: store, subscribeSignals });
-      return runWithStore(cli, argv, store, true);
+      return runWithStore(createCli({ env, sources: [], zenLockStore: store, subscribeSignals }), argv, store, true);
     }
     let config;
     try { config = loadConfig(options.configEnv ?? process.env); }
@@ -80,11 +79,9 @@ export function compose(options: CompositionOptions = {}): CliProgram {
       persistence = options.openUsagePersistence ? options.openUsagePersistence() : openUsagePersistence(dataEnv);
       if (persistence) sources = cacheSources(sources, config, configEnv, persistence, Boolean(parsed.refresh), options.clock);
     } catch { /* cache opening failures preserve provider collection */ }
-    let store: ZenLockStore | undefined = options.zenLockStore;
-    let shouldClose = Boolean(store);
+    let store: ZenLockStore | undefined = options.zenLockStore, shouldClose = Boolean(store);
     if (!store) {
-      const dbExists = existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME));
-      if (dbExists) {
+      if (existsSync(join(resolveDataDir(dataEnv), DB_FILE_NAME))) {
         try { store = openZenLockStore(dataEnv); shouldClose = true; } catch { /* keep provider output */ }
       } else store = new MemoryZenLockStore();
     }

@@ -33,6 +33,7 @@ async function run(argv: string[]): Promise<void> {
   }).run(argv);
 }
 When('I run insights once with a synthetic Arena source', () => run(['insights', 'once']));
+When('I run insights once --full with a synthetic Arena source', () => run(['insights', 'once', '--full']));
 When('I run insights once twice on the same KST day', async () => { await run(['insights', 'once']); await run(['insights', 'once']); });
 When('I run insights once with a failing source', () => { world.failing = true; return run(['insights', 'once']); });
 When('I run insights once --json', () => run(['insights', 'once', '--json']));

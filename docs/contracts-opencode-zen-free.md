@@ -1,6 +1,6 @@
 # OpenCode Zen Free 플러그인 계약
 
-확인일: 2026-10-10. [#73](https://github.com/qus0in/yoroi/issues/73)·[상위 #72](https://github.com/qus0in/yoroi/issues/72)를 `gh issue view`로 읽고 조사했다. 모델 요청·한도 유발 시험·사용량 조회·전역 설정 수정 없이 정적 근거만 확인했다. 실제 이벤트 수신은 **미확인**이다.
+확인일: 2026-10-10. [#73](https://github.com/qus0in/yoroi/issues/73)·[상위 #72](https://github.com/qus0in/yoroi/issues/72)를 `gh issue view`로 읽고 조사했다. 모델 요청·한도 유발 시험·사용량 조회·전역 설정 수정 없이 정적 근거만 확인했다. 실제 이벤트 수신은 **관측됨(2026-10-12, zen-free-observations.md)**(exceeded/cleared).
 
 ## 버전과 근거
 
@@ -35,13 +35,13 @@
 - 권장 조건: 연결한 공급자 `opencode` + `error.name === "APIError"` + 무료 초과 전용 표식. HTTP 429나 `isRetryable`만으로 판별하지 않는다.
 - 강한 표식: `error.data.responseBody`를 제한된 크기로 JSON 해석하여 `error.type === "FreeUsageLimitError"` 확인. 원문은 저장·전달하지 않는다.
 - 서버 소스는 이 오류를 HTTP **429**, `{ type: "error", error: { type, message }, metadata }`로 직렬화하고 값이 있으면 `retry-after` 헤더(초)를 붙인다.
-- 호환 메시지 조건: `data.message`의 `Free usage exceeded` 표식. #72의 `Free usage exceeded, retrying in 11h`는 예시이며 이 설치본의 실제 수신 문구·현행 언어별 문구는 **미확인**이다.
+- 호환 메시지 조건: `data.message`의 `Free usage exceeded` 표식. #72의 `Free usage exceeded, retrying in 11h`는 예시이며 이 설치본의 실제 수신 문구는 **관측됨(2026-10-12, zen-free-observations.md)**: "Rate limit exceeded. Please try again later."였고 언어별 전체 목록은 미확인이다.
 - `ProviderAuthError`, 네트워크 오류, 일반 `RateLimitError`, `GoUsageLimitError`, `BlackUsageLimitError`, 다른 공급자 오류는 무료 초과로 처리하지 않는다.
 - `session.error`는 재시도 종료 후 발생할 수 있다. **즉시 한도 감지**가 필요하면 `session.status`의 `properties.status.type === "retry"`도 고려한다.
 - 1.18.34 소스의 `status.action.reason === "free_tier_limit"`, `status.action.provider === "opencode"`는 추가 표식이다. 로컬 1.18.29 타입에는 `action`이 없어 런타임 가드가 필요하다.
 - CLI는 무료 오류 body 표식을 재시도 안내 `Free usage exceeded, subscribe to Go`로 바꿀 수 있다. `retrying in 11h`만 기다리면 감지를 놓칠 수 있다.
 - 재시도 시간은 `error.data.responseHeaders["retry-after"]`의 유효한 초/HTTP 날짜 또는 `retry-after-ms`에서 추출 가능하다. 없는 값·잘못된 값은 **미확인**으로 둔다.
-- 문구 호환 파서는 `retrying in` 뒤의 숫자와 `h/m/s`를 엄격히 해석한다(합성 `11h` → 39600초). 실제 해당 문구 추출 성공은 **미확인**이다.
+- 문구 호환 파서는 `retrying in` 뒤의 숫자와 `h/m/s`를 엄격히 해석한다(합성 `11h` → 39600초). 실제 해당 문구 추출은 **관측됨(2026-10-12, zen-free-observations.md)**(retry_at=관측+30분; 문구/헤더 경로는 미구분).
 - `status.next`는 다음 CLI 재시도 시각(Unix ms)이며 한도 해제 시각을 보장하지 않는다. 헤더·문구 시간도 관측된 대기 정보로만 저장하고 자동 해제 근거로 쓰지 않는다.
 근거: [서버 오류 응답](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/console/app/src/routes/zen/util/handler.ts#L505), [재시도 정책](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/retry.ts), [상태 스키마](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/schema/src/session-status-event.ts).
 
@@ -71,7 +71,7 @@
 - 출력 억제는 `.quiet()`, 비정상 종료를 값으로 받으려면 `.nothrow()`를 사용하고 `exitCode`를 확인한다. 실행 파일 부재·Promise rejection도 catch한다.
 - 이벤트 콜백 Promise는 소스에서 await하지 않는다. 자체 큐·timeout·실패 처리가 필요하며 원문 오류·헤더·대화·토큰을 명령 인수나 로그에 전달하지 않는다.
 - 전역 플러그인 실설치(2026-10-10 20:28 KST)는 확인했다. 설치 이후 시작한 opencode 프로세스 2개를 확인했으나(2026-10-11 조사) OpenCode 로그에 플러그인 로드 기록이 없고
-  `--ok`는 락이 없으면 DB에 흔적이 없어 **로드·외부 명령 실행 성공은 여전히 미확인**이다. 아래 로드 표시로 확인한다.
+  `--ok`는 락이 없으면 DB에 흔적이 없지만, 2026-10-12 cleared 이벤트로 **관측됨(zen-free-observations.md)**. 아래 로드 표시로 확인한다.
 근거: [탐색 경로](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/config/paths.ts), [XDG 경로](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/core/src/global.ts), [발견·중복 제거](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/config/plugin.ts), [초기화·이벤트 전달](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/plugin/index.ts).
 
 ## 로드 표시 ([#77](https://github.com/qus0in/yoroi/issues/77))
@@ -82,7 +82,7 @@
   더 늦은 시각만 덮어쓰고 같은 DB에서 v2(캐시·이력)와 독립적으로 적용된다.
 - `yoroi zen-free status`는 둘째 줄에 `plugin-loaded: <UTC ISO>`를 표시하고 미기록이면 `plugin-loaded: not recorded`를 표시한다. `--json`에는 `loadedAt`(ISO 또는 `null`)이 추가된다.
   `once`의 Zen 행은 바뀌지 않는다.
-- 로드 표시는 프로세스별(인스턴스별) 로드마다 갱신되는 "마지막 로드 시각"이다. 어느 OpenCode 프로세스인지, 세션이 한도 이벤트를 받는지는 알려주지 않는다. 기존 설치본에는 이 표시가 없다. `node scripts/opencode-hook.mjs install`로 다시 설치하고 OpenCode를 재시작해야 처음 기록된다(**미확인**: 실제 로드 기록 성공).
+- 로드 표시는 프로세스별(인스턴스별) 로드마다 갱신되는 "마지막 로드 시각"이다. 어느 OpenCode 프로세스인지, 세션이 한도 이벤트를 받는지는 알려주지 않는다. 기존 설치본에는 이 표시가 없다. `node scripts/opencode-hook.mjs install`로 다시 설치하고 OpenCode를 재시작해야 처음 기록된다(**관측됨(2026-10-12, zen-free-observations.md)**: 재설치 후 첫 로드 기록 성공).
 
 ## detect가 읽는 테이블 ([#89](https://github.com/qus0in/yoroi/issues/89))
 
@@ -96,5 +96,5 @@
 
 ## 검증과 회고
 
-로컬 버전·타입·예시를 읽고 태그 소스와 비교했다. 모델 요청 및 한도 시험은 0회이며 실제 오류·정상 응답·계정별 reset은 **미확인**으로 남긴다.
+로컬 버전·타입·예시를 읽고 태그 소스와 비교했다. 모델 요청 및 한도 시험은 0회이며 실제 오류·정상 응답은 **관측됨(2026-10-12, zen-free-observations.md)**, 계정별 reset은 **미확인**으로 남긴다.
 회고: CLI/SDK 버전 차이, retry와 최종 error의 차이, idle과 성공의 차이를 계약에 보존해야 오탐과 해제 누락을 줄일 수 있다.

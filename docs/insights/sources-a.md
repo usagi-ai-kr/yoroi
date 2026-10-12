@@ -31,6 +31,8 @@
 - 사용자/세션: 근사치 (distinct users, OpenCode sessions).
 - 비용: 세션 평균 비용 + 모델 catalog list price.
 
-## 2026-10-11 최신 override — AA coding 상위 20
-- AA는 free tier 전체 페이지(실측 4쪽)를 수집한 뒤 `artificial_analysis_coding_index` 상위20(동점 포함)만 저장·비교하고 순위 코호트도 `coding_index`다. 정렬·필터·page_size 축소는 여전히 UNVERIFIED(요청 축소 없음, 저장 축소만).
-- requestScope는 `aa-v2:free:language-models:coding-top20`(전환일 비교는 의도된 '이전 기록 없음'). 알려진 한계(review-051-096 medium): 20위 동점이면 저장 모델이 20개를 넘을 수 있어 레터 근거표 20행 상한과 요약이 어긋날 수 있다.
+## 2026-10-12 최신 override — AA·OpenRouter 상위 50 (사용자 승인, [top50-decision.md](top50-decision.md))
+- 구 상위 20 결정(2026-10-11)은 역사로 보존하며, 전 소스 수집·순위창이 상위 50(rank<=50)으로 갱신됐다.
+- AA: free tier 4쪽 전체 수집 후 `coding_index` 상위 50과 `intelligence_index` 상위 50의 합집합(동점 포함) 저장, requestScope `aa-v2:free:language-models:coding-intel-top50`.
+- OpenRouter: 비교일별 `total_tokens` 상위 50(동점 포함) 보존, requestScope `rankings-daily:day:top50`. (Arena `overall-top50` 연계).
+- 레터: 기본 출력은 Top 10 압축 레터(오케스트레이터·워커 Top10, Arena/OR 참고 순위 표기), `--full` 옵션 시 50개 전체 상세 레터를 보존한다. 스코프 갱신으로 전환일 비교는 의도적 '이전 기록 없음'.

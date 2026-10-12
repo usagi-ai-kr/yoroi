@@ -2,7 +2,8 @@ Feature: yoroi insights letter CLI
   Scenario: insights once prints the compact top10 letter to stdout only
     When I run insights once with a synthetic Arena source
     Then the insights exit code is 0
-    And the insights stdout contains "🏆 통합 Top10"
+    And the insights stdout contains "🧭 오케스트레이터 Top10"
+    And the insights stdout contains "🛠️ 워커 Top10"
     And the insights stdout contains "출처:"
     And the insights stderr is empty
 
@@ -17,7 +18,8 @@ Feature: yoroi insights letter CLI
     When I run insights once --markdown with a synthetic Arena source
     Then the insights exit code is 0
     And the insights stdout contains "# AI 인사이트 데일리: 2026-10-09 KST"
-    And the insights stdout contains "## 🏆 통합 Top10"
+    And the insights stdout contains "## 🧭 오케스트레이터 Top10"
+    And the insights stdout contains "## 🛠️ 워커 Top10"
     And the insights stderr is empty
 
   Scenario: the same KST day reuses the stored success without another fetch

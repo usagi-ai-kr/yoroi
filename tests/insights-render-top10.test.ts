@@ -11,17 +11,16 @@ const compact = () => renderTop10FromRecords({ publicationDate: '2026-10-12', fa
   { modelId: 'claude-opus-5-5', value: 90.0, metric: 'artificial_analysis_intelligence_index' },
   { modelId: 'gpt-6-1-sol', value: 82.0, metric: 'artificial_analysis_coding_index' },
   { modelId: 'claude-opus-5-5', value: 88.0, metric: 'artificial_analysis_coding_index' }] });
-test('composition-injected compact renderer is used by default and stays under 3000 characters', () => {
+test('composition-injected compact renderer is used by default and stays under the 3600-char budget', () => {
   const rendered = renderInsights(view, { compact });
   assert.equal(rendered.exitCode, 0);
-  assert.match(rendered.stdout, /통합 Top10/);
-  assert.ok(rendered.stdout.length <= 3000, `length=${rendered.stdout.length}`);
-  assert.match(rendered.stdout, /출처: lmarena-ai LMArena Leaderboard Dataset \(CC-BY-4\.0\)/);
-  assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미상\)/);
-  assert.match(rendered.stdout, /출처: OpenCode Data \(내부 참조 · 약관상 자동 추출 제한\) \(라이선스 미상\)/);
+  assert.match(rendered.stdout, /## 🧭 오케스트레이터 Top10/);
+  assert.match(rendered.stdout, /## 🛠️ 워커 Top10/);
+  assert.ok(rendered.stdout.length <= 3600, `length=${rendered.stdout.length}`);
+  assert.match(rendered.stdout, /출처: lmarena-ai LMArena Leaderboard Dataset \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /^## 요약$/m);
+  assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미상\)/); assert.match(rendered.stdout, /출처: OpenCode Data \(내부 참조 · 약관상 자동 추출 제한\) \(라이선스 미상\)/);
   assert.match(rendered.stdout, /출처: Cognition FrontierCode \(라이선스 미상 · 내부 전용\)/); assert.match(rendered.stdout, /수집 실패 소스: cognition/);
   assert.match(rendered.stdout, /SQLite/); assert.doesNotMatch(rendered.stdout, /가중치 재정규화/);
-  assert.match(rendered.stdout, /^## 요약$/m);
 });
 test('--full and the legacy boolean keep the detailed letter instead of the compact one', () => {
   for (const options of [{ pretty: true, full: true }, true] as const) {
@@ -29,7 +28,7 @@ test('--full and the legacy boolean keep the detailed letter instead of the comp
       { kind: 'metadata', title: 'AI 인사이트 레터', publicationDate: '2026-10-12', issuedAt: '2026-10-12T00:00:00Z' },
     ] }, options);
     assert.match(rendered.stdout, /【AI 인사이트 레터】/);
-    assert.doesNotMatch(rendered.stdout, /통합 Top10/);
+    assert.doesNotMatch(rendered.stdout, /오케스트레이터 Top10/);
   }
   assert.match(renderInsights(view, {}).stdout, /\[AI 인사이트 레터\]/, 'no-injection fallback stays detailed');
 });
@@ -54,15 +53,17 @@ test('normalize collisions omit the ambiguous reference rank instead of guessing
       { modelId: 'other/gpt-6-1-sol', value: 1400, metric: 'rating' }] });
   assert.doesNotMatch(text, /Arena \d/);
 });
-test('worst-case compact stays within 3000 chars with long names, full turnover and long failures', () => {
+test('worst-case compact stays within the 3600-char budget with long names, full turnover and long failures', () => {
   const catalogModels = ['gpt-6-1-sol', 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'gemini-3-1-pro',
     'gemini-3-pro', 'deepseek-v4-1-flash', 'gemma4', 'glm-5-3', 'glm-5-3-flash'];
-  const records = catalogModels.map((m, i) => ({ modelId: m, value: 90 - i, metric: 'artificial_analysis_intelligence_index' }));
+  const records = catalogModels.flatMap((m, i) => [
+    { modelId: m, value: 90 - i, metric: 'artificial_analysis_intelligence_index' },
+    { modelId: m, value: 90 - i, metric: 'artificial_analysis_coding_index' }]);
   const previousRanks = Array.from({ length: 10 }, (_, i) => ({ modelId: `prev-${i}`, rank: i + 1 }));
   const refs = catalogModels.map((m, i) => ({ modelId: m, rank: i + 1 }));
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12', records, arenaRecords: refs, openrouterRecords: refs, previousRanks,
     failedSources: Array.from({ length: 12 }, (_, i) => `source-with-a-very-long-name-${i}`) });
-  assert.ok(text.length <= 3000, `length=${text.length}`);
+  assert.ok(text.length <= 3600, `length=${text.length}`);
   assert.match(text, /출처:/); assert.match(text, /SQLite/);
 });
 test('Arena reference uses the official rank field, not a rating re-sort', () => {
@@ -77,7 +78,7 @@ test('Arena reference uses the official rank field, not a rating re-sort', () =>
     arenaRecords: [{ modelId: 'gpt-6-1-sol', value: Number.NaN, metric: 'rating' }] });
   assert.doesNotMatch(malformed, /Arena \d/);
 });
-test('previous cohort maps track rank changes in unified ranking', () => {
+test('previous cohort maps track rank changes in both role lists', () => {
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12',
     records: [{ modelId: 'gpt-6-1-sol', value: 90, metric: 'artificial_analysis_intelligence_index' },
       { modelId: 'claude-opus-5-5', value: 80, metric: 'artificial_analysis_coding_index' }],
@@ -92,4 +93,8 @@ test('compact mode still reports failures diagnostics on stderr like the legacy 
     { kind: 'failures', title: '실패', entries: [{ source: 'cognition', reason: '수집 실패' }] }] };
   const rendered = renderInsights(failing, { compact: () => '. ' });
   assert.match(rendered.stderr, /인사이트: Cognition: 수집 실패/);
+});
+test('OpenRouter usage ranks stay 1..N and raw total_tokens never reach the letter (ref-rank-113)', () => {
+  const text = renderTop10FromRecords({ publicationDate: '2026-10-12', records: [{ modelId: 'gpt-6-1-sol', value: 51.8, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' }], openrouterRecords: [{ modelId: 'gpt-6-1-sol', value: 264308530787, metric: 'total_tokens' }] });
+  assert.match(text, /OpenRouter 1위/); assert.ok(!text.includes('264308530787'), text);
 });

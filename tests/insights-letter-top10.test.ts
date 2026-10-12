@@ -40,15 +40,16 @@ test('composition compact path covers the unified AA top ten, unified previous c
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) }, subscribeSignals: () => () => {},
     insights: { clock: () => NOW, openHistory: () => history, createPorts: () => [aaPort] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
-  assert.ok(text.length <= 3000, `length=${text.length}`);
-  assert.equal((text.match(/^## 🏆 통합 Top10/m) ?? []).length, 1);
-  assert.ok(['🧭 오케', '🛠️ 워커', '🧭+🛠️ 둘 다'].every(tag => text.includes(tag)), 'all three role tags must be present');
-  assert.match(text, /claude-opus-5-5 .*유지/, 'unified previous cohort keeps the leader at rank 1');
-  assert.match(text, /mistral-large-4/, '10th model of the unified list must be present (not truncated at 20 evidence rows)');
-  const list = text.slice(text.indexOf('## 🏆 통합 Top10'), text.indexOf('## 요금제상 최적'));
-  assert.equal((list.match(/^\d+\. /gm) ?? []).length, 10, 'unified top10 must have 10 rows');
-  assert.match(text, /• 이탈: gpt-6-1-sol \(전일 2위\)/, 'single unified previous cohort feeds exits');
-  assert.doesNotMatch(text, /오케스트레이터 Top10|워커 Top10/, 'role-split sections are replaced by the unified list');
+  assert.ok(text.length <= 3600, `length=${text.length}`);
+  assert.equal((text.match(/^## (🧭 오케스트레이터|🛠️ 워커) Top10/m) ?? []).length, 2);
+  assert.match(text, /claude-opus-5-5 .*유지/, 'per-role previous cohort keeps the leader at rank 1');
+  assert.match(text, /mistral-large-4/, 'orchestrator list must keep the mid-ranked model');
+  const orch = text.slice(text.indexOf('## 🧭 오케스트레이터'), text.indexOf('## 🛠️ 워커'));
+  const work = text.slice(text.indexOf('## 🛠️ 워커'), text.indexOf('## 요금제상 최적'));
+  assert.equal((orch.match(/^\d+\. /gm) ?? []).length, 10, 'orchestrator top10 must have 10 rows');
+  assert.equal((work.match(/^\d+\. /gm) ?? []).length, 10, 'worker top10 must have 10 rows');
+  assert.match(text, /• 이탈: gpt-6-1-sol \(전일 2위\)/, 'the worker list alone carries that exit');
+  assert.ok(text.includes(' ↔'), 'intersection models are marked in both lists');
   assert.doesNotMatch(text, /인사이트: /);
   stdout.length = 0; stderr.length = 0;
   assert.equal(await program.run(['insights', 'once', '--full']), 0);
@@ -75,7 +76,7 @@ test('Cognition-only success still renders the compact letter with 자료 부족
       createPorts: () => [cognitionPort, failingAa] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
   assert.equal((text.match(/자료 부족/g) ?? []).length >= 2, true, text);
-  assert.ok(text.length <= 3000);
+  assert.ok(text.length <= 3600);
   assert.match(stderr.join(''), /인사이트: Artificial Analysis: /);
 });
 

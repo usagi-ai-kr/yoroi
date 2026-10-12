@@ -32,16 +32,31 @@ export function compareVersions(a: readonly number[], b: readonly number[]): num
   return 0;
 }
 
-/** 같은 계열에 더 높은 버전이 있으면 그보다 낮은 버전만 제외하고, 파싱 불가·동일 버전은 유지한다. */
-export function dropOlderVersions(variants: readonly ModelVariant[]): ModelVariant[] {
-  const parsed = variants.map(v => ({ v, pv: parseFamilyVersion(v.baseModelId) }));
-  const maxByFamily = new Map<string, readonly number[]>();
-  for (const { pv } of parsed) {
-    if (!pv) continue;
-    const current = maxByFamily.get(pv.family);
-    if (!current || compareVersions(pv.version, current) > 0) maxByFamily.set(pv.family, pv.version);
+/** GPT의 같은 세대 하위 등급 토큰. */
+export const GRADE_TOKENS = ['luna', 'terra', 'sol'] as const;
+
+/** GPT family 꼬리 등급만 합친다. 다른 벤더의 같은 토큰은 별도 family로 둔다. */
+export function vendorLine(family: string): string {
+  const parts = family.split('-'), grade = parts.at(-1)!;
+  return parts[0] === 'gpt' && (GRADE_TOKENS as readonly string[]).includes(grade) ? parts.slice(0, -1).join('-') : family;
+}
+
+const modelKey = (id: string): string => id.trim().toLowerCase().replace(/\./g, '-');
+/** 전체 접근 가능 AA 모델 집합에서 더 높은 세대가 있으면 낮은 GPT 등급의 ID를 반환한다. */
+export function olderGenerationModelIds(modelIds: readonly string[]): ReadonlySet<string> {
+  const parsed = modelIds.map(id => ({ id: modelKey(id), pv: parseFamilyVersion(modelKey(id)) }));
+  const maxByLine = new Map<string, readonly number[]>();
+  for (const { pv } of parsed) if (pv) {
+    const line = vendorLine(pv.family), current = maxByLine.get(line);
+    if (!current || compareVersions(pv.version, current) > 0) maxByLine.set(line, pv.version);
   }
-  return parsed.filter(({ pv }) => !pv || compareVersions(pv.version, maxByFamily.get(pv.family)!) >= 0).map(({ v }) => v);
+  return new Set(parsed.filter(({ pv }) => pv && compareVersions(pv.version, maxByLine.get(vendorLine(pv.family))!) < 0).map(x => x.id));
+}
+
+/** 같은 벤더 라인에 더 높은 세대가 있으면 낮은 버전을 제외한다. 파싱 불가·동일 세대는 유지한다. */
+export function dropOlderVersions(variants: readonly ModelVariant[]): ModelVariant[] {
+  const older = olderGenerationModelIds(variants.map(v => v.baseModelId));
+  return variants.filter(v => !older.has(modelKey(v.baseModelId)));
 }
 
 /** 후보 파이프라인 1단계: 제외 계열 → 최신 버전만 → off-peak 단가 적용(실행 시각이 off-peak일 때만, 표기 플래그 포함). */

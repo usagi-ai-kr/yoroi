@@ -49,10 +49,18 @@
 - #102 크롤러 작업·진단 완료. 리더보드 파서는 내일 진단 결과 후 진행한다(승계 작업 없음).
 - 크론 출력은 0.6.0부터 `--pretty` 압축 Top10, 0.7.0부터 `--markdown`이다.
 
-## 0.8.0 준비 상태 (2026-10-12)
+## 0.8.0 머지 및 발행 완료 (2026-10-12)
 
-- v0.7.0 발행 완료(PR #106 → `025d16a`, Release https://github.com/qus0in/yoroi/releases/tag/v0.7.0, 전역 CLI 0.7.0 태그 worktree 설치).
-- 0.8.0: #108 통합 Top10 — 보유 요금제 접근 모델만, 추천 역할·effort 표시, DeepSeek 4.1 Flash는 AA 미수록이라 4 Flash 지수 하한(사용자 확인)·공식 단가.
+- v0.7.0 발행 완료(PR #106 → `025d16a`, main CI 38217518529 success, Release https://github.com/qus0in/yoroi/releases/tag/v0.7.0, 전역 CLI 0.7.0 태그 worktree 설치).
+- v0.8.0 발행 완료: PR #109 머지 커밋 `a54af3e`, main CI [38232400154](https://github.com/qus0in/yoroi/actions/runs/38232400154) success, [v0.8.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.0) 발행, 전역 CLI 0.8.0 태그 worktree 설치.
+- 0.8.0의 #108 통합 Top10: 보유 요금제 접근 모델만, 추천 역할·effort 표시, DeepSeek 4.1 Flash는 AA 미수록이라 4 Flash 지수 하한(사용자 확인)·공식 단가.
+- 0.8.0의 통합 Top10(#108)은 사용자 의도 오해로 [#111](https://github.com/qus0in/yoroi/issues/111)에서 오케스트레이터/워커 Top10 별도 유지(이중 자격 모델은 양쪽 표시)로 정정 중이다.
+- [#110](https://github.com/qus0in/yoroi/issues/110) 레터는 통합 형식으로 발행돼 #111 갱신본 반영 후 재발행 예정이다.
+- 0.8.1: #111 정정(오케/워커 분리 표시) 및 #110 갱신본 재발행을 묶어 dev → main PR 준비 중.
+- #111 범위: 오케스트레이터·워커 Top10을 별도 유지하고 교집합 모델은 양쪽에 `↔` 표시; GPT 6.x가 있으면 지표와 무관한 전체 접근 모델 기준으로 GPT 5.6 luna·terra·sol을 제외한다.
+- Kimi K3 한도 참고(2026-10-12): OpenCode Go Plus 440회/5h 추정([공식 안내](https://opencode.ai/go)); Ollama Cloud Pro 크레딧 $60/월·토큰 차감·동시 3([요금](https://ollama.com/pricing)).
+- #107 SQLite WAL 동시 오픈 재현 실패 기록: 400라운드에서 실패 0회.
+- 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
 
 ## 버전 이력 요약
 

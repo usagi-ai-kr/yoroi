@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { OFF_PEAK_RATES, OFF_PEAK_ALIASES, OFF_PEAK_TODO, DEEPSEEK_OFF_PEAK_WINDOW, OLLAMA_OFF_PEAK_WINDOW,
   findOffPeakRate, isOffPeakHour, type OffPeakRate } from '../src/insights/model-price-overrides.js';
-import { computeUnifiedTop10 } from '../src/insights/letter-top10-unified.js';
+import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { runInsightsOnce } from '../src/insights/run-once.js';
 import { parseAaResponse } from '../src/insights/aa-parser.js';
@@ -25,14 +25,14 @@ test('verified DeepSeek off-peak rates with source and date; provider windows st
 test('the verified off-peak rate drives blended cost/efficiency and marks the row off-peak', () => {
   const records = [{ modelId: 'deepseek-v4-1-flash', value: 90, priceInput: 0.3, priceOutput: 1.2,
     metric: 'artificial_analysis_intelligence_index' }];
-  const entry = computeUnifiedTop10(records).entries[0]!; // 기본 OFF_PEAK_RATES 적용
+  const entry = computeRoleTop10(records).orchestrator.entries[0]!; // 기본 OFF_PEAK_RATES 적용
   assert.equal(entry.blendedCostText, '$0.26/1M'); // (3*0.15+0.6)/4=0.2625
   assert.equal(entry.offPeak, true);
 });
 test('an injected override still wins and unknown cost stays strict', () => {
   const rate: OffPeakRate = { input: 0.2, output: 0.4, sourceUrl: 'https://example.invalid/off-peak', checkedOn: '2026-10-12', provider: 'ollama-cloud' };
   const records = [{ modelId: 'deepseek-v4-1-flash', value: 90, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_intelligence_index' }];
-  const entry = computeUnifiedTop10(records, { priceOverrides: { 'deepseek-v4-1-flash': rate } }).entries[0]!;
+  const entry = computeRoleTop10(records, { priceOverrides: { 'deepseek-v4-1-flash': rate } }).orchestrator.entries[0]!;
   assert.equal(entry.blendedCostText, '$0.25/1M');
   assert.equal(entry.offPeak, true);
 });
@@ -40,7 +40,7 @@ test('an injected override still wins and unknown cost stays strict', () => {
 test('the AA modelId deepseek-v4-flash uses off-peak through the official legacy-name alias', () => {
   const records = [{ modelId: 'deepseek-v4.1-flash', value: 69.1, priceInput: 0.3, priceOutput: 1.2,
     metric: 'artificial_analysis_intelligence_index' }];
-  const entry = computeUnifiedTop10(records).entries[0]!;
+  const entry = computeRoleTop10(records).orchestrator.entries[0]!;
   assert.equal(entry.blendedCostText, '$0.26/1M');
   assert.equal(entry.offPeak, true);
 });
@@ -68,10 +68,10 @@ test('runInsightsOnce operational path reflects peak vs off-peak time for deepse
   assert.equal(peakRun.top10?.observedAt, '2026-10-12T02:00:00Z');
   assert.equal(offPeakRun.top10?.observedAt, '2026-10-12T00:00:00Z');
   assert.ok(peakRun.top10?.nowUtc && offPeakRun.top10?.nowUtc);
-  const peakUnified = computeUnifiedTop10(peakRun.top10.records, { nowUtc: peakRun.top10.nowUtc });
-  const offPeakUnified = computeUnifiedTop10(offPeakRun.top10.records, { nowUtc: offPeakRun.top10.nowUtc });
-  assert.equal(peakUnified.entries[0]?.blendedCostText, '$0.52/1M');
-  assert.equal(peakUnified.entries[0]?.offPeak, undefined);
-  assert.equal(offPeakUnified.entries[0]?.blendedCostText, '$0.26/1M');
-  assert.equal(offPeakUnified.entries[0]?.offPeak, true);
+  const peakUnified = computeRoleTop10(peakRun.top10.records, { nowUtc: peakRun.top10.nowUtc });
+  const offPeakUnified = computeRoleTop10(offPeakRun.top10.records, { nowUtc: offPeakRun.top10.nowUtc });
+  assert.equal(peakUnified.orchestrator.entries[0]?.blendedCostText, '$0.52/1M');
+  assert.equal(peakUnified.orchestrator.entries[0]?.offPeak, undefined);
+  assert.equal(offPeakUnified.orchestrator.entries[0]?.blendedCostText, '$0.26/1M');
+  assert.equal(offPeakUnified.orchestrator.entries[0]?.offPeak, true);
 });

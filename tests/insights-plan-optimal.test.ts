@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PLAN_CATALOG, type PlanCatalogEntry } from '../src/insights/plan-catalog.js';
+import { plansForModel } from '../src/insights/letter-top10-plans.js';
 import { computePlanOptimal, renderPlanOptimalLines } from '../src/insights/plan-optimal.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 
@@ -53,4 +54,28 @@ test('renderPlanOptimalLines emits the section with index-order rows and the fla
   assert.match(lines[1]!, /^- Plan P: 오케 A 100\.0 > B 90\.0 · 워커 A 50\.0$/);
   assert.match(lines.at(-1)!, /지수 순/);
   assert.deepEqual(renderPlanOptimalLines([row('x', 90)], catalog), []);
+});
+
+test('models with usageLimit append limit to plansForModel and plan optimal displayName', () => {
+  const opencode = PLAN_CATALOG.find(p => p.planId === 'opencode-go-plus')!;
+  const kimi = opencode.models.find(m => m.modelId === 'kimi-k3')!;
+  assert.ok(kimi.usageLimit);
+  assert.equal(kimi.usageLimit.count, 440);
+  assert.equal(kimi.usageLimit.period, '5h');
+  assert.ok(plansForModel('kimi-k3').includes('OpenCode Go Plus(440회/5h)'));
+  assert.ok(plansForModel('kimi-k3').includes('Ollama Cloud Pro(크레딧 $60/월)'));
+  const catalogWithLimit: PlanCatalogEntry[] = [{ planId: 'opencode-go-plus', planName: 'OpenCode Go Plus', models: [kimi] }];
+  const [res] = computePlanOptimal([row('kimi-k3', 90)], 'orchestrator', catalogWithLimit);
+  assert.equal(res!.entries[0]!.displayName, 'Kimi K3(제한 440회/5h(추정))');
+});
+
+test('Ollama Cloud Pro carries usagePolicy credit, pricingModel and concurrency in PLAN_CATALOG', () => {
+  const ollama = PLAN_CATALOG.find(p => p.planId === 'ollama-cloud-pro')!;
+  assert.ok(ollama.usagePolicy);
+  assert.equal(ollama.usagePolicy.credit, '$60/월');
+  assert.equal(ollama.usagePolicy.pricingModel, '토큰 단가 차감');
+  assert.equal(ollama.usagePolicy.concurrency, 3);
+  assert.equal(ollama.usagePolicy.sourceUrl, 'https://ollama.com/pricing');
+  assert.equal(ollama.usagePolicy.checkedOn, '2026-10-12');
+  assert.ok(plansForModel('gemma4').includes('Ollama Cloud Pro(크레딧 $60/월)'));
 });

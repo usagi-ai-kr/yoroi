@@ -28,6 +28,14 @@
 - 대응: 같은 커밋에서 단독 실행과 CI 재실행 결과를 기록한다. 반복 시간 초과·출력·종료 코드 불일치는
   프로세스 시작/종료 경로를 조사할 근거다. 제한 확대·skip으로 숨기지 않는다.
 
+## SQLite WAL 동시 첫 열기: `tests/sqlite-migration-concurrency.test.ts`
+
+- 조건: detect·Zen·usage가 같은 새 DB를 동시에 처음 연다. 각 연결은 busy_timeout 설정 뒤 `PRAGMA journal_mode = WAL`과 마이그레이션을 수행한다.
+- 코드 판정: WAL 전환은 `withMigrationRetry` 호출 안에 있다. `errcode === 5`(SQLITE_BUSY)만 최대 3회 시도하며, 다음 시도 예상치가 시작 후 900ms 미만일 때만 재시도한다. 재시도 사이 실제 대기는 10ms, busy_timeout은 연결별 기존 설정을 유지한다. SQLITE_LOCKED(6)는 이 helper에서 재시도하지 않는다.
+- 2026-10-12 로컬 단독 반복: detect·Zen·usage 3자 경합 테스트 20회, **20/20 통과**. 매회 내부 20라운드로 400개 동시 초기화 라운드에서 누락 테이블 및 `database is locked` 실패 0회. 전체 반복 시간은 약 1.45–2.01초/회였다.
+- 판정: 로컬에서는 재현하지 못했다. CI의 메시지 문자열만으로 SQLITE_BUSY(5)와 SQLITE_LOCKED(6)를 구분할 수 없으므로 오류 코드는 미확인이다. 현재 코드의 SQLITE_BUSY 재시도 경로는 WAL 전환에도 적용된다.
+- 대응: 3자 신선 DB 경합을 테스트에 포함했다. 시간 제한·재시도 상한은 유지한다. 동일 CI 오류가 반복되면 실제 `errcode`와 재시도 횟수를 확보해 SQLITE_LOCKED 여부를 확인한다.
+
 ## 재현 명령과 결과 기록
 
 레포 루트에서 실행한다. 아래 명령은 합성 입력과 없는 실행 파일을 사용하며 실제 계정 API를 부르지 않는다.

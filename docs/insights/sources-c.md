@@ -49,3 +49,8 @@
 - JSON 갱신 시각·스키마 버전 계약·이전 revision 보존 기간
 - 자동 수집에 대한 약관상 명시적 허용/금지
 - JSON 키 구조 변경 시 하위 호환 정책
+
+## 결정 갱신 — OpenCode Data(2026-10-12)
+
+- #80의 '0.5.0 제외' 판정은 유지한다. 다만 사용자 위험 수용으로 **내부 전용 참조 수집(#102)**만 추가한다.
+- 정책·라이선스(ky·cheerio MIT)·UA·요청 상한은 [sources-opencode-data.md](sources-opencode-data.md)에 기록.

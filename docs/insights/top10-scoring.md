@@ -33,3 +33,35 @@ Top 10 압축 레터의 오케스트레이터·워커 선정 및 가성비 최�
 - 전일 비교: 동일 최적 존 정책으로 재계산하며, 현재 OR 참고를 쓰면 전일 동일 scope/schema OR 자료(최신 comparisonDate, aggregate/other 제외)를 반드시 함께 전달하고, 없으면 추정 비교 대신 보류하고 사유를 표기한다.
 - 푸터는 공식 1줄과 정렬 규칙 1줄('가성비 순(무료 최상위) → OpenRouter 사용량 → 지수, 단가 미상 후순위 · ★ 정의')로, 상단은 '가성비 최적 존: 지수 ≥ 최고의 85%(오케스트레이터)/75%(워커) 중 가성비 순 · ★ 파레토 최적'으로 표기한다.
 - 길이 예산 3,000자: 초과 시 표시 이름만 24자로 우선 축약(원문 저장 유지)하고, 그래도 초과하면 변형→참고순위 순으로 생략하며 각 단계마다 안내 줄을 덧붙인다. 행 중간 임의 절단은 하지 않는다.
+
+## 4. 후보 필터와 파이프라인 순서 (rank-rules-103, 2026-10-12)
+
+- 후보 50 전체를 처음부터 다시 산출한다(기존 Top10 재정렬 금지): **제외 필터 → 최신 버전만 → off-peak 단가 적용 → 단가·가성비 계산 → 성능 하한(85%/75%, 필터 후 후보 최고값 기준) → 정렬**.
+- **제외 계열**: 모델명에 `fable`·`astra` 포함 시 순위·참고 모두 제외. `grok` 계열도 제외하며 사유는 **사용자 취향**이다.
+- **동일 계열 최신만**: 꼬리 숫자 버전을 비교해(예 `claude-opus-5-5` > `claude-opus-5`) 더 높은 버전이 후보에 있으면 구버전을 제외한다. 버전 파싱 불가·동일 버전·판단 불확실 시에는 제외하지 않는다(오판 방지, `letter-top10-filter.ts`).
+
+## 5. off-peak 단가 override
+
+- `src/insights/model-price-overrides.ts`의 `OffPeakRate`(input/output 단가, sourceUrl, checkedOn)에 **공식 요금 문서로 확인된 값만** 넣는다. 추측값 금지.
+- DeepSeek 4.1 Flash: 공식 off-peak 문서 미확보(HTTP 0)로 값 없이 `OFF_PEAK_TODO`에 **미확인**으로 남긴다.
+- 적용 시 혼합 단가·가성비 계산에 off-peak 단가를 쓰고 행에 `off-peak`를 표기한다.
+
+## 6. 속도·캐시 지표 반영 여부 (AA 저장분 읽기전용 확인, 2026-10-12)
+
+- `median_output_tokens_per_second`: 70개 모델 저장 확인 → 가성비 동률 tie-break에 사용(순서: 가성비 → OR 사용량 → **속도** → 지수).
+- `price_1m_cache_hit_tokens`(73)·`price_1m_cache_write_tokens`(48)는 존재하나 캐시 적중률 데이터가 없어 가성비 계산·표기에 **미반영**(근거: 적중률 없이 캐시 단가만으로 유효 비용을 계산할 수 없음).
+- 그 외 속도 지표(응답시간 등)는 tie-break에 미반영.
+
+## 7. 요금제상 최적 (plan-optimal-104)
+
+- 요금제→모델 매핑은 `src/insights/plan-catalog.ts`에만 두고, 각 항목은 레포 근거 `source`와 `verified`를 가진다. `verified=false`(모델 단위 근거 부족)와 근거 없는 모델은 렌더에 쓰지 않는다(근거 없는 모델은 보고서 '미확인'에만 기록).
+- 후보는 AA 저장 모델과 **정규화 이름 정확 일치**만 사용하고, #103 최적 존 파이프라인(`letter-top10-filter`·`letter-top10-worker`)을 수정 없이 재사용해 임계(85%/75%, 전체 후보 최고값 기준)를 적용한다.
+- **정렬 판단**: 정액 구독은 모델 선택에 따른 한계비용이 0이므로 가성비(지수÷단가)와 단가 정렬은 의미가 없다. 따라서 임계 통과 후보를 **지수 내림차순**으로 표시한다(요금제별 최대 3위).
+- 압축·마크다운 렌더 모두 `## 요금제상 최적` 섹션을 제공한다(마크다운은 `renderPlanOptimalMarkdown`, 압축은 `renderPlanOptimalLines`).
+
+## 8. 요금제 가격 확인·off-peak 적용 규칙 (plans-pricing-104, 2026-10-12)
+
+- 보유 요금제 5개만 다룬다: ChatGPT Plus, Claude Pro, Google AI Pro, Ollama Cloud Pro, OpenCode Go Plus(Zen Free 제외 — 사용자 확정). 공식 페이지를 1회씩 읽기 전용 조회해 확인했다: openai.com/chatgpt/pricing/, anthropic.com/pricing, one.google.com/about/google-ai-plans/, ollama.com/pricing, opencode.ai/go. 각 항목은 `sourceUrl`·`checkedOn(2026-10-12)`·`verified`로 기록하고, 페이지에서 확인되지 않은 모델은 코드에 넣지 않는다(보고서 '미확인').
+- off-peak 창은 공급자별로 다르다: DeepSeek 플랫폼 peak=월–금 UTC 01:00–04:00·06:00–10:00(중국 공휴일 제외), 그 외·주말·공휴일 off-peak(반값). Ollama Cloud peak=평일 UTC 12:00–18:00, off-peak=평일 그 외+주말 전일. 두 창을 하나로 묶지 않는다.
+- 적용 규칙: 레터 발행 시각 09:00 KST = 00:00 UTC는 두 공급자 모두 off-peak 창이므로, DeepSeek 4.1 Flash(V4.1-Flash) 혼합단가·가성비에 off-peak 단가(입력 $0.15/출력 $0.60, cache miss)를 사용하고 행에 `off-peak`를 표기한다(OpenCode Go 경유 포함). 발행 시각이 바뀌어 peak 창에 들면 재검토한다.
+- Ollama의 다른 모델은 off-peak 단가가 공개되지 않아 미확인(적용 안 함). 캐시 적중 단가는 §6대로 가성비 계산에 미반영한다.

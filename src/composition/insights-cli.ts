@@ -1,5 +1,6 @@
 import { runInsights } from './insights.js';
 import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
+import { renderTop10MarkdownFromRecords } from '../insights/letter-markdown.js';
 import type { InsightHistoryPort } from '../insights/history-port.js';
 import type { InsightSourcePort } from '../insights/source-port.js';
 import type { InsightPortOptions } from '../insights/sources.js';
@@ -41,8 +42,11 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
       const letter: InsightLetterView = outcome.letter;
       const top10 = outcome.top10 ?? { records: [], arenaRecords: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
       const warnings = (top10 as { warnings?: readonly string[] }).warnings;
-      return { letter, storage: outcome.storage,
-        compact: renderTop10FromRecords({ publicationDate: outcome.publicationDate, ...top10, ...(warnings && warnings.length ? { notes: warnings } : {}) }) };
+      const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
+      const top10Payload = { publicationDate: outcome.publicationDate, ...top10, ...(warnings && warnings.length ? { notes: warnings } : {}),
+        ...(partialSources.length ? { partialSources } : {}) };
+      return { letter, storage: outcome.storage, compact: renderTop10FromRecords(top10Payload),
+        markdown: renderTop10MarkdownFromRecords(top10Payload) };
     },
   };
   return runInsightsCommand(parsed, deps, ctx.env);

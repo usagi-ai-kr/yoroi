@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -28,44 +29,55 @@ const bodies: Record<string, unknown> = {
 function http(status = 200) {
   const requests: HttpRequest[] = [];
   const client: HttpClient = { async request(request): Promise<HttpResponse> { requests.push(request);
-    return { status, headers: {}, body: JSON.stringify(bodies[new URL(request.url).host] ?? {}) }; } };
+    const value = bodies[new URL(request.url).host] ?? {};
+    return { status, headers: {}, body: typeof value === 'string' ? value : JSON.stringify(value) }; } };
   return { client, requests };
 }
 const setup = (t: TestContext) => { const dir = mkdtempSync(join(tmpdir(), 'yoroi-insights-comp-')); t.after(() => rmSync(dir, { recursive: true, force: true }));
   return { dir, dataEnv: { YOROI_DATA_DIR: dir }, env: { YOROI_AA_API_KEY: AA_KEY, YOROI_OPENROUTER_API_KEY: OR_KEY } as Record<string, string> }; };
+const OC_JSON = '{"updatedAt":"2026-10-12T00:00:00Z","dailyTokens":[{"date":"2026-10-12","total":1,"models":{"Model-A":1}}]}';
 const noWait = { sleep: async () => {} };
+function openCodeServer(t: TestContext) {
+  const requests: { readonly headers: Record<string, string | string[] | undefined> }[] = [];
+  const server = createServer((req, res) => { requests.push({ headers: req.headers });
+    res.writeHead(200, { 'content-type': 'application/json' }).end(OC_JSON); });
+  return { server, requests, listen: () => new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve)) }; }
 const states = (r: { sources: readonly { source: string; status: string; failure?: string }[] }) => Object.fromEntries(r.sources.map(s => [s.source, s.failure ?? s.status]));
 
 test('a run opens its own database, stores per KST day, reuses on rerun and replaces on refresh; keys only travel in headers', async t => {
-  const s = setup(t), h = http();
-  const first = await runInsights({ ...s, http: h.client, clock });
+  const s = setup(t), h = http(), oc = openCodeServer(t); await oc.listen(); t.after(() => oc.server.close());
+  const sourceOptions = { opencodeBaseUrl: `http://127.0.0.1:${(oc.server.address() as { port: number }).port}` };
+  const first = await runInsights({ ...s, http: h.client, clock, sourceOptions });
   assert.deepEqual([first.exitCode, first.storage, first.publicationDate], [0, 'sqlite', '2026-10-09']); assert.equal(h.requests.length, 4);
+  assert.equal(oc.requests.length, 1);
+  assert.match(String(oc.requests[0]!.headers['user-agent']), /^yoroi\/\d+\.\d+\.\d+ \(\+https:\/\/github\.com\/qus0in\/yoroi; internal reference, once daily\)$/);
   assert.ok(first.sources.every(r => r.status === 'collected' && r.saved === true));
   const header = (host: string) => h.requests.find(r => new URL(r.url).host === host)!.headers;
   assert.deepEqual([header('artificialanalysis.ai')?.['x-api-key'], header('openrouter.ai')?.Authorization, header('cognition.com'), header('datasets-server.huggingface.co')], [AA_KEY, `Bearer ${OR_KEY}`, undefined, undefined]);
   assert.ok(!JSON.stringify(first).includes(AA_KEY) && !JSON.stringify(first).includes(OR_KEY) && h.requests.every(r => !r.url.includes('key')));
-  const again = await runInsights({ ...s, http: h.client, clock });
+  const again = await runInsights({ ...s, http: h.client, clock, sourceOptions });
   assert.ok(again.sources.every(r => r.status === 'reused')); assert.equal(h.requests.length, 4);
-  const refreshed = await runInsights({ ...s, http: h.client, clock, refresh: true });
+  assert.equal(oc.requests.length, 1);
+  assert.match(String(oc.requests[0]!.headers['user-agent']), /^yoroi\/\d+\.\d+\.\d+ \(\+https:\/\/github\.com\/qus0in\/yoroi; internal reference, once daily\)$/);
+  const refreshed = await runInsights({ ...s, http: h.client, clock, refresh: true, sourceOptions });
   assert.ok(refreshed.sources.every(r => r.status === 'collected' && r.saved === true)); assert.equal(h.requests.length, 8);
   assert.equal((await fetchArenaRows(http().client)).boundary, 'rank-above-top');
 });
-test('a missing key fails only that source before any request; exit stays 0', async t => {
-  const s = setup(t), h = http(), { YOROI_AA_API_KEY: _omitted, ...env } = s.env;
-  const run = await runInsights({ ...s, env, http: h.client, clock });
+test('a missing key fails only that source before any request; exit stays 0', async t => { const s = setup(t), h = http(), { YOROI_AA_API_KEY: _omitted, ...env } = s.env;
+  const run = await runInsights({ ...s, env, http: h.client, clock, sourceOptions: { opencodeTransport: async () => ({ status: 200, body: OC_JSON }) } });
   assert.deepEqual([run.exitCode, states(run)['artificial-analysis'], run.sources.find(r => r.source === 'artificial-analysis')?.reason], [0, 'fetch', 'authentication']);
   assert.ok(h.requests.every(r => new URL(r.url).host !== 'artificialanalysis.ai'));
 });
-test('the database is opened and closed once per run, and an unopenable database degrades to memory without failing', async t => {
-  const s = setup(t), h = http(); let opened = 0, closed = 0;
+test('the database is opened and closed once per run, and an unopenable database degrades to memory without failing', async t => { const s = setup(t), h = http(); let opened = 0, closed = 0;
   const openHistory = () => { opened++; const store = openInsightsHistory(s.dataEnv); const close = store.close.bind(store); store.close = () => { closed++; close(); }; return store; };
-  await runInsights({ ...s, http: h.client, clock, openHistory }); await runInsights({ ...s, http: h.client, clock, openHistory });
+  const oc = { opencodeTransport: async () => ({ status: 200, body: OC_JSON }) };
+  await runInsights({ ...s, http: h.client, clock, openHistory, sourceOptions: oc }); await runInsights({ ...s, http: h.client, clock, openHistory, sourceOptions: oc });
   assert.deepEqual([opened, closed], [2, 2]);
-  const broken = await runInsights({ ...s, http: h.client, clock, openHistory: () => { throw new Error('synthetic'); } });
-  assert.deepEqual([broken.storage, broken.exitCode, broken.sources.length], ['memory', 0, 4]);
+  const broken = await runInsights({ ...s, http: h.client, clock, openHistory: () => { throw new Error('synthetic'); }, sourceOptions: oc });
+  assert.deepEqual([broken.storage, broken.exitCode, broken.sources.length], ['memory', 0, 5]);
 });
 test('every source failing is exit 1 (reasons are codes only); injected ports flow through the same run', async t => {
-  const s = setup(t), down = await runInsights({ ...s, http: http(503).client, clock, sourceOptions: noWait });
+  const s = setup(t), down = await runInsights({ ...s, http: http(503).client, clock, sourceOptions: { ...noWait, opencodeTransport: async () => ({ status: 503, body: '' }) } });
   assert.deepEqual([down.exitCode, down.letter.ok, down.sources.every(r => r.failure === 'fetch' && r.reason === 'unavailable')], [1, false, true]);
   const port: InsightSourcePort = { id: 'arena', fetch: async () => [arenaRow(0), arenaRow(1)], parse: (p, at) => parseArenaRows(p as unknown[], at) };
   const run = await runInsights({ ...s, clock, createPorts: () => [port] });

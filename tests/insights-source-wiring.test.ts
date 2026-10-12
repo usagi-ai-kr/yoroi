@@ -20,9 +20,9 @@ function harness(respond: (request: HttpRequest, n: number) => HttpResponse) {
 }
 const of = (url: string, name: string) => new URL(url).searchParams.get(name);
 
-test('the registry still excludes OpenCode Data and Vals AI; only the four approved ports exist', () => {
-  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['arena', 'artificial-analysis', 'openrouter', 'cognition']);
-  assert.deepEqual([...harness(() => json({})).ports.keys()], ['arena', 'artificial-analysis', 'openrouter', 'cognition']);
+test('the registry holds the four approved ports plus the OpenCode Data internal reference; Vals AI stays excluded', () => {
+  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['arena', 'artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
+  assert.deepEqual([...harness(() => json({})).ports.keys()], ['arena', 'artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
 });
 test('Arena goes through the /rows transport and the existing parser with no key and no extra headers', async () => {
   const h = harness(request => { const offset = Number(of(request.url, 'offset'));

@@ -31,14 +31,13 @@ const orPayload = { meta: { as_of: '2026-10-09T00:00:00Z', start_date: '2026-10-
 const cogPayload = { v1_1: { models: ['M'], subsets: { main: 100 },
   data: { M: { high: { main: { correct: 0.5, cost: 1.25 } } } } } };
 
-test('registry holds the four go sources and excludes opencode/vals', () => {
-  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['arena', 'artificial-analysis', 'openrouter', 'cognition']);
+test('registry holds the four go sources plus the OpenCode Data internal reference (#102)', () => { assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['arena', 'artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
   const byId = new Map(INSIGHT_SOURCES.map(e => [e.id, e]));
   assert.equal(byId.get('artificial-analysis')?.url, 'https://artificialanalysis.ai/api/v2/language/models/free');
   assert.equal(byId.get('openrouter')?.url, 'https://openrouter.ai/api/v1/datasets/rankings-daily?period=day');
   assert.equal(byId.get('cognition')?.url, 'https://cognition.com/data/frontiercode-leaderboard/data.json');
-  assert.match(byId.get('arena')?.url ?? '', /^https:\/\/huggingface\.co\/datasets\//);
-  assert.deepEqual([...byId].map(([id, e]) => [id, e.pipeline]), [['arena', 'hf-rows'], ['artificial-analysis', 'aa-pages'], ['openrouter', 'http-json'], ['cognition', 'http-json']]);
+  assert.match(byId.get('arena')?.url ?? '', /^https:\/\/huggingface\.co\/datasets\//); assert.deepEqual([...byId].map(([id, e]) => [id, e.pipeline]), [['arena', 'hf-rows'], ['artificial-analysis', 'aa-pages'], ['openrouter', 'http-json'], ['opencode-data', 'opencode-json'], ['cognition', 'http-json']]);
+  assert.equal(byId.get('opencode-data')?.displayName, 'OpenCode Data (내부 참조 · 약관상 자동 추출 제한)');
   assert.deepEqual(INSIGHT_SOURCES.filter(e => e.authEnvName !== null).map(e => e.authEnvName), ['YOROI_AA_API_KEY', 'YOROI_OPENROUTER_API_KEY']);
 });
 

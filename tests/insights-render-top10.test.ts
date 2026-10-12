@@ -14,13 +14,12 @@ const compact = () => renderTop10FromRecords({ publicationDate: '2026-10-12', fa
 test('composition-injected compact renderer is used by default and stays under 3000 characters', () => {
   const rendered = renderInsights(view, { compact });
   assert.equal(rendered.exitCode, 0);
-  assert.match(rendered.stdout, /오케스트레이터 Top10/);
-  assert.match(rendered.stdout, /워커 Top10/);
+  assert.match(rendered.stdout, /오케스트레이터 Top10/); assert.match(rendered.stdout, /워커 Top10/);
   assert.ok(rendered.stdout.length <= 3000, `length=${rendered.stdout.length}`);
   assert.match(rendered.stdout, /출처: lmarena-ai LMArena Leaderboard Dataset \(CC-BY-4\.0\)/);
-  assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미확인\)/);
-  assert.match(rendered.stdout, /출처: Cognition FrontierCode \(라이선스 미확인 · 내부 전용\)/);
-  assert.match(rendered.stdout, /수집 실패 소스: cognition/);
+  assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미상\)/);
+  assert.match(rendered.stdout, /출처: OpenCode Data \(내부 참조 · 약관상 자동 추출 제한\) \(라이선스 미상\)/);
+  assert.match(rendered.stdout, /출처: Cognition FrontierCode \(라이선스 미상 · 내부 전용\)/); assert.match(rendered.stdout, /수집 실패 소스: cognition/);
   assert.match(rendered.stdout, /SQLite/); assert.match(rendered.stdout, /가성비 최적 존:/); assert.doesNotMatch(rendered.stdout, /가중치 재정규화/);
   assert.equal((rendered.stdout.match(/^- /gm) ?? []).length, 3, 'the contract summary is three fact lines');
   assert.match(rendered.stdout, /^## 요약$/m);
@@ -59,7 +58,7 @@ test('normalize collisions omit the ambiguous reference rank instead of guessing
   assert.doesNotMatch(text, /Arena \d/);
 });
 test('worst-case compact stays within 3000 chars with long names, full turnover and long failures', () => {
-  const longId = (i: number) => `provider/${'x'.repeat(100)}-model-${i}`;
+  const longId = (i: number) => `provider/${'x'.repeat(100)}-model-x${i}`;
   const records = [...Array.from({ length: 20 }, (_, i) => ({ modelId: longId(i), value: 90 - i,
       metric: 'artificial_analysis_intelligence_index' })),
     ...Array.from({ length: 20 }, (_, i) => ({ modelId: longId(100 + i), value: 80 - i,

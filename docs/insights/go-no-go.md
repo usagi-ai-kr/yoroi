@@ -38,6 +38,8 @@
 - Artificial Analysis: Commercial tier 범위, 재배포 권리 세부 조항
 - OpenRouter: 무료 사용 가능 여부 (rate limit만 명시)
 - OpenCode Data: 자동 추출 금지 예외·오픈 데이터 라이선스 (0.5.0 제외로 실사용 무관)
+- OpenCode Data 재확인(2026-10-12): 사용자 크롤링(ky+cheerio) 지시에 따라 약관·robots를 1회씩 재조회. 약관(Aug 15, 2026 발효)의 자동 추출·crawl/scrape·대량 저장 금지가 그대로라 수집 불가 판정, 구현하지 않음([#80](https://github.com/qus0in/yoroi/issues/80) 댓글).
+- OpenCode Data 결정 갱신(2026-10-12, 사용자): 위 수집 불가 판정(#80 제외)을 유지한 채, 리스크를 사용자가 직접 수용해 **내부 전용 참조 수집으로 범위를 축소**해 구현한다([#102](https://github.com/qus0in/yoroi/issues/102)). 예의 있는 수집(순차·≥1s·연락처 UA·차단 시 재시도 0·1일 1회·원문 미저장)만 허용 — docs/insights/sources-opencode-data.md.
 - Vals AI: 공개 약관·재배포 정책 미게시 (0.5.0 제외로 실사용 무관)
 - Arena: 데이터셋 갱신 주기(데일리 여부) 미공지
 - Cognition: JSON 갱신 시각·스키마 버전 계약, 자동 수집 약관 명시 여부

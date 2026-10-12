@@ -9,18 +9,21 @@ import { computeInsightTrend } from './trend.js';
 
 /** Default parser schema versions (daily-reuse lookup happens before any fetch). A stale entry only misses the cache. */
 export const DEFAULT_SCHEMA_VERSIONS: Readonly<Record<InsightSource, string>> = Object.freeze({
-  arena: 'arena-hf-v1', 'artificial-analysis': 'aa-v2-free', openrouter: 'openrouter-rankings-v1', cognition: 'cognition-frontiercode-v1' });
+  arena: 'arena-hf-v1', 'artificial-analysis': 'aa-v2-free', openrouter: 'openrouter-rankings-v1', cognition: 'cognition-frontiercode-v1',
+  'opencode-data': 'opencode-data-v1' });
 /** Opaque, secret-free request scope per source (subset/period/filter/tier); part of every history key. */
 export const DEFAULT_REQUEST_SCOPES: Readonly<Record<InsightSource, string>> = Object.freeze({
   arena: 'hf-rows:text:latest:overall-top50', 'artificial-analysis': 'aa-v2:free:language-models:coding-intel-value-top50',
-  openrouter: 'rankings-daily:day:top50', cognition: 'frontiercode:data-json:top50' });
+  openrouter: 'rankings-daily:day:top50', cognition: 'frontiercode:data-json:top50',
+  'opencode-data': 'opencode-data:internal-daily' });
 /** Metric whose ordering defines rank changes per source; same-source cohorts only. */
 export const RANK_COHORTS: Readonly<Record<InsightSource, { readonly metric: string; readonly order: 'ascending' | 'descending';
   readonly extraMetrics?: readonly string[] }>> = Object.freeze({
   arena: { metric: 'rating', order: 'descending' },
   'artificial-analysis': { metric: 'artificial_analysis_coding_index', order: 'descending',
     extraMetrics: ['artificial_analysis_intelligence_index'] },
-  openrouter: { metric: 'total_tokens', order: 'descending' }, cognition: { metric: 'correct', order: 'descending' } });
+  openrouter: { metric: 'total_tokens', order: 'descending' }, cognition: { metric: 'correct', order: 'descending' },
+  'opencode-data': { metric: 'opencode_data_rank', order: 'ascending' } });
 
 /** Source/validation failure to the letter's failure kind: transport → fetch, bad rows → parse, nothing usable → empty. */
 export function failureKind(error: SourceError | undefined, validation?: Extract<InsightValidation, { ok: false }>): LetterFailure {

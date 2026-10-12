@@ -91,5 +91,9 @@ test('compose wires insights once to fake ports: KST publication day, same-day r
   stdout.length = 0;
   assert.equal(await program.run(['insights', 'once', '--full']), 0);
   assert.ok(stdout.join('').includes('발행일(KST): 2026-10-09'));
+  stdout.length = 0;
+  assert.equal(await program.run(['insights', 'once', '--markdown']), 0);
+  assert.ok(stdout.join('').includes('AI 인사이트 데일리: 2026-10-09 KST'));
+  assert.equal(await program.run(['insights', 'once', '--markdown', '--full']), 2);
   assert.equal(await program.run(['insights', 'once', '--json']), 2);
 });

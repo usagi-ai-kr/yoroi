@@ -6,18 +6,20 @@ import { parseOpenRouterResponse } from './openrouter-parser.js';
 import type { InsightSource } from './record.js';
 import type { InsightSourcePort } from './source-port.js';
 import { fetchAaPages, parseAaPages } from './sources-aa.js';
+import { fetchOpenCodeData, OPEN_CODE_DATA_URL, OPEN_CODE_DATA_ATTRIBUTION, type OpenCodeDataPage, type OpenCodeDataTransport } from './sources-opencode-data.js';
+import { emitOpenCodeDataSchemaDiagnostic, parseOpenCodeDataJson } from './opencode-data-json-parser.js';
 import { fetchArena, parseArena } from './sources-arena.js';
 import type { ParseRowResult } from './parse-utils.js';
 
 type AuthKind = 'x-api-key' | 'bearer' | 'none';
 
-/** One registered 0.4.0 source (#70). OpenCode Data and Vals AI stay excluded. */
+/** One registered 0.4.0 source (#70) plus OpenCode Data 내부 참조(#102). Vals AI stays excluded. */
 export interface InsightSourceEntry {
   readonly id: InsightSource;
   readonly displayName: string;
   /** Access URL. Arena lists the HF dataset page (attribution); its rows come from the datasets-server /rows API. */
   readonly url: string;
-  readonly pipeline: 'http-json' | 'hf-rows' | 'aa-pages';
+  readonly pipeline: 'http-json' | 'hf-rows' | 'aa-pages' | 'opencode-json';
   readonly auth: AuthKind;
   /** Candidate env var name (docs/insights/sources-a.md, #79); user .env key name unconfirmed. */
   readonly authEnvName: string | null;
@@ -39,6 +41,9 @@ export const INSIGHT_SOURCES: readonly InsightSourceEntry[] = [
     url: 'https://openrouter.ai/api/v1/datasets/rankings-daily?period=day',
     pipeline: 'http-json', auth: 'bearer', authEnvName: 'YOROI_OPENROUTER_API_KEY', timeoutMs: 10000,
     license: 'CC-BY-4.0', note: 'Daily unfiltered dataset; CC BY 4.0 redistribution' },
+  { id: 'opencode-data', displayName: OPEN_CODE_DATA_ATTRIBUTION,
+    url: OPEN_CODE_DATA_URL, pipeline: 'opencode-json', auth: 'none', authEnvName: null, timeoutMs: 15000,
+    license: null, note: '사용자 결정(2026-10-12) 내부 참조 · 1일 1회 · updatedAt 인용 · 차단 시 재시도 0' },
   { id: 'cognition', displayName: 'Cognition FrontierCode',
     url: 'https://cognition.com/data/frontiercode-leaderboard/data.json',
     pipeline: 'http-json', auth: 'none', authEnvName: null, timeoutMs: 15000,
@@ -54,7 +59,8 @@ function authHeaders(entry: InsightSourceEntry, env: EnvLookup): Record<string, 
   return entry.auth === 'x-api-key' ? { 'x-api-key': value } : { Authorization: `Bearer ${value}` };
 }
 
-export type InsightPortOptions = PolicyFetchOptions;
+export type InsightPortOptions = PolicyFetchOptions & { readonly opencodeTransport?: OpenCodeDataTransport; readonly opencodeBaseUrl?: string;
+  /** Injected stderr sink for source diagnostics (CLI IO contract); defaults to process.stderr. */ readonly onDiagnostic?: (line: string) => void };
 
 /** Builds one port per registered source for ONE execution: every port gets its own request session that starts at
  * the shared run start (creation time), so the per-source 4-A request/time caps count pages and retries together.
@@ -73,6 +79,7 @@ export function createInsightSourcePorts(client: HttpClient, env: EnvLookup, opt
       async fetch(signal?: AbortSignal): Promise<unknown> {
         switch (entry.pipeline) {
           case 'hf-rows': return fetchArena(client, { ...options, ...(signal && { signal }) });
+          case 'opencode-json': return fetchOpenCodeData({ ...(signal && { signal }), ...(options.opencodeTransport && { transport: options.opencodeTransport }), ...(options.opencodeBaseUrl && { baseUrl: options.opencodeBaseUrl }) });
           case 'aa-pages': return fetchAaPages(client, spec(), session, options, signal);
           default: return fetchJsonWithPolicy(client, spec(), session, options, signal);
         }
@@ -83,6 +90,7 @@ export function createInsightSourcePorts(client: HttpClient, env: EnvLookup, opt
           case 'artificial-analysis': return parseAaPages(payload, observedAt, options);
           case 'openrouter': return parseOpenRouterResponse(payload, observedAt);
           case 'cognition': return parseCognitionResponse(payload, observedAt);
+          case 'opencode-data': { const json = JSON.parse((payload as OpenCodeDataPage).jsonText) as unknown; emitOpenCodeDataSchemaDiagnostic(json, options.onDiagnostic); return parseOpenCodeDataJson(json, observedAt).rows; }
           default: throw new SourceError('parse');
         }
       },

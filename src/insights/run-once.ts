@@ -31,7 +31,8 @@ export interface InsightSourceReport {
 export interface InsightTop10Row { readonly modelId: string; readonly value?: number; readonly metric?: string; readonly rank?: number;
   readonly priceInput?: number; readonly priceOutput?: number }
 export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly arenaRecords: readonly InsightTop10Row[]; readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
-  readonly previousRanks: readonly { readonly modelId: string; readonly rank: number; readonly metric: string }[] }
+  readonly previousRanks: readonly { readonly modelId: string; readonly rank: number; readonly metric: string }[];
+  readonly observedAt?: string; readonly nowUtc?: string }
 const top10Row = (value: ValidatedInsightRecord, metric: string, prices?: { input?: number; output?: number }): InsightTop10Row =>
   ({ modelId: value.record.modelId, value: value.record.value, metric,
     ...(prices?.input !== undefined && { priceInput: prices.input }), ...(prices?.output !== undefined && { priceOutput: prices.output }) });
@@ -66,12 +67,12 @@ async function runSource(deps: InsightRunDeps, port: InsightSourcePort, publicat
       ranks: buildRanks(deps.history, scope, publicationDate, success, !partial, deps.rankGroupLimit ?? 5), ...(partial && { partial }) } };
   } catch { return failed('parse', 'internal-error'); }
 }
-function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: readonly SourceRun[]): InsightTop10Data {
+function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: readonly SourceRun[], observedAt: string): InsightTop10Data {
   const success = (source: InsightSource) => runs.find(r => r.report.source === source)?.success;
   const intact = (source: InsightSource) => { const run = runs.find(r => r.report.source === source);
     return run && run.report.status !== 'failed' && run.report.partial !== true && (run.report.rejectedRows ?? 0) === 0; };
   const aa = success('artificial-analysis')?.records ?? [], first = aa[0]?.record, prices = buildPriceMap(aa);
-  const records = aa.filter(v => v.record.metric === 'artificial_analysis_intelligence_index' || v.record.metric === 'artificial_analysis_coding_index').map(v => top10Row(v, v.record.metric, prices.get(v.record.modelId)));
+  const records = aa.filter(v => ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index', 'median_output_tokens_per_second'].includes(v.record.metric)).map(v => top10Row(v, v.record.metric, prices.get(v.record.modelId)));
   let previous: InsightSuccess | undefined;  try { previous = first && deps.history.getDaily({ source: 'artificial-analysis', publicationDate: shiftInsightDate(publicationDate, -1),
     requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'], schemaVersion: first.schemaVersion }) || undefined; } catch { previous = undefined; }
   const arenaRecords = intact('arena') ? (success('arena')?.records ?? []).filter(v => v.record.metric === 'rank').map(v => ({ modelId: v.record.modelId, rank: v.record.value, metric: 'rank' })) : [];
@@ -81,7 +82,7 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
   const prev = buildPreviousRanks(deps.history, publicationDate, previous, DEFAULT_REQUEST_SCOPES['openrouter'],
     success('openrouter')?.records[0]?.record.schemaVersion, openrouterRecords.length > 0);
   return { records, arenaRecords, openrouterRecords, previousRanks: prev.ranks, failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source),
-    ...(prev.warnings.length && { warnings: prev.warnings }) };
+    observedAt, nowUtc: observedAt, ...(prev.warnings.length && { warnings: prev.warnings }) };
 }
 
 /** One internal-only run: collect/reuse → validate → store → compare → letter. No rendering, delivery or LLM. */
@@ -94,5 +95,5 @@ export async function runInsightsOnce(deps: InsightRunDeps): Promise<InsightRunR
   let pruned = 0;
   try { pruned = deps.history.prune(publicationDate); } catch { /* retention is best effort */ }
   return { exitCode: letter.ok ? 0 : 1, publicationDate, letter, sources: runs.map(run => run.report), pruned,
-    top10: buildTop10Data(deps, publicationDate, runs) };
+    top10: buildTop10Data(deps, publicationDate, runs, observedAt) };
 }

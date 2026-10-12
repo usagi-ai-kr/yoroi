@@ -24,7 +24,7 @@ export function computeRanks(values: (number | undefined)[], higherIsBetter = tr
   return result;
 }
 
-/** 가성비 정렬: 무료(0) < 유가 < 단가 미상, 각 tier에서 가성비↓ → OR 사용량 순위↑ → 지수↓. */
+/** 가성비 정렬: 무료(0) < 유가 < 단가 미상, 각 tier에서 가성비↓ → OR 사용량↑ → 속도↑ → 지수↓. */
 function compareGroups(a: ScoredGroup, b: ScoredGroup): number {
   const ra = a.group.repVariant, rb = b.group.repVariant;
   const tier = (cost?: number) => cost === undefined ? 2 : cost === 0 ? 0 : 1;
@@ -34,6 +34,8 @@ function compareGroups(a: ScoredGroup, b: ScoredGroup): number {
   if (ea !== eb) return eb - ea;
   const oa = a.orRank ?? Number.POSITIVE_INFINITY, ob = b.orRank ?? Number.POSITIVE_INFINITY;
   if (oa !== ob) return oa - ob;
+  const sa = ra.outputTokensPerSecond ?? Number.NEGATIVE_INFINITY, sb = rb.outputTokensPerSecond ?? Number.NEGATIVE_INFINITY;
+  if (sa !== sb) return sb - sa;
   if (ra.value !== rb.value) return rb.value - ra.value;
   return a.group.baseModelId.localeCompare(b.group.baseModelId);
 }

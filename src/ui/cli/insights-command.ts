@@ -10,12 +10,15 @@ export interface InsightsRunView {
   readonly storage: "sqlite" | "memory";
   /** Composition-built compact top-10 text (uncapped records); used for the default/pretty output. */
   readonly compact?: string;
+  /** Composition-built markdown top-10 text. */
+  readonly markdown?: string;
 }
 export interface InsightsCommandDeps {
   readonly run: (options: { readonly refresh?: boolean; readonly signal?: AbortSignal }) => Promise<InsightsRunView>;
   readonly subscribeSignals: (handler: () => void) => () => void;
   /** Optional compact top-10 renderer injected by the composition layer (ui keeps no insights import). */
   readonly renderCompact?: (letter: InsightLetterView) => string;
+  readonly renderMarkdown?: (letter: InsightLetterView) => string;
 }
 
 /** stdout carries only the letter (contract 1-A); diagnostics go to stderr and never change the exit code.
@@ -37,8 +40,9 @@ export async function runInsightsCommand(parsed: Extract<InsightsParsedArgs, { k
     }
     if (controller.signal.aborted) env.stderr("insights: cancelled; partial results follow if available\n");
     const compact = view.compact !== undefined ? () => view.compact! : deps.renderCompact;
+    const markdownText = view.markdown !== undefined ? () => view.markdown! : deps.renderMarkdown;
     const rendered = renderInsights(view.letter, { pretty: Boolean(parsed.pretty), full: Boolean(parsed.full),
-      ...(compact && { compact }) });
+      markdown: Boolean(parsed.markdown), ...(compact && { compact }), ...(markdownText && { markdownText }) });
     if (rendered.stderr) env.stderr(rendered.stderr);
     if (rendered.stdout) env.stdout(rendered.stdout);
     return rendered.exitCode;

@@ -23,12 +23,14 @@ test('the zone keeps only candidates at or above the threshold: order by cost ef
   assert.equal(entries.length, 10);
   assert.equal(entries[0]!.modelId, 'claude-opus-5-5');
 });
-test('previous ranks use the same optimal-zone policy: cheap mid-index first, below-threshold excluded', () => {
+test('previous ranks use the same composite-score and threshold policy', () => {
   const records: Top10RecordInput[] = [
     { modelId: 'claude-opus-5-5', value: 100, metric: 'artificial_analysis_intelligence_index', priceInput: 1000, priceOutput: 1000 },
     { modelId: 'gpt-6-1-sol', value: 95, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
     { modelId: 'claude-haiku-5-5', value: 60, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
   ];
   const ranks = previousRanks(records).orchestrator;
-  assert.deepEqual([ranks.get('gpt-6-1-sol'), ranks.get('claude-opus-5-5'), ranks.get('claude-haiku-5-5')], [1, 2, undefined]); // cheap 60 < 100*0.85
+  assert.deepEqual([ranks.get('gpt-6-1-sol'), ranks.get('claude-opus-5-5'), ranks.get('claude-haiku-5-5')], [2, 1, undefined]);
+  // GPT=(0 index, 1 cost, 0 usage, .5 neutral speed)=42.5; Opus=(1,0,0,.5)=42.5.
+  // Tie-break is index descending, so Opus ranks first; Haiku 60 < 100*0.85 is excluded.
 });

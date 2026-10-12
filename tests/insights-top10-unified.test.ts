@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { computeRoleTop10, previousRanks } from '../src/insights/letter-top10-unified.js';
 import { renderTop10FromRecords } from '../src/insights/letter-top10-render.js';
+import { plansForModel } from '../src/insights/letter-top10-plans.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index';
@@ -22,16 +23,18 @@ const cohortOf = (records: readonly Top10RecordInput[]) => {
 
 test('one candidate pool feeds both lists: intersection appears twice, excluded/inaccessible never', () => {
   const { orchestrator, worker } = computeRoleTop10(RECORDS);
-  assert.deepEqual(orchestrator.entries.map(e => e.modelId), ['claude-haiku-5-5', 'gpt-6-1-sol', 'claude-opus-5-5']);
+  assert.deepEqual(orchestrator.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5', 'claude-haiku-5-5']);
   assert.deepEqual(worker.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
   assert.deepEqual(worker.entries.map(e => e.both), [true, true], 'intersection models are marked ↔');
-  assert.deepEqual(orchestrator.entries.map(e => e.both), [false, true, true]);
+  assert.deepEqual(orchestrator.entries.map(e => e.both), [true, true, false]);
   assert.ok(!orchestrator.entries.some(e => e.modelId === 'unlisted-mega-model'), '보유 요금제 미접근');
   assert.ok(!worker.entries.some(e => e.modelId === 'unlisted-mega-model'), '보유 요금제 미접근');
   assert.ok(!orchestrator.entries.some(e => e.modelId === 'fable-pro'), '제외 계열은 존 계산 전에 걸러진다');
   assert.ok(orchestrator.entries.every(e => e.plans.length > 0));
   assert.equal(orchestrator.entries[0]!.rank, 1);
-  assert.equal(orchestrator.entries[0]!.indexText, '86.0');
+  assert.equal(orchestrator.entries[0]!.indexText, '88.0');
+  assert.match(orchestrator.entries[0]!.scoreText ?? '', /^\d+\.\d$/);
+  assert.ok(orchestrator.entries[0]!.scoreComponents);
   assert.equal(worker.entries[0]!.indexText, '80.0');
 });
 
@@ -66,9 +69,9 @@ test('previous comparison and exits are recomputed per list with the same policy
   assert.equal(lists.orchestrator.exits.length, 0);
   const shrunken = computeRoleTop10([row('claude-opus-5-5', INTEL, 90, [3, 15]), row('gpt-6-1-sol', INTEL, 88, [1.1, 4.4])],
     { previousCohort: cohort });
-  assert.deepEqual(shrunken.orchestrator.exits.map(x => [x.modelId, x.previousRank]), [['claude-haiku-5-5', 1]]);
+  assert.deepEqual(shrunken.orchestrator.exits.map(x => [x.modelId, x.previousRank]), [['claude-haiku-5-5', 3]]);
   assert.deepEqual(shrunken.worker.exits.map(x => x.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
-  assert.deepEqual([...previousRanks(RECORDS).orchestrator], [['claude-haiku-5-5', 1], ['gpt-6-1-sol', 2], ['claude-opus-5-5', 3]]);
+  assert.deepEqual([...previousRanks(RECORDS).orchestrator], [['gpt-6-1-sol', 1], ['claude-opus-5-5', 2], ['claude-haiku-5-5', 3]]);
   assert.deepEqual([...previousRanks(RECORDS).worker], [['gpt-6-1-sol', 1], ['claude-opus-5-5', 2]]);
 });
 
@@ -78,9 +81,13 @@ test('successor rows keep the predecessor-index lower bound in both lists', () =
     { ...row('deepseek-v4.1-flash', CODE, 75, [0.3, 1.2]), successorOf: 'deepseek-v4-flash' },
     row('claude-opus-5-5', INTEL, 80, [3, 15]), row('claude-opus-5-5', CODE, 90, [3, 15])];
   const lists = computeRoleTop10(rows);
-  const orch = lists.orchestrator.entries.find(e => e.modelId === 'deepseek-v4.1-flash');
-  const worker = lists.worker.entries.find(e => e.modelId === 'deepseek-v4.1-flash');
+  const orch = lists.orchestrator.entries.find(e => e.modelId === 'deepseek-v4-1-flash');
+  const worker = lists.worker.entries.find(e => e.modelId === 'deepseek-v4-1-flash');
   assert.equal(orch?.successorOf, 'deepseek-v4-flash');
   assert.equal(worker?.successorOf, 'deepseek-v4-flash');
   assert.equal(orch?.both, true, '두 존을 모두 통과하면 두 목록에 나온다');
+});
+test('plansForModel keeps the usage-limit annotation that the letters still display', () => {
+  assert.ok(plansForModel('kimi-k3').includes('OpenCode Go Plus(440회/5h·추정)'));
+  assert.ok(plansForModel('kimi-k3').includes('Ollama Cloud Pro(크레딧 $60/월)'));
 });

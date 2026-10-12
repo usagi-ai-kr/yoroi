@@ -29,15 +29,20 @@ export interface OpenDatabaseOptions {
   readonly migrations?: readonly Migration[];
 }
 
-const MIGRATION_ATTEMPTS = 3;
+const MIGRATION_ATTEMPTS = 6;
+const MIGRATION_RETRY_BUDGET_MS = 900;
 
-/** SQLITE_BUSY(5)·SQLITE_LOCKED(6). 다른 연결이 쓰기 잠금을 쥔 상태다. */
+/** SQLite primary/extended BUSY·LOCKED codes and Node's database-is-locked errors. */
 export function isBusy(error: unknown): boolean {
-  const code = (error as { errcode?: unknown } | null)?.errcode;
-  return code === 5 || code === 6;
+  const detail = error as { errcode?: unknown; code?: unknown; errstr?: unknown; message?: unknown } | null;
+  const code = detail?.errcode;
+  if (typeof code === 'number' && Number.isSafeInteger(code) && [5, 6].includes(code & 0xff)) return true;
+  if (typeof detail?.code === 'string' && /^SQLITE_(?:BUSY|LOCKED)(?:_|$)/.test(detail.code)) return true;
+  const message = [detail?.message, detail?.errstr].filter((part): part is string => typeof part === 'string').join(' ');
+  return /\bdatabase\b.*\blocked\b/i.test(message);
 }
 
-/** 원래 busy_timeout 유지. SQLITE_BUSY만 총 3회, 다음 대기 추정치를 포함해 900ms 미만일 때 재시도한다. */
+/** Keep busy_timeout; retry lock failures up to 6 attempts within the existing projected 900ms budget. */
 export function withMigrationRetry<T>(run: () => T): T {
   const began = performance.now();
   for (let attempt = 1; ; attempt += 1) {
@@ -46,8 +51,7 @@ export function withMigrationRetry<T>(run: () => T): T {
     catch (error) {
       const now = performance.now();
       const nextWait = Math.max(100, now - attemptBegan) + 10;
-      if ((error as { errcode?: unknown } | null)?.errcode !== 5 || attempt >= MIGRATION_ATTEMPTS ||
-        now - began + nextWait >= 900) throw error;
+      if (!isBusy(error) || attempt >= MIGRATION_ATTEMPTS || now - began + nextWait >= MIGRATION_RETRY_BUDGET_MS) throw error;
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
     }
   }
@@ -65,7 +69,8 @@ export function openDatabase(path: string, options: OpenDatabaseOptions = {}): D
   try {
     db.exec(`PRAGMA busy_timeout = ${busyTimeoutMs}`);
     withMigrationRetry(() => {
-      db.exec('PRAGMA journal_mode = WAL');
+      const mode = (db.prepare('PRAGMA journal_mode').get() as { journal_mode: string }).journal_mode;
+      if (mode.toLowerCase() !== 'wal') db.exec('PRAGMA journal_mode = WAL');
       migrate(db, options.migrations);
     });
   } catch (error) {

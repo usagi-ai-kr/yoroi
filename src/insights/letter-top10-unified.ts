@@ -2,7 +2,7 @@ import { groupVariants, type ModelGroup } from './letter-top10-group.js';
 import { plansForModel } from './letter-top10-plans.js';
 import { buildVariants, normalizeModelName, toRefMap, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
 import { buildCandidatePool } from './letter-top10-candidates.js';
-import { selectOptimalZone, type OptimalZoneRole } from './letter-top10-worker.js';
+import { selectOptimalZone, type OptimalZoneRole, type ScoreComponents } from './letter-top10-worker.js';
 
 /** 후보 지표: 오케스트레이터=intelligence, 워커=coding. 임계 상수는 letter-top10-worker의 OPTIMAL_ZONE_THRESHOLDS. */
 const METRICS: Readonly<Record<OptimalZoneRole, string>> = {
@@ -14,7 +14,8 @@ export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = {
 export type RoleChange = '유지' | `▲${number}` | `▼${number}` | '진입' | '신규';
 export interface RoleEntry {
   readonly rank: number; readonly modelId: string; readonly indexText: string; readonly repEffort: string;
-  readonly blendedCostText: string; readonly costEffRankText: string; readonly plans: readonly string[];
+  readonly blendedCostText: string; readonly costEffRankText: string; readonly scoreText?: string;
+  readonly scoreComponents?: ScoreComponents; readonly plans: readonly string[];
   readonly change: RoleChange; readonly isPareto: boolean; readonly both: boolean; readonly offPeak?: boolean;
   readonly arenaRankText?: string; readonly openrouterRankText?: string; readonly variantsText?: string;
   readonly successorOf?: string;
@@ -40,8 +41,9 @@ function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, 
       (g.variants.length > 3 ? ` 외 ${g.variants.length - 3}개` : '') : undefined;
     const of = successors.get(key);
     return { rank: i + 1, modelId: g.baseModelId, indexText: rep.value.toFixed(1), repEffort: rep.effort,
-      blendedCostText: costTextOf(rep.blendedCost),
+      blendedCostText: costTextOf(rep.effectiveCost ?? rep.blendedCost),
       costEffRankText: s.costEffRank === 0 ? '가성비 n/a' : `가성비 ${s.costEffRank}위`,
+      scoreText: s.score.toFixed(1), scoreComponents: s.components,
       plans: plansForModel(g.baseModelId), isPareto: g.isPareto, both: false,
       ...(rep.offPeak === true && { offPeak: true }),
       ...(rep.arenaRank !== undefined && { arenaRankText: `Arena ${rep.arenaRank}위` }),
@@ -63,7 +65,7 @@ function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, 
 const markBoth = (list: RoleList, other: ReadonlySet<string>): RoleList =>
   ({ ...list, entries: list.entries.map(e => ({ ...e, both: other.has(normalizeModelName(e.modelId)) })) });
 
-/** 역할별 Top10: 같은 후보 풀에서 오케스트레이터 존·워커 존을 각각 임계 통과 → 가성비 순으로 뽑는다.
+/** 역할별 Top10: 중복 정리 후보 풀에서 각 역할 임계를 통과한 뒤 종합 점수 순으로 뽑는다.
  *  교집합 모델은 두 목록에 모두 나오고(both=true), 전일 비교·이탈도 목록별로 재계산한다. */
 export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: Top10Options): RoleLists {
   const candidates = buildCandidatePool(records).accessibleRecords;

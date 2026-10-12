@@ -46,6 +46,10 @@
 
 - 상태 문서 갱신 패킷은 버전 줄을 옛 값으로 두거나 재번호·이동 이력을 지우는 일이 반복됐다(2026-10-11·12). root는 머지 전 버전 줄과 삭제된 줄(`git diff | grep '^-'`)을 직접 대조한다.
 
+- 공식 페이지 근거를 요구한 조사에서 worker가 페이지에 없는 인용문을 만든 사례가 있다(2026-10-13, 요금제 접근).
+  요금제·가격처럼 레터에 박히는 사실은 root가 해당 URL을 직접 조회해 대조한 뒤 반영한다.
+- watch_workers.sh의 LIMIT·BLOCKED 판정은 패킷 본문 문구나 순간 상태로 오탐할 수 있다. 신호가 오면 `agent get` 상태와
+  visible 화면으로 확인하고, 반복 오탐 시 보고서 파일 생성만 기다리는 방식으로 전환한다.
 - 작업 중 pane은 `herdr agent read --source visible`만 통한다(recent 읽기는 실패). 전송 전·진행 중 확인도 visible을 쓴다.
 - zsh에서 `set -- $x` 반복 전송은 단어 분리가 안 돼 빈 프롬프트가 된다. 전송 전에 인자 분리·내용을 검증한다.
 - 루프 감시는 스킬 스크립트로 일반화했다([watch_workers.sh](../.agents/skills/agent-coordination/scripts/watch_workers.sh)).

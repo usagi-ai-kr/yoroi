@@ -42,18 +42,25 @@ export function vendorLine(family: string): string {
 }
 
 const modelKey = (id: string): string => id.trim().toLowerCase().replace(/\./g, '-');
-/** 전체 접근 가능 AA 모델 집합에서 더 높은 세대가 있으면 낮은 GPT 등급의 ID를 반환한다. */
+const isGptGrade = (family: string): boolean => {
+  const parts = family.split('-');
+  return parts[0] === 'gpt' && (GRADE_TOKENS as readonly string[]).includes(parts.at(-1)!);
+};
+/** 같은 family는 전체 버전, GPT 등급 family끼리는 메이저 세대만 비교한다. */
+function supersedes(newer: NonNullable<ReturnType<typeof parseFamilyVersion>>,
+  older: NonNullable<ReturnType<typeof parseFamilyVersion>>): boolean {
+  if (newer.family === older.family) return compareVersions(newer.version, older.version) > 0;
+  return isGptGrade(newer.family) && isGptGrade(older.family) && vendorLine(newer.family) === vendorLine(older.family) &&
+    (newer.version[0] ?? 0) > (older.version[0] ?? 0);
+}
+/** 전체 접근 가능 AA 모델 집합에서 같은 등급은 전체 버전, GPT 교차 등급은 메이저 세대를 비교한다. */
 export function olderGenerationModelIds(modelIds: readonly string[]): ReadonlySet<string> {
   const parsed = modelIds.map(id => ({ id: modelKey(id), pv: parseFamilyVersion(modelKey(id)) }));
-  const maxByLine = new Map<string, readonly number[]>();
-  for (const { pv } of parsed) if (pv) {
-    const line = vendorLine(pv.family), current = maxByLine.get(line);
-    if (!current || compareVersions(pv.version, current) > 0) maxByLine.set(line, pv.version);
-  }
-  return new Set(parsed.filter(({ pv }) => pv && compareVersions(pv.version, maxByLine.get(vendorLine(pv.family))!) < 0).map(x => x.id));
+  return new Set(parsed.filter(x => { const pv = x.pv;
+    return pv !== null && parsed.some(y => y.pv !== null && supersedes(y.pv, pv)); }).map(x => x.id));
 }
 
-/** 같은 벤더 라인에 더 높은 세대가 있으면 낮은 버전을 제외한다. 파싱 불가·동일 세대는 유지한다. */
+/** 같은 family의 낮은 버전 및 더 낮은 GPT 메이저를 제외한다. 파싱 불가·동일 세대는 유지한다. */
 export function dropOlderVersions(variants: readonly ModelVariant[]): ModelVariant[] {
   const older = olderGenerationModelIds(variants.map(v => v.baseModelId));
   return variants.filter(v => !older.has(modelKey(v.baseModelId)));
@@ -63,14 +70,14 @@ export function dropOlderVersions(variants: readonly ModelVariant[]): ModelVaria
 export function filterCandidates(variants: readonly ModelVariant[],
   overrides: Readonly<Record<string, OffPeakRate>> = OFF_PEAK_RATES,
   nowUtc?: string): ModelVariant[] {
-  const kept = dropOlderVersions(variants.filter(v => !isExcludedModel(v.modelId) && !isExcludedModel(v.baseModelId)));
-  return kept.map(v => {
+  return variants.filter(v => !isExcludedModel(v.modelId) && !isExcludedModel(v.baseModelId)).map(v => {
     const rate = findOffPeakRate(v.modelId, overrides) ?? findOffPeakRate(v.baseModelId, overrides);
     if (!rate) return v;
     if (nowUtc !== undefined && !isOffPeakHour(nowUtc, rate.provider)) return v;
     const blendedCost = calcBlendedCost(rate.input, rate.output);
     if (blendedCost === undefined) return v;
-    const costEfficiency = calcCostEfficiency(v.value, blendedCost);
-    return { ...v, blendedCost, ...(costEfficiency !== undefined && { costEfficiency }), offPeak: true };
+    const multiplier = v.blendedCost && v.effectiveCost !== undefined ? v.effectiveCost / v.blendedCost : 1;
+    const effectiveCost = blendedCost * multiplier, costEfficiency = calcCostEfficiency(v.value, effectiveCost);
+    return { ...v, blendedCost, effectiveCost, ...(costEfficiency !== undefined && { costEfficiency }), offPeak: true };
   });
 }

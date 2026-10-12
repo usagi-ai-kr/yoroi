@@ -31,7 +31,8 @@ test('renderTop10Letter renders optimum-zone rows, header phrase, pareto star an
   assert.ok(rendered.includes('1. worker-model-1 · effort high · 지수 95.0'));
   assert.ok(rendered.includes('## 출처 및 안내'));
   for (const t of ['출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)', '출처: OpenRouter (CC-BY-4.0)',
-    '출처: Artificial Analysis (라이선스 미확인)', '출처: Cognition FrontierCode (라이선스 미확인 · 내부 전용)',
+    '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
+    '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)',
     '수집 실패 소스: cognition', '혼합 단가=(3×입력+출력)/4 USD/1M · 가성비=지수÷max(단가,0.01)',
     '★ 파레토 최적은 더 싸고 더 좋은 모델이 없는 상태', '상세 지표는 SQLite 이력에서 확인할 수 있습니다.']) {
     assert.ok(rendered.includes(t), t);
@@ -59,4 +60,15 @@ test('renderTop10Letter summarizes all-new, partial-new, and no-new cohorts', ()
   assert.ok(partialNew.includes('- 변동: 상위권 3개 중 1개 순위·진입 변동 (신규 1개), 이탈 0개'));
   const regular = renderTop10Letter({ publicationDate: '2026-10-12', orchestrator: mkResult(['유지', '▲1']), worker: mkResult(['유지']) });
   assert.ok(regular.includes('- 변동: 상위권 3개 중 1개 순위·진입 변동, 이탈 0개'));
+});
+
+test('partial sources are reported instead of claiming all sources are normal', () => {
+  const data: Top10LetterInput = { publicationDate: '2026-10-12', orchestrator: fakeResult('orch'), worker: fakeResult('worker'),
+    partialSources: ['cognition'] };
+  const rendered = renderTop10Letter(data);
+  assert.ok(rendered.includes('부분 수집 소스: cognition'));
+  assert.ok(!rendered.includes('전 소스 정상 수집'));
+  const both = renderTop10Letter({ ...data, failedSources: ['opencode-data'] });
+  assert.ok(both.includes('수집 실패 소스: opencode-data') && both.includes('부분 수집 소스: cognition'));
+  assert.ok(!both.includes('전 소스 정상 수집'));
 });

@@ -13,6 +13,13 @@ Feature: yoroi insights letter CLI
     And the insights stdout contains "발행일(KST): 2026-10-09"
     And the insights stderr is empty
 
+  Scenario: insights once --markdown prints the github issue markdown layout
+    When I run insights once --markdown with a synthetic Arena source
+    Then the insights exit code is 0
+    And the insights stdout contains "# AI 인사이트 데일리: 2026-10-09 KST"
+    And the insights stdout contains "## 🧭 오케스트레이터 Top10"
+    And the insights stderr is empty
+
   Scenario: the same KST day reuses the stored success without another fetch
     When I run insights once twice on the same KST day
     Then the insights exit code is 0

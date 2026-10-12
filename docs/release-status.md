@@ -32,13 +32,22 @@
 - [#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93)·[#96](https://github.com/qus0in/yoroi/issues/96)·[#97](https://github.com/qus0in/yoroi/issues/97) close 및 [Milestone 0.5.1](https://github.com/qus0in/yoroi/milestone/11) close 완료.
 - 0.6.0 착수: [#94](https://github.com/qus0in/yoroi/issues/94) 레터 이슈 발행, [#84](https://github.com/qus0in/yoroi/issues/84) trend 착수.
 
-## 0.6.0 준비 상태 (2026-10-12)
+## 0.6.0 머지 및 발행 완료 (2026-10-12)
 
 - [#84](https://github.com/qus0in/yoroi/issues/84) trend: 24h·7d 병행 사용량 추세 보기 구현 완료.
 - Top50 수집·Top10 압축 레터 체계 구축 (`--full` 상세 플래그 유지).
 - [#94](https://github.com/qus0in/yoroi/issues/94) Hermes 레터: 첫 수동 발행 [#99](https://github.com/qus0in/yoroi/issues/99), 크론 첫 자동 발행 [#100](https://github.com/qus0in/yoroi/issues/100), Top10 갱신본 반영([#100](https://github.com/qus0in/yoroi/issues/100) 댓글 2026-10-12 10:31 KST).
 - 크론 스케줄 등록 완료: `yoroi-letter-daily` (일간 레터), `yoroi-weekly-report` (주간 보고).
-- [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) Zen Free 락 해제 실관측 (2026-10-12 00:22Z) 확인으로 close 예정.
+- [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) Zen Free 락 해제 실관측 (2026-10-12 00:22Z) 확인으로 close 완료.
+
+- PR #101 머지(`ae7cd83`), main CI [38203425496](https://github.com/qus0in/yoroi/actions/runs/38203425496): attempt1은 `tests/cli-process.test.ts` 3000ms flaky 실패, attempt2 success. [v0.6.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.6.0) 발행 완료.
+- 전역 CLI 0.6.0은 `v0.6.0` 태그 worktree에서 설치했다. #84·#77·#88 및 0.3.1 milestone close 완료. 0.6.0 milestone은 #94 크론 관측 대기로 open 유지.
+
+## 0.7.0 준비 상태 (2026-10-12)
+
+- 0.7.0 milestone: #102 OpenCode Data 내부 참조 수집(dailyTokens 파서·리더보드 키 진단), #103 순위 규칙, #104 요금제상 최적, #105 `--markdown`을 묶어 dev → main PR 준비.
+- #102 크롤러 작업·진단 완료. 리더보드 파서는 내일 진단 결과 후 진행한다(승계 작업 없음).
+- 크론 출력은 0.6.0부터 `--pretty` 압축 Top10, 0.7.0부터 `--markdown`이다.
 
 ## 버전 이력 요약
 
@@ -49,4 +58,4 @@
 - **0.4.0** (2026-10-11): 내장 10분 주기 감지기(#89) PR #91 머지 완료, 전역 0.4.0 동기화 완료. 외부 작업으로 [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0) 발행 완료 관측.
 - **0.5.0** (2026-10-11): 크롤러 2소스 검증(#70) PR #95 머지 완료, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행 완료, 전역 0.5.0 동기화 완료.
 - **0.5.1** (2026-10-11): Arena·AA top20(#92·#93), Zen 리셋/남은시간(#96), OpenCode 락 복구(#97) PR #98 머지 완료, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행 완료, 전역 0.5.1 동기화 완료.
-- **0.6.0** (준비 중): trend 24h·7d(#84), Top50 수집·Top10 압축 레터(#94, #99·#100), 크론 자동 발행, #77·#88 해제 실관측 반영.
+- **0.6.0** (2026-10-12 발행 완료): trend 24h·7d(#84), Top50 수집·Top10 압축 레터(#94, #99·#100), 크론 자동 발행, #77·#88 해제 실관측 반영.

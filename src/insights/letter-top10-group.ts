@@ -7,6 +7,8 @@ export interface ModelVariant {
   readonly costEfficiency?: number; // value / max(단가,0.01); undefined = 가격 결측
   readonly openrouterTokens?: number;
   readonly arenaRank?: number;
+  readonly offPeak?: boolean; // off-peak 단가가 적용된 행
+  readonly outputTokensPerSecond?: number; // AA 속도 지표(있을 때 동률 tie-break)
 }
 
 export interface ModelGroup {

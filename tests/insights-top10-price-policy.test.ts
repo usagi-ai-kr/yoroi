@@ -15,10 +15,10 @@ test('a model with unknown cost is never marked pareto (star withheld)', () => {
   assert.equal(g!.isPareto, false);
 });
 test('the zone keeps only candidates at or above the threshold: 60 equal-cost candidates yield m-0 first', () => {
-  const records = Array.from({ length: 60 }, (_, i) => ({ modelId: `m-${i}`, value: 100 - i, priceInput: 100, priceOutput: 100 }));
+  const records = Array.from({ length: 60 }, (_, i) => ({ modelId: `mx${i}`, value: 100 - i, priceInput: 100, priceOutput: 100 }));
   const entries = computeOrchestratorTop10(records).entries;
   assert.equal(entries.length, 10);
-  assert.equal(entries[0]!.modelId, 'm-0');
+  assert.equal(entries[0]!.modelId, 'mx0');
 });
 test('previous ranks use the same optimal-zone policy: cheap mid-index first, below-threshold excluded', () => {
   const records: Top10RecordInput[] = [

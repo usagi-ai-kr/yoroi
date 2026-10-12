@@ -45,15 +45,22 @@ function trend(row: Evidence): string {
       .map(point => `${clean(point.date, 32)}:${point.value === null ? '결측' : number(point.value)}`).join(', ');
 }
 export interface RenderInsightsOptions { readonly pretty?: boolean; readonly full?: boolean;
+  readonly markdown?: boolean; readonly markdownText?: (letter: InsightLetterView) => string;
   /** Composition-injected compact renderer (ui must not import the insights core directly). */
   readonly compact?: (letter: InsightLetterView) => string }
 const failure = (result: Extract<InsightLetterView, { ok: false }>) =>
   ({ stdout: '', stderr: `인사이트: 전체 소스 실패 (${limited(result.failedSources).map(label).join(', ')})\n`, exitCode: 1 as const });
-/** Default/--pretty: compact top-10 letter; --full (or legacy boolean pretty): detailed letter. */
+/** Default/--pretty: compact top-10 letter; --full: detailed letter; --markdown: markdown letter. */
 export function renderInsights(result: InsightLetterView,
   options: boolean | RenderInsightsOptions = {}): { stdout: string; stderr: string; exitCode: 0 | 1 } {
   const opts: RenderInsightsOptions = typeof options === 'boolean' ? { pretty: options, full: true } : options;
   if (!result.ok) return failure(result);
+  if (opts.markdown && opts.markdownText === undefined) {
+    return { stdout: '', stderr: '인사이트: --markdown 렌더러가 연결되지 않았습니다\n', exitCode: 1 };
+  }
+  if (opts.markdown && opts.markdownText !== undefined) {
+    return { stdout: `${opts.markdownText(result)}\n`, stderr: '', exitCode: 0 };
+  }
   if (opts.full !== true && opts.compact !== undefined) {
     const diagnostics = result.sections.flatMap(section => section.kind === 'failures' ? section.entries : [])
       .map(entry => `인사이트: ${label(entry.source)}: ${clean(entry.reason)}`).slice(0, 20);

@@ -5,6 +5,7 @@ import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { parseAaResponse } from '../src/insights/aa-parser.js';
 import { parseArenaRows } from '../src/insights/arena-parser.js';
 import { parseCognitionResponse } from '../src/insights/cognition-parser.js';
+import { parseOpenCodeDataJson } from '../src/insights/opencode-data-json-parser.js';
 import { parseOpenRouterResponse } from '../src/insights/openrouter-parser.js';
 import type { InsightSource } from '../src/insights/record.js';
 import { runInsightsOnce } from '../src/insights/run-once.js';
@@ -19,8 +20,10 @@ const payloads = {
   openrouter: (): unknown => ({ meta: { as_of: '2026-10-07T00:00:00Z', start_date: '2026-10-01', end_date: '2026-10-07', version: 'v1' },
     data: [{ date: '2026-10-07', model_permaslug: 'gpt-5', total_tokens: 123 }] }),
   cognition: (): unknown => ({ v1_1: { models: ['M'], subsets: { main: 100 }, data: { M: { high: { main: { correct: 0.5, cost: 1.25 } } } } } }),
+  'opencode-data': (): unknown => ({ jsonText: '{"updatedAt":"2026-10-07T00:00:00Z","dailyTokens":[{"date":"2026-10-07","total":1,"models":{"Model-A":1}}]}' }),
 };
-const parsers = { arena: (p: unknown, at: string) => parseArenaRows(p as unknown[], at), 'artificial-analysis': parseAaResponse, openrouter: parseOpenRouterResponse, cognition: parseCognitionResponse };
+const parsers = { arena: (p: unknown, at: string) => parseArenaRows(p as unknown[], at), 'artificial-analysis': parseAaResponse, openrouter: parseOpenRouterResponse, cognition: parseCognitionResponse,
+  'opencode-data': (p: unknown, at: string) => parseOpenCodeDataJson(JSON.parse((p as { jsonText: string }).jsonText) as unknown, at).rows };
 /** Fake four-source ports (real parsers, no network). behavior[id] is a SourceError to throw, or a replacement payload. */
 function setup() {
   const calls: Record<string, number> = {}, behavior: Partial<Record<InsightSource, unknown>> = {};
@@ -30,17 +33,17 @@ function setup() {
 }
 const statuses = (r: Awaited<ReturnType<typeof runInsightsOnce>>) => Object.fromEntries(r.sources.map(s => [s.source, s.failure ?? s.status]));
 
-test('all four sources collected: exit 0, letter sections, every source stored once and reported', async () => {
+test('all five sources collected: exit 0, letter sections, every source stored once and reported', async () => {
   const s = setup(); const run = await runInsightsOnce(s);
   assert.deepEqual([run.exitCode, run.publicationDate, run.letter.ok], [0, '2026-10-08', true]);
-  assert.deepEqual(statuses(run), { arena: 'collected', 'artificial-analysis': 'collected', openrouter: 'collected', cognition: 'collected' });
+  assert.deepEqual(statuses(run), { arena: 'collected', 'artificial-analysis': 'collected', openrouter: 'collected', cognition: 'collected', 'opencode-data': 'collected' });
   assert.ok(run.sources.every(r => r.saved === true && r.rejectedRows === 0));
   assert.ok(run.letter.ok && ['metadata', 'summary', 'evidence', 'ranks', 'sources', 'failures', 'limitations'].every(k => run.letter.ok && run.letter.sections.some(x => x.kind === k)));
   assert.ok(run.letter.ok && JSON.stringify(run.letter.sections).includes('n/a: 기준일 미상'));
 });
 test('same-day rerun reuses stored successes with no fetch; --refresh fetches and replaces them', async () => {
   const s = setup(); await runInsightsOnce(s);
-  const again = await runInsightsOnce(s); assert.deepEqual(statuses(again), { arena: 'reused', 'artificial-analysis': 'reused', openrouter: 'reused', cognition: 'reused' });
+  const again = await runInsightsOnce(s); assert.deepEqual(statuses(again), { arena: 'reused', 'artificial-analysis': 'reused', openrouter: 'reused', cognition: 'reused', 'opencode-data': 'reused' });
   assert.ok(Object.values(s.calls).every(n => n === 1) && again.exitCode === 0);
   const refreshed = await runInsightsOnce({ ...s, refresh: true }); assert.ok(refreshed.sources.every(r => r.status === 'collected' && r.saved === true));
   assert.ok(Object.values(s.calls).every(n => n === 2));
@@ -52,7 +55,7 @@ test('a failed source is reported, never stored, retried the same day while the 
   assert.ok(first.letter.ok && first.letter.sections.some(x => x.kind === 'failures' && x.entries.some(e => e.source === 'artificial-analysis')));
   delete s.behavior['artificial-analysis'];
   const retry = await runInsightsOnce(s);
-  assert.deepEqual(statuses(retry), { arena: 'reused', 'artificial-analysis': 'collected', openrouter: 'reused', cognition: 'reused' });
+  assert.deepEqual(statuses(retry), { arena: 'reused', 'artificial-analysis': 'collected', openrouter: 'reused', cognition: 'reused', 'opencode-data': 'reused' });
   assert.deepEqual([s.calls['artificial-analysis'], s.calls.arena], [2, 1]);
 });
 test('failure kinds: transport vs bad payload vs no measurements vs every row failed; partial rows are used but not stored', async () => {
@@ -68,6 +71,6 @@ test('failure kinds: transport vs bad payload vs no measurements vs every row fa
 test('every source failing is exit 1 with the failed list; nothing is stored; no secrets reach the result', async () => {
   const s = setup(); const secret = 'synthetic-secret-token'; for (const id of Object.keys(payloads) as InsightSource[]) s.behavior[id] = new Error(secret);
   const run = await runInsightsOnce(s);
-  assert.deepEqual([run.exitCode, run.letter.ok, !run.letter.ok && run.letter.failedSources.length], [1, false, 4]);
+  assert.deepEqual([run.exitCode, run.letter.ok, !run.letter.ok && run.letter.failedSources.length], [1, false, 5]);
   assert.ok(!JSON.stringify(run).includes(secret)); assert.equal(s.history.getDaily({ source: 'arena', publicationDate: '2026-10-08', requestScope: 'hf-rows:text:latest:overall', schemaVersion: 'arena-hf-v1' }), undefined);
 });

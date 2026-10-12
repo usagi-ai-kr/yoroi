@@ -14,7 +14,7 @@ import { validateInsightRecord } from '../src/insights/validation.js';
 
 const NOW = Date.parse('2026-10-12T00:00:00Z');
 const aaPayload = { tier: 'free', intelligence_index_version: 4, pagination: { page: 1, page_size: 200, total_pages: 1, has_more: false },
-  data: Array.from({ length: 30 }, (_, i) => ({ id: `m-${100 - i}`, slug: `m-${100 - i}`, name: `Model ${100 - i}`, release_date: null,
+  data: Array.from({ length: 30 }, (_, i) => ({ id: `m-x${100 - i}`, slug: `m-x${100 - i}`, name: `Model ${100 - i}`, release_date: null,
     model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 60 - i, artificial_analysis_coding_index: 90 - i }, pricing: {}, performance: {} })) };
 const aaPort: InsightSourcePort = { id: 'artificial-analysis', fetch: async () => [{ page: 1, payload: aaPayload }],
   parse: (payload, at) => parseAaPages(payload, at, {}) };
@@ -31,9 +31,9 @@ test('composition compact path covers both AA top tens, metric-split previous co
     requestScope: 'aa-v2:free:language-models:coding-intel-value-top50', schemaVersion: 'aa-v2-free' };
   const validated = (record: InsightRecord) => { const result = validateInsightRecord(record); assert.ok(result.ok); return result.value; };
   history.saveDaily(day, { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: [
-    validated(previousRecord('m-100', 'artificial_analysis_intelligence_index', 59)),
-    validated(previousRecord('m-100', 'artificial_analysis_coding_index', 89)),
-    validated(previousRecord('m-99', 'artificial_analysis_intelligence_index', 58))] });
+    validated(previousRecord('m-x100', 'artificial_analysis_intelligence_index', 59)),
+    validated(previousRecord('m-x100', 'artificial_analysis_coding_index', 89)),
+    validated(previousRecord('m-x99', 'artificial_analysis_intelligence_index', 58))] });
   const stdout: string[] = [], stderr: string[] = [];  const program = compose({ configEnv: { YOROI_DATA_DIR: dir }, dataDir: dir,
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) }, subscribeSignals: () => () => {},
     insights: { clock: () => NOW, openHistory: () => history, createPorts: () => [aaPort] } });
@@ -41,14 +41,14 @@ test('composition compact path covers both AA top tens, metric-split previous co
   assert.ok(text.length <= 3000, `length=${text.length}`);
   assert.equal((text.match(/^## 오케스트레이터 Top10/m) ?? []).length, 1);
   assert.equal((text.match(/^## 워커 Top10/m) ?? []).length, 1);
-  assert.match(text, /m-100/);
-  assert.match(text, /m-91/, '10th model of both lists must be present (not truncated at 20 evidence rows)');
+  assert.match(text, /m-x100/);
+  assert.match(text, /m-x91/, '10th model of both lists must be present (not truncated at 20 evidence rows)');
   const orchestrator = text.slice(text.indexOf('## 오케스트레이터'), text.indexOf('## 워커'));
   const worker = text.slice(text.indexOf('## 워커'), text.indexOf('## 출처'));
   assert.equal((orchestrator.match(/^\d+\. /gm) ?? []).length, 10, 'orchestrator top10 must have 10 rows');
   assert.equal((worker.match(/^\d+\. /gm) ?? []).length, 10, 'worker top10 must have 10 rows');
-  assert.match(orchestrator, /m-99 .*유지/, 'intelligence previous cohort applies');
-  assert.match(worker, /m-99 .*진입/, 'coding must not inherit intelligence previous ranks (new within its own cohort)');
+  assert.match(orchestrator, /m-x99 .*유지/, 'intelligence previous cohort applies');
+  assert.match(worker, /m-x99 .*진입/, 'coding must not inherit intelligence previous ranks (new within its own cohort)');
   assert.doesNotMatch(text, /인사이트: /);
   stdout.length = 0; stderr.length = 0;
   assert.equal(await program.run(['insights', 'once', '--full']), 0);

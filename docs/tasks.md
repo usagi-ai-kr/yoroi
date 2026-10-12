@@ -11,9 +11,16 @@
 - 0.5.1: PR #98 머지(2536baa), main CI 38141050373 success, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행, 전역 CLI 0.5.1 동기화, OpenCode 플러그인 재설치 installed(재시작 대기), #92·#93·#96·#97 close, 0.5.1 milestone close 완료.
 - 0.6.0: [#84](https://github.com/qus0in/yoroi/issues/84) trend(24h·7d 병행) 구현 완료. Top50 수집·Top10 압축 레터(`--full` 상세 유지). [#94](https://github.com/qus0in/yoroi/issues/94) 첫 수동 발행 [#99](https://github.com/qus0in/yoroi/issues/99), 크론 첫 자동 발행 [#100](https://github.com/qus0in/yoroi/issues/100), Top10 갱신본([#100](https://github.com/qus0in/yoroi/issues/100) 댓글 2026-10-12 10:31 KST) 반영 완료. 크론 `yoroi-letter-daily`·`yoroi-weekly-report` 가동. [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) 해제 실관측(2026-10-12 00:22Z) 확인.
 
+- PR #101 머지(`ae7cd83`), main CI [38203425496](https://github.com/qus0in/yoroi/actions/runs/38203425496): attempt1은 `tests/cli-process.test.ts` 3000ms flaky 실패, attempt2 success. [v0.6.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.6.0) 발행 완료.
+- 전역 CLI 0.6.0은 `v0.6.0` 태그 worktree에서 설치했다. #84·#77·#88 및 0.3.1 milestone close 완료. 0.6.0 milestone은 #94 크론 관측 대기로 open 유지.
+- release-prep-070: 버전·준비 문서 갱신, 이력 보존 및 삭제 줄 감사 후 `pnpm run check`·레포 검증·diff 검사로 확인한다. 외부 호출·커밋 없이 로컬 기록만 수행한다.
+
 ## 남은 작업
 
-- 0.6.0 milestone(9): 0.6.0 PR 병합 및 v0.6.0 Release 발행, [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) close 처리.
+- 0.6.0 milestone(9): #94 크론 관측 대기로 open 유지.
+- 0.7.0 milestone: #102 OpenCode Data 내부 참조 수집(dailyTokens 파서·리더보드 키 진단), #103 순위 규칙, #104 요금제상 최적, #105 `--markdown`을 묶어 dev → main PR 준비.
+- #102 크롤러 작업·진단 완료. 리더보드 파서는 내일 진단 결과 후 진행한다(승계 작업 없음).
+- 크론 출력은 0.6.0부터 `--pretty` 압축 Top10, 0.7.0부터 `--markdown`이다.
 - [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지.
 - PR #86 후속(미착수): 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 미노출.
 
@@ -39,4 +46,5 @@
 - `0.4.0`: [#89](https://github.com/qus0in/yoroi/issues/89) 감지 (스모크 exit 0 확인, #89 close, milestone 10 close, [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0) 발행 완료).
 - `0.5.0`: [#70](https://github.com/qus0in/yoroi/issues/70) 인사이트 레터 (PR #95 머지 e34f217, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행, 전역 CLI 갱신, #70 close, milestone 7 close).
 - `0.5.1`: milestone 11 ([#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93) top20, [#96](https://github.com/qus0in/yoroi/issues/96) Zen 리셋/남은시간, [#97](https://github.com/qus0in/yoroi/issues/97) OpenCode 락 복구, PR #98 머지 2536baa, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행 완료, #92·#93·#96·#97 close, milestone 11 close).
-- `0.6.0`: milestone 9 ([#84](https://github.com/qus0in/yoroi/issues/84) trend 24h·7d 병행, Top50 수집·Top10 압축 레터, [#94](https://github.com/qus0in/yoroi/issues/94) 레터 #99·#100 발행 및 크론 2종 등록, [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) 해제 실관측으로 close 예정).
+- `0.6.0`: milestone 9 ([#84](https://github.com/qus0in/yoroi/issues/84) trend 24h·7d 병행, Top50 수집·Top10 압축 레터, [#94](https://github.com/qus0in/yoroi/issues/94) 레터 #99·#100 발행 및 크론 2종 등록, [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) 해제 실관측으로 close 완료, #84 close, PR #101 머지 ae7cd83 및 v0.6.0 발행, milestone은 #94 크론 관측 대기로 open).
+- `0.7.0`: #102·#103·#104·#105 milestone, 버전 0.7.0 및 dev → main PR 준비.

@@ -1,4 +1,4 @@
-export type InsightSource = 'arena' | 'artificial-analysis' | 'openrouter' | 'cognition';
+export type InsightSource = 'arena' | 'artificial-analysis' | 'openrouter' | 'cognition' | 'opencode-data';
 
 export type InsightMetadataValue = string | number | boolean | null |
   readonly InsightMetadataValue[] | { readonly [key: string]: InsightMetadataValue };

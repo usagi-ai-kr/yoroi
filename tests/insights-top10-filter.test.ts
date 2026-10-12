@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { filterCandidates, isExcludedModel, parseFamilyVersion, compareVersions } from '../src/insights/letter-top10-filter.js';
-import { computeOrchestratorTop10, computePreviousRanks } from '../src/insights/letter-top10-rank.js';
+import { computeUnifiedTop10, previousRanks } from '../src/insights/letter-top10-unified.js';
 import { calcCostEfficiency, type ModelVariant } from '../src/insights/letter-top10-group.js';
 
 const variant = (modelId: string, value = 90, cost = 1, orTokens?: number): ModelVariant => {
@@ -36,12 +36,11 @@ test('same family keeps only the highest version, including middle version group
 test('threshold max is computed after filtering: an excluded top model does not raise the bar', () => {
   const records = [
     { modelId: 'grok-4-6', value: 100, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
-    { modelId: 'alpha', value: 90, priceInput: 10, priceOutput: 10, metric: 'artificial_analysis_intelligence_index' },
-    { modelId: 'beta', value: 80, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' }];
-  const entries = computeOrchestratorTop10(records).entries.map(e => e.modelId);
-  assert.deepEqual(entries, ['beta', 'alpha']); // max 90의 85%=76.5 → 80 포함(제외된 grok의 100은 기준 아님)
-  assert.deepEqual(computePreviousRanks([{ modelId: 'claude-fable-5-1', value: 99, metric: 'artificial_analysis_intelligence_index' }],
-    'artificial_analysis_intelligence_index', false).size, 0);
+    { modelId: 'gpt-6-1-sol', value: 90, priceInput: 10, priceOutput: 10, metric: 'artificial_analysis_intelligence_index' },
+    { modelId: 'claude-opus-5-5', value: 80, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' }];
+  const entries = computeUnifiedTop10(records).entries.map(e => e.modelId);
+  assert.deepEqual(entries, ['claude-opus-5-5', 'gpt-6-1-sol']); // max 90의 85%=76.5 → 80 포함(제외된 grok의 100은 기준 아님)
+  assert.deepEqual(previousRanks([{ modelId: 'claude-fable-5-1', value: 99, metric: 'artificial_analysis_intelligence_index' }]).size, 0);
 });
 
 test('ChatGPT line keeps only GPT-6.1 Sol: 6 Sol and 5.6 Sol are pruned by the latest-only rule', () => {

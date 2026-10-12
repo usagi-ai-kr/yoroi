@@ -4,7 +4,8 @@ import { buildInsightLetter, type InsightLetterResult } from './letter.js';
 import type { LetterFailure, LetterSourceInput } from './letter-sections.js';
 import type { InsightSource } from './record.js';
 import { buildMeasurements, buildRanks, DEFAULT_REQUEST_SCOPES, DEFAULT_SCHEMA_VERSIONS, failureKind } from './run-once-steps.js';
-import { buildPriceMap } from './letter-top10-price.js';
+import { buildPriceMap, type ModelPrices } from './letter-top10-price.js';
+import { withSuccessors } from './letter-top10-candidates.js';
 import { buildPreviousRanks } from './letter-top10-history.js';
 import { collectInsightSource, type InsightSourcePort } from './source-port.js';
 import { validateInsightRows } from './validation.js';
@@ -33,9 +34,10 @@ export interface InsightTop10Row { readonly modelId: string; readonly value?: nu
 export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly arenaRecords: readonly InsightTop10Row[]; readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
   readonly previousRanks: readonly { readonly modelId: string; readonly rank: number; readonly metric: string }[];
   readonly observedAt?: string; readonly nowUtc?: string }
-const top10Row = (value: ValidatedInsightRecord, metric: string, prices?: { input?: number; output?: number }): InsightTop10Row =>
+const top10Row = (value: ValidatedInsightRecord, metric: string, prices?: ModelPrices): InsightTop10Row =>
   ({ modelId: value.record.modelId, value: value.record.value, metric,
-    ...(prices?.input !== undefined && { priceInput: prices.input }), ...(prices?.output !== undefined && { priceOutput: prices.output }) });
+    ...(prices?.input !== undefined && { priceInput: prices.input }), ...(prices?.output !== undefined && { priceOutput: prices.output }),
+    ...(typeof value.record.metadata?.successorOf === 'string' && { successorOf: value.record.metadata.successorOf }) });
 export interface InsightRunResult {
   /** 1-A: success and partial success 0; every source failed 1. Argument errors (2) belong to the CLI. */
   readonly exitCode: 0 | 1; readonly publicationDate: string; readonly letter: InsightLetterResult;
@@ -44,7 +46,6 @@ export interface InsightRunResult {
   readonly top10?: InsightTop10Data;
 }
 type SourceRun = { readonly input: LetterSourceInput; readonly report: InsightSourceReport; readonly success?: InsightSuccess };
-
 async function runSource(deps: InsightRunDeps, port: InsightSourcePort, publicationDate: string, observedAt: string): Promise<SourceRun> {
   const source = port.id, scope = deps.requestScopes?.[source] ?? DEFAULT_REQUEST_SCOPES[source];
   const failed = (failure: LetterFailure, reason: string): SourceRun => ({ input: { source, ok: false, failure },
@@ -71,7 +72,8 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
   const success = (source: InsightSource) => runs.find(r => r.report.source === source)?.success;
   const intact = (source: InsightSource) => { const run = runs.find(r => r.report.source === source);
     return run && run.report.status !== 'failed' && run.report.partial !== true && (run.report.rejectedRows ?? 0) === 0; };
-  const aa = success('artificial-analysis')?.records ?? [], first = aa[0]?.record, prices = buildPriceMap(aa);
+  const aa = withSuccessors(success('artificial-analysis')?.records ?? []);
+  const first = aa[0]?.record, prices = buildPriceMap(aa);
   const records = aa.filter(v => ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index', 'median_output_tokens_per_second'].includes(v.record.metric)).map(v => top10Row(v, v.record.metric, prices.get(v.record.modelId)));
   let previous: InsightSuccess | undefined;  try { previous = first && deps.history.getDaily({ source: 'artificial-analysis', publicationDate: shiftInsightDate(publicationDate, -1),
     requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'], schemaVersion: first.schemaVersion }) || undefined; } catch { previous = undefined; }
@@ -84,7 +86,6 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
   return { records, arenaRecords, openrouterRecords, previousRanks: prev.ranks, failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source),
     observedAt, nowUtc: observedAt, ...(prev.warnings.length && { warnings: prev.warnings }) };
 }
-
 /** One internal-only run: collect/reuse → validate → store → compare → letter. No rendering, delivery or LLM. */
 export async function runInsightsOnce(deps: InsightRunDeps): Promise<InsightRunResult> {
   const observedAt = deps.now(), publicationDate = insightPublicationDate(observedAt);

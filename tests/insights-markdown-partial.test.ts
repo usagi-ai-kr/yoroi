@@ -7,7 +7,7 @@ import { INSIGHT_SOURCES } from '../src/insights/sources.js';
 const empty = { entries: [], exits: [] };
 
 test('partial sources and warnings reach the markdown instead of all_healthy', () => {
-  const md = renderTop10Markdown({ publicationDate: '2026-10-12', orchestrator: empty, worker: empty,
+  const md = renderTop10Markdown({ publicationDate: '2026-10-12', unified: empty,
     partialSources: ['artificial-analysis'], notes: ['전일 OpenRouter 자료 없음'] });
   assert.ok(!md.includes('all_healthy'));
   assert.ok(md.includes('partial'));
@@ -17,7 +17,7 @@ test('partial sources and warnings reach the markdown instead of all_healthy', (
 });
 
 test('failed and partial together report both, failures first', () => {
-  const md = renderTop10Markdown({ publicationDate: '2026-10-12', orchestrator: empty, worker: empty,
+  const md = renderTop10Markdown({ publicationDate: '2026-10-12', unified: empty,
     failedSources: ['cognition'], partialSources: ['artificial-analysis'], notes: ['샘플 정체 경고'] });
   assert.ok(md.includes('1_failed-critical'));
   assert.ok(md.includes('⚠️ cognition'));
@@ -26,13 +26,13 @@ test('failed and partial together report both, failures first', () => {
 });
 
 test('clean input still reports all healthy without partial markers', () => {
-  const md = renderTop10Markdown({ publicationDate: '2026-10-12', orchestrator: empty, worker: empty });
+  const md = renderTop10Markdown({ publicationDate: '2026-10-12', unified: empty });
   assert.ok(md.includes('all_healthy-success'));
   assert.ok(md.includes('모든 소스 정상 수집 완료'));
 });
 
 test('sources badge and attribution list follow the INSIGHT_SOURCES registry', () => {
-  const md = renderTop10Markdown({ publicationDate: '2026-10-12', orchestrator: empty, worker: empty });
+  const md = renderTop10Markdown({ publicationDate: '2026-10-12', unified: empty });
   assert.ok(md.includes(`sources-${INSIGHT_SOURCES.length}_total`));
   for (const entry of INSIGHT_SOURCES) assert.ok(md.includes(entry.displayName), entry.id);
   assert.ok(md.includes('약관상 자동 추출 제한'));

@@ -13,9 +13,10 @@ import { parseArenaRows } from '../src/insights/arena-parser.js';
 import { validateInsightRecord } from '../src/insights/validation.js';
 
 const NOW = Date.parse('2026-10-12T00:00:00Z');
+const MODELS: readonly (readonly [string, number, number])[] = [['claude-opus-5-5',100,95],['glm-5-3-flash',70,99],['gpt-oss-120b',65,98],['gpt-oss-20b',60,97],['kimi-k3',55,96],['kimi-k2-7-code',50,95],['gemini-3-1-pro',94,60],['minimax-m3',93,58],['claude-sonnet-5-5',92,88],['mistral-large-4',91,56],['nemotron-3-nano',90,54],['nemotron-3-super',89,52],['nemotron-3-ultra',88,50],['space-bunny',87,48],['qwen3-7-plus',86,46],['mimo-v2-6-flash',85,44],['claude-haiku-5-5',84,80],['muse-spark-1-3-contributor',83,79],['longcat-2-5-preview-free',82,78],['step-5-preview-free',81,77],['gpt-6-1-sol',80,76],['gpt-6-luna',79,75],['gpt-5-6-terra',78,74],['gpt-5-thinking-mini',77,73],['deepseek-v4-1-flash',76,72],['deepseek-v4-pro',75,71],['gemma4',74,70],['glm-5-3',73,69],['minimax-m2-7',72,68],['kimi-k2-6',71,67]];
 const aaPayload = { tier: 'free', intelligence_index_version: 4, pagination: { page: 1, page_size: 200, total_pages: 1, has_more: false },
-  data: Array.from({ length: 30 }, (_, i) => ({ id: `m-x${100 - i}`, slug: `m-x${100 - i}`, name: `Model ${100 - i}`, release_date: null,
-    model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 60 - i, artificial_analysis_coding_index: 90 - i }, pricing: {}, performance: {} })) };
+  data: MODELS.map(([slug, intel, coding]) => ({ id: slug, slug, name: slug, release_date: null, model_creator: { id: 'c', name: 'C' },
+    evaluations: { artificial_analysis_intelligence_index: intel, artificial_analysis_coding_index: coding }, pricing: { input: 1.1, output: 4.4 }, performance: {} })) };
 const aaPort: InsightSourcePort = { id: 'artificial-analysis', fetch: async () => [{ page: 1, payload: aaPayload }],
   parse: (payload, at) => parseAaPages(payload, at, {}) };
 const setup = (t: TestContext) => { const dir = mkdtempSync(join(tmpdir(), 'yoroi-top10-wire-'));
@@ -24,31 +25,30 @@ const previousRecord = (modelId: string, metric: string, value: number): Insight
   value, unit: 'score', category: 'language-models', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-11T00:00:00Z',
   sourceUrl: 'https://artificialanalysis.ai', sourceName: 'Artificial Analysis', license: null, attributionText: 'x', method: 'official-api', schemaVersion: 'aa-v2-free' });
 
-test('composition compact path covers both AA top tens, metric-split previous cohorts and stderr failures', async (t) => {
+test('composition compact path covers the unified AA top ten, unified previous cohort and stderr failures', async (t) => {
   const { dir } = setup(t);
   const history = Object.assign(new MemoryInsightHistory(), { close() {} });
   const day = { source: 'artificial-analysis' as const, publicationDate: '2026-10-11',
     requestScope: 'aa-v2:free:language-models:coding-intel-value-top50', schemaVersion: 'aa-v2-free' };
   const validated = (record: InsightRecord) => { const result = validateInsightRecord(record); assert.ok(result.ok); return result.value; };
   history.saveDaily(day, { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: [
-    validated(previousRecord('m-x100', 'artificial_analysis_intelligence_index', 59)),
-    validated(previousRecord('m-x100', 'artificial_analysis_coding_index', 89)),
-    validated(previousRecord('m-x99', 'artificial_analysis_intelligence_index', 58))] });
+    validated(previousRecord('claude-opus-5-5', 'artificial_analysis_intelligence_index', 100)),
+    validated(previousRecord('claude-opus-5-5', 'artificial_analysis_coding_index', 95)),
+    validated(previousRecord('gpt-6-1-sol', 'artificial_analysis_intelligence_index', 80)),
+    validated(previousRecord('gpt-6-1-sol', 'artificial_analysis_coding_index', 76))] });
   const stdout: string[] = [], stderr: string[] = [];  const program = compose({ configEnv: { YOROI_DATA_DIR: dir }, dataDir: dir,
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) }, subscribeSignals: () => () => {},
     insights: { clock: () => NOW, openHistory: () => history, createPorts: () => [aaPort] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
   assert.ok(text.length <= 3000, `length=${text.length}`);
-  assert.equal((text.match(/^## 오케스트레이터 Top10/m) ?? []).length, 1);
-  assert.equal((text.match(/^## 워커 Top10/m) ?? []).length, 1);
-  assert.match(text, /m-x100/);
-  assert.match(text, /m-x91/, '10th model of both lists must be present (not truncated at 20 evidence rows)');
-  const orchestrator = text.slice(text.indexOf('## 오케스트레이터'), text.indexOf('## 워커'));
-  const worker = text.slice(text.indexOf('## 워커'), text.indexOf('## 출처'));
-  assert.equal((orchestrator.match(/^\d+\. /gm) ?? []).length, 10, 'orchestrator top10 must have 10 rows');
-  assert.equal((worker.match(/^\d+\. /gm) ?? []).length, 10, 'worker top10 must have 10 rows');
-  assert.match(orchestrator, /m-x99 .*유지/, 'intelligence previous cohort applies');
-  assert.match(worker, /m-x99 .*진입/, 'coding must not inherit intelligence previous ranks (new within its own cohort)');
+  assert.equal((text.match(/^## 🏆 통합 Top10/m) ?? []).length, 1);
+  assert.ok(['🧭 오케', '🛠️ 워커', '🧭+🛠️ 둘 다'].every(tag => text.includes(tag)), 'all three role tags must be present');
+  assert.match(text, /claude-opus-5-5 .*유지/, 'unified previous cohort keeps the leader at rank 1');
+  assert.match(text, /mistral-large-4/, '10th model of the unified list must be present (not truncated at 20 evidence rows)');
+  const list = text.slice(text.indexOf('## 🏆 통합 Top10'), text.indexOf('## 요금제상 최적'));
+  assert.equal((list.match(/^\d+\. /gm) ?? []).length, 10, 'unified top10 must have 10 rows');
+  assert.match(text, /• 이탈: gpt-6-1-sol \(전일 2위\)/, 'single unified previous cohort feeds exits');
+  assert.doesNotMatch(text, /오케스트레이터 Top10|워커 Top10/, 'role-split sections are replaced by the unified list');
   assert.doesNotMatch(text, /인사이트: /);
   stdout.length = 0; stderr.length = 0;
   assert.equal(await program.run(['insights', 'once', '--full']), 0);
@@ -84,16 +84,16 @@ test('composition passes Arena official ranks through the production-shaped metr
   const model = (id: string, intel: number, coding: number) => ({ id, slug: id, name: id, release_date: null,
     model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: intel, artificial_analysis_coding_index: coding }, pricing: {}, performance: {} });
   const aa = { tier: 'free', intelligence_index_version: 4, pagination: { page: 1, page_size: 50, total_pages: 1, has_more: false },
-    data: [model('A', 60, 70), model('B', 50, 60)] };
+    data: [model('claude-opus-5-5', 90, 85), model('gpt-6-1-sol', 80, 76)] };
   const arenaRow = (name: string, rating: number, rank: number) => ({ model_name: name, organization: 'o', license: 'L', rating,
     rating_lower: rating - 10, rating_upper: rating + 10, variance: 2, vote_count: 10, rank, category: 'overall', leaderboard_publish_date: '2026-10-11' });
   const aaPort: InsightSourcePort = { id: 'artificial-analysis', fetch: async () => [{ page: 1, payload: aa }], parse: (payload, at) => parseAaPages(payload, at, {}) };
-  const arenaPort: InsightSourcePort = { id: 'arena', fetch: async () => [arenaRow('A', 1500, 2), arenaRow('B', 1400, 1)],
+  const arenaPort: InsightSourcePort = { id: 'arena', fetch: async () => [arenaRow('claude-opus-5-5', 1500, 2), arenaRow('gpt-6-1-sol', 1400, 1)],
     parse: (payload, at) => parseArenaRows(payload as unknown[], at) };
   const stdout: string[] = [], stderr: string[] = [];  const program = compose({ configEnv: { YOROI_DATA_DIR: dir }, dataDir: dir,
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) }, subscribeSignals: () => () => {},
     insights: { clock: () => NOW, openHistory: () => Object.assign(new MemoryInsightHistory(), { close() {} }),
       createPorts: () => [aaPort, arenaPort] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
-  assert.match(text, /A .*Arena 2위/); assert.match(text, /B .*Arena 1위/);
+  assert.match(text, /claude-opus-5-5 .*Arena 2위/); assert.match(text, /gpt-6-1-sol .*Arena 1위/);
 });

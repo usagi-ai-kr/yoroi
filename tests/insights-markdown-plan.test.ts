@@ -44,7 +44,7 @@ test('markdown letter embeds the plan section and the shared exclusion note', ()
   assert.ok(md.includes(`- ${EXCLUSION_NOTE}`));
   assert.ok(!md.includes('off-peak 확인분 적용'));
   const bare = renderTop10Markdown({ publicationDate: '2026-10-12',
-    orchestrator: { entries: [], exits: [] }, worker: { entries: [], exits: [] } });
+    unified: { entries: [], exits: [] } });
   assert.ok(!bare.includes('💳'));
 });
 

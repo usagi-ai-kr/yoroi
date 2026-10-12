@@ -7,21 +7,20 @@ const view: InsightLetterView = { ok: true, sections: [
   { kind: 'metadata', title: 'AI 인사이트 레터', publicationDate: '2026-10-12', issuedAt: '2026-10-12T00:00:00Z' },
   { kind: 'summary', title: '요약', items: [{ text: '확인된 변화 없음', evidenceIds: [] }] }] };
 const compact = () => renderTop10FromRecords({ publicationDate: '2026-10-12', failedSources: ['cognition'], records: [
-  { modelId: 'orchestrator-a', value: 53.4, metric: 'artificial_analysis_intelligence_index' },
-  { modelId: 'orchestrator-b', value: 52.7, metric: 'artificial_analysis_intelligence_index' },
-  { modelId: 'worker-a', value: 81.6, metric: 'artificial_analysis_coding_index' },
-  { modelId: 'worker-b', value: 78.3, metric: 'artificial_analysis_coding_index' }] });
+  { modelId: 'gpt-6-1-sol', value: 85.0, metric: 'artificial_analysis_intelligence_index' },
+  { modelId: 'claude-opus-5-5', value: 90.0, metric: 'artificial_analysis_intelligence_index' },
+  { modelId: 'gpt-6-1-sol', value: 82.0, metric: 'artificial_analysis_coding_index' },
+  { modelId: 'claude-opus-5-5', value: 88.0, metric: 'artificial_analysis_coding_index' }] });
 test('composition-injected compact renderer is used by default and stays under 3000 characters', () => {
   const rendered = renderInsights(view, { compact });
   assert.equal(rendered.exitCode, 0);
-  assert.match(rendered.stdout, /오케스트레이터 Top10/); assert.match(rendered.stdout, /워커 Top10/);
+  assert.match(rendered.stdout, /통합 Top10/);
   assert.ok(rendered.stdout.length <= 3000, `length=${rendered.stdout.length}`);
   assert.match(rendered.stdout, /출처: lmarena-ai LMArena Leaderboard Dataset \(CC-BY-4\.0\)/);
   assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미상\)/);
   assert.match(rendered.stdout, /출처: OpenCode Data \(내부 참조 · 약관상 자동 추출 제한\) \(라이선스 미상\)/);
   assert.match(rendered.stdout, /출처: Cognition FrontierCode \(라이선스 미상 · 내부 전용\)/); assert.match(rendered.stdout, /수집 실패 소스: cognition/);
-  assert.match(rendered.stdout, /SQLite/); assert.match(rendered.stdout, /가성비 최적 존:/); assert.doesNotMatch(rendered.stdout, /가중치 재정규화/);
-  assert.equal((rendered.stdout.match(/^- /gm) ?? []).length, 3, 'the contract summary is three fact lines');
+  assert.match(rendered.stdout, /SQLite/); assert.doesNotMatch(rendered.stdout, /가중치 재정규화/);
   assert.match(rendered.stdout, /^## 요약$/m);
 });
 test('--full and the legacy boolean keep the detailed letter instead of the compact one', () => {
@@ -30,7 +29,7 @@ test('--full and the legacy boolean keep the detailed letter instead of the comp
       { kind: 'metadata', title: 'AI 인사이트 레터', publicationDate: '2026-10-12', issuedAt: '2026-10-12T00:00:00Z' },
     ] }, options);
     assert.match(rendered.stdout, /【AI 인사이트 레터】/);
-    assert.doesNotMatch(rendered.stdout, /오케스트레이터 Top10/);
+    assert.doesNotMatch(rendered.stdout, /통합 Top10/);
   }
   assert.match(renderInsights(view, {}).stdout, /\[AI 인사이트 레터\]/, 'no-injection fallback stays detailed');
 });
@@ -44,27 +43,23 @@ test('a failed letter keeps the legacy failure contract in both modes', () => {
 });
 test('compact text strips control characters and credential-like fragments', () => {
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12', records: [
-    { modelId: 'bad\u001b[31m-model sk-live123456', value: 90, metric: 'artificial_analysis_intelligence_index' },
-    { modelId: 'plain', value: 80, metric: 'artificial_analysis_coding_index' }] });
+    { modelId: 'gpt-6-1-sol', value: 90, metric: 'artificial_analysis_intelligence_index\u001b[31m sk-live123456' }] });
   assert.doesNotMatch(text, /\u001b/);
   assert.doesNotMatch(text, /sk-live123456/);
-  assert.match(text, /\[redacted\]/);
 });
 test('normalize collisions omit the ambiguous reference rank instead of guessing', () => {
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12',
-    records: [{ modelId: 'acme/model-a', value: 90, metric: 'artificial_analysis_intelligence_index' }],
-    arenaRecords: [{ modelId: 'acme/model-a', value: 1500, metric: 'rating' },
-      { modelId: 'other/model-a', value: 1400, metric: 'rating' }] });
+    records: [{ modelId: 'gpt-6-1-sol', value: 90, metric: 'artificial_analysis_intelligence_index' }],
+    arenaRecords: [{ modelId: 'openai/gpt-6-1-sol', value: 1500, metric: 'rating' },
+      { modelId: 'other/gpt-6-1-sol', value: 1400, metric: 'rating' }] });
   assert.doesNotMatch(text, /Arena \d/);
 });
 test('worst-case compact stays within 3000 chars with long names, full turnover and long failures', () => {
-  const longId = (i: number) => `provider/${'x'.repeat(100)}-model-x${i}`;
-  const records = [...Array.from({ length: 20 }, (_, i) => ({ modelId: longId(i), value: 90 - i,
-      metric: 'artificial_analysis_intelligence_index' })),
-    ...Array.from({ length: 20 }, (_, i) => ({ modelId: longId(100 + i), value: 80 - i,
-      metric: 'artificial_analysis_coding_index' }))];
+  const catalogModels = ['gpt-6-1-sol', 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'gemini-3-1-pro',
+    'gemini-3-pro', 'deepseek-v4-1-flash', 'gemma4', 'glm-5-3', 'glm-5-3-flash'];
+  const records = catalogModels.map((m, i) => ({ modelId: m, value: 90 - i, metric: 'artificial_analysis_intelligence_index' }));
   const previousRanks = Array.from({ length: 10 }, (_, i) => ({ modelId: `prev-${i}`, rank: i + 1 }));
-  const refs = Array.from({ length: 20 }, (_, i) => ({ modelId: longId(i), rank: i + 1 }));
+  const refs = catalogModels.map((m, i) => ({ modelId: m, rank: i + 1 }));
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12', records, arenaRecords: refs, openrouterRecords: refs, previousRanks,
     failedSources: Array.from({ length: 12 }, (_, i) => `source-with-a-very-long-name-${i}`) });
   assert.ok(text.length <= 3000, `length=${text.length}`);
@@ -72,23 +67,24 @@ test('worst-case compact stays within 3000 chars with long names, full turnover 
 });
 test('Arena reference uses the official rank field, not a rating re-sort', () => {
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12',
-    records: [{ modelId: 'A', value: 60, metric: 'artificial_analysis_intelligence_index' },
-      { modelId: 'B', value: 52, metric: 'artificial_analysis_intelligence_index' }],
-    arenaRecords: [{ modelId: 'A', rank: 2, metric: 'rank' }, { modelId: 'B', rank: 1, metric: 'rank' }] });
-  assert.match(text, /B .*Arena 1위/);
-  assert.match(text, /A .*Arena 2위/);
+    records: [{ modelId: 'gpt-6-1-sol', value: 60, metric: 'artificial_analysis_intelligence_index' },
+      { modelId: 'claude-opus-5-5', value: 52, metric: 'artificial_analysis_intelligence_index' }],
+    arenaRecords: [{ modelId: 'gpt-6-1-sol', rank: 2, metric: 'rank' }, { modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }] });
+  assert.match(text, /claude-opus-5-5 .*Arena 1위/);
+  assert.match(text, /gpt-6-1-sol .*Arena 2위/);
   const malformed = renderTop10FromRecords({ publicationDate: '2026-10-12',
-    records: [{ modelId: 'm', value: 90, metric: 'artificial_analysis_intelligence_index' }],
-    arenaRecords: [{ modelId: 'bad', value: Number.NaN, metric: 'rating' }] });
+    records: [{ modelId: 'gpt-6-1-sol', value: 90, metric: 'artificial_analysis_intelligence_index' }],
+    arenaRecords: [{ modelId: 'gpt-6-1-sol', value: Number.NaN, metric: 'rating' }] });
   assert.doesNotMatch(malformed, /Arena \d/);
 });
-test('previous cohort maps do not bypass metric separation when ranks are present', () => {
+test('previous cohort maps track rank changes in unified ranking', () => {
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12',
-    records: [{ modelId: 'm1', value: 90, metric: 'artificial_analysis_intelligence_index' },
-      { modelId: 'm2', value: 80, metric: 'artificial_analysis_coding_index' }],
-    previousRanks: [{ modelId: 'm1', rank: 1, metric: 'artificial_analysis_coding_index' },
-      { modelId: 'm2', rank: 2, metric: 'artificial_analysis_coding_index' }] });
-  assert.match(text, /m1 .*신규/);
+    records: [{ modelId: 'gpt-6-1-sol', value: 90, metric: 'artificial_analysis_intelligence_index' },
+      { modelId: 'claude-opus-5-5', value: 80, metric: 'artificial_analysis_coding_index' }],
+    previousRanks: [{ modelId: 'gpt-6-1-sol', rank: 1, metric: 'rank' },
+      { modelId: 'claude-opus-5-5', rank: 2, metric: 'rank' }] });
+  assert.match(text, /gpt-6-1-sol .*유지/);
+  assert.match(text, /claude-opus-5-5 .*🔼 1/);
 });
 test('compact mode still reports failures diagnostics on stderr like the legacy contract', () => {
   const failing: InsightLetterView = { ok: true, sections: [

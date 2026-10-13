@@ -9,8 +9,9 @@ export type ZenDetectEvent =
   /** The recorded retry time has passed; the lock itself stays unverified until a real `--ok`. */
   | { readonly kind: 'retry-passed'; readonly observedAt: string; readonly retryAt: string; readonly model?: string }
   /** An OpenCode process started after the last recorded plugin load (`loadedAt` absent: never recorded). */
-  | { readonly kind: 'plugin-stale'; readonly observedAt: string; readonly processStartedAt: string;
-      readonly loadedAt?: string };
+  | { readonly kind: 'plugin-stale'; readonly observedAt: string; readonly processStartedAt?: string;
+      readonly loadedAt?: string; /** v2 마커 판정(p43): 설치 마커 버전. processStartedAt 대신 표시된다. */
+      readonly marker?: 'v1' | 'v2' };
 
 /** The detector itself was not running between two heartbeats (reboot, logout, crash). */
 export interface DetectorGapEvent { readonly kind: 'detector-gap'; readonly observedAt: string; readonly gapMs: number }

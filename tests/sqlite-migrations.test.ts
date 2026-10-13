@@ -56,7 +56,7 @@ test('opening the database leaks no ExperimentalWarning to stderr', () => {
   }
 });
 
-test('Zen, usage and detect migration sets converge to v1-v4 in every opening order without touching v1 data', () => {
+test('Zen, usage and detect migration sets converge to v1-v6 in every opening order without touching v1 data', () => {
   const lists = [ZEN_MIGRATIONS, USAGE_MIGRATIONS, DETECT_MIGRATIONS];
   const orders = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
   for (const order of orders) {
@@ -65,7 +65,7 @@ test('Zen, usage and detect migration sets converge to v1-v4 in every opening or
       const db = openDatabase(join(root, 'yoroi.db'));
       db.prepare("INSERT INTO provider_locks (scope, state, updated_at) VALUES ('s', 'locked', 't')").run();
       for (const index of order) { migrate(db, lists[index]); migrate(db, lists[index]); }
-      assert.deepEqual(versions(db), [1, 2, 3, 4], order.join());
+      assert.deepEqual(versions(db), [1, 2, 3, 4, 6], order.join());
       const names = (db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]).map(row => row.name);
       for (const table of ['detect_state', 'detect_lease', 'plugin_loads', 'cache_entries', 'observation_samples']) assert.ok(names.includes(table), `${table} ${order.join()}`);
       assert.equal((db.prepare('SELECT COUNT(*) AS n FROM provider_locks').get() as { n: number }).n, 1);

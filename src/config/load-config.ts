@@ -61,3 +61,5 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): R
   });
   return { providers: settings };
 }
+/** OpenCode 대상 버전(p42): YOROI_OPENCODE_TARGET=v1|v2, 기본 v1. 그 밖의 값은 다른 설정처럼 거부한다. */
+export function opencodeTarget(env: Readonly<Record<string, string | undefined>>): 'v1' | 'v2' { const value = env.YOROI_OPENCODE_TARGET?.trim() || 'v1'; if (value !== 'v1' && value !== 'v2') throw new Error('Invalid opencode target'); return value; }

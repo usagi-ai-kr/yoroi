@@ -63,15 +63,18 @@ export class SqliteZenLockStore implements ZenLockStore {
     });
   }
 
-  /** 늦게 도착한 기록이 더 최근 로드 시각을 되돌리지 않는다(ISO UTC 문자열 비교). */
-  markLoaded(input: { scope: string; observedAt: string }): void {
-    this.db.prepare(`INSERT INTO plugin_loads (scope, loaded_at) VALUES (?, ?)
-      ON CONFLICT(scope) DO UPDATE SET loaded_at = MAX(loaded_at, excluded.loaded_at)`).run(input.scope, input.observedAt);
+  /** 늦게 도착한 기록이 더 최근 로드 시각·버전을 되돌리지 않는다(ISO UTC 문자열 비교). */
+  markLoaded(input: { scope: string; observedAt: string; version?: 'v1' | 'v2' }): void {
+    this.db.prepare(`INSERT INTO plugin_loads (scope, loaded_at, loaded_version) VALUES (?, ?, ?)
+      ON CONFLICT(scope) DO UPDATE SET loaded_at = MAX(loaded_at, excluded.loaded_at),
+        loaded_version = CASE WHEN excluded.loaded_at >= loaded_at THEN excluded.loaded_version ELSE loaded_version END`)
+      .run(input.scope, input.observedAt, input.version ?? 'v1');
   }
-
   loadedAt(scope: string): string | undefined {
     return (this.db.prepare('SELECT loaded_at FROM plugin_loads WHERE scope = ?').get(scope) as { loaded_at?: string } | undefined)?.loaded_at;
   }
+  loadedVersion(scope: string): 'v1' | 'v2' | undefined { const row = this.db.prepare('SELECT loaded_version FROM plugin_loads WHERE scope = ?').get(scope) as { loaded_version?: string } | undefined;
+    return row?.loaded_version === 'v1' || row?.loaded_version === 'v2' ? row.loaded_version : undefined; }
 
   eventsSince(scope: string, afterId: number, limit = MAX_EVENTS): readonly ZenLockEvent[] { return lockEventsSince(this.db, scope, afterId, limit); }
   latestEventId(scope: string): number { return latestLockEventId(this.db, scope); }

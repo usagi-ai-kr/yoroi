@@ -7,6 +7,7 @@ import { NodeHttpClient, type HttpClient } from '../infra/http-client.js';
 import { NodeProcessRunner } from '../infra/process-runner.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import { openInsightsHistory } from '../infra/sqlite/insights-store.js';
+import { opencodeTarget } from '../config/load-config.js';
 import { buildFreeCatalog, collectOpenCodeFreeModels, freeOnlyModelIdsFromCatalog, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
 
 export interface InsightsRunOptions {
@@ -39,6 +40,7 @@ export type InsightsRunOutcome = Omit<InsightRunResult, 'top10'> & { readonly to
  * A history that cannot be opened degrades to an in-memory history instead of failing the collection. */
 export async function runInsights(options: InsightsRunOptions): Promise<InsightsRunOutcome> {
   const clock = options.clock ?? (() => Date.now());
+  const target = opencodeTarget(options.env); // 수집 시작 전에 판정(도중 throw로 history가 먼저 닫히지 않게)
   const sourceOptions: InsightPortOptions = { ...options.sourceOptions, now: clock };
   let history: InsightHistoryPort & { close?(): void }, storage: InsightsRunOutcome['storage'] = 'sqlite';
   try { history = (options.openHistory ?? (() => openInsightsHistory(options.dataEnv)))(); }
@@ -48,7 +50,7 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
     const [run, freeModels] = await Promise.all([runInsightsOnce({ ports, history, now: () => new Date(clock()).toISOString(),
       ...(options.refresh && { refresh: true }), ...(options.signal && { signal: options.signal }) }),
       options.processRunner ? collectOpenCodeFreeModels(options.processRunner,
-        { ...(options.signal && { signal: options.signal }) }) : Promise.resolve(undefined)]);
+        { ...(options.signal && { signal: options.signal }), target }) : Promise.resolve(undefined)]);
     const freeCatalog = freeModels && buildFreeCatalog(freeModels, run.publicationDate);
     const top10 = run.top10 && freeCatalog ? { ...run.top10, freeCatalog,
       freeOnlyModelIds: freeOnlyModelIdsFromCatalog(freeCatalog) } : run.top10;

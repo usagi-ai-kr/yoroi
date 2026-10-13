@@ -14,7 +14,8 @@ export function renderDetectEvent(event: DetectEvent): string {
     case "exceeded": return part("exceeded", event.model && `model=${clean(event.model)}`, event.retryAt && `retry=${event.retryAt}`);
     case "cleared": return part("cleared", event.model && `model=${clean(event.model)}`);
     case "retry-passed": return part("retry-passed", event.model && `model=${clean(event.model)}`, `retry=${event.retryAt}`, "(unverified)");
-    case "plugin-stale": return part("plugin-stale", `opencode-started=${event.processStartedAt}`, `plugin-loaded=${event.loadedAt ?? "never"}`);
+    case "plugin-stale": return part("plugin-stale", event.processStartedAt && `opencode-started=${event.processStartedAt}`,
+      event.marker && `marker=${event.marker}`, `plugin-loaded=${event.loadedAt ?? "never"}`);
     case "detector-gap": return part("gap", `${minutes(event.gapMs)} without heartbeat`);
     default: {
       const subject = `${event.provider}/${clean(event.windowId)}`;

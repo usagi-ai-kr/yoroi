@@ -60,8 +60,10 @@ const V4: Migration = {
 /** openDatabase 기본값(Zen 락만). 테이블 추가는 usage 어댑터가 USAGE_MIGRATIONS로 적용한다. */
 export const MIGRATIONS: readonly Migration[] = [V1];
 export const USAGE_MIGRATIONS: readonly Migration[] = [V1, V2];
+/** 플러그인 마커 버전(v1|v2) 기록(p43). 기존 행은 NULL로 남고 해석상 v1이다. 전역에서 미사용이던 v6을 쓴다(v5=insights). */
+const V6: Migration = { version: 6, sql: 'ALTER TABLE plugin_loads ADD COLUMN loaded_version TEXT;' };
 /** Zen 락 저장소가 여는 연결: v1 락 테이블 + v3 로드 표시. v2(캐시·이력)와 독립이라 적용 순서에 의존하지 않는다. */
-export const ZEN_MIGRATIONS: readonly Migration[] = [V1, V3];
+export const ZEN_MIGRATIONS: readonly Migration[] = [V1, V3, V6];
 /** detect 저장소가 여는 연결. 독립 테이블이라 v1~v3과 어떤 순서로 열어도 합집합이 된다. */
 export const DETECT_MIGRATIONS: readonly Migration[] = [V4];
 /** 인사이트(#70) 저장소 연결: 정의는 insights-migration.ts(v5), 독립 테이블이라 어떤 순서로 열어도 합집합이 된다. */

@@ -1,4 +1,5 @@
 import type { ProcessRunner } from '../infra/process-port.js';
+import { OPENCODE_V2_UNVERIFIED_DIAGNOSTIC, type OpenCodeTarget } from './opencode-models-source.js';
 import { PLAN_CATALOG, type PlanCatalogEntry, type PlanModelEntry } from './plan-catalog.js';
 
 export interface OpenCodeFreeModel { readonly provider: 'opencode' | 'opencode-go'; readonly originalId: string; readonly modelId: string }
@@ -17,9 +18,11 @@ export function parseOpenCodeFreeModels(output: string): OpenCodeFreeModel[] {
 }
 
 export async function collectOpenCodeFreeModels(runner: ProcessRunner, options: {
-  readonly signal?: AbortSignal; readonly diagnostic?: (line: string) => void;
+  readonly signal?: AbortSignal; readonly diagnostic?: (line: string) => void; readonly target?: OpenCodeTarget;
 } = {}): Promise<OpenCodeFreeModel[]> {
   const fail = options.diagnostic ?? console.error;
+  // V2는 실측 전까지 stub: CLI를 실행하지 않고 빈 목록 + 진단 1줄(근거 opencode-models-source.ts).
+  if (options.target === 'v2') { fail(OPENCODE_V2_UNVERIFIED_DIAGNOSTIC); return []; }
   try {
     const result = await runner.run({ executable: 'opencode', args: ['models'], timeoutMs: TIMEOUT_MS }, options.signal);
     if (result.exitCode !== 0) throw new Error('exit');

@@ -64,7 +64,7 @@ test('two processes racing for the lease: exactly one acquires, every round', as
     const raw = openDatabase(join(dir, 'yoroi.db')); raw.exec('DELETE FROM detect_lease'); raw.close();
   }
 });
-test('detect, Zen and usage first opens on one fresh database converge to all tables and versions 1-4', async t => {
+test('detect, Zen and usage first opens on one fresh database converge to all tables and versions 1-4·6', async t => {
   const dir = tmp(t);
   const open = (mod: string, fn: string) => `const m = await import('./src/infra/sqlite/${mod}.ts'); ${fn}`;
   const codes = [open('detect-state-store', 'm.openDetectStateStore(process.env).close();'), open('zen-lock-store', 'm.openZenLockStore(process.env).close();'),
@@ -77,7 +77,7 @@ test('detect, Zen and usage first opens on one fresh database converge to all ta
     try {
       const names = (db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]).map(r => r.name);
       for (const need of ['detect_state', 'detect_lease', 'plugin_loads', 'cache_entries', 'observation_samples', 'provider_locks']) assert.ok(names.includes(need), `${need} in ${names}`);
-      assert.deepEqual((db.prepare('SELECT version FROM schema_migrations ORDER BY version').all() as { version: number }[]).map(r => r.version), [1, 2, 3, 4]);
+      assert.deepEqual((db.prepare('SELECT version FROM schema_migrations ORDER BY version').all() as { version: number }[]).map(r => r.version), [1, 2, 3, 4, 6]);
     } finally { db.close(); }
   }
 });

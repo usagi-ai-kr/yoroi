@@ -24,12 +24,12 @@ const versions = (db: DatabaseSync) => (db.prepare('SELECT version FROM schema_m
 const cols = (db: DatabaseSync, table: string) =>
   (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map(c => c.name);
 
-test('v1 through v5 apply together and stay idempotent', () => {
+test('v1 through v6 apply together and stay idempotent', () => {
   assert.deepEqual(INSIGHTS_MIGRATIONS.map(m => m.version), [5], 'insights owns v5 only');
   withDb(db => {
-    assert.deepEqual(versions(db), [1, 2, 3, 4, 5]);
+    assert.deepEqual(versions(db), [1, 2, 3, 4, 5, 6]);
     const before = tables(db); migrate(db, ALL); migrate(db, ALL);
-    assert.deepEqual(versions(db), [1, 2, 3, 4, 5], 'a rerun adds nothing');
+    assert.deepEqual(versions(db), [1, 2, 3, 4, 5, 6], 'a rerun adds nothing');
     assert.deepEqual(tables(db), before, 'a rerun creates no extra table'); });
 });
 
@@ -44,10 +44,10 @@ test('applying insights first then the rest still converges', () => {
   const root = mkdtempSync(join(tmpdir(), 'yoroi-insights-order-'));
   try { const path = join(root, 'yoroi.db'); const db = openDatabase(path);
     migrate(db, [...INSIGHTS_MIGRATIONS, ...DETECT_MIGRATIONS, ...ZEN_MIGRATIONS, ...USAGE_MIGRATIONS]);
-    assert.deepEqual(versions(db), [1, 2, 3, 4, 5], 'order does not matter');
+    assert.deepEqual(versions(db), [1, 2, 3, 4, 5, 6], 'order does not matter');
     db.close();
     const again = openDatabase(path); migrate(again, ALL);
-    assert.deepEqual(versions(again), [1, 2, 3, 4, 5], 'a reopen adds nothing'); again.close();
+    assert.deepEqual(versions(again), [1, 2, 3, 4, 5, 6], 'a reopen adds nothing'); again.close();
   } finally { rmSync(root, { recursive: true, force: true }); } });
 
 test('the daily primary key is the S1 InsightDailyKey', () => {

@@ -30,7 +30,7 @@ async function fakeBin(t: test.TestContext, body: string) {
 const plugin = async () => (await import(new URL('../integrations/opencode/yoroi-zen-free.js', import.meta.url).href)).YoroiZenFreePlugin();
 
 test('--loaded takes no report options and cannot be combined with other operations or --json', () => {
-  assert.deepEqual(parseZenFree(['report', '--loaded']), { kind: 'zen-free', operation: 'loaded' });
+  assert.deepEqual(parseZenFree(['report', '--loaded']), { kind: 'zen-free', operation: 'loaded', marker: 'v1' });
   for (const bad of [['--loaded', '--model', 'free'], ['--loaded', '--reason', 'x'], ['--loaded', '--retry-in', '5'],
     ['--loaded', '--ok'], ['--exceeded', '--loaded'], ['--loaded', '--json']]) {
     assert.equal(parseZenFree(['report', ...bad]).kind, 'error', bad.join(' '));
@@ -67,8 +67,8 @@ test('SQLite persists only a scope and time, keeps the newest load, and coexists
   const db = openDatabase(path.join(root, 'yoroi.db'));
   t.after(() => db.close());
   const rows = (sql: string) => db.prepare(sql).all() as Record<string, unknown>[];
-  assert.deepEqual(rows('SELECT version FROM schema_migrations ORDER BY version').map(r => r.version), [1, 2, 3]);
-  assert.deepEqual(rows('PRAGMA table_info(plugin_loads)').map(r => r.name), ['scope', 'loaded_at']);
+  assert.deepEqual(rows('SELECT version FROM schema_migrations ORDER BY version').map(r => r.version), [1, 2, 3, 6]);
+  assert.deepEqual(rows('PRAGMA table_info(plugin_loads)').map(r => r.name), ['scope', 'loaded_at', 'loaded_version']);
   assert.equal(rows('SELECT COUNT(*) AS n FROM provider_locks')[0]!.n, 0);
   assert.equal(rows('SELECT COUNT(*) AS n FROM lock_events')[0]!.n, 0);
 });

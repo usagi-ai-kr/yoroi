@@ -28,7 +28,7 @@ export function applyOk(prev: ZenLockState | undefined, input: OkInput): { chang
 
 export class MemoryZenLockStore implements ZenLockStore {
   private readonly states = new Map<string, ZenLockState>();
-  private readonly loads = new Map<string, string>();
+  private readonly loads = new Map<string, { at: string; version: 'v1' | 'v2' }>();
   private readonly events: (ZenLockEvent & { scope: string })[] = [];
   private nextEventId = 1;
 
@@ -50,12 +50,14 @@ export class MemoryZenLockStore implements ZenLockStore {
     return { changed: result.changed, ...(result.state && { state: { ...result.state } }) };
   }
 
-  markLoaded(input: { scope: string; observedAt: string }): void {
+  markLoaded(input: { scope: string; observedAt: string; version?: 'v1' | 'v2' }): void {
     const prev = this.loads.get(input.scope);
-    if (!prev || Date.parse(input.observedAt) >= Date.parse(prev)) this.loads.set(input.scope, input.observedAt);
+    if (!prev || Date.parse(input.observedAt) >= Date.parse(prev.at))
+      this.loads.set(input.scope, { at: input.observedAt, version: input.version ?? 'v1' });
   }
 
-  loadedAt(scope: string): string | undefined { return this.loads.get(scope); }
+  loadedAt(scope: string): string | undefined { return this.loads.get(scope)?.at; }
+  loadedVersion(scope: string): 'v1' | 'v2' | undefined { return this.loads.get(scope)?.version; }
 
   eventsSince(scope: string, afterId: number, limit = 200): readonly ZenLockEvent[] {
     return this.events.filter(e => e.scope === scope && e.id > afterId).slice(0, limit).map(({ scope: _s, ...event }) => event);

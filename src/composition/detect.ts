@@ -21,7 +21,8 @@ export interface DetectCycleDeps {
   readonly thresholds: UsageDetectThresholds & { readonly pluginStaleGraceMs: number };
   readonly platform?: string; readonly factories?: SourceFactories; readonly intervals?: Partial<Record<ProviderId, number>>;
   /** Newest OpenCode process start (ms); injected by the caller, absent when unknown. */
-  readonly opencodeStartedAtMs?: () => number | undefined; readonly signal?: AbortSignal;
+  readonly opencodeStartedAtMs?: () => number | undefined; /** p45: 설치 타깃(v2면 ps 대신 마커 버전으로 stale 판정). */
+  readonly opencodeTarget?: 'v1' | 'v2'; readonly signal?: AbortSignal;
   readonly openState?: () => DetectStateStore; readonly openZen?: () => ZenLockStore; readonly openPersistence?: () => UsagePersistence;
 }
 export interface DetectCycleResult {
@@ -52,6 +53,7 @@ export async function runDetectCycle(deps: DetectCycleDeps): Promise<DetectCycle
       const lock = (deps.openZen ?? (() => openZenLockStore(deps.dataEnv)))(); closers.push(() => lock.close());
       const started = deps.opencodeStartedAtMs?.();
       events.push(...detectZen({ lock, state, nowMs, pluginStaleGraceMs: deps.thresholds.pluginStaleGraceMs,
+        ...(deps.opencodeTarget && { target: deps.opencodeTarget }),
         ...(started !== undefined && { opencodeStartedAtMs: started }) }));
     } catch { errors.push('zen'); }
     let persistence: UsagePersistence | undefined, sources: readonly UsageSource[] = [];

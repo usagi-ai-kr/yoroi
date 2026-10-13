@@ -10,6 +10,7 @@ export const USAGE = [
   "  yoroi zen-free",
   "  yoroi detect --once",
   "  yoroi insights once",
+  "  yoroi insights publish --dry-run",
   "  yoroi trend --since 7d",
   "",
   "providers: defaults to all 5 (ollama-pro,opencode-go,codex,agy,claude)",

@@ -77,7 +77,7 @@ test("detect help exits 0, documents the loop, once, json and status, and keeps 
   }
 });
 
-test("insights help exits 0 and documents once, pretty/refresh and the internal-only scope", async () => {
+test("insights help exits 0 and documents once, publish and their options", async () => {
   for (const argv of [["insights", "--help"], ["insights", "-h"], ["insights", "once", "--help"], ["insights", "once", "--pretty", "-h"]]) {
     const { cli, stdout, stderr } = runHelp(argv);
     assert.equal(await cli.run(argv), 0);
@@ -86,7 +86,9 @@ test("insights help exits 0 and documents once, pretty/refresh and the internal-
     assert.match(text, /usage: yoroi insights once \[--pretty\] \[--refresh\]/);
     assert.match(text, /--pretty/);
     assert.match(text, /--refresh/);
-    assert.match(text, /Internal use only/);
+    assert.match(text, /yoroi insights publish \[--dry-run\] \[--not-before HH:MM\]/);
+    assert.match(text, /--dry-run/);
+    assert.match(text, /--not-before/);
     assert.ok(!text.includes("pnpm"), "insights help has no pnpm string");
     assert.ok(!SECRET_PATTERN.test(text), "no secret patterns in help");
   }

@@ -1,13 +1,16 @@
 export const INSIGHTS_HELP = [
   "usage: yoroi insights once [--pretty] [--refresh] [--full] [--markdown] [--help]",
+  "       yoroi insights publish [--dry-run] [--not-before HH:MM]",
   "",
   "collects the AI data-source insights letter once and writes it to stdout.",
-  "Internal use only: no external delivery, scheduling or LLM calls.",
+  "Once renders the letter; publish creates one GitHub letter issue deterministically.",
   "",
   "options:",
   "  --pretty       render the Korean letter layout",
   "  --refresh      replace today's stored success and collect fresh data",
   "  --full         render full detailed letter with all evidence rows",
   "  --markdown     render GitHub issue markdown layout",
+  "  --dry-run      show publish actions without GitHub writes",
+  "  --not-before   minimum KST time to publish (default 09:00)",
   "  -h, --help     show help for insights subcommand",
 ].join("\n");

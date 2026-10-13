@@ -78,3 +78,9 @@
 - v0.8.4 발행: PR #122 → main `73f4ad1`, PR/main CI 38336083878 attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.4), 전역 CLI 0.8.4.
 - #115 본문 갱신(2026-10-13 11:19:10 KST), #121·0.8.4 milestone close 완료.
 - 0.8.5 준비: [#123](https://github.com/qus0in/yoroi/issues/123) 레터 정정 8건, dev → main PR.
+
+## 0.8.5 발행 및 0.8.6 준비 (2026-10-13)
+
+- v0.8.5 발행 완료: PR #124 → main `240378b`, PR/main CI [38344750752](https://github.com/qus0in/yoroi/actions/runs/38344750752) attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.5), 전역 CLI 0.8.5.
+- #115 본문 갱신(2026-10-13 13:07:28 KST), #123·0.8.5 milestone close 완료.
+- 0.8.6 범위: [#125](https://github.com/qus0in/yoroi/issues/125) 레터 발행을 Hermes 크론에서 yoroi 자체 PM2로 이관하고 `insights publish` 명령 추가; dev → main PR 준비.

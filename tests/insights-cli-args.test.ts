@@ -31,3 +31,13 @@ test('argument errors carry the exact offending token', () => {
   assert.deepEqual(parseInsights(['once', '--pretty', '--pretty']),
     { kind: 'error', message: 'unexpected argument: --pretty' });
 });
+
+test('insights publish accepts dry-run and a valid KST threshold only', () => {
+  assert.deepEqual(parseInsights(['publish']), { kind: 'insights', operation: 'publish' });
+  assert.deepEqual(parseInsights(['publish', '--dry-run', '--not-before', '07:30']),
+    { kind: 'insights', operation: 'publish', dryRun: true, notBefore: '07:30' });
+  for (const args of [['publish', '--not-before'], ['publish', '--not-before', '24:00'],
+    ['publish', '--dry-run', '--dry-run'], ['publish', '--pretty']]) {
+    assert.equal(parseInsights(args).kind, 'error');
+  }
+});

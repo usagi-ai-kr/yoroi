@@ -68,7 +68,7 @@ test('usage contributes to the score; exact ties use index then model ID', () =>
   assert.deepEqual(ids(selectOptimalZone(exactTie, 'orchestrator').map(s => s.group)), ['a', 'z']);
   assert.deepEqual(computeRanks([10, 20, 20, 5]), [3, 1, 1, 4]);
 });
-test('fewer than ten in the zone are shown as-is per list; previous comparison works end to end', () => {
+test('fewer than ten candidates show all rows with below-zone fill; previous comparison works end to end', () => {
   const records = [
     { modelId: 'claude-opus-5-5', value: 90, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'gpt-6-1-sol', value: 85, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
@@ -76,12 +76,12 @@ test('fewer than ten in the zone are shown as-is per list; previous comparison w
     { modelId: 'claude-opus-5-5', value: 88, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_coding_index' },
     { modelId: 'gpt-6-1-sol', value: 82, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_coding_index' }];
   const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }] });
-  assert.equal(lists.orchestrator.entries.length, 3); // 존 컷(지능 80.75) 통과 3개, 채우기 없음
-  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // 단일 종합 점수 순
-  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']); // 코딩 66 통과 2개
+  assert.equal(lists.orchestrator.entries.length, 3); // 후보 3개라 사용 가능한 행 모두 표시
+  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // 전체 후보 풀 점수
+  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5', 'gpt-6-1-sol', 'claude-haiku-5-5']);
   assert.ok(lists.orchestrator.entries.some(e => e.isPareto));
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.both, true);
-  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, false);
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, true);
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.change, '진입');
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '유지'); // 종합 점수에서도 1위 유지
 });

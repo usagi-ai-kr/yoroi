@@ -53,7 +53,7 @@ test('normalize collisions omit the ambiguous reference rank instead of guessing
       { modelId: 'other/gpt-6-1-sol', value: 1400, metric: 'rating' }] });
   assert.doesNotMatch(text, /Arena \d/);
 });
-test('worst-case compact stays within the 3600-char budget with long names, full turnover and long failures', () => {
+test('worst-case compact stays within the 3800-char budget with long names, full turnover and long failures', () => {
   const catalogModels = ['gpt-6-1-sol', 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'gemini-3-1-pro',
     'gemini-3-pro', 'deepseek-v4-1-flash', 'gemma4', 'glm-5-3', 'glm-5-3-flash'];
   const records = catalogModels.flatMap((m, i) => [
@@ -63,7 +63,7 @@ test('worst-case compact stays within the 3600-char budget with long names, full
   const refs = catalogModels.map((m, i) => ({ modelId: m, rank: i + 1 }));
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12', records, arenaRecords: refs, openrouterRecords: refs, previousRanks,
     failedSources: Array.from({ length: 12 }, (_, i) => `source-with-a-very-long-name-${i}`) });
-  assert.ok(text.length <= 3600, `length=${text.length}`);
+  assert.ok(text.length <= 3800, `length=${text.length}`);
   assert.match(text, /출처:/); assert.match(text, /SQLite/);
 });
 test('Arena reference uses the official rank field, not a rating re-sort', () => {
@@ -84,8 +84,8 @@ test('previous cohort maps track rank changes in both role lists', () => {
       { modelId: 'claude-opus-5-5', value: 80, metric: 'artificial_analysis_coding_index' }],
     previousRanks: [{ modelId: 'gpt-6-1-sol', rank: 1, metric: 'rank' },
       { modelId: 'claude-opus-5-5', rank: 2, metric: 'rank' }] });
-  assert.match(text, /gpt-6-1-sol .*유지/);
-  assert.match(text, /claude-opus-5-5 .*🔼 1/);
+  assert.match(text, /gpt-6-1-sol .*➖/);
+  assert.match(text, /claude-opus-5-5 .*▲1/);
 });
 test('compact mode still reports failures diagnostics on stderr like the legacy contract', () => {
   const failing: InsightLetterView = { ok: true, sections: [

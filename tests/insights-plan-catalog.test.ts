@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PLAN_CATALOG, type PlanCatalogEntry, type PlanModelEntry } from '../src/insights/plan-catalog.js';
-import { plansForModel } from '../src/insights/letter-top10-plans.js';
+import { plansForModel, freeOnlyModelIds } from '../src/insights/letter-top10-plans.js';
 import { buildCandidatePool } from '../src/insights/letter-top10-candidates.js';
 import { normalizeModelName, type Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 
 test('plan catalog entries all carry an https sourceUrl, checkedOn and a verified flag', () => {
-  assert.deepEqual(PLAN_CATALOG.map(p => p.planId), ['chatgpt-plus', 'claude-pro', 'google-ai-pro', 'ollama-cloud-pro', 'opencode-go-plus']);
+  assert.deepEqual(PLAN_CATALOG.map(p => p.planId), ['chatgpt-plus', 'claude-pro', 'google-ai-pro', 'ollama-cloud-pro', 'opencode-go-plus', 'antigravity', 'cursor', 'opencode-zen-free', 'opencode-go-free', 'antigravity-free']);
+  assert.ok(plansForModel('gemini-3-8-flash').includes('Antigravity'));
   for (const plan of PLAN_CATALOG) for (const model of plan.models) {
     assert.match(model.sourceUrl, /^https:\/\//, `${plan.planId}:${model.modelId}`);
     assert.ok(model.checkedOn === '2026-10-12' || model.checkedOn === '2026-10-13', `${model.modelId} checkedOn`);
@@ -35,19 +36,17 @@ test('Ollama Cloud Pro carries usagePolicy credit, pricingModel and concurrency 
   assert.ok(plansForModel('gemma4').includes('Ollama Cloud Pro(크레딧 $60/월)'));
 });
 
-test('plansForModel resolves Muse Spark 1.3 and Step 5 to OpenCode Go Plus', () => {
-  assert.ok(plansForModel('muse-spark-1-3').includes('OpenCode Go Plus'));
-  assert.ok(plansForModel('step-5').includes('OpenCode Go Plus'));
-  assert.ok(plansForModel('qwen3-8-max').includes('OpenCode Go Plus'));
-  assert.ok(plansForModel('grok-4-7').includes('OpenCode Go Plus'));
-  assert.ok(plansForModel('deepseek-v4-flash').includes('OpenCode Go Plus'));
-  assert.ok(plansForModel('muse-spark-1-2').includes('OpenCode Go Plus'));
+test('plansForModel resolves the Go console docs models to OpenCode Go Plus', () => {
+  for (const id of ['muse-spark-1-3', 'qwen3-8-max', 'grok-4-7', 'deepseek-v4-flash', 'muse-spark-1-2'])
+    assert.ok(plansForModel(id).includes('OpenCode Go Plus'), id);
+  assert.ok(plansForModel('step-5').includes('OpenCode Go Free(Free)'));
 });
 
 test('each plan keeps its expected model count and no duplicate modelId', () => {
   const counts: Record<string, number> = {
     'chatgpt-plus': 8, 'claude-pro': 3, 'google-ai-pro': 2,
-    'ollama-cloud-pro': 18, 'opencode-go-plus': 32,
+    'ollama-cloud-pro': 18, 'opencode-go-plus': 30, 'antigravity': 9, 'cursor': 11,
+    'opencode-zen-free': 13, 'opencode-go-free': 2, 'antigravity-free': 7,
   };
   assert.deepEqual(Object.fromEntries(PLAN_CATALOG.map(p => [p.planId, p.models.length])), counts);
   for (const plan of PLAN_CATALOG) {
@@ -64,18 +63,31 @@ test('verified=false models are dropped from the accessible candidate pool', () 
     checkedOn: '2026-10-13', verified,
   });
   const catalog: PlanCatalogEntry[] = [{
-    planId: 'p', planName: 'Plan P', models: [entry('kimi-k3'), entry('muse-spark-1-3', false)],
+    planId: 'p', planName: 'Plan P', models: [entry('glm-5-3'), entry('muse-spark-1-3', false)],
   }];
   const rows: Top10RecordInput[] = [
-    { modelId: 'kimi-k3', value: 90, metric: 'artificial_analysis_intelligence_index' },
+    { modelId: 'glm-5-3', value: 90, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'muse-spark-1-3', value: 80, metric: 'artificial_analysis_intelligence_index' },
   ];
   const pool = buildCandidatePool(rows, catalog);
-  assert.deepEqual(pool.accessibleRecords.map(r => r.modelId), ['kimi-k3']);
+  assert.deepEqual(pool.accessibleRecords.map(r => r.modelId), ['glm-5-3']);
   assert.equal(pool.allRecords.length, 2, 'verified=false는 세대 제외 대상이 아니므로 allRecords에는 남는다');
   const allVerified: PlanCatalogEntry[] = [{
     ...catalog[0]!, models: catalog[0]!.models.map(m => ({ ...m, verified: true })),
   }];
   assert.deepEqual(buildCandidatePool(rows, allVerified).accessibleRecords.map(r => r.modelId).sort(),
-    ['kimi-k3', 'muse-spark-1-3']);
+    ['glm-5-3', 'muse-spark-1-3']);
+});
+
+test('free plans hold the free entries and freeOnlyModelIds keeps only free-reachable models', () => {
+  const goFree = PLAN_CATALOG.find(p => p.planId === 'opencode-go-free')!;
+  assert.deepEqual(goFree.models.filter(m => m.free === true).map(m => m.modelId), ['longcat-2-5-preview-free', 'step-5']);
+  assert.equal(PLAN_CATALOG.filter(p => p.tier === 'free').length, 3);
+  assert.deepEqual(freeOnlyModelIds(), ['big-pickle', 'exo', 'jev-1-13', 'ling-3-0-flash-fin',
+    'ling-3-1-flash', 'longcat-2-5-preview-free', 'nemotron-3-5-lightning', 'step-5']);
+  assert.ok(plansForModel('longcat-2-5-preview-free').includes('OpenCode Go Free(Free)'));
+  assert.ok(plansForModel('step-5').includes('OpenCode Go Free(Free)'));
+  assert.ok(!plansForModel('kimi-k3').some(p => p.includes('(Free)')));
+  const paidOnly = PLAN_CATALOG.flatMap(p => p.models.filter(m => m.free !== true));
+  assert.ok(paidOnly.every(m => !freeOnlyModelIds().includes(m.modelId)));
 });

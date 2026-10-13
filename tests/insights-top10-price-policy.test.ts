@@ -15,22 +15,22 @@ test('a model with unknown cost is never marked pareto (star withheld)', () => {
   const [g] = groupVariants([{ modelId: 'm', baseModelId: 'm', effort: 'default', value: 90 } as never]);
   assert.equal(g!.isPareto, false);
 });
-test('the zone keeps only candidates at or above the threshold: order by cost efficiency then value', () => {
+test('the zone leads and fills from the remaining role candidates', () => {
   const models = ['claude-opus-5-5', 'gpt-6-1-sol', 'claude-haiku-5-5', 'gemini-3-1-pro', 'gemini-3-pro',
     'mistral-large-4', 'minimax-m3', 'kimi-k3', 'gemma4', 'space-bunny', 'qwen3-7-plus'];
   const records = models.map((m, i) => ({ modelId: m, value: 100 - i, priceInput: 10, priceOutput: 10, metric: 'artificial_analysis_intelligence_index' }));
   const entries = computeRoleTop10(records).orchestrator.entries;
-  assert.equal(entries.length, 10);
+  assert.equal(entries.length, 10); // Kimi K3가 복귀해 Top10을 채운다.
+  assert.ok(entries.some(e => e.modelId === 'kimi-k3'));
   assert.equal(entries[0]!.modelId, 'claude-opus-5-5');
 });
-test('previous ranks use the same composite-score and threshold policy', () => {
+test('previous ranks use the same composite-score and fill policy', () => {
   const records: Top10RecordInput[] = [
     { modelId: 'claude-opus-5-5', value: 100, metric: 'artificial_analysis_intelligence_index', priceInput: 1000, priceOutput: 1000 },
     { modelId: 'gpt-6-1-sol', value: 95, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
     { modelId: 'claude-haiku-5-5', value: 60, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
   ];
   const ranks = previousRanks(records).orchestrator;
-  assert.deepEqual([ranks.get('gpt-6-1-sol'), ranks.get('claude-opus-5-5'), ranks.get('claude-haiku-5-5')], [2, 1, undefined]);
-  // GPT=(0 index, 1 cost, 0 usage, .5 neutral speed)=42.5; Opus=(1,0,0,.5)=42.5.
-  // Tie-break is index descending, so Opus ranks first; Haiku 60 < 100*0.85 is excluded.
+  assert.deepEqual([ranks.get('gpt-6-1-sol'), ranks.get('claude-opus-5-5'), ranks.get('claude-haiku-5-5')], [1, 2, 3]);
+  // GPT=(.875 index, 1 cost, 0 usage, .5 speed)=77.5; Opus=42.5. Haiku 60 < 100*.85, then fills rank 3.
 });

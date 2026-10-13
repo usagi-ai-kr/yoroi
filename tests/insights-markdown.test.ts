@@ -16,6 +16,8 @@ const LISTS: RoleLists = {
         arenaRankText: 'Arena 2위', isPareto: true, both: true, change: '신규' }),
       entry({ rank: 2, modelId: 'provider/orch-up', indexText: '80.0', repEffort: 'default',
         blendedCostText: '$0.50', scoreText: '71.2', change: '▲2' }),
+      entry({ rank: 3, modelId: 'provider/orch-new', indexText: '76.0', change: '진입' }),
+      entry({ rank: 4, modelId: 'provider/orch-hold', indexText: '75.0', change: '유지' }),
     ],
     exits: [{ modelId: 'provider/orch-old', previousRank: 5 }],
   },
@@ -39,7 +41,6 @@ test('escapeShields escapes hyphens, underscores, and spaces according to shield
 test('renderTop10Markdown renders shields.io badges, emojis, tables, details, length limit', () => {
   const fixture = makeFixture();
   const md = renderTop10Markdown(fixture);
-
   assert.ok(md.includes('![date](https://img.shields.io/badge/date-2026--10--12-blue)'));
   assert.ok(md.includes(`![sources](https://img.shields.io/badge/sources-${SOURCE_LINES.length}_total-informational)`));
   assert.ok(md.includes('![status](https://img.shields.io/badge/status-1_failed-critical)'));
@@ -47,25 +48,25 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
   const healthyMd = renderTop10Markdown({ ...fixture, failedSources: [] });
   assert.ok(healthyMd.includes('![status](https://img.shields.io/badge/status-all_healthy-success)'));
 
-  for (const emoji of ['🧭', '🛠️', '⭐', '🆕', '🔼', '🔽']) {
-    assert.ok(md.includes(emoji), `Expected markdown to include ${emoji}`);
-  }
+  for (const emoji of ['🧭', '🛠️', '⭐', '🆕', '🌱', '➖', '🚪']) assert.ok(md.includes(emoji), emoji);
 
   assert.ok(md.includes('## 🧭 오케스트레이터 Top10 (판단·계획 / Intelligence Index)'));
   assert.ok(md.includes('## 🛠️ 워커 Top10 (실행·코딩 / Coding Index)'));
   const expectedHeader = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 접근 요금제 | 변동 |';
   assert.ok(md.includes(expectedHeader));
   assert.ok(md.includes('| --- | --- | --- | --- | --- | --- | --- | --- |'));
-  assert.ok(md.includes('| ⭐ 1 | provider/orch-model ↔ | high | 78.4 | 85.5 | $1.50 | ChatGPT Plus | 🆕 신규 |'));
-  assert.ok(md.includes('| 2 | provider/orch-up | default | 71.2 | 80.0 | $0.50 | ChatGPT Plus | 🔼 2 |'));
-  assert.ok(md.includes('| 1 | provider/worker-down | default | 66.9 | 75.0 | $0.20 | Ollama Cloud Pro | 🔽 1 |'));
-  assert.ok(md.includes('• 이탈: provider/orch-old (전일 5위)'));
+  assert.ok(md.includes('| ⭐ 1 | provider/orch-model ↔ | high | 78.4 | 85.5 | $1.50 | ChatGPT Plus | 🌱 |'));
+  assert.ok(md.includes('| 2 | provider/orch-up | default | 71.2 | 80.0 | $0.50 | ChatGPT Plus | ▲2 |'));
+  assert.ok(md.includes('| 3 | provider/orch-new | high | 97.0 | 76.0 | $1.50 | ChatGPT Plus | 🆕 |'));
+  assert.ok(md.includes('| 4 | provider/orch-hold | high | 96.0 | 75.0 | $1.50 | ChatGPT Plus | ➖ |'));
+  assert.ok(md.includes('| 1 | provider/worker-down | default | 66.9 | 75.0 | $0.20 | Ollama Cloud Pro | ▼1 |'));
+  assert.ok(md.includes('🚪 이탈: provider/orch-old (전일 5위)'));
 
   assert.ok(md.includes('<details><summary>출처 및 산출 공식</summary>'));
   assert.ok(!md.includes('오케스트레이터 점수 = 지수 50%'));
   assert.ok(!md.includes('워커 점수 = 코딩 35%'));
   assert.ok(md.includes('- 자격: 오케스트레이터 지능 ≥ 후보 최고 85% · 워커 코딩 ≥ 후보 최고 75% · 보유 요금제 접근 모델만'));
-  assert.ok(md.includes('- 교집합: 두 목록에 모두 오르는 모델은 모델 칸에 ↔ 표시'));
+  assert.ok(md.includes('## 📖 표시 안내') && md.includes('- ↔ 양쪽 목록 교집합: 오케스트레이터·워커 두 목록 모두에 오른 모델') && !md.includes('- 교집합: 두 목록에 모두 오르는 모델'));
   assert.ok(md.includes('- 혼합 단가=(3×입력+출력)/4 USD/1M'));
   assert.ok(!md.includes('가성비=지수÷max'));
   assert.ok(md.includes('- 스코어 = 100 × Σ(가중치 × 정규화값), 스코어 내림차순 정렬(동점 시 지수)'));
@@ -75,7 +76,7 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
   assert.ok(md.includes('- default: AA에 effort 변형 또는 cost_per_task가 없어 단일 구성으로 평가'));
   assert.ok(!md.includes('정렬: 가성비 중 큰 값'));
   assert.ok(md.includes(`- ${EXCLUSION_NOTE}`));
-  assert.ok(md.includes('★ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태'));
+  assert.ok(md.includes('- ⭐ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태(가성비 경계선)') && !md.includes('- ★ 파레토 최적'));
   assert.ok(md.includes('⚠️ synthetic-source'));
   assert.ok(md.includes('LMArena'));
   assert.ok(md.includes('OpenRouter'));

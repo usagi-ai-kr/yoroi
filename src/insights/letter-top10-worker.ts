@@ -10,7 +10,7 @@ export type OptimalZoneRole = keyof typeof OPTIMAL_ZONE_THRESHOLDS;
 export interface ScoreComponents { readonly index: number; readonly cost: number; readonly usage: number; readonly speed: number }
 export interface ScoredGroup {
   readonly group: ModelGroup; readonly indexRank: number; readonly costEffRank: number;
-  readonly score: number; readonly components: ScoreComponents;
+  readonly score: number; readonly components: ScoreComponents; readonly belowZone: boolean;
 }
 
 export function computeRanks(values: (number | undefined)[], higherIsBetter = true): (number | undefined)[] {
@@ -39,7 +39,7 @@ function median(values: readonly number[]): number {
   return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
 function scoreGroups(groups: readonly ModelGroup[], role: OptimalZoneRole): { score: number; components: ScoreComponents }[] {
-  const index = normalize(groups.map(g => g.repVariant.value));
+  const index = normalize(groups.map(g => g.repVariant.indexMissing ? undefined : g.repVariant.value));
   const cost = normalize(groups.map(g => { const c = g.repVariant.effectiveCost ?? g.repVariant.blendedCost;
     return c !== undefined && c >= 0 ? Math.log10(c + 0.01) : undefined; }), true);
   const usage = normalize(groups.map(g => logPositive(g.repVariant.openrouterTokens)));
@@ -72,23 +72,29 @@ function paretoGroups(groups: readonly ModelGroup[]): ModelGroup[] {
   return groups.map(g => {
     const c = g.repVariant, cost = costOf(g), dominated = groups.some(o => {
       const otherCost = costOf(o);
-      if (o.baseModelId === g.baseModelId || otherCost === undefined || cost === undefined) return false;
+      if (o.baseModelId === g.baseModelId || o.repVariant.indexMissing || otherCost === undefined || cost === undefined) return false;
       return otherCost <= cost && o.repVariant.value >= c.value &&
         (otherCost < cost || o.repVariant.value > c.value);
     });
-    return { ...g, isPareto: cost !== undefined && !dominated };
+    return { ...g, isPareto: cost !== undefined && !c.indexMissing && !dominated };
   });
 }
 
 /** 임계 통과 그룹만 종합 점수 내림차순으로 반환한다(채우기 없음). 파레토는 단가·지수 별도 판정이다. */
-export function selectOptimalZone(groups: readonly ModelGroup[], role: OptimalZoneRole): ScoredGroup[] {
-  if (!groups.length) return [];
-  const representatives = chooseRepresentatives(groups, role);
-  const cutoff = Math.max(...representatives.map(g => g.repVariant.value)) * OPTIMAL_ZONE_THRESHOLDS[role];
-  const kept = paretoGroups(representatives.filter(g => g.repVariant.value >= cutoff)), scores = scoreGroups(kept, role);
-  const indexRanks = computeRanks(kept.map(g => g.repVariant.value));
-  const costRanks = computeRanks(kept.map(g => g.repVariant.costEfficiency));
-  return kept.map((group, i) => ({ group, indexRank: indexRanks[i] ?? 1, costEffRank: costRanks[i] ?? 0,
-    ...scores[i]! })).sort((a, b) => b.score - a.score || b.group.repVariant.value - a.group.repVariant.value ||
-      a.group.baseModelId.localeCompare(b.group.baseModelId));
+export function selectOptimalZone(groups: readonly ModelGroup[], role: OptimalZoneRole): ScoredGroup[] { return scoreRoleCandidates(groups, role).filter(g => !g.belowZone); }
+export function selectRoleCandidates(groups: readonly ModelGroup[], role: OptimalZoneRole, limit = 10): ScoredGroup[] { return scoreRoleCandidates(groups, role).slice(0, limit); }
+const fillOrder = (a: ScoredGroup, b: ScoredGroup): number => {
+  const maxIndex = (g: ScoredGroup) => Math.max(...g.group.variants.filter(v => !v.indexMissing).map(v => v.value), Number.NEGATIVE_INFINITY);
+  return Number(!!a.group.repVariant.indexMissing) - Number(!!b.group.repVariant.indexMissing) ||
+    (a.group.repVariant.indexMissing ? b.score - a.score : maxIndex(b) - maxIndex(a) || b.score - a.score) || a.group.baseModelId.localeCompare(b.group.baseModelId);
+};
+function scoreRoleCandidates(groups: readonly ModelGroup[], role: OptimalZoneRole): ScoredGroup[] {
+  if (!groups.length) return []; const representatives = chooseRepresentatives(groups, role);
+  const cutoff = Math.max(0, ...representatives.filter(g => !g.repVariant.indexMissing).map(g => g.repVariant.value)) * OPTIMAL_ZONE_THRESHOLDS[role];
+  const kept = paretoGroups(representatives), scores = scoreGroups(kept, role);
+  const indexRanks = computeRanks(kept.map(g => g.repVariant.indexMissing ? undefined : g.repVariant.value)), costRanks = computeRanks(kept.map(g => g.repVariant.indexMissing ? undefined : g.repVariant.costEfficiency));
+  return kept.map((group, i) => ({ group, belowZone: !!group.repVariant.indexMissing || group.repVariant.value < cutoff,
+    indexRank: indexRanks[i] ?? 0, costEffRank: costRanks[i] ?? 0,
+    ...scores[i]! })).sort((a, b) => Number(a.belowZone) - Number(b.belowZone) ||
+      (a.belowZone ? fillOrder(a, b) : b.score - a.score || b.group.repVariant.value - a.group.repVariant.value || a.group.baseModelId.localeCompare(b.group.baseModelId)));
 }

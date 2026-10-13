@@ -16,6 +16,8 @@ const fields = {
 export class AaParseError extends Error {
   constructor(readonly code: 'invalid-row' | 'invalid-response') { super(`Artificial Analysis ${code}`); }
 }
+/** FrontierCode는 AA가 예고한 보조 지표(가칭). 이름에 frontiercode가 든 필드만 골라 같은 metric으로 적재한다. */
+export const FRONTIERCODE_METRIC = 'frontiercode_score';
 export type AaRowResult = ParseRowResult;
 function fail(): never { throw new AaParseError('invalid-row'); }
 /** Free-shape V2 metrics only; Pro additions are ignored with warnings.
@@ -38,10 +40,13 @@ export function parseAaResponse(payload: unknown, observedAt: string): readonly 
       if (!isObject(row) || !isText(row.id) || !isText(row.slug) || !isText(row.name) ||
         !isObject(row.model_creator) || !isText(row.model_creator.id) || !isText(row.model_creator.name) ||
         !(row.release_date === null || isIsoDate(row.release_date))) fail();
+      const rowFcKeys = Object.keys(row).filter(key => key.toLowerCase().includes('frontiercode'));
       warnings.push(...unknownFields(row, ['id', 'slug', 'name', 'release_date', 'model_creator',
-        ...Object.keys(fields), 'artificial_analysis_intelligence_index_cost'], 'model'),
+        ...Object.keys(fields), 'artificial_analysis_intelligence_index_cost', ...rowFcKeys], 'model'),
         ...unknownFields(row.model_creator, ['id', 'name'], 'model_creator'));
       const records: InsightRecord[] = [];
+      const frontiercode: [string, unknown][] = [];
+      for (const key of rowFcKeys) frontiercode.push([`model.${key}`, row[key]]);
       const add = (metric: string, value: unknown, unit: string) => {
         if (value === null) return;
         if (!isFiniteNumber(value) || (unit !== 'score' && value < 0)) fail();
@@ -56,9 +61,17 @@ export function parseAaResponse(payload: unknown, observedAt: string): readonly 
       };
       for (const [group, metrics] of Object.entries(fields)) {
         const values = row[group]; if (!isObject(values)) fail();
-        warnings.push(...unknownFields(values, metrics.map(([name]) => name!), group));
+        const allowed = metrics.map(([name]) => name!);
+        const fcKeys = group === 'evaluations' ? Object.keys(values).filter(key => key.toLowerCase().includes('frontiercode')) : [];
+        warnings.push(...unknownFields(values, [...allowed, ...fcKeys], group));
         for (const [metric, unit] of metrics) if (metric! in values) add(metric!, values[metric!], unit!);
+        for (const key of fcKeys) frontiercode.push([`${group}.${key}`, values[key]]);
       }
+      const fcNumeric = frontiercode.find(([, value]) => isFiniteNumber(value));
+      if (fcNumeric) {
+        if (frontiercode.length > 1) warnings.push(`Multiple frontiercode fields; used ${fcNumeric[0]}`);
+        add(FRONTIERCODE_METRIC, fcNumeric[1], 'score');
+      } else if (frontiercode.length) warnings.push('frontiercode fields present but not numeric; ignored');
       const cost = row.artificial_analysis_intelligence_index_cost;
       const optionalCost = (metric: string, value: unknown, unit: string) => {
         if (value === undefined || value === null) warnings.push(`Missing ${metric}; metric omitted`);

@@ -68,6 +68,13 @@
 - 0.8.2 milestone: [#113](https://github.com/qus0in/yoroi/issues/113) 레터 종합 스코어 정렬 및 사용자 피드백 4건, 재오픈한 [#107](https://github.com/qus0in/yoroi/issues/107) SQLite WAL 첫 열기 재시도 수정.
 - 0.8.2는 위 두 이슈를 묶어 dev → main PR 준비 중이다.
 
+## 0.8.2 발행 및 0.8.3 준비 (2026-10-13)
+
+- v0.8.2 발행 완료: PR #114 → main `e631228`, PR/push CI 1회 성공, main CI [38324791859](https://github.com/qus0in/yoroi/actions/runs/38324791859) attempt 1 success, [v0.8.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.2).
+- 전역 CLI 0.8.2는 `v0.8.2` 태그 worktree에서 설치했다. #113·#107 close 및 0.8.2 milestone close 완료.
+- 0.8.3 milestone: [#116](https://github.com/qus0in/yoroi/issues/116) Antigravity 요금제 추가. `plan-catalog.ts` 구현은 go1 진행 중이며, 0.8.3 dev → main PR을 준비한다.
+- 0.8.3 범위 확장: [#117](https://github.com/qus0in/yoroi/issues/117) Top10 10행 채움·Free 티어 섹션·표시 안내/이모지·Cursor 요금제·Cognition 1.1·AA FrontierCode 대비·Grok/Kimi 롤백을 추가한다.
+
 ## 버전 이력 요약
 
 - **0.1.0**–**0.1.2** (2026-10-08): MVP, CLI 개선, .env 병합 로드 완료 및 발행.

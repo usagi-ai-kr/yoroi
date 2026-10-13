@@ -29,8 +29,10 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('1. unified-model-1 ↔ · effort high · 스코어 90.0 · 95.0 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(rendered.includes('3. unified-model-3 · effort high · 스코어 84.0 · 90.0 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(!rendered.includes('가성비 1위 · 접근'));
-  for (const t of ['OpenRouter 1위', 'Arena 1위', '유지', '★']) assert.ok(rendered.includes(t), t);
-  assert.ok(rendered.includes('• 이탈: unified-old-model (전일 8위)'));
+  for (const t of ['OpenRouter 1위', 'Arena 1위', '➖', '⭐']) assert.ok(rendered.includes(t), t);
+  assert.ok(rendered.includes('🚪 이탈: unified-old-model (전일 8위)'));
+  assert.ok(rendered.includes('## 📖 표시 안내') && rendered.includes('- ⭐ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태(가성비 경계선)'));
+  assert.ok(rendered.indexOf('## 📖 표시 안내') < rendered.indexOf('## 출처 및 안내'));
   assert.ok(rendered.includes('## 출처 및 안내'));
   for (const t of ['출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)', '출처: OpenRouter (CC-BY-4.0)',
     '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
@@ -40,26 +42,26 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
     assert.ok(rendered.includes(t), t);
   }
 });
-test('renderTop10Letter indicates all sources normal and keeps the whole compact under the 3600-char budget', () => {
+test('renderTop10Letter indicates all sources normal and keeps the whole compact under the 3800-char budget', () => {
   const data: Top10LetterInput = { publicationDate: '2026-10-12',
     lists: fakeLists('long-vendor-org-name/long-model-name-extra-large-v1'), failedSources: ['openrouter', 'cognition'] };
   const rendered = renderTop10Letter(data);
   assert.ok(!rendered.includes('수집 실패 소스: cognition'));
   assert.ok(rendered.includes('수집 실패 소스: openrouter'));
-  assert.ok(rendered.length < 3600, `length ${rendered.length} >= 3600`);
+  assert.ok(rendered.length < 3800, `length ${rendered.length} >= 3800`);
 });
 test('renderTop10Letter summarizes all-new, partial-new, and no-new cohorts per list', () => {
-  const mkLists = (changes: readonly ('신규' | '유지' | '▲1')[]): RoleLists => ({
+  const mkLists = (changes: readonly ('신규' | '유지' | '▲1' | '진입')[]): RoleLists => ({
     orchestrator: { entries: changes.map((change, i) => ({ rank: i + 1, modelId: `m-${i + 1}`, indexText: '90.0',
       repEffort: 'high', blendedCostText: '$1.00/1M', costEffRankText: `가성비 ${i + 1}위`, plans: ['ChatGPT Plus'],
       arenaRankText: 'Arena -', openrouterRankText: 'OpenRouter -', isPareto: false, both: false, change })), exits: [] },
     worker: { entries: [], exits: [] } });
   const allNew = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['신규', '신규']) });
-  assert.ok(allNew.includes('- 변동: 오케스트레이터 첫 집계: 전일 비교 기록 없음 · 워커 자료 부족'));
-  const partialNew = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['유지', '▲1', '신규']) });
-  assert.ok(partialNew.includes('- 변동: 오케스트레이터 상위권 3개 중 1개 순위·진입 변동 (신규 1개), 이탈 0개 · 워커 자료 부족'));
+  assert.ok(allNew.includes('- 변동: 🌱 오케스트레이터 첫 집계: 전일 기록 없음 · 워커 자료 부족'));
+  const partialNew = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['유지', '▲1', '진입']) });
+  assert.ok(partialNew.includes('- 변동: 오케스트레이터 상위권 3개 중 2개 순위·진입 변동 (🆕 1개), 🚪 0개 · 워커 자료 부족'));
   const regular = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['유지', '▲1', '유지']) });
-  assert.ok(regular.includes('- 변동: 오케스트레이터 상위권 3개 중 1개 순위·진입 변동, 이탈 0개 · 워커 자료 부족'));
+  assert.ok(regular.includes('- 변동: 오케스트레이터 상위권 3개 중 1개 순위·진입 변동, 🚪 0개 · 워커 자료 부족'));
 });
 
 test('partial sources are reported instead of claiming all sources are normal', () => {

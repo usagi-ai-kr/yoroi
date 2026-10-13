@@ -1,6 +1,8 @@
-/** 사용자 보유 5개 요금제 → 사용 가능 모델 매핑. 근거는 공식 pricing/플랜 페이지 1회 조회(2026-10-12)이며,
+/** 사용자 보유 6개 요금제 → 사용 가능 모델 매핑. 근거는 공식 pricing/플랜 페이지 1회 조회(2026-10-12)이며,
  *  항목마다 sourceUrl·checkedOn·verified를 가진다. 페이지에서 확인되지 않은 모델은 넣지 않는다(보고서 '미확인').
- *  modelId는 AA 정규화 이름(소문자·점→하이픈) 기준이다. */
+ *  modelId는 AA 정규화 이름(소문자·점→하이픈) 기준이다.
+ *  Antigravity: 2026-10-13 사용자 결정("gemini 3.8 flash는 antigravity에 들어있는 셈") + 공식 모델 페이지
+ *  (https://antigravity.google/docs/models) 확인으로 추가. 수치 한도는 페이지에 없어(주간/5h 잔여 %만) 미표기. */
 export interface UsageLimit {
   readonly count: number;
   readonly period: string;
@@ -15,6 +17,10 @@ export interface PlanModelEntry {
   readonly checkedOn: string;
   readonly verified: boolean;
   readonly usageLimit?: UsageLimit;
+  /** 공식 표기에서 무료(Free)로 확인된 모델만 true. 유료 표기 모델은 두지 않는다(추측 금지). */
+  readonly free?: boolean;
+  /** 요금제 내 과금 방식: 'pool'은 플랜 사용량 풀 포함, 'list-price'는 API 정가. Cursor 전용 구분. */
+  readonly billing?: 'pool' | 'list-price';
 }
 export interface PlanUsagePolicy {
   readonly credit: string;
@@ -28,7 +34,11 @@ export interface PlanCatalogEntry {
   readonly planName: string;
   readonly models: readonly PlanModelEntry[];
   readonly usagePolicy?: PlanUsagePolicy;
+  /** 무료 전용 플랜(OpenCode Zen Free·Antigravity Free 등). 미설정은 유료 플랜으로 본다. */
+  readonly tier?: 'paid' | 'free';
 }
+
+import { FREE_PLANS } from './plan-catalog-free.js';
 
 const CHECKED_ON = '2026-10-12', CHECKED_ON_DOCS = '2026-10-13';
 const OPENAI = 'https://openai.com/chatgpt/pricing/';
@@ -37,8 +47,12 @@ const GOOGLE = 'https://one.google.com/about/google-ai-plans/';
 const OLLAMA = 'https://ollama.com/pricing';
 const OPENCODE = 'https://opencode.ai/go';
 const OPENCODE_DOCS = 'https://opencode.ai/v2/docs/console/go';
+const ANTIGRAVITY = 'https://antigravity.google/docs/models';
+const CURSOR = 'https://cursor.com/pricing';
 const m = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
   ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON, verified: true });
+const mFree = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
+  ({ ...m(modelId, displayName, sourceUrl), free: true });
 const mDocs = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
   ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON_DOCS, verified: true });
 
@@ -63,8 +77,7 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     { ...m('kimi-k3', 'Kimi K3', OPENCODE), usageLimit: { count: 440, period: '5h', note: 'Est. requests / 5h: 440 (Plus)', sourceUrl: OPENCODE, checkedOn: CHECKED_ON } },
     ...['Kimi K2.7 Code|kimi-k2-7-code', 'Space Bunny|space-bunny', 'MiniMax M3|minimax-m3', 'Claude Haiku 5.5|claude-haiku-5-5',
     'GPT 6 Luna|gpt-6-luna', 'Qwen3.7 Plus|qwen3-7-plus', 'GLM-5.3-Flash|glm-5-3-flash', 'DeepSeek V4.1 Flash|deepseek-v4-1-flash',
-    'MiMo-V2.6-Flash|mimo-v2-6-flash', 'Muse Spark 1.3 Contributor|muse-spark-1-3',
-    'LongCat 2.5 Preview Free|longcat-2-5-preview-free', 'Step 5 Preview Free|step-5']
+    'MiMo-V2.6-Flash|mimo-v2-6-flash', 'Muse Spark 1.3 Contributor|muse-spark-1-3']
     .map(s => m(s.split('|')[1]!, s.split('|')[0]!, OPENCODE)),
     ...['GPT 5.6 Luna|gpt-5-6-luna', 'GLM-5.3|glm-5-3', 'GLM-5.2|glm-5-2', 'Kimi K2.6|kimi-k2-6', 'LongCat-2.0|longcat-2-0',
     'MiMo-V2.6-Pro|mimo-v2-6-pro', 'MiMo-V2.5|mimo-v2-5', 'MiMo-V2.5-Pro|mimo-v2-5-pro', 'MiniMax M2.7|minimax-m2-7',
@@ -72,4 +85,16 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     'DeepSeek V4 Pro|deepseek-v4-pro', 'DeepSeek V4 Flash|deepseek-v4-flash',
     'DeepSeek V4 Flash Vision Exp|deepseek-v4-flash-vision-exp', 'Hy4 preview|hy4-preview', 'Hy3|hy3',
     'Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6'].map(s => mDocs(s.split('|')[1]!, s.split('|')[0]!, OPENCODE_DOCS))] },
+  { planId: 'antigravity', planName: 'Antigravity', models: ['Gemini 3.8 Flash|gemini-3-8-flash', 'Gemini 3.7 Flash|gemini-3-7-flash',
+    'Gemini 3.6 Flash|gemini-3-6-flash', 'Gemini 3.1 Pro|gemini-3-1-pro', 'Claude Sonnet 5.5 (thinking)|claude-sonnet-5-5',
+    'Claude Opus 5.5 (thinking)|claude-opus-5-5', 'Claude Sonnet 4.6 (thinking)|claude-sonnet-4-6',
+    'Claude Opus 4.6 (thinking)|claude-opus-4-6', 'GPT-OSS-120b|gpt-oss-120b']
+    .map(s => mDocs(s.split('|')[1]!, s.split('|')[0]!, ANTIGRAVITY)) },
+  { planId: 'cursor', planName: 'Cursor', models: [
+    ...['Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6', 'Grok 4.5|grok-4-5']
+      .map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), billing: 'pool' as const })),
+    ...['Claude Opus 5.5|claude-opus-5-5', 'Claude Sonnet 5.5|claude-sonnet-5-5', 'Claude Haiku 5.5|claude-haiku-5-5',
+      'Gemini 3.8 Flash|gemini-3-8-flash', 'GPT-5.6 Luna|gpt-5-6-luna', 'GPT-5.6 Terra|gpt-5-6-terra', 'GPT-5.6 Sol|gpt-5-6-sol',
+      'Muse Spark 1.3 Contributor|muse-spark-1-3'].map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), billing: 'list-price' as const }))] },
+  ...FREE_PLANS,
 ];

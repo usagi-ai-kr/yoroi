@@ -26,7 +26,7 @@
       "Synthetic Model A": {
         "low": {
           "main": { "correct": 0.3, "new_score": 0.28, "tokens": 500, "cost": 0.5,
-            "duration_min": 2.5, "tool_calls": 5, "steps": 10, "ote": null, "flagged_rate": 0 }
+            "duration_min": 2.5, "tool_calls": 5.4, "steps": 10.2, "ote": null, "flagged_rate": 0 }
         },
         "high": {
           "main": { "correct": 0.6, "new_score": 0.55, "tokens": 2000, "cost": 3,

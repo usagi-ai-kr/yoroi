@@ -12,11 +12,13 @@ const variant = (modelId: string, value = 90, cost = 1, orTokens?: number): Mode
 };
 const ids = (vs: readonly ModelVariant[]) => vs.map(v => v.modelId);
 
-test('fable/astra/grok families are excluded from candidates (case-insensitive)', () => {
-  for (const id of ['claude-fable-5-1', 'gpt-6-astra', 'grok-4-6', 'GROK-4', 'Fable-x', 'a-astra-b']) assert.equal(isExcludedModel(id), true, id);
+test('fable/astra are excluded while Grok remains a candidate (case-insensitive)', () => {
+  for (const id of ['claude-fable-5-1', 'gpt-6-astra', 'Fable-x', 'a-astra-b']) assert.equal(isExcludedModel(id), true, id);
+  assert.equal(isExcludedModel('grok-4-6'), false);
+  assert.equal(isExcludedModel('GROK-4'), false);
   assert.equal(isExcludedModel('claude-opus-5-5'), false);
   const kept = ids(filterCandidates([variant('claude-opus-5-5'), variant('claude-fable-5-1'), variant('gpt-6-astra'), variant('grok-4-6')]));
-  assert.deepEqual(kept, ['claude-opus-5-5']);
+  assert.deepEqual(kept, ['claude-opus-5-5', 'grok-4-6']);
 });
 
 test('same family keeps only the highest version, including middle version groups (gpt-…-sol/flash)', () => {
@@ -34,13 +36,13 @@ test('same family keeps only the highest version, including middle version group
   assert.ok(kept.includes('qwen3-8') && kept.includes('qwen3-8-flash-next'));
 });
 
-test('threshold max is computed after filtering: an excluded top model does not raise the bar', () => {
+test('threshold max is computed after filtering: an excluded Fable top model does not raise the bar', () => {
   const records = [
-    { modelId: 'grok-4-6', value: 100, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
+    { modelId: 'fable-4-6', value: 100, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'gpt-6-1-sol', value: 90, priceInput: 10, priceOutput: 10, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'claude-opus-5-5', value: 80, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' }];
   const entries = computeRoleTop10(records).orchestrator.entries.map(e => e.modelId);
-  assert.deepEqual(entries, ['gpt-6-1-sol', 'claude-opus-5-5']); // cutoff max 90의 85%=76.5 → 80 포함(제외된 grok의 100은 기준 아님)
+  assert.deepEqual(entries, ['gpt-6-1-sol', 'claude-opus-5-5']); // cutoff max 90의 85%=76.5 → 80 포함(제외된 Fable의 100은 기준 아님)
   const empty = previousRanks([{ modelId: 'claude-fable-5-1', value: 99, metric: 'artificial_analysis_intelligence_index' }]);
   assert.deepEqual([empty.orchestrator.size, empty.worker.size], [0, 0]);
 });

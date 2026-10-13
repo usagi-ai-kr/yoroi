@@ -1,7 +1,7 @@
 import { computeRoleTop10, type RoleEntry, type RoleList, type RoleLists } from './letter-top10-unified.js';
 import { FREE_PLANS } from './plan-catalog-free.js';
 import type { Top10Options, Top10RecordInput } from './letter-top10-rank.js';
-export { cursorLabelFor, freeOnlyModelIds, shortPlan } from './letter-top10-plans.js';
+export { freeOnlyModelIds, shortPlan } from './letter-top10-plans.js';
 
 /** Free 경로 칸: 플랜 이름에 공식 페이지 근거의 조건/주의를 붙인다(root 확정 사실만). */
 const PATH: Readonly<Record<string, string>> = {

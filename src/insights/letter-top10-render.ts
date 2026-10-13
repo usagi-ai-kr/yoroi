@@ -2,7 +2,7 @@ import { computeRoleTop10, SECTION_HEADINGS, type RoleList, type RoleLists } fro
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { SCORE_FORMULA_LINES } from './letter-markdown-format.js';
-import { cursorLabelFor, freeLists, freeOnlyModelIds, renderFreeSectionCompact, shortPlan } from './letter-markdown-free.js';
+import { freeLists, freeOnlyModelIds, renderFreeSectionCompact, shortPlan } from './letter-markdown-free.js';
 import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 import { LEGEND_LINES, changeNote, exitLine, formatChange } from './letter-top10-legend.js';
 
@@ -33,7 +33,7 @@ function section(role: OptimalZoneRole, list: RoleList): string[] {
     const rank = e.belowZone ? `▽ ${e.rank}` : String(e.rank);
     const refs = [e.openrouterRankText, e.arenaRankText, e.isPareto ? '⭐' : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
     lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)}${e.both ? ' ↔' : ''} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${clean(e.indexText, 80)}` +
-      ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' · off-peak' : ''} · 접근 ${e.plans.map(p => shortPlan(cursorLabelFor(e.modelId, p))).join('+') || '미상'}` +
+      ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' · off-peak' : ''} · 접근 ${e.plans.map(shortPlan).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
       `${e.successorOf ? ` · AA 미수록 · 선행 지수 하한(${clean(e.successorOf, 40)})` : ''} · ${formatChange(e.change)}`);
   }

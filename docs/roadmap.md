@@ -17,7 +17,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 | 자동화 | 워커·CI 범위·버전 스크립트·Wiki 운영 | #56–#61 | 완료. #57·#59·#60·#61·#25 closed(PR #62). #58·#56 closed(Wiki 게시 검증 후) |
 | 웹·이력 | Zen Free 락·실사용 검증·캐시·인사이트 | [#70](https://github.com/qus0in/yoroi/issues/70)–[#89](https://github.com/qus0in/yoroi/issues/89) (0.2.0–0.6.0) | 0.2.0·0.3.0 발행 완료(v0.3.0 `f12f55a`), 0.3.1 로드 표시 [#77](https://github.com/qus0in/yoroi/issues/77)·실관측 [#88](https://github.com/qus0in/yoroi/issues/88), 0.4.0 감지 [#89](https://github.com/qus0in/yoroi/issues/89) v0.4.0 발행(main `4744fbc`, 스모크 대기로 #89 open). 옛 milestone #2·#30–#55·#69 close(사용자, 2026-10-10) |
 
-- `package.json`의 버전은 `0.8.3`(직전 발행 v0.8.2, main `e631228`, 0.8.3 dev → main PR 준비 중)이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
+- `package.json`의 버전은 `0.8.4`(직전 발행 v0.8.3, main `81b264c`, 0.8.4 dev → main PR 준비 중)이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
 - [0.1.2 milestone](https://github.com/qus0in/yoroi/milestone/4): 계약 확인 #13·#14·#29(당시 open 3 유지).
   PR #66 병합 `4dfd4d7`(.env 병합 로드 `68bce2f` 포함), workflow_dispatch CI `37764517117` success,
   tag `v0.1.2`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행, milestone close.
@@ -73,3 +73,5 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 - v0.8.1 발행(PR #112 → main `57b379d`, main CI 38247171932 attempt 2 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.1), 전역 CLI 0.8.1).
 - 0.8.2 milestone: [#113](https://github.com/qus0in/yoroi/issues/113) 레터 종합 스코어 정렬·피드백 4건 및 재오픈 [#107](https://github.com/qus0in/yoroi/issues/107) SQLite WAL 첫 열기 재시도 수정; dev → main PR 준비 중.
 - 0.8.3 milestone scope: [#116](https://github.com/qus0in/yoroi/issues/116) Antigravity 요금제와 [#117](https://github.com/qus0in/yoroi/issues/117) Top10 채움·Free 티어 섹션·표시 안내/이모지·Cursor·Cognition 1.1·AA FrontierCode 대비·Grok/Kimi 롤백을 묶어 dev → main PR 준비.
+- v0.8.3 발행: PR #120 → main `81b264c`, PR CI 1회 성공, main CI 38332564117 attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.3), 전역 CLI 0.8.3. 실수집 `all_healthy`로 Cognition 부분 수집 경고가 해소됐고 #116·#117 및 0.8.3 milestone을 닫았다.
+- 0.8.4 milestone: [#121](https://github.com/qus0in/yoroi/issues/121) Cursor 접근 표기 단순화(go1 구현); dev → main PR 준비.

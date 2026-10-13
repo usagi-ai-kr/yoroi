@@ -19,7 +19,7 @@ export interface RoleEntry {
   readonly scoreComponents?: ScoreComponents; readonly plans: readonly string[];
   readonly change: RoleChange; readonly isPareto: boolean; readonly both: boolean; readonly offPeak?: boolean;
   readonly belowZone?: boolean; readonly indexMissing?: boolean;
-  readonly arenaRankText?: string; readonly openrouterRankText?: string; readonly variantsText?: string;
+  readonly openrouterRankText?: string; readonly variantsText?: string;
   readonly successorOf?: string;
 }
 export interface RoleExit { readonly modelId: string; readonly previousRank: number }
@@ -50,7 +50,6 @@ function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, 
       plans: plansForCatalogModel(g.baseModelId, catalog), isPareto: g.isPareto, both: false,
       ...(rep.indexMissing && { indexMissing: true }), ...(s.belowZone && { belowZone: true }),
       ...(rep.offPeak === true && { offPeak: true }),
-      ...(rep.arenaRank !== undefined && { arenaRankText: `Arena ${rep.arenaRank}위` }),
       ...(typeof orRank === 'number' && Number.isSafeInteger(orRank) && orRank > 0 &&
         { openrouterRankText: `OpenRouter ${orRank}위` }),
       ...(vs !== undefined && { variantsText: vs }), ...(of !== undefined && { successorOf: of }) };
@@ -70,11 +69,13 @@ const markBoth = (list: RoleList, other: ReadonlySet<string>): RoleList =>
   ({ ...list, entries: list.entries.map(e => ({ ...e, both: other.has(normalizeModelName(e.modelId)) })) });
 
 /** 역할별 Top10: 중복 정리 후보 풀에서 존 통과 행을 먼저 놓고 부족분은 보충 점수순으로 채운다.
- *  교집합 모델은 두 목록에 모두 나오고(both=true), 전일 비교·이탈도 목록별로 재계산한다. */
+ *  교집합 모델은 두 목록에 모두 나오고(both=true), 전일 비교·이탈도 목록별로 재계산한다.
+ *  AA 미측정 모델은 OpenRouter·OpenCode Data 근거 행이 있으면 후보 풀에 유지한다(unmeasured-evidence, 2026-10-13). */
 export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: Top10Options): RoleLists {
   const catalog = opts?.catalog ?? PLAN_CATALOG, excluded = new Set([...(opts?.excludeModelIds ?? [])]
     .map(id => normalizeModelName(splitBaseAndEffort(id).base)));
-  const candidates = buildCandidatePool(records, catalog).accessibleRecords;
+  const evidence = [...(opts?.openrouterRecords ?? []), ...(opts?.opencodeDataRecords ?? [])];
+  const candidates = buildCandidatePool(records, catalog, evidence).accessibleRecords;
   const orchestrator = buildList(candidates, 'orchestrator', opts ?? {}, catalog, excluded), worker = buildList(candidates, 'worker', opts ?? {}, catalog, excluded);
   const oKeys = new Set(orchestrator.entries.map(e => normalizeModelName(e.modelId)));
   const wKeys = new Set(worker.entries.map(e => normalizeModelName(e.modelId)));

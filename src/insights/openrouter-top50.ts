@@ -1,9 +1,9 @@
 import type { ParseRowResult } from './parse-utils.js';
 
 export const OPENROUTER_TOP_N = 50;
-/** Per comparison date, keep the top N models by total_tokens (ties at the cutoff included).
- * The `other` aggregate row (metadata.aggregate) never consumes a model slot but is always preserved
- * separately, matching the storage contract (Top 50 models + other). Non-ok rows stay for validation. */
+/** 조회·표시용: 비교 날짜별로 total_tokens 상위 N개(경계 동점 포함)를 유지한다.
+ *  `other` 집계 행(metadata.aggregate)은 모델 슬롯을 쓰지 않고 항상 보존한다.
+ *  저장은 전체 rows를 보존하고 이 컷은 조회 단계(report-cohort)에서만 적용한다(p5 설계 §1). Non-ok rows stay. */
 export function filterOpenRouterTop50(results: readonly ParseRowResult[], limit = OPENROUTER_TOP_N): ParseRowResult[] {
   const keep = new Set<number>();
   const byDate = new Map<string, { index: number; value: number }[]>();

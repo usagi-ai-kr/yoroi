@@ -1,6 +1,6 @@
 # 0.5.0 A0 Arena 전송 경로 설계
 
-> 버전 표기는 2026-10-11 재번호로 `0.5.0`(milestone #7)로 갱신했다. ([#70](https://github.com/qus0in/yoroi/issues/70))
+> 버전 표기는 2026-10-11 재번호로 `0.5.0`(milestone #7)로 갱신했다. ([#70](https://github.com/qus0in/yoroi/issues/70)) Arena는 2026-10-13 사용자 결정으로 제외, 코드 삭제(본 문서는 역사 기록).
 
 상태: **확정(사용자 일괄 확정 2026-10-11)·A1 구현됨**. §8의 권고안이 그대로 승인되어 `[권고]`는 확정 사항이다. 구현은 `src/insights/arena-transport.ts`다. 근거: [실행 계약](execution-contract.md), [소스 B](sources-b.md), 기존 `src/insights/arena-parser.ts`·`sources.ts`.
 

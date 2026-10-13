@@ -5,7 +5,7 @@ import { SourceError } from '../src/app/usage-source.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { validateInsightRecord, validateInsightRows } from '../src/insights/validation.js';
 import { isOpenCodeDataBlockedPage, parseOpenCodeDataPage } from '../src/insights/opencode-data-parser.js';
-import { parseOpenCodeDataJson } from '../src/insights/opencode-data-json-parser.js';
+import { OPENCODE_DATA_FULL_REQUEST_SCOPE, parseOpenCodeDataJson } from '../src/insights/opencode-data-json-parser.js';
 import { fetchOpenCodeData, readOpenCodeDataReference, OPEN_CODE_DATA_SCOPE, OPEN_CODE_DATA_SCHEMA,
   OPEN_CODE_DATA_USER_AGENT } from '../src/insights/sources-opencode-data.js';
 
@@ -40,14 +40,14 @@ test('body date fallback parses in UTC regardless of the local timezone', () => 
   assert.equal(run('Asia/Seoul'), '2026-10-12 2026-10-12');
   assert.equal(run('UTC'), '2026-10-12 2026-10-12');
 });
-test('JSON parser reads only the recorded keys: latest dailyTokens date, finite model numbers, rejected rows counted', () => {
+test('JSON parser keeps every dailyTokens date, finite model numbers, and rejected rows', () => {
   const { rows, updatedAt } = parseOpenCodeDataJson(jsonFixture, observedAt);
   assert.equal(updatedAt, '2026-10-12');
-  const ok = rows.filter(r => r.ok); assert.equal(ok.length, 1); // 최신 날짜(10-12)만
-  if (!ok[0]!.ok) return;
-  assert.deepEqual(ok[0]!.records.map(r => [r.modelId, r.value, r.metric, r.unit]), [
-    ['model-a', 100, 'opencode_data_tokens', 'tokens']]); // -5·문자열 값 제외, 리더보드 미파싱
-  assert.equal(ok[0]!.records[0]!.metadata?.updatedAt, '2026-10-12');
+  const records = rows.flatMap(r => r.ok ? r.records : []);
+  assert.deepEqual(records.map(r => [r.metadata?.date, r.modelId, r.value]), [
+    ['2026-10-11', 'model-a', 200], ['2026-10-11', 'model-b', 100], ['2026-10-12', 'model-a', 100]]);
+  assert.ok(records.every(r => r.metric === 'opencode_data_tokens' && r.unit === 'tokens' && r.metadata?.updatedAt === '2026-10-12'));
+  assert.equal(rows.filter(r => !r.ok).length, 1); // -5·문자열 값은 거절, 리더보드 미파싱
   const broken = parseOpenCodeDataJson({ updatedAt: 'not-a-date', dailyTokens: [{ nope: 1 }] }, observedAt);
   assert.equal(broken.updatedAt, null);
   assert.ok(broken.rows.every(r => !r.ok)); // 구조 불일치 행은 거부로 집계
@@ -66,13 +66,17 @@ test('production fetch is one JSON request with the contact UA; HTTP errors stop
   }
   assert.equal(isOpenCodeDataBlockedPage('<title>Just a moment...</title>'), true);
 });
-test('the reference lookup reads the stored daily row', () => {
+test('the reference lookup uses the full scope and latest date without changing all-date storage', () => {
   const history = new MemoryInsightHistory();
-  const parsed = parseOpenCodeDataJson(jsonFixture, observedAt);
-  history.saveDaily({ source: 'opencode-data', publicationDate: '2026-10-12', requestScope: OPEN_CODE_DATA_SCOPE,
-    schemaVersion: OPEN_CODE_DATA_SCHEMA }, { ok: true, source: 'opencode-data', rejectedRows: 0,
+  const parsed = parseOpenCodeDataJson({ ...jsonFixture, dailyTokens: [
+    { date: '2026-10-12', models: { 'model-a': 100 } }, jsonFixture.dailyTokens[0]] }, observedAt);
+  assert.equal(OPEN_CODE_DATA_SCOPE, OPENCODE_DATA_FULL_REQUEST_SCOPE);
+  const key = { source: 'opencode-data' as const, publicationDate: '2026-10-12', requestScope: OPEN_CODE_DATA_SCOPE, schemaVersion: OPEN_CODE_DATA_SCHEMA };
+  assert.equal(readOpenCodeDataReference(history, '2026-10-12'), undefined);
+  history.saveDaily(key, { ok: true, source: 'opencode-data', rejectedRows: 0,
     records: parsed.rows.flatMap(r => r.ok ? r.records : []).map(rec => { const v = validateInsightRecord(rec); assert.ok(v.ok); return v.value; }) });
-  assert.equal(readOpenCodeDataReference(history, '2026-10-12')?.records.length, 1);
+  assert.deepEqual(readOpenCodeDataReference(history, '2026-10-12')?.records.map(v => [v.comparisonDate, v.record.value]), [['2026-10-12', 100]]);
+  assert.equal(history.getDaily(key)?.records.length, 3);
 });
 test('a 200 HTML challenge or non-JSON content type is unavailable with one attempt', async () => {
   await assert.rejects(fetchOpenCodeData({ transport: async () => ({ status: 200, body: '<!doctype html><title>Just a moment...</title>' }) }),

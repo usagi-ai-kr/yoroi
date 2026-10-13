@@ -1,3 +1,4 @@
+import { buildCatalogAliasResolver } from './model-aliases.js';
 import { computeRoleTop10, type RoleEntry, type RoleList, type RoleLists } from './letter-top10-unified.js';
 import { splitBaseAndEffort } from './letter-top10-group.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
@@ -31,8 +32,10 @@ export const unmeasuredFreeIds = (freeCatalog: readonly PlanCatalogEntry[] | und
   if (!freeCatalog?.length) return [];
   const measured = new Set(records.filter(r => Number.isFinite(r.value))
     .map(r => normalizeModelName(splitBaseAndEffort(r.modelId).base)));
+  // 순위 표와 같은 별칭 해석(p29)을 써야 별칭으로 측정된 모델이 '미측정'에 함께 남지 않는다.
+  const resolve = buildCatalogAliasResolver(records, freeCatalog.flatMap(p => p.models.map(m => m.modelId)));
   return [...new Set(freeCatalog.flatMap(p => p.models
-    .filter(m => m.verified && !measured.has(normalizeModelName(m.modelId))).map(m => m.modelId)))].sort();
+    .filter(m => m.verified && !measured.has(resolve(normalizeModelName(m.modelId)))).map(m => m.modelId)))].sort();
 };
 
 const indexOf = (e: RoleEntry): number | undefined => {

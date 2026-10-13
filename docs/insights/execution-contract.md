@@ -8,7 +8,7 @@ CLI·합성 테스트 및 8-A 실측 완료; 사용자 결정으로 0.5.0 검증
 
 ## 이미 확정된 범위
 
-- 수집 대상은 Arena(HF 데이터셋), Artificial Analysis(AA), OpenRouter, Cognition FrontierCode **4곳**이다.
+- 수집 대상은 Arena(HF 데이터셋), Artificial Analysis(AA), OpenRouter, Cognition FrontierCode **4곳**이다. **Arena 제외(2026-10-13 사용자 결정)**: 기본 수집 소스 목록에서 빼서 외부 요청·`insight_daily` 저장·레터 표시를 하지 않는다(수집은 AA·OpenRouter·Cognition·OpenCode Data).
 - AA·OpenRouter 키의 로컬 `.env` 보관은 [#79](https://github.com/qus0in/yoroi/issues/79)에서 결정됐다. 값은 문서·로그·Git에 넣지 않는다.
 - OpenCode Data·Vals AI는 [#80](https://github.com/qus0in/yoroi/issues/80)·[#81](https://github.com/qus0in/yoroi/issues/81)에 따라 제외한다.
 - [Cognition 추가 결정](https://github.com/qus0in/yoroi/issues/70#issuecomment-6096818456)은 내부 전용이다. 외부 재사용 권한은 승인되지 않았다.
@@ -46,10 +46,10 @@ CLI·합성 테스트 및 8-A 실측 완료; 사용자 결정으로 0.5.0 검증
 | --- | --- | --- |
 | **4-A 확정** | KST 날짜당 소스별 성공 결과 재사용, 정규화 이력 90일 보존; 수동 `--refresh` 허용; 429/일시 장애 재시도 최대 1회 | 일일 호출 절약·7일 분석 여유. 같은 날짜의 실패 소스는 다음 실행에서 다시 시도 |
 | ~~4-B~~ 기각 | KST 날짜당 성공 결과 재사용, 이력 30일 보존; 0.5.0에서는 강제 refresh 없이 자동 재시도 0회 | 기각. 7일 추세에 필요한 90일 보존과 수동 복구 경로를 포기한다 |
-
 확정된 공통 제안: 캐시 키는 `(source, KST 발행일, 비밀 없는 요청 범위, schemaVersion)`이고 키·응답에 credential 원문을 넣지 않는다.
 요청 범위에는 subset·기간·필터·revision·접근 tier 차이를 포함한다. 원자료 기준일은 별도 보존하며 발행일로 덮어쓰지 않는다.
-성공 캐시만 재사용하고 오류는 성공으로 저장하지 않는다. 전행 실패·페이지 불완전은 새 성공 스냅샷으로 덮어쓰지 않는다.
+행 일부 거절은 유효 측정을 `complete=0` daily에 저장·재조회해 partial로 표시하고 재수집한다. 전행 실패·페이지 불완전은 저장하지 않는다.
+partial은 기존 complete를 덮거나 비교 이력에 들어가지 않는다. `getDaily`는 기본 complete만, 수집 직후 `includePartial:true` 조회는 partial도 반환한다.
 중복 적재 키는 `(source, modelId, metric, unit, category, schemaVersion, 비교 날짜)`; 같은 날짜 갱신은 해당 일자를 갱신하고 전일 기록은 보존한다.
 수동 재실행에도 동일 성공 레터를 stdout으로 다시 출력한다. “이미 전달됨”을 이유로 stdout을 비우지 않는다.
 Hermes 전달 중복 키는 `(KST 발행일, 레터 내용 해시)`를 제안하며 전달 성공 확인·중복 억제·전달 재시도는 코테츠가 맡는다.

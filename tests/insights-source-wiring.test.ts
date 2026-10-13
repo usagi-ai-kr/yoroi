@@ -10,7 +10,6 @@ const env = (name: string) => ({ YOROI_AA_API_KEY: KEY, YOROI_OPENROUTER_API_KEY
 const json = (value: unknown, status = 200, headers: Record<string, string> = {}): HttpResponse => ({ status, headers, body: JSON.stringify(value) });
 const aaPage = (page: number, total: number, id: string) => ({ tier: 'free', intelligence_index_version: 3, pagination: { page, page_size: 1, total_pages: total, has_more: page < total },
   data: [{ id, slug: id, name: id, release_date: '2025-01-01', model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 40 + page, artificial_analysis_coding_index: 30 + page }, pricing: {}, performance: {} }] });
-const arenaRow = (i: number, category = 'overall') => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i, rating_lower: 1490, rating_upper: 1510, variance: 2, vote_count: 10 + i, rank: i + 1, category, leaderboard_publish_date: '2026-10-08' });
 function harness(respond: (request: HttpRequest, n: number) => HttpResponse) {
   const requests: HttpRequest[] = []; let clock = 1_000_000; const sleeps: number[] = [];
   const client: HttpClient = { async request(request) { requests.push(request); return respond(request, requests.length); } };
@@ -20,17 +19,16 @@ function harness(respond: (request: HttpRequest, n: number) => HttpResponse) {
 }
 const of = (url: string, name: string) => new URL(url).searchParams.get(name);
 
-test('the registry holds the four approved ports plus the OpenCode Data internal reference; Vals AI stays excluded', () => {
-  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['arena', 'artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
-  assert.deepEqual([...harness(() => json({})).ports.keys()], ['arena', 'artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
+test('the registry holds the four approved ports plus the OpenCode Data internal reference; Arena·Vals AI stay excluded', () => {
+  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
+  assert.deepEqual([...harness(() => json({})).ports.keys()], ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
 });
-test('Arena goes through the /rows transport and the existing parser with no key and no extra headers', async () => {
-  const h = harness(request => { const offset = Number(of(request.url, 'offset'));
-    const rows = Array.from({ length: 51 }, (_, i) => arenaRow(i)).slice(offset, offset + 100);
-    return json({ rows: rows.map(row => ({ row })), num_rows_total: 51, partial: false }); });
-  const result = await collectInsightSource(h.ports.get('arena')!, observedAt);
-  assert.ok(result.ok && result.rows.length === 50 && result.rows.every(r => r.ok)); assert.equal(h.requests.length, 1);
-  assert.ok(h.requests.every(r => r.headers === undefined && of(r.url, 'config') === 'text'));
+test('Arena is excluded from the default ports: no HF request is ever sent (2026-10-13 결정)', async () => {
+  const h = harness(() => json({}));
+  assert.equal(INSIGHT_SOURCES.some(e => e.id === 'arena'), false);
+  assert.equal(h.ports.has('arena'), false);
+  assert.equal(INSIGHT_SOURCES.some(e => e.pipeline === 'hf-rows'), false);
+  assert.equal(h.requests.length, 0);
 });
 test('AA pages are fetched with the key on every request, merged by H3, and the key never appears in URLs or errors', async () => {
   const h = harness(request => { const page = Number(of(request.url, 'page') ?? 1); return json(aaPage(page, 3, `model-${page}`)); });

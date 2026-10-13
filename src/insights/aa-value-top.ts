@@ -44,6 +44,8 @@ function topByEff(metrics: Map<string, ModelMetrics>, key: 'coding' | 'intel', l
   return scored.filter(m => m.eff >= cutoff).map(m => m.modelId);
 }
 
+/** 조회·표시용 top50 선택(저장 경로는 호출하지 않는다, p5 설계 §1).
+ *  AA Top10 후보 풀은 전체 records를 쓰고 이 선택기로 재제한하지 않는다. */
 export function selectAaValueTop(records: readonly InsightRecord[], limit = VALUE_TOP_N): InsightRecord[] {
   const byModel = new Map<string, InsightRecord[]>();
   const metrics = new Map<string, ModelMetrics>();

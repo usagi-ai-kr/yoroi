@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { isInsightRow, isInsightSource, isNormalizedBenchmarkRecord,
   type InsightProvider, type NormalizedBenchmarkRecord } from '../src/insights/types.js';
-import { parseArenaRows } from '../src/insights/arena-parser.js';
+
 import { parseAaResponse } from '../src/insights/aa-parser.js';
 import { parseOpenRouterResponse } from '../src/insights/openrouter-parser.js';
 import { INSIGHT_SOURCES } from '../src/insights/sources.js';
@@ -43,9 +43,6 @@ test('isNormalizedBenchmarkRecord requires identity, unit, and a finite value', 
 });
 
 test('every record the shipped parsers emit satisfies the normalized contract', () => {
-  const arena = recordsOf(parseArenaRows([{ model_name: 'm', organization: 'o', license: 'CC-BY-4.0',
-    category: 'Text', leaderboard_publish_date: '2026-01-02', rating: 1500, rating_lower: 1400,
-    rating_upper: 1600, variance: 12, vote_count: 100, rank: 1 }], now));
   const aa = recordsOf(parseAaResponse({ tier: 'free', intelligence_index_version: 2.5,
     pagination: { page: 1, page_size: 20, total_pages: 1, has_more: false },
     data: [{ id: 'i', slug: 's', name: 'n', model_creator: { id: 'c', name: 'C' }, release_date: null,
@@ -55,10 +52,10 @@ test('every record the shipped parsers emit satisfies the normalized contract', 
   const openrouter = recordsOf(parseOpenRouterResponse({ data: [{ date: '2026-01-02',
     model_permaslug: 'vendor/model', total_tokens: '1234' }],
     meta: { as_of: now, start_date: '2026-01-01', end_date: '2026-01-03', version: 'v1' } }, now));
-  const all = [...arena, ...aa, ...openrouter];
+  const all = [...aa, ...openrouter];
   // Every parser must contribute, otherwise a silent parse failure would pass vacuously.
-  assert.ok(arena.length > 0 && aa.length > 0 && openrouter.length > 0,
-    `expected records from every parser, got ${arena.length}/${aa.length}/${openrouter.length}`);
+  assert.ok(aa.length > 0 && openrouter.length > 0,
+    `expected records from every parser, got ${aa.length}/${openrouter.length}`);
   for (const record of all) {
     assert.ok(isNormalizedBenchmarkRecord(record), `${record.source}/${record.metric}`);
   }

@@ -8,16 +8,16 @@ import type { InsightSourcePort } from './source-port.js';
 import { fetchAaPages, parseAaPages } from './sources-aa.js';
 import { fetchOpenCodeData, OPEN_CODE_DATA_URL, OPEN_CODE_DATA_ATTRIBUTION, type OpenCodeDataPage, type OpenCodeDataTransport } from './sources-opencode-data.js';
 import { emitOpenCodeDataSchemaDiagnostic, parseOpenCodeDataJson } from './opencode-data-json-parser.js';
-import { fetchArena, parseArena } from './sources-arena.js';
 import type { ParseRowResult } from './parse-utils.js';
 
 type AuthKind = 'x-api-key' | 'bearer' | 'none';
 
-/** One registered 0.4.0 source (#70) plus OpenCode Data 내부 참조(#102). Vals AI stays excluded. */
+/** One registered source per #70 plus OpenCode Data 내부 참조(#102).
+ *  Arena는 2026-10-13 사용자 결정으로 제외한다(HF 수집·저장·레터 표시 없음). Vals AI stays excluded. */
 export interface InsightSourceEntry {
   readonly id: InsightSource;
   readonly displayName: string;
-  /** Access URL. Arena lists the HF dataset page (attribution); its rows come from the datasets-server /rows API. */
+  /** Access URL (attribution). */
   readonly url: string;
   readonly pipeline: 'http-json' | 'hf-rows' | 'aa-pages' | 'opencode-json';
   readonly auth: AuthKind;
@@ -29,10 +29,6 @@ export interface InsightSourceEntry {
 }
 
 export const INSIGHT_SOURCES: readonly InsightSourceEntry[] = [
-  { id: 'arena', displayName: 'lmarena-ai LMArena Leaderboard Dataset',
-    url: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset',
-    pipeline: 'hf-rows', auth: 'none', authEnvName: null, timeoutMs: 20000,
-    license: 'CC-BY-4.0', note: 'datasets-server /rows, subset text, category overall (arena-transport.md)' },
   { id: 'artificial-analysis', displayName: 'Artificial Analysis',
     url: 'https://artificialanalysis.ai/api/v2/language/models/free',
     pipeline: 'aa-pages', auth: 'x-api-key', authEnvName: 'YOROI_AA_API_KEY', timeoutMs: 10000,
@@ -78,7 +74,6 @@ export function createInsightSourcePorts(client: HttpClient, env: EnvLookup, opt
       id: entry.id,
       async fetch(signal?: AbortSignal): Promise<unknown> {
         switch (entry.pipeline) {
-          case 'hf-rows': return fetchArena(client, { ...options, ...(signal && { signal }) });
           case 'opencode-json': return fetchOpenCodeData({ ...(signal && { signal }), ...(options.opencodeTransport && { transport: options.opencodeTransport }), ...(options.opencodeBaseUrl && { baseUrl: options.opencodeBaseUrl }) });
           case 'aa-pages': return fetchAaPages(client, spec(), session, options, signal);
           default: return fetchJsonWithPolicy(client, spec(), session, options, signal);
@@ -86,7 +81,6 @@ export function createInsightSourcePorts(client: HttpClient, env: EnvLookup, opt
       },
       parse(payload: unknown, observedAt: string): readonly ParseRowResult[] {
         switch (entry.id) {
-          case 'arena': return parseArena(payload, observedAt);
           case 'artificial-analysis': return parseAaPages(payload, observedAt, options);
           case 'openrouter': return parseOpenRouterResponse(payload, observedAt);
           case 'cognition': return parseCognitionResponse(payload, observedAt);

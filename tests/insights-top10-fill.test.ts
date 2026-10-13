@@ -36,10 +36,10 @@ test('below-zone fill lowers the index floor first and puts missing indexes last
   const ids = ['index-peak', 'fallback-near', 'fallback-cheap', 'missing-free', 'missing-paid'];
   const catalog = catalogFor(ids), records: Top10RecordInput[] = [
     row('index-peak', INTEL, 100),
-    { ...row('fallback-near', INTEL, 84), priceInput: 100, priceOutput: 100 },
+    { ...row('fallback-near', INTEL, 84), priceInput: 1, priceOutput: 1 },
     { ...row('fallback-cheap', INTEL, 40), priceInput: 0, priceOutput: 0 },
     { ...row('missing-free', CODE, 90), priceInput: 0, priceOutput: 0 },
-    { ...row('missing-paid', CODE, 80), priceInput: 100, priceOutput: 100 },
+    { ...row('missing-paid', CODE, 80), priceInput: 1, priceOutput: 1 },
   ];
   const entries = computeRoleTop10(records, { catalog }).orchestrator.entries;
   assert.deepEqual(entries.map(e => e.modelId), ids);

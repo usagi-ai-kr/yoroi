@@ -51,8 +51,10 @@ export function expandSuccessors(records: readonly InsightRecord[]): InsightReco
     const template = predRecords[0]!;
     for (const r of predRecords) {
       if (!METRICS_TO_COPY.has(r.metric)) continue;
+      // 선행 모델의 releaseDate는 후속 모델의 릴리스가 아니므로 옮기지 않는다(릴리스 판정에서 구 릴리스로 지워지지 않게).
+      const { releaseDate: _predecessorRelease, ...metadata } = r.metadata ?? {};
       result.push({ ...r, modelId: rule.successor,
-        metadata: { ...(r.metadata ?? {}), successorOf: rule.predecessor, indexBasis: 'predecessor-floor' } });
+        metadata: { ...metadata, successorOf: rule.predecessor, indexBasis: 'predecessor-floor' } });
     }
 
     const regPrice = findRegularRate(rule.successor);

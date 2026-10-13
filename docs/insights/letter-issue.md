@@ -20,18 +20,19 @@
 - **마크다운 본문 구성 (`--markdown`)**:
   - **헤더 & 배지**: `# AI 인사이트 데일리: YYYY-MM-DD KST` 제목 및 shields.io 정적 배지:
     - 날짜 배지: `![date](https://img.shields.io/badge/date-YYYY--MM--DD-blue)` (`--` 이스케이프)
-    - 소스 수 배지: `![sources](https://img.shields.io/badge/sources-5_total-informational)` (`INSIGHT_SOURCES` 레지스트리 기준)
+    - 소스 수 배지: `![sources](https://img.shields.io/badge/sources-4_total-informational)` (`INSIGHT_SOURCES` 레지스트리 기준)
+    - Arena 제외(2026-10-13 사용자 결정): 수집·출처·참조 순위('Arena N위')에서 빠져 소스 수가 5에서 4로 줄었다.
     - 상태 배지: `![status](https://img.shields.io/badge/status-all_healthy-success)` (실패 시 `N_failed-critical`, 부분 수집 시 `N_partial-warning`)
   - **1부 요약**: 두 목록의 선두 모델과 목록별 상위권 변동(➖·▲N/▼N·🆕 진입·🌱 첫 집계)·이탈(🚪) 통계.
   - **2부 🧭 오케스트레이터 Top 10** (판단·계획 / Intelligence Index): 마크다운 테이블.
   - **3부 🛠️ 워커 Top 10** (실행·코딩 / Coding Index): 마크다운 테이블.
   - **테이블 열 규격** (두 섹션 공통 · `추천 역할` 열은 두 목록 분리로 폐기, `가성비` 열은 2026-10-13 종합 스코어 도입으로 `스코어` 열로 대체):
-    `| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 접근 요금제 | 변동 |`
+    `| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 변동 |`
     - 모델: 후보 풀(요금제 접근·제외·최신만)을 두 목록이 공유하므로 교집합 모델은 `↔`를 붙여 양쪽에 함께 오른다.
     - 순위: 파레토 최적 시 `⭐ 순위` (예: `⭐ 1`), 비파레토는 일반 숫자. 임계 미달 보충 행은 `▽ 순위` (예: `▽ 9`).
     - 변동: `➖` 유지, `▲N`/`▼N` 전일 대비 순위 상승/하락, `🆕` 신규 진입(전일 Top10 밖), `🌱` 첫 집계(전일 기록 없음).
     - 테이블 하단: 이탈 목록 (`🚪 이탈: 모델명 (전일 N위)`).
-    - 접근 요금제: 플랜 이름만 표기한다(2026-10-13 #123: 크레딧·한도 괄호 주석과 선행 모델 주석을 제거하고, Cursor는 자체 모델만 접근 경로로 남긴다).
+    - 접근 요금제: Top10 열에서 분리해 워커 표 뒤 별도 `## 접근 요금제` 표로 표시한다(2026-10-13 사용자 지시: "별도 테이블로 체크박스"). 두 목록(오케스트레이터·워커) unique 모델 × 보유 요금제 합집합(plan-catalog 순서)을 `☑`/`☐`로 채우고, 행이 없으면 표를 생략한다.
     - Free 티어: 유료 표와 섞이지 않는 `## 🆓 Free 티어` 별도 섹션이다. 목록은 실시간 free 카탈로그로 채우고 비면 `Free 목록 수집 실패(opencode models)` 1줄만 표시하며, 티어 설명은 Zen Free·Go Free 두 줄이다.
   - **4부 표시 안내**: 두 Top10 표 바로 아래 `## 📖 표시 안내`로 ⭐·↔·➖/▲N/▼N/🆕/🌱/🚪·▽ 하한 보충·지수 미측정·⚠️·🔒·🆓 의미를 한곳에 설명한다(접힘 블록 밖, 마크다운·압축 렌더 공통).
   - **5부 접힘 블록**: `<details><summary>출처 및 산출 공식</summary>...`
@@ -58,10 +59,10 @@
 ![status](https://img.shields.io/badge/status-all_healthy-success)
 
 ## 🧭 오케스트레이터 Top10 (판단·계획 / Intelligence Index)
-| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 접근 요금제 | 변동 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ⭐ 1 | anthropic/claude-3-7-sonnet ↔ | high | 78.4 | 85.2 | $3.75 | Claude Pro | ➖ |
-| ▽ 9 | provider/fill-model | default | 40.1 | - | $1.50 | ChatGPT Free | 🆕 |
+| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 변동 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ⭐ 1 | anthropic/claude-3-7-sonnet ↔ | high | 78.4 | 85.2 | $3.75 | ➖ |
+| ▽ 9 | provider/fill-model | default | 40.1 | - | $1.50 | 🆕 |
 
 ## 📖 표시 안내
 - ⭐ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태(가성비 경계선)

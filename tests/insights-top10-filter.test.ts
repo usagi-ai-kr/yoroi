@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { dropOlderVersions, filterCandidates, isExcludedModel, parseFamilyVersion, compareVersions, vendorLine } from '../src/insights/letter-top10-filter.js';
+import { PRICE_EXCLUSION_THRESHOLD, dropOlderVersions, filterCandidates, isExcludedModel, parseFamilyVersion, compareVersions, vendorLine } from '../src/insights/letter-top10-filter.js';
 import { computeRoleTop10, previousRanks } from '../src/insights/letter-top10-unified.js';
 import { buildCandidatePool } from '../src/insights/letter-top10-candidates.js';
 import { calcCostEfficiency, type ModelVariant } from '../src/insights/letter-top10-group.js';
@@ -21,6 +21,15 @@ test('fable/astra are excluded while Grok remains a candidate (case-insensitive)
   assert.deepEqual(kept, ['claude-opus-5-5', 'grok-4-6']);
 });
 
+test('blended price $3/1M or above is excluded up front; boundary included, unknown and free stay (price-cap-3m)', () => {
+  assert.equal(PRICE_EXCLUSION_THRESHOLD, 3);
+  const mk = (modelId: string, blendedCost?: number): ModelVariant =>
+    ({ modelId, baseModelId: modelId, effort: 'default', value: 80, ...(blendedCost !== undefined && { blendedCost }) });
+  const kept = ids(filterCandidates([mk('cheap', 2.99), mk('at-three', 3), mk('pricey', 6),
+    mk('opaque'), mk('free-m', 0)]));
+  assert.deepEqual(kept, ['cheap', 'opaque', 'free-m']);
+});
+
 test('same family keeps only the highest version, including middle version groups (gpt-…-sol/flash)', () => {
   assert.deepEqual(parseFamilyVersion('claude-opus-5-5'), { family: 'claude-opus', version: [5, 5] });
   assert.deepEqual(parseFamilyVersion('claude-opus-5'), { family: 'claude-opus', version: [5] });
@@ -39,7 +48,7 @@ test('same family keeps only the highest version, including middle version group
 test('threshold max is computed after filtering: an excluded Fable top model does not raise the bar', () => {
   const records = [
     { modelId: 'fable-4-6', value: 100, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
-    { modelId: 'gpt-6-1-sol', value: 90, priceInput: 10, priceOutput: 10, metric: 'artificial_analysis_intelligence_index' },
+    { modelId: 'gpt-6-1-sol', value: 90, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'claude-opus-5-5', value: 80, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' }];
   const entries = computeRoleTop10(records).orchestrator.entries.map(e => e.modelId);
   assert.deepEqual(entries, ['gpt-6-1-sol', 'claude-opus-5-5']); // cutoff max 90의 85%=76.5 → 80 포함(제외된 Fable의 100은 기준 아님)

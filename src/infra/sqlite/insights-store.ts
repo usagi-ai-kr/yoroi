@@ -23,12 +23,13 @@ const INSERT_HISTORY = `INSERT INTO insight_history (source, model_id, metric, u
 export class SqliteInsightHistory extends SqliteInsightHistoryReader implements InsightHistoryPort {
   constructor(db: DatabaseSync) { super(db); }
 
-  /** 실패·빈 성공·불완전 페이지는 저장하지 않고 기존 성공도 지우지 않는다. */
+  /** 행 일부 거절은 partial daily로 보존한다. 실패·불완전 페이지와 기존 complete 덮어쓰기는 거부한다. */
   saveDaily(key: InsightDailyKey, result: InsightValidation,
     options: { readonly refresh?: boolean; readonly complete?: boolean } = {}): boolean {
     assertDailyKey(key);
-    const complete = options.complete !== false;
-    if (!result.ok || !complete) return false;
+    if (!result.ok) return false;
+    const complete = options.complete !== false && result.rejectedRows === 0;
+    if (!complete && result.rejectedRows === 0) return false;
     if (result.source !== key.source ||
       result.records.some(value => value.record.schemaVersion !== key.schemaVersion)) return false;
     // 저장 경계에서 재검증해 비교 날짜 위조와 빈 성공을 막는다(메모리 구현과 동일).
@@ -39,12 +40,11 @@ export class SqliteInsightHistory extends SqliteInsightHistoryReader implements 
       records: checked.records.map(value => ({ ...value, record: pickRecord(value.record) })) };
     this.db.exec('BEGIN IMMEDIATE');
     try {
-      if (!complete || options.refresh !== true) {
-        const existing = this.db.prepare(`SELECT 1 FROM insight_daily WHERE source = ? AND publication_date = ?
-          AND request_scope = ? AND schema_version = ?`).get(key.source, key.publicationDate,
-          key.requestScope, key.schemaVersion);
-        if (existing) { this.db.exec('ROLLBACK'); return false; }
-      }
+      const existing = this.db.prepare(`SELECT complete FROM insight_daily WHERE source = ? AND publication_date = ?
+        AND request_scope = ? AND schema_version = ?`).get(key.source, key.publicationDate,
+        key.requestScope, key.schemaVersion) as { complete: number } | undefined;
+      if (existing && (existing.complete === 1 ? !complete || options.refresh !== true : !complete && options.refresh !== true)) {
+        this.db.exec('ROLLBACK'); return false; }
       this.db.prepare(`INSERT INTO insight_daily (source, publication_date, request_scope, schema_version,
         complete, record_count, payload, saved_at) VALUES (?,?,?,?,?,?,?,?)
         ON CONFLICT (source, publication_date, request_scope, schema_version)
@@ -52,7 +52,7 @@ export class SqliteInsightHistory extends SqliteInsightHistoryReader implements 
           payload = excluded.payload, saved_at = excluded.saved_at`)
         .run(key.source, key.publicationDate, key.requestScope, key.schemaVersion, complete ? 1 : 0,
           success.records.length, JSON.stringify(success), new Date().toISOString());
-      for (const measurement of success.records) {
+      for (const measurement of complete ? success.records : []) {
         if (measurement.comparisonDate === null) continue; // 기준일 미상은 일일 최신 결과로만 남긴다
         const { record } = measurement;
         this.db.prepare(INSERT_HISTORY).run(record.source, record.modelId, record.metric, record.unit,

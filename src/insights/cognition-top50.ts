@@ -2,9 +2,10 @@ import type { InsightRecord } from './record.js';
 import type { ParseRowResult } from './parse-utils.js';
 
 export const COGNITION_TOP_N = 50;
-/** Per comparable category (rev/effort/subset), keep the top N models by their best `correct` value
- * (ties at each cutoff included) and union the categories; every metric of a kept model stays.
- * Scores are never mixed across categories: the parser already encodes rev/effort/subset in `category`. */
+/** 조회·표시용: 비교 가능한 카테고리(rev/effort/subset)별 `correct` 상위 N개(경계 동점 포함)를 합집합으로
+ *  유지하고, 유지된 모델의 모든 지표를 보존한다. 저장은 전체 rows를 보존하고 이 컷은 조회 단계
+ *  (report-cohort)에서만 적용한다(p5 설계 §1). Scores are never mixed across categories:
+ *  the category column already encodes rev/effort/subset. */
 export function filterCognitionTop50(results: readonly ParseRowResult[], limit = COGNITION_TOP_N): ParseRowResult[] {
   const byCategory = new Map<string, Map<string, number>>();
   for (const row of results) {

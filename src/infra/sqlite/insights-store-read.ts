@@ -63,11 +63,11 @@ const SERIES_SQL = 'source = ? AND model_id = ? AND metric = ? AND unit = ? AND 
 export class SqliteInsightHistoryReader {
   constructor(protected readonly db: DatabaseSync) {}
 
-  getDaily(key: InsightDailyKey): InsightSuccess | undefined {
+  getDaily(key: InsightDailyKey, options: { readonly includePartial?: boolean } = {}): InsightSuccess | undefined {
     assertDailyKey(key);
     const row = this.db.prepare(`SELECT payload FROM insight_daily WHERE source = ? AND publication_date = ?
-      AND request_scope = ? AND schema_version = ?`).get(key.source, key.publicationDate,
-      key.requestScope, key.schemaVersion) as DailyRow | undefined;
+      AND request_scope = ? AND schema_version = ? AND (complete = 1 OR ? = 1)`).get(key.source, key.publicationDate,
+      key.requestScope, key.schemaVersion, options.includePartial === true ? 1 : 0) as DailyRow | undefined;
     return row ? JSON.parse(row.payload) as InsightSuccess : undefined;
   }
 

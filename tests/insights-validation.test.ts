@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { validateInsightRecord, validateInsightRows } from '../src/insights/validation.js';
-import { parseArenaRows } from '../src/insights/arena-parser.js';
+
 import { parseAaResponse } from '../src/insights/aa-parser.js';
 import { parseCognitionResponse } from '../src/insights/cognition-parser.js';
 import { parseOpenRouterResponse } from '../src/insights/openrouter-parser.js';
@@ -70,7 +70,7 @@ test('3-A keeps AA/Cognition latest values but never treats observedAt as a comp
 });
 
 test('all shipped parsers remain accepted and OpenRouter uses metadata.date rather than sourceAsOf', () => {
-  const parsed = [parseArenaRows(fixture('arena') as unknown[], now), parseAaResponse(fixture('aa'), now),
+  const parsed = [parseAaResponse(fixture('aa'), now),
     parseCognitionResponse(fixture('cognition'), now), parseOpenRouterResponse(fixture('openrouter'), now)];
   for (const rows of parsed) {
     const records = rows.flatMap(r => r.ok ? r.records : []);

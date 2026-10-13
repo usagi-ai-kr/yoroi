@@ -72,7 +72,7 @@ test('fewer than ten candidates show all rows with below-zone fill; previous com
   const records = [
     { modelId: 'claude-opus-5-5', value: 90, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'gpt-6-1-sol', value: 85, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' },
-    { modelId: 'claude-haiku-5-5', value: 95, priceInput: 5, priceOutput: 10, metric: 'artificial_analysis_intelligence_index' },
+    { modelId: 'claude-haiku-5-5', value: 95, priceInput: 2, priceOutput: 4, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'claude-opus-5-5', value: 88, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_coding_index' },
     { modelId: 'gpt-6-1-sol', value: 82, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_coding_index' }];
   const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }] });
@@ -87,8 +87,8 @@ test('fewer than ten candidates show all rows with below-zone fill; previous com
 });
 test('output tokens/s and OR usage contribute to the role composite score', () => {
   const metric = 'artificial_analysis_intelligence_index', speed = 'median_output_tokens_per_second';
-  const records = [{ modelId: 'claude-opus-5-5', value: 96, priceInput: 12, priceOutput: 12, metric },
-    { modelId: 'gpt-6-1-sol', value: 90, priceInput: 11.25, priceOutput: 11.25, metric },
+  const records = [{ modelId: 'claude-opus-5-5', value: 96, priceInput: 2, priceOutput: 2, metric },
+    { modelId: 'gpt-6-1-sol', value: 90, priceInput: 1.5, priceOutput: 1.5, metric },
     { modelId: 'claude-opus-5-5', value: 50, metric: speed }, { modelId: 'gpt-6-1-sol', value: 80, metric: speed }];
   assert.deepEqual(computeRoleTop10(records).orchestrator.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
   const or = [{ modelId: 'claude-opus-5-5', value: 300, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 100, metric: 'total_tokens' }];

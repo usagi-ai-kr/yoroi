@@ -9,7 +9,7 @@ const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analy
 const row = (modelId: string, metric: string, value: number, price?: [number, number]): Top10RecordInput =>
   ({ modelId, metric, value, ...(price && { priceInput: price[0], priceOutput: price[1] }) });
 const RECORDS: readonly Top10RecordInput[] = [
-  row('claude-opus-5-5', INTEL, 90, [3, 15]), row('claude-opus-5-5', CODE, 70, [3, 15]),
+  row('claude-opus-5-5', INTEL, 90, [1.5, 7]), row('claude-opus-5-5', CODE, 70, [1.5, 7]),
   row('gpt-6-1-sol', INTEL, 88, [1.1, 4.4]), row('gpt-6-1-sol', CODE, 80, [1.1, 4.4]),
   row('claude-haiku-5-5', INTEL, 86, [0.8, 4]), row('claude-haiku-5-5', CODE, 40, [0.8, 4]),
   row('unlisted-mega-model', INTEL, 99, [1, 1]), row('unlisted-mega-model', CODE, 99, [1, 1]),
@@ -70,7 +70,7 @@ test('previous comparison and exits are recomputed per list with the same policy
   assert.ok(lists.orchestrator.entries.every(e => e.change === '유지'));
   assert.ok(lists.worker.entries.every(e => e.change === '유지'));
   assert.equal(lists.orchestrator.exits.length, 0);
-  const shrunken = computeRoleTop10([row('claude-opus-5-5', INTEL, 90, [3, 15]), row('gpt-6-1-sol', INTEL, 88, [1.1, 4.4])],
+  const shrunken = computeRoleTop10([row('claude-opus-5-5', INTEL, 90, [1.5, 7]), row('gpt-6-1-sol', INTEL, 88, [1.1, 4.4])],
     { previousCohort: cohort });
   assert.deepEqual(shrunken.orchestrator.exits.map(x => [x.modelId, x.previousRank]), [['claude-haiku-5-5', 3]]);
   assert.deepEqual(shrunken.worker.exits.map(x => x.modelId), ['claude-haiku-5-5']);
@@ -82,7 +82,7 @@ test('successor rows keep the predecessor-index lower bound in both lists', () =
   const rows: Top10RecordInput[] = [
     { ...row('deepseek-v4.1-flash', INTEL, 69.1, [0.3, 1.2]), successorOf: 'deepseek-v4-flash' },
     { ...row('deepseek-v4.1-flash', CODE, 75, [0.3, 1.2]), successorOf: 'deepseek-v4-flash' },
-    row('claude-opus-5-5', INTEL, 80, [3, 15]), row('claude-opus-5-5', CODE, 90, [3, 15])];
+    row('claude-opus-5-5', INTEL, 80, [1.5, 7]), row('claude-opus-5-5', CODE, 90, [1.5, 7])];
   const lists = computeRoleTop10(rows);
   const orch = lists.orchestrator.entries.find(e => e.modelId === 'deepseek-v4-1-flash');
   const worker = lists.worker.entries.find(e => e.modelId === 'deepseek-v4-1-flash');

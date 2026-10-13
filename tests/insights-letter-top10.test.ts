@@ -7,9 +7,8 @@ import { compose } from '../src/composition-root.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import type { InsightRecord } from '../src/insights/record.js';
 import type { InsightSourcePort } from '../src/insights/source-port.js';
-import { parseAaPages } from '../src/insights/sources-aa.js';
+import { AA_FULL_REQUEST_SCOPE, parseAaPages } from '../src/insights/sources-aa.js';
 import { parseCognitionResponse } from '../src/insights/cognition-parser.js';
-import { parseArenaRows } from '../src/insights/arena-parser.js';
 import { validateInsightRecord } from '../src/insights/validation.js';
 
 const NOW = Date.parse('2026-10-12T00:00:00Z');
@@ -29,7 +28,7 @@ test('composition compact path covers the unified AA top ten, unified previous c
   const { dir } = setup(t);
   const history = Object.assign(new MemoryInsightHistory(), { close() {} });
   const day = { source: 'artificial-analysis' as const, publicationDate: '2026-10-11',
-    requestScope: 'aa-v2:free:language-models:coding-intel-value-top50', schemaVersion: 'aa-v2-free' };
+    requestScope: AA_FULL_REQUEST_SCOPE, schemaVersion: 'aa-v2-free' };
   const validated = (record: InsightRecord) => { const result = validateInsightRecord(record); assert.ok(result.ok); return result.value; };
   history.saveDaily(day, { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: [
     validated(previousRecord('claude-opus-5-5', 'artificial_analysis_intelligence_index', 100)),
@@ -80,7 +79,7 @@ test('Cognition-only success still renders the compact letter with 자료 부족
   assert.match(stderr.join(''), /인사이트: Artificial Analysis: /);
 });
 
-test('composition passes Arena official ranks through the production-shaped metric:rank path', async (t) => {
+test('composition keeps arena data unlisted: production-shaped metric:rank rows never reach the letter', async (t) => {
   const { dir } = setup(t);
   const model = (id: string, intel: number, coding: number) => ({ id, slug: id, name: id, release_date: null,
     model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: intel, artificial_analysis_coding_index: coding }, pricing: {}, performance: {} });
@@ -90,11 +89,12 @@ test('composition passes Arena official ranks through the production-shaped metr
     rating_lower: rating - 10, rating_upper: rating + 10, variance: 2, vote_count: 10, rank, category: 'overall', leaderboard_publish_date: '2026-10-11' });
   const aaPort: InsightSourcePort = { id: 'artificial-analysis', fetch: async () => [{ page: 1, payload: aa }], parse: (payload, at) => parseAaPages(payload, at, {}) };
   const arenaPort: InsightSourcePort = { id: 'arena', fetch: async () => [arenaRow('claude-opus-5-5', 1500, 2), arenaRow('gpt-6-1-sol', 1400, 1)],
-    parse: (payload, at) => parseArenaRows(payload as unknown[], at) };
+    parse: (payload, at) => (payload as ReturnType<typeof arenaRow>[]).map((r, index) => ({ ok: true as const, index, warnings: [], records: (['rating', 'rank'] as const).map(metric =>
+      ({ source: 'arena' as const, modelId: r.model_name, metric, value: metric === 'rank' ? r.rank : r.rating, unit: 'score', category: r.category, observedAt: at, sourceAsOf: r.leaderboard_publish_date, sourceUrl: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset', sourceName: 'lmarena-ai LMArena Leaderboard Dataset', license: 'CC-BY-4.0', attributionText: 'x', method: 'bradley-terry', schemaVersion: 'arena-hf-v1' })) })) };
   const stdout: string[] = [], stderr: string[] = [];  const program = compose({ configEnv: { YOROI_DATA_DIR: dir }, dataDir: dir,
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) }, subscribeSignals: () => () => {},
     insights: { clock: () => NOW, openHistory: () => Object.assign(new MemoryInsightHistory(), { close() {} }),
       createPorts: () => [aaPort, arenaPort] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
-  assert.match(text, /claude-opus-5-5 .*Arena 2위/); assert.match(text, /gpt-6-1-sol .*Arena 1위/);
+  assert.match(text, /claude-opus-5-5/); assert.match(text, /gpt-6-1-sol/); assert.doesNotMatch(text, /Arena \d/); assert.ok(!text.includes('lmarena'), text);
 });

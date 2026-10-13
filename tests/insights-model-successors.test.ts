@@ -77,3 +77,15 @@ test('expandSuccessors handles existing successor, missing predecessor, and non-
   const nonAa = [mockRecord('deepseek-v4-flash', 'artificial_analysis_intelligence_index', 69.1, 'openrouter')];
   assert.equal(expandSuccessors(nonAa).length, 1);
 });
+test('successor floor rows drop the predecessor releaseDate so the release rule keeps the copied coding floor', async () => {
+  const { buildCandidatePool } = await import('../src/insights/letter-top10-candidates.js');
+  const dated = (r: InsightRecord, releaseDate: string): InsightRecord => ({ ...r, metadata: { releaseDate } });
+  const out = expandSuccessors([dated(mockRecord('deepseek-v4-flash', 'artificial_analysis_coding_index', 69.1), '2026-07-31'),
+    dated(mockRecord('deepseek-v4-1-flash', 'artificial_analysis_intelligence_index', 39.5), '2026-09-10')]);
+  const copied = out.filter(r => r.metadata?.indexBasis === 'predecessor-floor');
+  assert.ok(copied.length > 0 && copied.every(r => r.metadata?.releaseDate === undefined));
+  const pool = buildCandidatePool(out.map(r => ({ modelId: r.modelId, value: r.value, metric: r.metric,
+    ...(typeof r.metadata?.successorOf === 'string' && { successorOf: r.metadata.successorOf }),
+    ...(typeof r.metadata?.releaseDate === 'string' && { releaseDate: r.metadata.releaseDate }) })));
+  assert.ok(pool.accessibleRecords.some(r => r.metric === 'artificial_analysis_coding_index' && r.value === 69.1));
+});

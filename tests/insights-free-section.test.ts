@@ -18,7 +18,7 @@ const RECORDS = [
   { modelId: 'big-pickle', value: 85, metric: CODE, priceInput: 0, priceOutput: 0 },
   { modelId: 'mimo-v2-5', value: 70, metric: CODE, priceInput: 0.1, priceOutput: 0.4 },
   { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 },
-  { modelId: 'claude-sonnet-5-5', value: 88, metric: INTEL, priceInput: 3, priceOutput: 15 }];
+  { modelId: 'claude-sonnet-5-5', value: 88, metric: INTEL, priceInput: 1, priceOutput: 5 }];
 
 test('the free section renders from the injected freeCatalog with notes limited to Zen/Go Free', () => {
   const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG });
@@ -50,8 +50,10 @@ test('labels are plain: no successor note, no bracketed plan tails, no Cursor fo
   assert.ok(!md.includes('(크레딧'), 'credit tail removed');
   assert.ok(!md.includes('440회'), 'limit tail removed');
   assert.ok(!md.includes('API 정가'), 'cursor billing label removed');
-  const sonnet = md.split('\n').find(l => l.includes('claude-sonnet-5-5') && l.startsWith('|'))!;
-  assert.ok(sonnet.includes('Claude Pro') && !sonnet.includes('Cursor'), sonnet);
+  const access = md.slice(md.indexOf('## 접근 요금제'), md.indexOf('## 🆓 Free 티어'));
+  const sonnet = access.split('\n').find(l => l.startsWith('| claude-sonnet-5-5'))!;
+  assert.ok(sonnet.includes('☑'), sonnet);
+  assert.ok(!access.includes('Cursor'), 'Cursor는 자체 모델만 접근 경로');
   assert.ok(md.includes('- off-peak: 실행 시각 기준 확인된 할인 단가 적용'));
   const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: RECORDS });
   assert.ok(!text.includes('선행') && !text.includes('(크레딧'));

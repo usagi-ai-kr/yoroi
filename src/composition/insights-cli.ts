@@ -47,7 +47,7 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
           ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
           signal: controller.signal });
         if (outcome.exitCode !== 0) return undefined;
-        const top10 = outcome.top10 ?? { records: [], arenaRecords: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
+        const top10 = outcome.top10 ?? { records: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
         const warnings = (top10 as { warnings?: readonly string[] }).warnings;
         const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
         return renderTop10MarkdownFromRecords({ publicationDate: outcome.publicationDate, ...top10,
@@ -64,7 +64,7 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
         ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
         ...(refresh && { refresh: true }), ...(signal && { signal }) });
       const letter: InsightLetterView = outcome.letter;
-      const top10 = outcome.top10 ?? { records: [], arenaRecords: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
+      const top10 = outcome.top10 ?? { records: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
       const warnings = (top10 as { warnings?: readonly string[] }).warnings;
       const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
       const top10Payload = { publicationDate: outcome.publicationDate, ...top10, ...(warnings && warnings.length ? { notes: warnings } : {}),

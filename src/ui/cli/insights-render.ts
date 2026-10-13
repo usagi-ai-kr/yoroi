@@ -20,7 +20,7 @@ function url(value: string): string {
     return clean(parsed.toString(), 512);
   } catch { return 'n/a: 출처 URL 오류'; }
 }
-const sourceNames: Readonly<Record<string, string>> = { arena: 'Arena', 'artificial-analysis': 'Artificial Analysis',
+const sourceNames: Readonly<Record<string, string>> = { 'artificial-analysis': 'Artificial Analysis',
   openrouter: 'OpenRouter', cognition: 'Cognition' };
 const label = (source: string): string => sourceNames[source] ?? '알 수 없는 소스';
 const limited = <T>(values: readonly T[]): readonly T[] => values.slice(0, MAX_ITEMS);

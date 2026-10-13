@@ -8,12 +8,10 @@
 
 - 0.8.0: PR #109 머지(`a54af3e`), main CI 38232400154 success, [v0.8.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.0) 발행, 전역 CLI 0.8.0 태그 worktree 설치 완료.
 - 0.8.0의 통합 Top10(#108)은 사용자 의도 오해로 [#111](https://github.com/qus0in/yoroi/issues/111)에서 오케스트레이터/워커 Top10 별도 유지(이중 자격 모델은 양쪽 표시)로 정정 중이다.
-- [#110](https://github.com/qus0in/yoroi/issues/110) 레터는 통합 형식으로 발행됐으므로 #111 갱신본 반영 후 재발행 예정이다.
-- 0.8.1 준비: #111 정정 + #110 갱신본 재발행을 묶어 dev → main PR 예정(package.json 0.8.1).
+- [#110](https://github.com/qus0in/yoroi/issues/110) 레터는 통합 형식으로 발행됐으므로 0.8.1 준비에서 #111 정정 + #110 갱신본 재발행을 묶어 dev → main PR 예정(package.json 0.8.1).
 - #111 범위: 오케스트레이터·워커 Top10 별도 유지, 교집합은 `↔`; GPT 6.x 세대가 있으면 지표 무관 전체 접근 모델 기준으로 GPT 5.6 luna·terra·sol 제외.
 - Kimi K3 참고 한도(2026-10-12): OpenCode Go Plus 440회/5h 추정([opencode.ai/go](https://opencode.ai/go)); Ollama Cloud Pro 크레딧 $60/월·토큰 차감·동시 3([ollama.com/pricing](https://ollama.com/pricing)).
-- #107 재현 실패 기록: SQLite WAL 동시 오픈 테스트 400라운드, 실패 0회.
-- 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
+- #107 재현 실패 기록: SQLite WAL 동시 오픈 테스트 400라운드, 실패 0회. 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
 
 - 0.4.0: #89 실환경 스모크 2026-10-11 19:17:56 KST 1회 exit 0 성공, zen:plugin-stale 1건 관측(#77 근거로 계속 관측), #89 및 0.4.0 milestone close 완료.
 - 0.5.0: PR #95 머지(e34f217), main CI 38132032129 success, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행, 전역 CLI 0.5.0 갱신, #70 close, 0.5.0 milestone close 완료.
@@ -33,16 +31,14 @@
 - [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지.
 - PR #86 후속(미착수): 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 미노출.
 
-## 소유표 (2026-10-11 패널 재편 현황)
+## 소유표 (2026-10-13 사용자 지시 현황)
 
 | pane | 모델 | 역할 및 담당 | 상태 |
 | --- | --- | --- | --- |
-| w12:p1 | Codex GPT-6.1-Sol medium | root 오케스트레이터: 범위·패킷·감사·통합 | 가동 중 |
-| w12:pG | Gemini 3.8 Flash medium (agy) | docs / 문서 패킷 및 아카이브 관리 담당 | 가동 중 |
-| w12:p5 | DeepSeek V4.1 Flash Ollama Cloud max | worker: 0.5 CLI 구현 및 검증 담당 | 패킷 완료·종료 |
-| w12:pJ | Step 5 Preview Free OpenCode Go high | worker: version / handover / 계약 점검 담당 | 패킷 완료·종료 |
-| w12:pK | LongCat 2.5 Preview Free OpenCode Go high | worker: 독립 검토 및 비교 감사 담당 | 패킷 완료·종료 |
-| w12:pF | 셸 | 에이전트 없음 (수동 확인 전용) | 유휴 |
+| w12:pQ | o1 Claude Opus 5.5 | 오케스트레이터·리뷰어 | 가동 중 |
+| w12:pR | o2 Claude Opus 5.5 (Claude Code, 2026-10-13 사용자 교체) | 오케스트레이터·리뷰어 | 가동 중 |
+| w12:pS | w1 OpenCode DeepSeek V4.1 Flash (Ollama Cloud) | 워커 | 가동 중 |
+| w12:pT | w2 Codex GPT-6.1-Sol (2026-10-13 사용자 교체) | 워커 | 가동 중 |
 
 - 같은 파일을 두 pane에 동시에 배정하지 않는다. 이전 구현 소유·병합 기록은 tasks-pre040.md·tasks-archive.md·issue-status.md에 있다.
 
@@ -84,3 +80,19 @@
 - v0.8.5 발행 완료: PR #124 → main `240378b`, PR/main CI [38344750752](https://github.com/qus0in/yoroi/actions/runs/38344750752) attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.5), 전역 CLI 0.8.5.
 - #115 본문 갱신(2026-10-13 13:07:28 KST), #123·0.8.5 milestone close 완료.
 - 0.8.6 범위: [#125](https://github.com/qus0in/yoroi/issues/125) 레터 발행을 Hermes 크론에서 yoroi 자체 PM2로 이관하고 `insights publish` 명령 추가; dev → main PR 준비.
+
+## price-cap-3m 및 o2 모델 교체 (2026-10-13, o2 수행)
+
+- o2 모델을 GLM-5.3-Flash(Ollama Cloud)로 교체(사용자 지시, 직전 Codex GPT-6.1-Sol capacity 오류 보고 뒤). orchestration.md 반영.
+- Top10 제외 필터에 혼합 단가 $3/1M 이상 제외(price-cap-3m) 추가: `letter-top10-filter.ts` filterCandidates, `PRICE_EXCLUSION_THRESHOLD=3`, EXCLUSION_NOTE 갱신.
+- 실측(DB 사본 `/tmp/yoroi-p7.BOhred/yoroi.db`, 5소스 reused): 오케·워커 Top10 모두 10행 유지. 제외 6개 — grok-4-7($3.00)·claude-sonnet-5-5·gpt-6-1-sol($4.00)·gemini-3-pro($4.50)·kimi-k3($6.00)·claude-opus-5-5($8.00).
+- 검증: 유닛 867/867, BDD 41/41, typecheck, build 통과. 규칙 상세는 [top10-price-cap.md](insights/top10-price-cap.md).
+- AA 미측정 요구도 같은 흐름으로 반영(unmeasured-evidence): OpenRouter·OpenCode tokens 근거 행 있으면 후보 풀 유지, usage 폴백. 풀 184→208, 두 역할 Top10 10행 유지. 상세는 [top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md).
+- 검증: 내 범위 유닛(top10·letter·run-once 전파 테스트) 전수 통과, BDD 41/41, typecheck·build 통과. 전체 스위트는 o1의 arena 제외 작업(2026-10-13 동시 진행, sources.ts·registry 테스트 갱신 대기) 일부 실패가 섞여 전수 녹색 미확정 — 내 변경 파일과 무관(격리 실행 확인).
+
+## 레터 데이터·표시 정정 (2026-10-13, 미발행)
+
+- 요청 3건 반영: 워커 후보 기준/MiMo 2.5 구세대 제외(등록 라인 `mimo-v2`의 신세대 등급이 있으면 무등급 구세대 제외), 접근 요금제를 Top10 두 표에서 분리해 워커 표 뒤 별도 `## 접근 요금제` 표(두 목록 unique 모델 × 보유 요금제, ☑/☐)로 표시, AA 등 소스 전량 SQLite 적재 후 같은 키 재조회 렌더(저장값만 사용).
+- 사용자 결정: Arena 수집 제외(스코어 입력이 아니어서 순위 변화 없음, sources 배지 5→4), "kimi-k2-7-code와 kimk-k3는 다른 계열로 봄"(원문 오기 그대로 기록, 코드 식별자는 `kimi-k3`) — Kimi 분리는 기존 동작과 같아 코드 변경 없음.
+- o2 별도 작업(혼합 단가 $3 상한·AA 미측정 근거 유지) 결과도 같은 워킹트리에 함께 있으며, 가격·근거 규칙 상세는 [top10-price-cap.md](insights/top10-price-cap.md)·[top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md)만 본다(중복 기록 없음).
+- 검증: 단위 879/879, BDD 41/41, typecheck·build·validate-repo PASS. 실수집 DB 사본 렌더 `insights once --markdown` exit 0, 근거 산출은 레터 Top10과 일치 확인(근거: scratch/reports/yoroi-final-report.md). 버전·PR·발행은 0.9.0(미커밋) 예정, 사용자 승인 대기하며 dev 워킹트리에만 보관.

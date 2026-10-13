@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseAaResponse } from '../src/insights/aa-parser.js';
-import { parseArenaRows } from '../src/insights/arena-parser.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
+import type { ParseRowResult } from '../src/insights/parse-utils.js';
 import type { LetterEvidence, LetterRankEvidence, LetterSection } from '../src/insights/letter-sections.js';
 import { runInsightsOnce } from '../src/insights/run-once.js';
 import type { InsightSourcePort } from '../src/insights/source-port.js';
@@ -11,9 +11,18 @@ const row = (i: number, date: string, rating: number) => ({ model_name: `m${i}`,
   variance: 2, vote_count: 10 + i, rank: i + 1, category: 'overall', leaderboard_publish_date: date });
 const aaPayload = { tier: 'free', intelligence_index_version: 3, pagination: { page: 1, page_size: 10, total_pages: 1, has_more: false },
   data: [{ id: 'a', slug: 'a', name: 'A', release_date: null, model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 42 }, pricing: {}, performance: {} }] };
-/** Arena publishes `date` with the given ratings; AA has no source date. Real parsers, fake fetch. */
+/** arena-parser 삭제(p16) 후 테스트 전용 최소 파서: rating 계열 3지표만 남긴다(증거 컷 기대값 유지). */
+const parseArenaStub = (payload: unknown, at: string): readonly ParseRowResult[] =>
+  (payload as ReturnType<typeof row>[]).map((r, index) => ({ ok: true, index, warnings: [], records:
+    ([['rating', r.rating], ['rating_lower', r.rating_lower], ['rating_upper', r.rating_upper]] as const).map(([metric, value]) => ({
+      source: 'arena' as const, modelId: r.model_name, metric, value, unit: 'score', category: r.category,
+      observedAt: at, sourceAsOf: r.leaderboard_publish_date,
+      sourceUrl: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset', sourceName: 'lmarena-ai LMArena Leaderboard Dataset',
+      license: 'CC-BY-4.0', attributionText: 'Source: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)',
+      method: 'bradley-terry', schemaVersion: 'arena-hf-v1' })) }));
+/** Arena publishes `date` with the given ratings; AA has no source date. Test parsers, fake fetch. */
 const ports = (date: string, ratings: number[]): InsightSourcePort[] => [
-  { id: 'arena', fetch: async () => ratings.map((r, i) => row(i, date, r)), parse: (p, at) => parseArenaRows(p as unknown[], at) },
+  { id: 'arena', fetch: async () => ratings.map((r, i) => row(i, date, r)), parse: parseArenaStub },
   { id: 'artificial-analysis', fetch: async () => aaPayload, parse: parseAaResponse }];
 const day = (n: number) => () => new Date(Date.parse('2026-10-08T00:30:00Z') + n * 86_400_000).toISOString();
 const section = <K extends LetterSection['kind']>(run: { letter: { ok: boolean; sections?: readonly LetterSection[] } }, kind: K) =>

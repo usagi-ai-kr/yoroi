@@ -1,8 +1,11 @@
 import { expandSuccessors } from './model-successors.js';
 import { validateInsightRecord, type ValidatedInsightRecord } from './validation.js';
 import { isExcludedModel, olderGenerationModelIds } from './letter-top10-filter.js';
+import { EVIDENCE_METRICS } from './top10-policy.js';
 import { effortForModel, splitBaseAndEffort, type ModelVariant } from './letter-top10-group.js';
 import { buildVariants, normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
+import { buildCatalogAliasResolver, resolveModelId } from './model-aliases.js';
+import { arbitrateReleases } from './release-snapshot.js';
 import { PLAN_CATALOG, type PlanCatalogEntry } from './plan-catalog.js';
 
 /** AA 검증 기록에 모델 후속 행을 합쳐 Top10 후보를 만든다(지수·속도·공식 단가 행 포함).
@@ -15,7 +18,6 @@ export function withSuccessors(base: readonly ValidatedInsightRecord[]): Validat
 }
 
 const modelIdOf = (r: Top10RecordInput): string => normalizeModelName(splitBaseAndEffort(r.modelId).base);
-const effortOf = (r: Top10RecordInput): string => effortForModel(r.modelId, r.modelAlias);
 function canonicalId(r: Top10RecordInput, catalogIds: ReadonlyMap<string, string>): string {
   const { effort: slugEffort } = splitBaseAndEffort(r.modelId), base = catalogIds.get(modelIdOf(r)) ?? modelIdOf(r);
   return slugEffort === 'default' ? base : `${base}-${slugEffort}`;
@@ -24,54 +26,62 @@ function dedupeRecords(records: readonly Top10RecordInput[], catalogIds: Readonl
   const grouped = new Map<string, Top10RecordInput[]>();
   for (const r of records) {
     const base = catalogIds.get(modelIdOf(r)) ?? modelIdOf(r);
-    const key = JSON.stringify([base, r.metric ?? '', effortOf(r)]);
+    const key = JSON.stringify([base, r.metric ?? '', effortForModel(r.modelId, r.modelAlias)]);
     grouped.set(key, [...(grouped.get(key) ?? []), r]);
   }
   return [...grouped.values()].map(rows => {
     const sorted = [...rows].sort((a, b) => (b.value ?? -Infinity) - (a.value ?? -Infinity) || a.modelId.localeCompare(b.modelId));
     const primary = sorted[0]!, priced = sorted.find(r => Number.isFinite(r.priceInput) && Number.isFinite(r.priceOutput));
     return { ...primary, modelId: canonicalId(primary, catalogIds),
-      ...(primary.modelAlias === undefined && rows.find(r => r.modelAlias !== undefined)?.modelAlias !== undefined &&
-        { modelAlias: rows.find(r => r.modelAlias !== undefined)!.modelAlias }),
+      ...(primary.modelAlias === undefined && rows.find(r => r.modelAlias !== undefined)?.modelAlias !== undefined && { modelAlias: rows.find(r => r.modelAlias !== undefined)!.modelAlias }),
       ...(priced && { priceInput: priced.priceInput, priceOutput: priced.priceOutput }),
-      ...(primary.successorOf === undefined && rows.find(r => r.successorOf !== undefined)?.successorOf !== undefined &&
-        { successorOf: rows.find(r => r.successorOf !== undefined)!.successorOf }) };
+      ...(primary.successorOf === undefined && rows.find(r => r.successorOf !== undefined)?.successorOf !== undefined && { successorOf: rows.find(r => r.successorOf !== undefined)!.successorOf }) };
   }).sort((a, b) => a.modelId.localeCompare(b.modelId) || (a.metric ?? '').localeCompare(b.metric ?? ''));
 }
 export interface CandidatePool {
   readonly allRecords: readonly Top10RecordInput[];
   readonly accessibleRecords: readonly Top10RecordInput[];
   readonly supersededModelIds: ReadonlySet<string>;
+  /** 릴리스 판정 보고(p20·p20c) — 비교 불가로 모두 유지한 canonical base 목록. */
+  readonly releaseWarnings: readonly string[];
 }
-/** Compute generation exclusions once from all AA-recorded, verified-plan models, independent of metric. */
-export function buildCandidatePool(records: readonly Top10RecordInput[], catalog: readonly PlanCatalogEntry[] = PLAN_CATALOG): CandidatePool {
-  const accessible = new Set(catalog.flatMap(p => p.models.filter(m => m.verified).map(m => normalizeModelName(m.modelId))));
-  const catalogIds = new Map(catalog.flatMap(p => p.models.filter(m => m.verified)
-    .map(m => [normalizeModelName(m.modelId), m.modelId] as const)));
-  const modelIds = [...new Set(records.map(modelIdOf))].filter(id => accessible.has(id) && !isExcludedModel(id));
+/** 세대 제외는 1회 계산. 근거 행(OR/OpenCode Data)이 있으면 AA 미측정 모델도 후보에서 빼지 않는다(2026-10-13). */
+export function buildCandidatePool(records: readonly Top10RecordInput[], catalog: readonly PlanCatalogEntry[] = PLAN_CATALOG,
+  evidence: readonly Top10RecordInput[] = []): CandidatePool {
+  const resolve = buildCatalogAliasResolver(records, catalog.flatMap(p => p.models.filter(m => m.verified).map(m => m.modelId)));
+  const accessible = new Set(catalog.flatMap(p => p.models.filter(m => m.verified).map(m => resolve(normalizeModelName(m.modelId)))));
+  const catalogIds = new Map(catalog.flatMap(p => p.models.filter(m => m.verified).map(m => [resolve(normalizeModelName(m.modelId)), m.modelId] as const)));
+  const merged = [...records, ...evidence.map(r => { const canonical = resolve(modelIdOf(r));
+    return canonical === modelIdOf(r) ? r : { ...r, modelId: canonical }; })], modelIds = [...new Set(merged.map(modelIdOf))].filter(id => accessible.has(id) && !isExcludedModel(id));
   const supersededModelIds = new Set(olderGenerationModelIds(modelIds));
-  for (const r of records) if (r.successorOf !== undefined && accessible.has(modelIdOf(r)))
-    supersededModelIds.add(normalizeModelName(splitBaseAndEffort(r.successorOf).base));
-  const allRecords = dedupeRecords(records.filter(r => !supersededModelIds.has(modelIdOf(r))), catalogIds);
-  const accessibleRecords = allRecords.filter(r => accessible.has(modelIdOf(r)) && !isExcludedModel(r.modelId));
-  return { allRecords, accessibleRecords, supersededModelIds };
+  for (const r of merged) if (r.successorOf !== undefined && accessible.has(modelIdOf(r))) supersededModelIds.add(normalizeModelName(splitBaseAndEffort(r.successorOf).base));
+  const eligible = merged.filter(r => !supersededModelIds.has(modelIdOf(r)));
+  const isEvidence = (r: Top10RecordInput): boolean => r.metric !== undefined && (EVIDENCE_METRICS as readonly string[]).includes(r.metric);
+  const releases = arbitrateReleases(eligible.filter(r => !isEvidence(r)), r => catalogIds.get(modelIdOf(r)) ?? modelIdOf(r));
+  const allRecords = dedupeRecords([...releases.rows, ...eligible.filter(isEvidence)], catalogIds);
+  const accessibleRecords = allRecords.filter(r => accessible.has(resolve(modelIdOf(r))) && !isExcludedModel(r.modelId));
+  return { allRecords, accessibleRecords, supersededModelIds, releaseWarnings: releases.warnings };
 }
 
 const AA_METRICS = new Set(['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index',
   'median_output_tokens_per_second', 'intelligence_index_cost_per_task']);
-/** Keep AA-recorded candidates without this role's index as zero-index fallback variants. */
+/** Keep AA-recorded candidates without this role's index as zero-index fallback variants, and keep
+ *  AA-unmeasured candidates too when OpenRouter·OpenCode Data evidence rows exist (user rule 2026-10-13). */
 export function buildRoleVariants(records: readonly Top10RecordInput[], metric: string, opts?: Top10Options): ModelVariant[] {
+  const presentKeys = new Set(records.map(r => `${modelIdOf(r)}|${r.metric ?? ''}`));
+  const evidenceRows = [...(opts?.openrouterRecords ?? []), ...(opts?.opencodeDataRecords ?? [])].filter(r =>
+    r.metric !== undefined && (EVIDENCE_METRICS as readonly string[]).includes(r.metric) && !presentKeys.has(`${modelIdOf(r)}|${r.metric}`));
   const indexed = buildVariants(records, metric, opts), known = new Set(indexed.map(v => normalizeModelName(v.baseModelId)));
   const missing = new Map<string, Top10RecordInput>();
-  for (const r of records) {
-    if (r.metric && !AA_METRICS.has(r.metric)) continue;
+  for (const r of [...records, ...evidenceRows]) {
+    if (r.metric && !AA_METRICS.has(r.metric) && !(EVIDENCE_METRICS as readonly string[]).includes(r.metric)) continue;
     const key = modelIdOf(r);
     if (known.has(key)) continue;
     const prior = missing.get(key), priced = r.priceInput !== undefined && r.priceOutput !== undefined;
     if (!prior || priced && (prior.priceInput === undefined || prior.priceOutput === undefined)) missing.set(key, r);
   }
   const placeholders = [...missing.values()].map(r => ({ ...r, metric, value: 0 })), ids = new Set(missing.keys());
-  const variants = buildVariants([...placeholders, ...records], metric, opts).filter(v => ids.has(normalizeModelName(v.baseModelId)))
+  const variants = buildVariants([...placeholders, ...records, ...evidenceRows], metric, opts).filter(v => ids.has(normalizeModelName(v.baseModelId)))
     .map(v => ({ ...v, value: 0, indexMissing: true }));
   return [...indexed, ...variants];
 }
@@ -80,7 +90,7 @@ export function buildRoleVariants(records: readonly Top10RecordInput[], metric: 
 export function plansForCatalogModel(modelId: string, catalog: readonly PlanCatalogEntry[]): string[] {
   const id = normalizeModelName(modelId);
   return catalog.flatMap(plan => {
-    const entry = plan.models.find(m => m.verified && normalizeModelName(m.modelId) === id);
+    const entry = plan.models.find(m => m.verified && resolveModelId(normalizeModelName(m.modelId), new Map(), new Set([id])) === id);
     if (!entry) return [];
     const label = plan.usagePolicy ? `${plan.planName}(크레딧 ${plan.usagePolicy.credit})` : plan.planName;
     if (!entry.usageLimit) return [label];

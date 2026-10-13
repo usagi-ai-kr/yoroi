@@ -57,7 +57,7 @@ test('both renderers place the guide under the two tables, outside the details b
 test('belowZone rows carry ▽ in the rank cell and indexMissing keeps the dash', () => {
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists, failedSources: [] });
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists });
-  assert.ok(md.includes('| ▽ 4 | orch-d | high | 96.0 | - | $1.50 | ChatGPT Plus | 🌱 |'), md);
+  assert.ok(md.includes('| ▽ 4 | orch-d | high | 96.0 | - | $1.50 | 🌱 |'), md);
   assert.ok(compact.includes('▽ 4. orch-d · effort high · 스코어 96.0 · - · $1.50 · 접근 ChatGPT Plus · 🌱'), compact);
   assert.ok(!md.includes('| ▽ 1 |') && !compact.includes('▽ 1.'));
 });

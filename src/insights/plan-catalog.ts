@@ -38,8 +38,6 @@ export interface PlanCatalogEntry {
   readonly tier?: 'paid' | 'free';
 }
 
-import { FREE_PLANS } from './plan-catalog-free.js';
-
 const CHECKED_ON = '2026-10-12', CHECKED_ON_DOCS = '2026-10-13';
 const OPENAI = 'https://openai.com/chatgpt/pricing/';
 const ANTHROPIC = 'https://www.anthropic.com/pricing';
@@ -51,8 +49,6 @@ const ANTIGRAVITY = 'https://antigravity.google/docs/models';
 const CURSOR = 'https://cursor.com/pricing';
 const m = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
   ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON, verified: true });
-const mFree = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
-  ({ ...m(modelId, displayName, sourceUrl), free: true });
 const mDocs = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
   ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON_DOCS, verified: true });
 
@@ -91,10 +87,6 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     'Claude Opus 4.6 (thinking)|claude-opus-4-6', 'GPT-OSS-120b|gpt-oss-120b']
     .map(s => mDocs(s.split('|')[1]!, s.split('|')[0]!, ANTIGRAVITY)) },
   { planId: 'cursor', planName: 'Cursor', models: [
-    ...['Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6', 'Grok 4.5|grok-4-5']
-      .map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), billing: 'pool' as const })),
-    ...['Claude Opus 5.5|claude-opus-5-5', 'Claude Sonnet 5.5|claude-sonnet-5-5', 'Claude Haiku 5.5|claude-haiku-5-5',
-      'Gemini 3.8 Flash|gemini-3-8-flash', 'GPT-5.6 Luna|gpt-5-6-luna', 'GPT-5.6 Terra|gpt-5-6-terra', 'GPT-5.6 Sol|gpt-5-6-sol',
-      'Muse Spark 1.3 Contributor|muse-spark-1-3'].map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), billing: 'list-price' as const }))] },
-  ...FREE_PLANS,
+    ...['Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6', 'Grok 4.5|grok-4-5', 'Composer 2.5|composer-2-5']
+      .map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), billing: 'pool' as const }))] },
 ];

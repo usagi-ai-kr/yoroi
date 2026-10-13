@@ -42,4 +42,5 @@ export const SCORE_FORMULA_LINES: readonly string[] = [
   '- 추천 effort: 변형별 실효 단가(혼합 단가 × cost_per_task 비율)로 스코어링한 최고 변형',
   '- default: AA에 effort 변형 또는 cost_per_task가 없어 단일 구성으로 평가',
   '- Free 섹션: 비용 항목 동일(무료)이라 지수·사용량·속도로 사실상 정렬',
+  '- off-peak: 실행 시각 기준 확인된 할인 단가 적용',
 ];

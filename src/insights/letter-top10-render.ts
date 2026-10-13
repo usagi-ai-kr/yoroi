@@ -2,15 +2,15 @@ import { computeRoleTop10, SECTION_HEADINGS, type RoleList, type RoleLists } fro
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { SCORE_FORMULA_LINES } from './letter-markdown-format.js';
-import { freeLists, freeOnlyModelIds, renderFreeSectionCompact, shortPlan } from './letter-markdown-free.js';
+import { freeListsFrom, freeOnlyModelIds, renderFreeSectionCompact, shortPlan, unmeasuredFreeIds } from './letter-markdown-free.js';
+import type { PlanCatalogEntry } from './plan-catalog.js';
 import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 import { LEGEND_LINES, changeNote, exitLine, formatChange } from './letter-top10-legend.js';
 
 export interface Top10LetterInput {
   readonly publicationDate: string; // YYYY-MM-DD
-  readonly lists: RoleLists;
-  readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
-  readonly partialSources?: readonly string[]; readonly free?: RoleLists;
+  readonly lists: RoleLists; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
+  readonly partialSources?: readonly string[]; readonly free?: RoleLists | undefined; readonly freeUnmeasured?: readonly string[];
 }
 
 const ATTRIBUTIONS = ['출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)', '출처: OpenRouter (CC-BY-4.0)',
@@ -33,9 +33,9 @@ function section(role: OptimalZoneRole, list: RoleList): string[] {
     const rank = e.belowZone ? `▽ ${e.rank}` : String(e.rank);
     const refs = [e.openrouterRankText, e.arenaRankText, e.isPareto ? '⭐' : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
     lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)}${e.both ? ' ↔' : ''} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${clean(e.indexText, 80)}` +
-      ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' · off-peak' : ''} · 접근 ${e.plans.map(shortPlan).join('+') || '미상'}` +
+      ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' off-peak' : ''} · 접근 ${e.plans.map(shortPlan).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
-      `${e.successorOf ? ` · AA 미수록 · 선행 지수 하한(${clean(e.successorOf, 40)})` : ''} · ${formatChange(e.change)}`);
+      ` · ${formatChange(e.change)}`);
   }
   for (const x of list.exits.slice(0, EXIT_LIMIT)) lines.push(exitLine(clean(x.modelId, NAME_LIMIT), x.previousRank));
   if (list.exits.length > EXIT_LIMIT) lines.push(`🚪 그 외 이탈 ${list.exits.length - EXIT_LIMIT}개`);
@@ -57,7 +57,7 @@ export function renderTop10Letter(data: Top10LetterInput): string {
     ...section('orchestrator', data.lists.orchestrator),
     '',
     ...section('worker', data.lists.worker),
-    ...(data.free ? renderFreeSectionCompact(data.free, 2) : []),
+    ...renderFreeSectionCompact(data.free, data.freeUnmeasured ?? [], 2),
     '',
     ...LEGEND_LINES,
     '',
@@ -88,13 +88,13 @@ export function renderTop10Letter(data: Top10LetterInput): string {
 export interface CompactLetterInput { readonly publicationDate: string; readonly records: readonly Top10RecordInput[];
   readonly arenaRecords?: readonly Top10RecordInput[]; readonly openrouterRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
-  readonly partialSources?: readonly string[] }
+  readonly partialSources?: readonly string[]; readonly freeCatalog?: readonly PlanCatalogEntry[] }
 /** Builds the compact letter from letter rows (no I/O): per-role zone policy over AA indices. */
 export function renderTop10FromRecords(input: CompactLetterInput): string {
   const options = { ...(input.arenaRecords && { arenaRecords: input.arenaRecords }), ...(input.openrouterRecords && { openrouterRecords: toRankedRecords(input.openrouterRecords) }),
     ...(input.previousRanks && { previousCohort: input.previousRanks }), excludeModelIds: new Set(freeOnlyModelIds()) };
-  return renderTop10Letter({ publicationDate: input.publicationDate, lists: computeRoleTop10(input.records, options), free: freeLists(input.records, options),
-    ...(input.failedSources && { failedSources: input.failedSources }),
+  return renderTop10Letter({ publicationDate: input.publicationDate, lists: computeRoleTop10(input.records, options), free: freeListsFrom(input.records, input.freeCatalog, options),
+    freeUnmeasured: unmeasuredFreeIds(input.freeCatalog, input.records), ...(input.failedSources && { failedSources: input.failedSources }),
     ...(input.notes && { notes: input.notes }),
     ...(input.partialSources && { partialSources: input.partialSources }) });
 }

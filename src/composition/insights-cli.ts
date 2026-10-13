@@ -1,6 +1,8 @@
 import { runInsights } from './insights.js';
 import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
 import { renderTop10MarkdownFromRecords } from '../insights/letter-markdown.js';
+import { NodeProcessRunner } from '../infra/process-runner.js';
+import type { ProcessRunner } from '../infra/process-port.js';
 import type { InsightHistoryPort } from '../insights/history-port.js';
 import type { InsightSourcePort } from '../insights/source-port.js';
 import type { InsightPortOptions } from '../insights/sources.js';
@@ -14,6 +16,7 @@ import type { InsightLetterView } from '../ui/cli/insights-view.js';
  * HTTP keys come from the config env and are never logged. */
 export interface InsightsCliOptions {
   readonly http?: HttpClient;
+  readonly processRunner?: ProcessRunner;
   readonly clock?: () => number;
   readonly sourceOptions?: Omit<InsightPortOptions, 'now'>;
   readonly openHistory?: () => InsightHistoryPort & { close(): void };
@@ -36,6 +39,7 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
     run: async ({ refresh, signal }) => {
       const outcome = await runInsights({ env: ctx.configEnv, dataEnv: ctx.dataEnv,
         ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }),
+        processRunner: opts?.processRunner ?? new NodeProcessRunner(),
         ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
         ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
         ...(refresh && { refresh: true }), ...(signal && { signal }) });

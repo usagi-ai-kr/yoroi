@@ -4,7 +4,10 @@ import { runInsightsOnce, type InsightRunResult } from '../insights/run-once.js'
 import type { InsightSourcePort } from '../insights/source-port.js';
 import { createInsightSourcePorts, type InsightPortOptions } from '../insights/sources.js';
 import { NodeHttpClient, type HttpClient } from '../infra/http-client.js';
+import { NodeProcessRunner } from '../infra/process-runner.js';
+import type { ProcessRunner } from '../infra/process-port.js';
 import { openInsightsHistory } from '../infra/sqlite/insights-store.js';
+import { buildFreeCatalog, collectOpenCodeFreeModels, freeOnlyModelIdsFromCatalog, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
 
 export interface InsightsRunOptions {
   /** Provider/key environment (AA and OpenRouter keys come from the usual .env/process env; values are never logged). */
@@ -12,6 +15,8 @@ export interface InsightsRunOptions {
   /** Data-dir environment (YOROI_DATA_DIR etc.), like `once`. */
   readonly dataEnv: NodeJS.ProcessEnv;
   readonly http?: HttpClient;
+  /** Runtime `opencode models` discovery. The CLI supplies the real runner; tests can inject a stub. */
+  readonly processRunner?: ProcessRunner;
   /** Epoch ms clock; the KST publication day and all timestamps derive from it. */
   readonly clock?: () => number;
   readonly refresh?: boolean;
@@ -22,7 +27,10 @@ export interface InsightsRunOptions {
   readonly openHistory?: () => InsightHistoryPort & { close(): void };
   readonly createPorts?: (client: HttpClient, lookup: (name: string) => string | undefined, options: InsightPortOptions) => readonly InsightSourcePort[];
 }
-export type InsightsRunOutcome = InsightRunResult & {
+type InsightsTop10Data = NonNullable<InsightRunResult['top10']> & {
+  readonly freeCatalog?: readonly RuntimeFreePlan[]; readonly freeOnlyModelIds?: ReadonlySet<string>;
+};
+export type InsightsRunOutcome = Omit<InsightRunResult, 'top10'> & { readonly top10?: InsightsTop10Data } & {
   /** `memory` means the database could not be opened: the run still works but nothing persists or compares. */
   readonly storage: 'sqlite' | 'memory';
 };
@@ -37,8 +45,13 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
   catch { history = new MemoryInsightHistory(); storage = 'memory'; }
   try {
     const ports = (options.createPorts ?? createInsightSourcePorts)(options.http ?? new NodeHttpClient(), name => options.env[name], sourceOptions);
-    const run = await runInsightsOnce({ ports, history, now: () => new Date(clock()).toISOString(),
-      ...(options.refresh && { refresh: true }), ...(options.signal && { signal: options.signal }) });
-    return { ...run, storage };
+    const [run, freeModels] = await Promise.all([runInsightsOnce({ ports, history, now: () => new Date(clock()).toISOString(),
+      ...(options.refresh && { refresh: true }), ...(options.signal && { signal: options.signal }) }),
+      options.processRunner ? collectOpenCodeFreeModels(options.processRunner,
+        { ...(options.signal && { signal: options.signal }) }) : Promise.resolve(undefined)]);
+    const freeCatalog = freeModels && buildFreeCatalog(freeModels, run.publicationDate);
+    const top10 = run.top10 && freeCatalog ? { ...run.top10, freeCatalog,
+      freeOnlyModelIds: freeOnlyModelIdsFromCatalog(freeCatalog) } : run.top10;
+    return { ...run, ...(top10 && { top10 }), storage };
   } finally { try { history.close?.(); } catch { /* close errors never change the result */ } }
 }

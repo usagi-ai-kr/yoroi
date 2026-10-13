@@ -17,7 +17,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 | 자동화 | 워커·CI 범위·버전 스크립트·Wiki 운영 | #56–#61 | 완료. #57·#59·#60·#61·#25 closed(PR #62). #58·#56 closed(Wiki 게시 검증 후) |
 | 웹·이력 | Zen Free 락·실사용 검증·캐시·인사이트 | [#70](https://github.com/qus0in/yoroi/issues/70)–[#89](https://github.com/qus0in/yoroi/issues/89) (0.2.0–0.6.0) | 0.2.0·0.3.0 발행 완료(v0.3.0 `f12f55a`), 0.3.1 로드 표시 [#77](https://github.com/qus0in/yoroi/issues/77)·실관측 [#88](https://github.com/qus0in/yoroi/issues/88), 0.4.0 감지 [#89](https://github.com/qus0in/yoroi/issues/89) v0.4.0 발행(main `4744fbc`, 스모크 대기로 #89 open). 옛 milestone #2·#30–#55·#69 close(사용자, 2026-10-10) |
 
-- `package.json`의 버전은 `0.8.4`(직전 발행 v0.8.3, main `81b264c`, 0.8.4 dev → main PR 준비 중)이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
+- `package.json`의 버전은 `0.8.5`(직전 발행 v0.8.4, main `73f4ad1`, 0.8.5 dev → main PR 준비 중)이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
 - [0.1.2 milestone](https://github.com/qus0in/yoroi/milestone/4): 계약 확인 #13·#14·#29(당시 open 3 유지).
   PR #66 병합 `4dfd4d7`(.env 병합 로드 `68bce2f` 포함), workflow_dispatch CI `37764517117` success,
   tag `v0.1.2`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행, milestone close.

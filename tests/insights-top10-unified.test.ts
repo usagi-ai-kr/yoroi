@@ -90,7 +90,7 @@ test('successor rows keep the predecessor-index lower bound in both lists', () =
   assert.equal(worker?.successorOf, 'deepseek-v4-flash');
   assert.equal(orch?.both, true, '두 존을 모두 통과하면 두 목록에 나온다');
 });
-test('plansForModel keeps the usage-limit annotation that the letters still display', () => {
-  assert.ok(plansForModel('kimi-k3').includes('OpenCode Go Plus(440회/5h·추정)'));
-  assert.ok(plansForModel('kimi-k3').includes('Ollama Cloud Pro(크레딧 $60/월)'));
+test('plansForModel lists plain plan names now that annotations left the access column', () => {
+  assert.deepEqual(plansForModel('kimi-k3'), ['Ollama Cloud Pro', 'OpenCode Go Plus']);
+  assert.deepEqual(plansForModel('claude-opus-5-5'), ['Claude Pro', 'Antigravity']);
 });

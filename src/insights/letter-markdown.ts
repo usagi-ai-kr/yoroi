@@ -4,7 +4,8 @@ import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { LEGEND_LINES, changeNote, exitLine, formatChange } from './letter-top10-legend.js';
-import { freeLists, freeOnlyModelIds, renderFreeSectionMarkdown } from './letter-markdown-free.js';
+import { barePlan, freeListsFrom, freeOnlyModelIds, renderFreeSectionMarkdown, unmeasuredFreeIds } from './letter-markdown-free.js';
+import type { PlanCatalogEntry } from './plan-catalog.js';
 
 export { escapeShields, OMISSION_MARK, MARKDOWN_LIMIT } from './letter-markdown-format.js';
 export type { RoleLists, RoleList, RoleEntry, RoleExit } from './letter-top10-unified.js';
@@ -14,9 +15,8 @@ const TABLE_HEAD = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼
 function renderTable(role: OptimalZoneRole, list: RoleList): string {
   const rows = list.entries.map(e => {
     const rank = `${e.isPareto ? '⭐ ' : ''}${e.belowZone ? '▽ ' : ''}${e.rank}`;
-    const successor = e.successorOf ? ` (${e.successorOf} 선행)` : '';
-    return `| ${rank} | ${e.modelId}${successor}${e.both ? ' ↔' : ''} | ${e.repEffort} | ${e.scoreText ?? '-'} | ` +
-      `${e.indexText} | ${e.blendedCostText} | ${e.plans.join('+')} | ${formatChange(e.change)} |`;
+    return `| ${rank} | ${e.modelId}${e.both ? ' ↔' : ''} | ${e.repEffort} | ${e.scoreText ?? '-'} | ` +
+      `${e.indexText} | ${e.blendedCostText}${e.offPeak ? ' off-peak' : ''} | ${e.plans.map(barePlan).join('+')} | ${formatChange(e.change)} |`;
   });
   const exits = list.exits.map(x => exitLine(x.modelId, x.previousRank));
   return [`${SECTION_HEADINGS[role]}\n\n${TABLE_HEAD}`, ...rows, ...(exits.length ? ['', ...exits] : [])].join('\n');
@@ -29,7 +29,8 @@ function summarize(lists: RoleLists): string {
 }
 
 export function renderTop10Markdown(data: {
-  readonly publicationDate: string; readonly lists: RoleLists; readonly free?: RoleLists;
+  readonly publicationDate: string; readonly lists: RoleLists; readonly free?: RoleLists | undefined;
+  readonly freeUnmeasured?: readonly string[];
   readonly failedSources?: readonly string[]; readonly partialSources?: readonly string[]; readonly notes?: readonly string[];
 }): string {
   const failed = data.failedSources ?? [], partial = data.partialSources ?? [], notes = data.notes ?? [];
@@ -56,7 +57,7 @@ export function renderTop10Markdown(data: {
     summarize(data.lists),
     renderTable('orchestrator', data.lists.orchestrator),
     renderTable('worker', data.lists.worker),
-    ...(data.free ? [renderFreeSectionMarkdown(data.free).join('\n')] : []),
+    renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? []).join('\n'),
     LEGEND_LINES.join('\n'),
     details,
   ];
@@ -68,6 +69,7 @@ export interface MarkdownLetterInput {
   readonly arenaRecords?: readonly Top10RecordInput[]; readonly openrouterRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[];
   readonly notes?: readonly string[]; readonly partialSources?: readonly string[];
+  readonly freeCatalog?: readonly PlanCatalogEntry[];
 }
 export function renderTop10MarkdownFromRecords(input: MarkdownLetterInput): string {
   const opts = {
@@ -79,7 +81,8 @@ export function renderTop10MarkdownFromRecords(input: MarkdownLetterInput): stri
   return renderTop10Markdown({
     publicationDate: input.publicationDate,
     lists: computeRoleTop10(input.records, opts),
-    free: freeLists(input.records, opts),
+    free: freeListsFrom(input.records, input.freeCatalog, opts),
+    freeUnmeasured: unmeasuredFreeIds(input.freeCatalog, input.records),
     ...(input.failedSources && { failedSources: input.failedSources }),
     ...(input.partialSources && { partialSources: input.partialSources }),
     ...(input.notes && { notes: input.notes }),

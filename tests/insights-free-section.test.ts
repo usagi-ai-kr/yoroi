@@ -2,70 +2,85 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderTop10MarkdownFromRecords } from '../src/insights/letter-markdown.js';
 import { renderTop10FromRecords } from '../src/insights/letter-top10-render.js';
-import { freeOnlyModelIds } from '../src/insights/letter-top10-plans.js';
+import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index';
+const freeEntry = (modelId: string, displayName = modelId) =>
+  ({ modelId, displayName, sourceUrl: 'https://opencode.ai/v2/docs/console/models', checkedOn: '2026-10-13', verified: true });
+const FREE_CATALOG: readonly PlanCatalogEntry[] = [
+  { planId: 'opencode-zen-free', planName: 'OpenCode Zen Free', tier: 'free',
+    models: [freeEntry('big-pickle', 'Big Pickle'), freeEntry('step-5', 'Step 5 Preview Free'), freeEntry('mimo-v2-5'), freeEntry('ling-3-0-flash-fin')] },
+  { planId: 'opencode-go-free', planName: 'OpenCode Go Free', tier: 'free', models: [freeEntry('step-5', 'Step 5 Preview Free')] },
+];
 const RECORDS = [
   { modelId: 'step-5', value: 90, metric: INTEL, priceInput: 1, priceOutput: 2 },
-  { modelId: 'claude-opus-5-5', value: 80, metric: INTEL, priceInput: 3, priceOutput: 15 },
-  { modelId: 'gemini-3-8-flash', value: 70, metric: CODE, priceInput: 1, priceOutput: 4 },
-  { modelId: 'big-pickle', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 },
-];
+  { modelId: 'big-pickle', value: 80, metric: INTEL, priceInput: 0, priceOutput: 0 },
+  { modelId: 'big-pickle', value: 85, metric: CODE, priceInput: 0, priceOutput: 0 },
+  { modelId: 'mimo-v2-5', value: 70, metric: CODE, priceInput: 0.1, priceOutput: 0.4 },
+  { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 },
+  { modelId: 'claude-sonnet-5-5', value: 88, metric: INTEL, priceInput: 3, priceOutput: 15 }];
 
-test('free-only models leave the paid list and move into the Free section', () => {
-  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS });
-  const orch = md.slice(md.indexOf('## 🧭'), md.indexOf('## 🛠️'));
-  assert.ok(!orch.includes('| step-5 |'), 'step-5 must not sit in the paid orchestrator table');
-  assert.ok(md.includes('## 🆓 Free 티어'));
-  assert.ok(md.includes('| 1 | step-5 |'), 'step-5 leads the free orchestrator list');
-  assert.ok(md.includes('OpenCode Zen Free+OpenCode Go Free ⚠️세션 헤더 필요'));
-  assert.ok(md.includes('- Antigravity Free: 주간 쿼터 갱신·주간 rate limit(수치 비공개).'));
-  assert.ok(md.includes('- 미확인: ChatGPT Free(공식 페이지 403)'));
-  assert.ok(md.includes('- Free 섹션: 비용 항목 동일(무료)이라 지수·사용량·속도로 사실상 정렬'));
-  assert.ok(md.includes('🆓 무료(🆓 Free 티어 섹션 표시)'), 'legend ties the 🆓 mark to the section');
-});
-
-test('the compact letter carries the Free section with both roles and the tier notes', () => {
-  const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: RECORDS });
-  assert.ok(text.includes('## 🆓 Free 티어'));
-  assert.ok(text.includes('1. step-5 · effort'), 'free orchestrator row');
-  assert.ok(text.includes('2. gemini-3-8-flash · effort'), 'free worker row (big-pickle outscored it)');
-  assert.ok(text.includes('- OpenCode Go Free: Unlimited·기간 한정, x-opencode-session 헤더 필수로 OpenCode 클라이언트 세션에서만 사용.'));
-  assert.ok(!text.slice(0, text.indexOf('## 🆓 Free 티어')).includes('step-5'), 'no free-only model before the section');
-});
-
-test('freeOnlyModelIds keeps free-reachable models and drops paid-accessible free models', () => {
-  const ids = freeOnlyModelIds();
-  assert.ok(ids.includes('step-5') && ids.includes('big-pickle') && ids.includes('longcat-2-5-preview-free'));
-  assert.ok(!ids.includes('gemini-3-8-flash'), 'also on the paid Antigravity plan');
-  assert.ok(!ids.includes('muse-spark-1-3'), 'also on the paid OpenCode Go plan');
-  assert.ok(!ids.includes('nemotron-3-ultra'), 'also on the paid Ollama plan');
-});
-
-const FILL_RECORDS = [
-  { modelId: 'gemini-3-8-flash', value: 90, metric: CODE, priceInput: 1, priceOutput: 4 },
-  { modelId: 'big-pickle', value: 50, metric: CODE, priceInput: 0, priceOutput: 0 },
-  { modelId: 'exo', value: 49, metric: CODE, priceInput: 0, priceOutput: 0 },
-  { modelId: 'jev-1-13', value: 48, metric: CODE, priceInput: 0, priceOutput: 0 },
-  { modelId: 'ling-3-1-flash', value: 47, metric: CODE, priceInput: 0, priceOutput: 0 }];
-
-test('each free role renders its own table right under its subheading', () => {
-  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: FILL_RECORDS });
+test('the free section renders from the injected freeCatalog with notes limited to Zen/Go Free', () => {
+  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG });
   const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
-  for (const label of ['### 오케스트레이터', '### 워커']) {
-    const at = section.indexOf(label);
-    assert.ok(at >= 0, label);
-    const after = section.slice(at + label.length).replace(/^\s+/, '');
-    assert.ok(after.startsWith('| 순위 | 모델 | 추천 effort | 스코어 | 지수 | Free 경로 |'), after.slice(0, 60));
-    assert.ok(after.startsWith('| 순위 | 모델 | 추천 effort | 스코어 | 지수 | Free 경로 |\n| --- | --- | --- | --- | --- | --- |'));
+  assert.ok(section.includes('### 오케스트레이터') && section.includes('### 워커'));
+  assert.ok(section.includes('⭐ 1 | step-5 ↔ |'), 'free orchestrator leader with star and dual-list mark');
+  assert.ok(section.includes('⭐ '), 'pareto star inside the free table');
+  assert.ok(section.includes('OpenCode Go Free ⚠️세션 헤더 필요'), 'Go Free session-header caveat kept');
+  assert.ok(section.includes('OpenCode Zen Free+OpenCode Go Free ⚠️세션 헤더 필요'));
+  assert.ok(section.includes('- OpenCode Zen Free: 기간 한정 무료'));
+  assert.ok(section.includes('- OpenCode Go Free: Unlimited·기간 한정'));
+  assert.ok(!section.includes('Antigravity Free') && !section.includes('미확인'), 'Antigravity/unknown lines removed');
+});
+
+test('an absent freeCatalog yields the single collection-failure line', () => {
+  for (const empty of [undefined, [] as readonly PlanCatalogEntry[]]) {
+    const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS, ...(empty && { freeCatalog: empty }) });
+    const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
+    assert.ok(section.includes('Free 목록 수집 실패(opencode models)'));
+    assert.ok(!section.includes('### 오케스트레이터'));
+    const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: RECORDS });
+    assert.ok(text.includes('Free 목록 수집 실패(opencode models)'));
   }
-  assert.ok(!section.includes('### 오케스트레이터\n| 1 |'), 'no heading glued to a row');
 });
 
-test('below-zone free rows carry the ▽ rank marker in both formats', () => {
-  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: FILL_RECORDS });
+test('labels are plain: no successor note, no bracketed plan tails, no Cursor for third-party', () => {
+  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG });
+  assert.ok(!md.includes('선행'), 'successor annotation removed');
+  assert.ok(!md.includes('(크레딧'), 'credit tail removed');
+  assert.ok(!md.includes('440회'), 'limit tail removed');
+  assert.ok(!md.includes('API 정가'), 'cursor billing label removed');
+  const sonnet = md.split('\n').find(l => l.includes('claude-sonnet-5-5') && l.startsWith('|'))!;
+  assert.ok(sonnet.includes('Claude Pro') && !sonnet.includes('Cursor'), sonnet);
+  assert.ok(md.includes('- off-peak: 실행 시각 기준 확인된 할인 단가 적용'));
+  const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: RECORDS });
+  assert.ok(!text.includes('선행') && !text.includes('(크레딧'));
+});
+
+const STAR_RECORDS = [
+  { modelId: 'step-5', value: 43.7, metric: INTEL, priceInput: 0, priceOutput: 0 },
+  { modelId: 'big-pickle', value: 30, metric: INTEL, priceInput: 0, priceOutput: 0 },
+  { modelId: 'ling-3-0-flash-fin', value: 22.6, metric: INTEL, priceInput: 0, priceOutput: 0 },
+  { modelId: 'mimo-v2-5', value: 70, metric: CODE, priceInput: 0, priceOutput: 0 },
+  { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 }];
+
+test('free pareto stars only index-undominated rows; dominated rows carry no star', () => {
+  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: STAR_RECORDS, freeCatalog: FREE_CATALOG });
   const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
-  assert.match(section, /\| ▽ \d+ \| big-pickle \|/, section);
-  const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: FILL_RECORDS });
-  assert.match(text.slice(text.indexOf('## 🆓 Free 티어')), /▽ \d+\. big-pickle/);
+  const orch = section.slice(section.indexOf('### 오케스트레이터'), section.indexOf('### 워커'));
+  const worker = section.slice(section.indexOf('### 워커'));
+  assert.match(orch, /\| ⭐ 1 \| step-5 ↔ \|/, orch);
+  assert.ok(orch.includes('| ▽ 2 | big-pickle ↔ |'), 'dominated by step-5: no star');
+  assert.ok(orch.includes('| ▽ 3 | ling-3-0-flash-fin ↔ |'), 'dominated: no star');
+  assert.match(worker, /\| ⭐ 1 \| mimo-v2-5 ↔ \|/);
+  assert.ok(worker.includes('| 2 | ling-3-0-flash-fin ↔ |'), 'dominated: no star');
+});
+
+test('free models without AA records are listed as unmeasured at the section bottom', () => {
+  const sparse = [{ modelId: 'step-5', value: 43.7, metric: INTEL, priceInput: 0, priceOutput: 0 },
+    { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 }];
+  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
+  assert.ok(md.includes('- AA 미측정(순위 제외): big-pickle, mimo-v2-5'));
+  const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
+  assert.ok(text.includes('- AA 미측정(순위 제외): big-pickle, mimo-v2-5'));
 });

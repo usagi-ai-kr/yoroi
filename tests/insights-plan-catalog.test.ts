@@ -6,7 +6,7 @@ import { buildCandidatePool } from '../src/insights/letter-top10-candidates.js';
 import { normalizeModelName, type Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 
 test('plan catalog entries all carry an https sourceUrl, checkedOn and a verified flag', () => {
-  assert.deepEqual(PLAN_CATALOG.map(p => p.planId), ['chatgpt-plus', 'claude-pro', 'google-ai-pro', 'ollama-cloud-pro', 'opencode-go-plus', 'antigravity', 'cursor', 'opencode-zen-free', 'opencode-go-free', 'antigravity-free']);
+  assert.deepEqual(PLAN_CATALOG.map(p => p.planId), ['chatgpt-plus', 'claude-pro', 'google-ai-pro', 'ollama-cloud-pro', 'opencode-go-plus', 'antigravity', 'cursor']);
   assert.ok(plansForModel('gemini-3-8-flash').includes('Antigravity'));
   for (const plan of PLAN_CATALOG) for (const model of plan.models) {
     assert.match(model.sourceUrl, /^https:\/\//, `${plan.planId}:${model.modelId}`);
@@ -21,8 +21,8 @@ test('models with usageLimit append limit to plansForModel', () => {
   assert.ok(kimi.usageLimit);
   assert.equal(kimi.usageLimit.count, 440);
   assert.equal(kimi.usageLimit.period, '5h');
-  assert.ok(plansForModel('kimi-k3').includes('OpenCode Go Plus(440회/5h·추정)'));
-  assert.ok(plansForModel('kimi-k3').includes('Ollama Cloud Pro(크레딧 $60/월)'));
+  assert.ok(plansForModel('kimi-k3').includes('OpenCode Go Plus'));
+  assert.ok(plansForModel('kimi-k3').includes('Ollama Cloud Pro'));
 });
 
 test('Ollama Cloud Pro carries usagePolicy credit, pricingModel and concurrency in PLAN_CATALOG', () => {
@@ -33,20 +33,18 @@ test('Ollama Cloud Pro carries usagePolicy credit, pricingModel and concurrency 
   assert.equal(ollama.usagePolicy.concurrency, 3);
   assert.equal(ollama.usagePolicy.sourceUrl, 'https://ollama.com/pricing');
   assert.equal(ollama.usagePolicy.checkedOn, '2026-10-12');
-  assert.ok(plansForModel('gemma4').includes('Ollama Cloud Pro(크레딧 $60/월)'));
+  assert.ok(plansForModel('gemma4').includes('Ollama Cloud Pro'));
 });
 
 test('plansForModel resolves the Go console docs models to OpenCode Go Plus', () => {
   for (const id of ['muse-spark-1-3', 'qwen3-8-max', 'grok-4-7', 'deepseek-v4-flash', 'muse-spark-1-2'])
     assert.ok(plansForModel(id).includes('OpenCode Go Plus'), id);
-  assert.ok(plansForModel('step-5').includes('OpenCode Go Free(Free)'));
 });
 
 test('each plan keeps its expected model count and no duplicate modelId', () => {
   const counts: Record<string, number> = {
     'chatgpt-plus': 8, 'claude-pro': 3, 'google-ai-pro': 2,
-    'ollama-cloud-pro': 18, 'opencode-go-plus': 30, 'antigravity': 9, 'cursor': 11,
-    'opencode-zen-free': 13, 'opencode-go-free': 2, 'antigravity-free': 7,
+    'ollama-cloud-pro': 18, 'opencode-go-plus': 30, 'antigravity': 9, 'cursor': 4,
   };
   assert.deepEqual(Object.fromEntries(PLAN_CATALOG.map(p => [p.planId, p.models.length])), counts);
   for (const plan of PLAN_CATALOG) {
@@ -79,15 +77,8 @@ test('verified=false models are dropped from the accessible candidate pool', () 
     ['glm-5-3', 'muse-spark-1-3']);
 });
 
-test('free plans hold the free entries and freeOnlyModelIds keeps only free-reachable models', () => {
-  const goFree = PLAN_CATALOG.find(p => p.planId === 'opencode-go-free')!;
-  assert.deepEqual(goFree.models.filter(m => m.free === true).map(m => m.modelId), ['longcat-2-5-preview-free', 'step-5']);
-  assert.equal(PLAN_CATALOG.filter(p => p.tier === 'free').length, 3);
-  assert.deepEqual(freeOnlyModelIds(), ['big-pickle', 'exo', 'jev-1-13', 'ling-3-0-flash-fin',
-    'ling-3-1-flash', 'longcat-2-5-preview-free', 'nemotron-3-5-lightning', 'step-5']);
-  assert.ok(plansForModel('longcat-2-5-preview-free').includes('OpenCode Go Free(Free)'));
-  assert.ok(plansForModel('step-5').includes('OpenCode Go Free(Free)'));
-  assert.ok(!plansForModel('kimi-k3').some(p => p.includes('(Free)')));
-  const paidOnly = PLAN_CATALOG.flatMap(p => p.models.filter(m => m.free !== true));
-  assert.ok(paidOnly.every(m => !freeOnlyModelIds().includes(m.modelId)));
+test('static free plans are gone, so freeOnlyModelIds is empty until codex injects a live freeCatalog', () => {
+  assert.equal(PLAN_CATALOG.filter(p => p.tier === 'free').length, 0);
+  assert.deepEqual(freeOnlyModelIds(), []);
+  assert.ok(!plansForModel('step-5').some(p => p.includes('(Free)')));
 });

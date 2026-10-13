@@ -26,23 +26,17 @@ const PLAN_SHORT: Readonly<Record<string, string>> = {
   'Antigravity Free': 'Antigravity F', 'OpenCode Go Free': 'Go Free',
 };
 export function shortPlan(label: string): string {
-  const bare = label.replace(/\([^)]*\)/g, '');
+  const bare = barePlan(label);
   return PLAN_SHORT[bare] ?? bare;
+}
+/** 괄호 괄호 주석(크레딧·한도 등)을 벗긴 플랜 이름만 돌려준다(접근 열 표기). */
+export function barePlan(label: string): string {
+  return label.replace(/\([^)]*\)/g, '');
 }
 
 /** 후보가 사용자 보유 요금제에서 접근 가능한지 판정한다(정규화 이름 정확 일치).
- *  반환은 플랜 표시명 목록(크레딧/한도/무료·Cursor 과금 방식 표기)이며, 어디에도 없으면 빈 배열(순위 후보에서 제외).
- *  한도 note가 추정(Est.)이면 '·추정'을 붙여 추정 성격을 숨기지 않는다. */
+ *  반환은 플랜 이름 목록(괄호 주석 없음 — 레터 접근 열은 이름만 표기)이며, 어디에도 없으면 빈 배열. */
 export function plansForModel(modelId: string): string[] {
   const norm = normalizeModelName(modelId);
-  return PLANS.flatMap(plan => {
-    const entry = plan.models.get(norm);
-    if (!entry) return [];
-    const base = plan.usagePolicy ? `${plan.planName}(크레딧 ${plan.usagePolicy.credit})` : plan.planName;
-    if (entry.free === true) return [`${base}(Free)`];
-    if (!entry.usageLimit) return [base];
-    const { count, period, note } = entry.usageLimit;
-    const estimate = note !== undefined && /est\./i.test(note) ? '·추정' : '';
-    return [`${base}(${count}회/${period}${estimate})`];
-  });
+  return PLANS.flatMap(plan => plan.models.has(norm) ? [plan.planName] : []);
 }

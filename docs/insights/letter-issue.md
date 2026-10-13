@@ -1,18 +1,20 @@
 # AI 인사이트 레터 이슈 발행 계약 ([#94](https://github.com/qus0in/yoroi/issues/94), [#105](https://github.com/qus0in/yoroi/issues/105))
 
-매일 인사이트 레터를 yoroi 레포(private) 이슈로 발행하는 코테츠(Hermes cron)와
-yoroi CLI 간의 발행 계약이다.
+매일 인사이트 레터를 yoroi 레포(private) 이슈로 발행하는 yoroi CLI 계약이다.
+이전 Hermes 발행 경로와 전환 시각은 아래 발행 주체 이력에 보존한다.
 
 ## 역할 분리 및 실행 명령
 
-- **크론 실행 명령**: `yoroi insights once --markdown`
+- **본문 미리보기 명령**: `yoroi insights once --markdown`
   - GitHub 이슈 본문용 마크다운 레이아웃(배지·테이블·이모지·details)을 stdout으로 출력한다.
   - 터미널용 텍스트는 `--pretty`, 기존 전량 상세 출력은 `--full` 플래그로 유지한다.
-- **코테츠(Hermes)**: 매일 cron 실행, 이슈 게시·중복 방지·전일 레터 close, 실패 알림 및 통보.
+- **이전 발행 주체**: 코테츠(Hermes)가 매일 cron 실행, 이슈 게시·중복 방지·전일 레터 close, 실패 알림 및 통보를 담당했다(2026-10-13 PM2로 이관).
+- **현행 발행 명령**: `yoroi insights publish [--dry-run] [--not-before HH:MM]`. PM2가 실행하며 본문은 `once --markdown`과 같은 renderer를 쓴다.
 
 ## 발행 계약
 
 - **주기**: 매일 1회 09:00 KST. 같은 KST 날짜에는 1건만 생성한다.
+- **시각 가드**: 기본 09:00 KST 전에는 `skip: before 09:00 KST`를 출력하고 종료한다. `--not-before HH:MM`으로 기준 시각을 바꿀 수 있다.
 - **제목**: `[letter] YYYY-MM-DD AI 인사이트 레터` (KST 날짜 기준).
 - **라벨**: `letter` 만 부여한다. `memo`, `work` 등 작업 라벨은 붙이지 않는다.
 - **마크다운 본문 구성 (`--markdown`)**:
@@ -37,9 +39,13 @@ yoroi CLI 간의 발행 계약이다.
     - 실패 소스 안내: 정상 시 `모든 소스 정상 수집 완료`, 실패 시 `⚠️ 소스명`, 부분 수집(일부 행 거절) 시 `⚠️ 부분 수집 소스: ...`가 함께 표시된다.
     - 경고: 전일 자료 부족 등 수집 경고가 있으면 `### 경고` 블록에 나열한다.
     - 출처 5사 라이선스 명시 (LMArena, OpenRouter, AA, Cognition, OpenCode Data (내부 참조 · 약관상 자동 추출 제한)).
-- **중복 방지**: `label:letter` 및 당일 제목 검색 시 재발행하지 않고 댓글로 남긴다.
+- **중복 방지 (이전 계약)**: `label:letter` 및 당일 제목 검색 시 재발행하지 않고 댓글로 남긴다.
+- **중복 방지 정정 (2026-10-13)**: 오늘 제목이 open/closed `label:letter` 이슈에 있으면 댓글 없이 `skip: already published #N`을 출력하고 종료한다.
 - **종료 코드**: `0` 정상, `1` 실패(이슈 미게시, 알림 발송), `2` 인자/설정 오류.
-- **전일 close**: 새 레터 게시 직후 전일 `letter` 이슈를 close한다 (열린 레터 최신 1건).
+- **전일 close (이전 계약)**: 새 레터 게시 직후 전일 `letter` 이슈를 close한다 (열린 레터 최신 1건).
+- **전일 close 정정 (2026-10-13)**: 생성 성공 후 새 이슈를 제외한 open `letter` 이슈 모두에 후속 레터 댓글을 단 뒤 close한다.
+- **Dry-run**: GitHub 쓰기 없이 제목·중복 판정·close 대상만 표시한다. 수집·렌더 실패는 이슈를 만들지 않고 exit 1이다.
+- **출력 및 보안**: 성공 stdout은 `published #N <url> <KST 시각>` 한 줄이다. 인증값과 본문 원문은 로그에 출력하지 않는다.
 - **공개 범위**: private 전제. Cognition·AA 포함으로 public 전환 시 발행 즉시 중단.
 - **발행 시 사용자 통보**: 이슈 번호·링크·KST 시각을 사용자에게 통보한다.
 
@@ -75,6 +81,7 @@ yoroi CLI 간의 발행 계약이다.
 - 댓글 분할 게시가 필요하면 코테츠가 잘린 본문과 `--full` 출력으로 별도 게시한다(yoroi는 분할하지 않는다).
 
 ## 발행 주체·일정 (2026-10-11 사용자 제공 사실, 외부 조회 없음)
-- 매일 레터 크론: Hermes `yoroi-letter-daily`(job `3409ac85f368`), 매일 09:00 KST, 첫 실행 2026-10-12 09:00.
+- 매일 레터 크론 이력: Hermes `yoroi-letter-daily`(job `3409ac85f368`), 매일 09:00 KST, 첫 실행 2026-10-12 09:00.
+- **2026-10-13 사용자 지시로 Hermes `yoroi-letter-daily`(job `3409ac85f368`)를 삭제하고, yoroi 자체 PM2 프로세스 `yoroi-letter`(매일 09:00 KST, cron_restart, 등록·운영은 [letter-pm2.md](letter-pm2.md))로 이관했다.** 발행 명령은 `yoroi insights publish`이며 09:00 KST 이전 skip·당일 중복 skip·전일 close를 자체 수행한다.
 - 별도 주간보고 크론: Hermes `yoroi-weekly-report`(job `e32c1f8f04ae`), 매주 토요일 09:00 KST, 첫 실행 2026-10-17.
 - 2026-10-11 수동 첫 발행은 [#99](https://github.com/qus0in/yoroi/issues/99) 마감, 위 크론과 실행 시각이 겹치지 않는다.

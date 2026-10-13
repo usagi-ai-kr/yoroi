@@ -1,6 +1,7 @@
 import { runInsights } from './insights.js';
 import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
 import { renderTop10MarkdownFromRecords } from '../insights/letter-markdown.js';
+import { publishInsightsLetter } from './insights-publish.js';
 import { NodeProcessRunner } from '../infra/process-runner.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import type { InsightHistoryPort } from '../insights/history-port.js';
@@ -34,12 +35,31 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
   readonly options?: InsightsCliOptions;
 }): Promise<number> {
   const opts = ctx.options;
+  const runner = opts?.processRunner ?? new NodeProcessRunner();
+  if (parsed.operation === 'publish') {
+    const controller = new AbortController(), unsubscribe = ctx.subscribeSignals(() => controller.abort());
+    return publishInsightsLetter({ ...(parsed.dryRun && { dryRun: true }), ...(parsed.notBefore && { notBefore: parsed.notBefore }), runner,
+      ...(ctx.configEnv.YOROI_GH_BIN && { ghBin: ctx.configEnv.YOROI_GH_BIN }), ...(opts?.clock && { clock: opts.clock }),
+      signal: controller.signal, render: async () => {
+        const outcome = await runInsights({ env: ctx.configEnv, dataEnv: ctx.dataEnv, processRunner: runner,
+          ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }),
+          ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
+          ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
+          signal: controller.signal });
+        if (outcome.exitCode !== 0) return undefined;
+        const top10 = outcome.top10 ?? { records: [], arenaRecords: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
+        const warnings = (top10 as { warnings?: readonly string[] }).warnings;
+        const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
+        return renderTop10MarkdownFromRecords({ publicationDate: outcome.publicationDate, ...top10,
+          ...(warnings?.length && { notes: warnings }), ...(partialSources.length && { partialSources }) });
+      } }, ctx.env).finally(() => { unsubscribe(); controller.abort(); });
+  }
   const deps: InsightsCommandDeps = {
     subscribeSignals: ctx.subscribeSignals,
     run: async ({ refresh, signal }) => {
       const outcome = await runInsights({ env: ctx.configEnv, dataEnv: ctx.dataEnv,
         ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }),
-        processRunner: opts?.processRunner ?? new NodeProcessRunner(),
+        processRunner: runner,
         ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
         ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
         ...(refresh && { refresh: true }), ...(signal && { signal }) });

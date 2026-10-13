@@ -23,7 +23,7 @@ export interface InsightsCommandDeps {
 
 /** stdout carries only the letter (contract 1-A); diagnostics go to stderr and never change the exit code.
  * An abort is not a run failure: if the letter survived, it is still printed and exit stays 0. */
-export async function runInsightsCommand(parsed: Extract<InsightsParsedArgs, { kind: "insights" }>,
+export async function runInsightsCommand(parsed: Extract<InsightsParsedArgs, { kind: "insights"; operation: "once" }>,
   deps: InsightsCommandDeps, env: CliEnvironment): Promise<number> {
   const controller = new AbortController();
   const unsubscribe = deps.subscribeSignals(() => controller.abort());

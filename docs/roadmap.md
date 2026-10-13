@@ -18,7 +18,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 | 웹·이력 | Zen Free 락·실사용 검증·캐시·인사이트 | [#70](https://github.com/qus0in/yoroi/issues/70)–[#89](https://github.com/qus0in/yoroi/issues/89) (0.2.0–0.6.0) | 0.2.0·0.3.0 발행 완료(v0.3.0 `f12f55a`), 0.3.1 로드 표시 [#77](https://github.com/qus0in/yoroi/issues/77)·실관측 [#88](https://github.com/qus0in/yoroi/issues/88), 0.4.0 감지 [#89](https://github.com/qus0in/yoroi/issues/89) v0.4.0 발행(main `4744fbc`, 스모크 대기로 #89 open). 옛 milestone #2·#30–#55·#69 close(사용자, 2026-10-10) |
 
 - `package.json`의 버전은 `0.9.0`(직전 v0.8.6 발행: PR #126 → main, PR/main CI success, [v0.8.6 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.6), 전역 CLI 0.8.6; #125 close)이다. 버전 원본은 이 파일 하나이며 CLI `--version`도 이를 읽는다.
-- 0.9.0 범위(minor, [versioning.md](versioning.md) 근거: Arena 소스 제거·Top10 산정 규칙 변경·DB scope `:all` 추가): MiMo 구세대 세대 제외·접근 요금제 별도 표(Top10 unique 모델 × 요금제 ☑/☐)·SQLite 전량 적재 후 재조회 렌더·Arena 수집 제거·혼합 단가 $3 상한·AA 미측정 근거 유지·오케스트레이터/워커 역할 재정립. 상태: dev 미커밋·PR 대기.
+- 0.9.0 범위(minor, [versioning.md](versioning.md) 근거: Arena 소스 제거·Top10 산정 규칙 변경·DB scope `:all` 추가): MiMo 구세대 세대 제외·접근 요금제 별도 표(Top10 unique 모델 × 요금제 ☑/☐)·SQLite 전량 적재 후 재조회 렌더·Arena 수집 제거·AA 미측정 근거 유지·오케스트레이터/워커 역할 재정립. 상태: dev 미커밋·PR 대기.
 - [0.1.2 milestone](https://github.com/qus0in/yoroi/milestone/4): 계약 확인 #13·#14·#29(당시 open 3 유지).
   PR #66 병합 `4dfd4d7`(.env 병합 로드 `68bce2f` 포함), workflow_dispatch CI `37764517117` success,
   tag `v0.1.2`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.1.2) 발행, milestone close.

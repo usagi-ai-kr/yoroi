@@ -48,10 +48,10 @@ Top 10 압축 레터의 오케스트레이터·워커 선정 및 가성비 최�
 
 ## 4. 후보 필터와 파이프라인 순서 (rank-rules-103, 2026-10-12)
 
-- 후보 50 전체를 처음부터 다시 산출한다(기존 Top10 재정렬 금지): **제외 필터(계열 패턴·혼합 단가 $3 상한) → 최신 버전만 → off-peak 단가 적용 → 단가·가성비 계산 → 성능 하한(85%/75%, 필터 후 후보 최고값 기준) → 정렬**. AA 미측정 후보는 OpenRouter·OpenCode Data 근거 행이 있으면 풀에 유지한다(unmeasured-evidence, [top10-unmeasured-evidence.md](top10-unmeasured-evidence.md)).
+- 후보 50 전체를 처음부터 다시 산출한다(기존 Top10 재정렬 금지): **제외 필터(계열 패턴) → 최신 버전만 → off-peak 단가 적용 → 단가·가성비 계산 → 성능 하한(85%/75%, 필터 후 후보 최고값 기준) → 정렬**. AA 미측정 후보는 OpenRouter·OpenCode Data 근거 행이 있으면 풀에 유지한다(unmeasured-evidence, [top10-unmeasured-evidence.md](top10-unmeasured-evidence.md)).
 - **이전 제외 규칙 이력**: 모델명에 `fable`·`astra` 포함 시 순위·참고에서 제외하고, `grok` 계열은 **사용자 취향** 사유로 제외했다. Grok 제외는 아래 롤백 지시로 철회했다.
 - **이전 Kimi K3 제외 결정 (2026-10-13)**: `kimi-k3`만 사용자 체감 비효율 사유로 제외하고, `kimi` 전체 패턴을 쓰지 않아 Kimi K2.x는 유지했었다. 아래 지시로 철회했다.
-- **제외 롤백 (2026-10-13 사용자 지시)**: Grok·Kimi K3 제외를 철회해 두 모델을 후보에 복귀시켰다. Grok은 Cursor 요금제로 접근 가능해졌다. 현재 제외 패턴은 `fable`·`astra`다. 혼합 단가 $3/1M 이상 제외(price-cap-3m, 2026-10-13 사용자 지시)가 1단계에 추가됐고, Kimi K3는 공식 단가 $3/$15(혼합 $6.00)로 걸려 다시 제외된다 — 규칙·실측은 [top10-price-cap.md](top10-price-cap.md).
+- **제외 롤백 (2026-10-13 사용자 지시)**: Grok·Kimi K3 제외를 철회해 두 모델을 후보에 복귀시켰다. Grok은 Cursor 요금제로 접근 가능해졌다. 현재 제외 패턴은 `fable`·`astra`다. 혼합 단가 상한 제외 규칙은 2026-10-13 사용자 지시로 폐지됐다(단가만으로는 제외하지 않으며 Kimi K3도 후보다).
 - **동일 계열 최신만**: 꼬리 숫자 버전을 비교해(예 `claude-opus-5-5` > `claude-opus-5`) 더 높은 버전이 후보에 있으면 구버전을 제외한다. 버전 파싱 불가·동일 버전·판단 불확실 시에는 제외하지 않는다(오판 방지, `letter-top10-filter.ts`). **Kimi 계열 분리 (2026-10-13 사용자 지시: "2. kimi-k2-7-code와 kimk-k3는 다른 계열로 봄")**: kimk-k3는 원문 오기이며 코드 식별자는 `kimi-k3`. `kimi-k2-7-code`는 family `kimi-k2-code` [7], `kimi-k3`는 파싱 불가(null)로 서로 제외하지 않는다 — 현행 동작과 일치해 코드 변경은 없다. **Kimi 후속 결정 (2026-10-13 사용자 원문 "2: kimi-k26은 제외하고 2-7 code만")**: `'kimi-k2': ['code']` 등급 등록으로 `kimi-k2-6` 제외, `kimi-k2-7-code` 유지, `kimi-k3`는 별 계열 유지.
 - **벤더 라인 세대 교체 (gpt-gen-112, 사용자 지시 2026-10-12)**: 세대 비교 기준은 등급을 뺀 **벤더 라인**이다(`vendorLine`: 계열 키에서 등급 토큰 `luna`·`terra`·`sol`을 제거해 `gpt-luna`·`gpt-terra`·`gpt-sol`이 모두 `gpt`가 된다). 같은 라인에 더 높은 세대(예 `gpt-6-1-sol`의 6.1 > `gpt-5-6-luna`·`gpt-5-6-terra`의 5.6)가 후보에 있으면 낮은 세대의 모든 하위 등급을 제외한다 — GPT의 luna·terra·sol이 같은 세대의 하위 등급이기 때문이다. 등급이 곧 라인인 `claude-opus`·`claude-sonnet`·`claude-haiku`·`gemini-pro`·`gemini-flash`는 각자 유지한다(haiku를 opus 세대로 지우지 않는다). `GRADE_TOKENS`에 없는 등급은 파싱 불확실로 보아 제외하지 않는 기존 원칙을 지킨다. 폐지 전 요금제상 최적 표도 같은 `filterCandidates`를 사용했으나, 현재 표에는 적용되지 않는다.
 - **현재 세대 제외 기준 (gpt-pool-113, 2026-10-12)**: GPT 6.x가 있으면 AA 기록이 있는 전체 접근 가능 모델 집합에서 지표와 무관하게 한 번 세대를 판정해 GPT 5.6 luna·terra·sol 제외 목록을 만들고, 당시 오케스트레이터·워커·요금제상 최적 표에 공통 적용했다. 요금제상 최적 표는 폐지됐다.
@@ -85,7 +85,7 @@ Top 10 압축 레터의 오케스트레이터·워커 선정 및 가성비 최�
 - 보유 요금제 5개만 다룬다: ChatGPT Plus, Claude Pro, Google AI Pro, Ollama Cloud Pro, OpenCode Go Plus(Zen Free 제외 — 사용자 확정). 공식 페이지를 1회씩 읽기 전용 조회해 확인했다: openai.com/chatgpt/pricing/, anthropic.com/pricing, one.google.com/about/google-ai-plans/, ollama.com/pricing, opencode.ai/go. 각 항목은 `sourceUrl`·`checkedOn(2026-10-12)`·`verified`로 기록하고, 페이지에서 확인되지 않은 모델은 코드에 넣지 않는다(보고서 '미확인').
 - **사용 한도 및 단가(kimi-limit-112, ollama-credit-112)**:
   - OpenCode Go Plus: Kimi K3는 5시간당 440회 추정 제한(Plus 기준, 월 $60 상당)이 공식 명시되어 `usageLimit`에 기록하고 표기(`OpenCode Go Plus(440회/5h)`)한다.
-  - Ollama Cloud Pro: 요금제 수준에 사용 방식(credit: $60/월, 토큰 단가 차감, concurrency 3, sourceUrl: ollama.com/pricing)을 기록하고, 레터 접근 표기에 `Ollama Cloud Pro(크레딧 $60/월)`로 표기한다. 모델 단가는 기존 AA/공식 단가(Kimi K3: 입력 $3.00, 출력 $15.00/1M)를 사용하며 혼합 단가 $6.00/1M에 정상 반영되지만, price-cap-3m으로 순위 후보에서는 제외되고 저장 단가는 유지된다.
+  - Ollama Cloud Pro: 요금제 수준에 사용 방식(credit: $60/월, 토큰 단가 차감, concurrency 3, sourceUrl: ollama.com/pricing)을 기록하고, 레터 접근 표기에 `Ollama Cloud Pro(크레딧 $60/월)`로 표기한다. 모델 단가는 기존 AA/공식 단가(Kimi K3: 입력 $3.00, 출력 $15.00/1M)를 사용하며 혼합 단가 $6.00/1M에 정상 반영되고 저장 단가도 유지된다.
 - **0.8.3 계획 (#117, 2026-10-13)**: Cursor 요금제를 추가해 Grok 접근을 표시하고, Free 전용 후보는 유료 Top10과 구분한 별도 섹션으로 안내한다.
 - **Cursor 표기 단순화 (2026-10-13 사용자 지시: "API 정가 표현은 제외")**: 접근 요금제 열의 Cursor 표지를 `Cursor(API 정가)`·`Cursor(주간 풀)`에서 `Cursor`로 통일했다. 타사 모델의 Cursor 경위 자체는 유지하며, 풀/정가 구분은 `plan-catalog.ts`의 `billing` 필드에 사실 기록으로만 남는다(표기에는 쓰지 않는다).
 - off-peak 창은 공급자별로 다르다: DeepSeek 플랫폼 peak=월–금 UTC 01:00–04:00·06:00–10:00(중국 공휴일 제외), 그 외·주말·공휴일 off-peak(반값). Ollama Cloud peak=평일 UTC 12:00–18:00, off-peak=평일 그 외+주말 전일. 두 창을 하나로 묶지 않는다.

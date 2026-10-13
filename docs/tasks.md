@@ -81,12 +81,10 @@
 - #115 본문 갱신(2026-10-13 13:07:28 KST), #123·0.8.5 milestone close 완료.
 - 0.8.6 범위: [#125](https://github.com/qus0in/yoroi/issues/125) 레터 발행을 Hermes 크론에서 yoroi 자체 PM2로 이관하고 `insights publish` 명령 추가; dev → main PR 준비.
 
-## price-cap-3m 및 o2 모델 교체 (2026-10-13, o2 수행)
+## o2 모델 교체·AA 미측정 근거 유지 (2026-10-13, o2 수행)
 
 - o2 모델을 GLM-5.3-Flash(Ollama Cloud)로 교체(사용자 지시, 직전 Codex GPT-6.1-Sol capacity 오류 보고 뒤). orchestration.md 반영.
-- Top10 제외 필터에 혼합 단가 $3/1M 이상 제외(price-cap-3m) 추가: `letter-top10-filter.ts` filterCandidates, `PRICE_EXCLUSION_THRESHOLD=3`, EXCLUSION_NOTE 갱신.
-- 실측(DB 사본 `/tmp/yoroi-p7.BOhred/yoroi.db`, 5소스 reused): 오케·워커 Top10 모두 10행 유지. 제외 6개 — grok-4-7($3.00)·claude-sonnet-5-5·gpt-6-1-sol($4.00)·gemini-3-pro($4.50)·kimi-k3($6.00)·claude-opus-5-5($8.00).
-- 검증: 유닛 867/867, BDD 41/41, typecheck, build 통과. 규칙 상세는 [top10-price-cap.md](insights/top10-price-cap.md).
+- 혼합 단가 $3 상한 폐지(2026-10-13 사용자 지시): 도입했던 단가 상한 제외 규칙·관련 문서를 걷어냈다(p45).
 - AA 미측정 요구도 같은 흐름으로 반영(unmeasured-evidence): OpenRouter·OpenCode tokens 근거 행 있으면 후보 풀 유지, usage 폴백. 풀 184→208, 두 역할 Top10 10행 유지. 상세는 [top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md).
 - 검증: 내 범위 유닛(top10·letter·run-once 전파 테스트) 전수 통과, BDD 41/41, typecheck·build 통과. 전체 스위트는 o1의 arena 제외 작업(2026-10-13 동시 진행, sources.ts·registry 테스트 갱신 대기) 일부 실패가 섞여 전수 녹색 미확정 — 내 변경 파일과 무관(격리 실행 확인).
 
@@ -94,5 +92,5 @@
 
 - 요청 3건 반영: 워커 후보 기준/MiMo 2.5 구세대 제외(등록 라인 `mimo-v2`의 신세대 등급이 있으면 무등급 구세대 제외), 접근 요금제를 Top10 두 표에서 분리해 워커 표 뒤 별도 `## 접근 요금제` 표(두 목록 unique 모델 × 보유 요금제, ☑/☐)로 표시, AA 등 소스 전량 SQLite 적재 후 같은 키 재조회 렌더(저장값만 사용).
 - 사용자 결정: Arena 수집 제외(스코어 입력이 아니어서 순위 변화 없음, sources 배지 5→4), "kimi-k2-7-code와 kimk-k3는 다른 계열로 봄"(원문 오기 그대로 기록, 코드 식별자는 `kimi-k3`) — Kimi 분리는 기존 동작과 같아 코드 변경 없음.
-- o2 별도 작업(혼합 단가 $3 상한·AA 미측정 근거 유지) 결과도 같은 워킹트리에 함께 있으며, 가격·근거 규칙 상세는 [top10-price-cap.md](insights/top10-price-cap.md)·[top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md)만 본다(중복 기록 없음).
+- o2 별도 작업(AA 미측정 근거 유지) 결과도 같은 워킹트리에 함께 있으며, 근거 규칙 상세는 [top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md)만 본다(중복 기록 없음).
 - 검증: 단위 879/879, BDD 41/41, typecheck·build·validate-repo PASS. 실수집 DB 사본 렌더 `insights once --markdown` exit 0, 근거 산출은 레터 Top10과 일치 확인(근거: scratch/reports/yoroi-final-report.md). 버전·PR·발행은 0.9.0(미커밋) 예정, 사용자 승인 대기하며 dev 워킹트리에만 보관.

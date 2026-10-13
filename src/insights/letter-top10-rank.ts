@@ -50,7 +50,7 @@ export function toRankedRecords(records: readonly Top10RecordInput[]): readonly 
   return [...records].sort((a, b) => usage(b) - usage(a) || a.modelId.localeCompare(b.modelId))
     .map((r, index) => ({ ...r, rank: index + 1 }));
 }
-/** 지표 행을 variants로 만들고 제외 계열(Fable·Astra)·최신 버전만·off-peak 단가 규칙·제외 단가 상한($3/1M)을 적용한다. */
+/** 지표 행을 variants로 만들고 제외 계열(Fable·Astra)·최신 버전만·off-peak 단가 규칙을 적용한다. */
 export function buildVariants(records: readonly Top10RecordInput[], metric: string, opts?: Top10Options): ModelVariant[] {
   const orMap = toRefMap(opts?.openrouterRecords, 'total_tokens');
   const speedMap = new Map(records.filter(r => r.metric === SPEED_METRIC && Number.isFinite(r.value)).map(r => [normalizeModelName(r.modelId), r.value!]));

@@ -5,10 +5,6 @@ import { findOffPeakRate, isOffPeakHour, OFF_PEAK_RATES, type OffPeakRate } from
 /** 사용자 규칙 제외 계열(소문자 부분 일치): Fable·Astra. */
 export const EXCLUDED_PATTERNS = ['fable', 'astra'] as const;
 
-/** 사용자 규칙: 혼합 단가(1M당 USD, off-peak 적용값)가 이 값 이상인 모델은 애초에 후보에서 제외한다(경계 포함).
- *  단가 미상은 판정 불가로 제외하지 않고 기존 규칙(후순위·★ 보류)을 따른다. */
-export const PRICE_EXCLUSION_THRESHOLD = 3;
-
 export function isExcludedModel(modelId: string): boolean {
   const id = modelId.toLowerCase();
   return EXCLUDED_PATTERNS.some(pattern => id.includes(pattern));
@@ -79,7 +75,7 @@ export function dropOlderVersions(variants: readonly ModelVariant[]): ModelVaria
   return variants.filter(v => !older.has(modelKey(v.baseModelId)));
 }
 
-/** 후보 파이프라인 1단계: 제외 계열 → 최신 버전만 → off-peak 단가 적용(실행 시각이 off-peak일 때만, 표기 플래그 포함) → 제외 단가 상한($3/1M 이상 제외). */
+/** 후보 파이프라인 1단계: 제외 계열 → 최신 버전만 → off-peak 단가 적용(실행 시각이 off-peak일 때만, 표기 플래그 포함). */
 export function filterCandidates(variants: readonly ModelVariant[],
   overrides: Readonly<Record<string, OffPeakRate>> = OFF_PEAK_RATES,
   nowUtc?: string): ModelVariant[] {
@@ -92,5 +88,5 @@ export function filterCandidates(variants: readonly ModelVariant[],
     const multiplier = v.blendedCost && v.effectiveCost !== undefined ? v.effectiveCost / v.blendedCost : 1;
     const effectiveCost = blendedCost * multiplier, costEfficiency = calcCostEfficiency(v.value, effectiveCost);
     return { ...v, blendedCost, effectiveCost, ...(costEfficiency !== undefined && { costEfficiency }), offPeak: true };
-  }).filter(v => v.blendedCost === undefined || v.blendedCost < PRICE_EXCLUSION_THRESHOLD);
+  });
 }

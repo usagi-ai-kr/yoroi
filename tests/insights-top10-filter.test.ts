@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { PRICE_EXCLUSION_THRESHOLD, dropOlderVersions, filterCandidates, isExcludedModel, parseFamilyVersion, compareVersions, vendorLine } from '../src/insights/letter-top10-filter.js';
+import { dropOlderVersions, filterCandidates, isExcludedModel, parseFamilyVersion, compareVersions, vendorLine } from '../src/insights/letter-top10-filter.js';
 import { computeRoleTop10, previousRanks } from '../src/insights/letter-top10-unified.js';
 import { buildCandidatePool } from '../src/insights/letter-top10-candidates.js';
 import { calcCostEfficiency, type ModelVariant } from '../src/insights/letter-top10-group.js';
@@ -19,15 +19,6 @@ test('fable/astra are excluded while Grok remains a candidate (case-insensitive)
   assert.equal(isExcludedModel('claude-opus-5-5'), false);
   const kept = ids(filterCandidates([variant('claude-opus-5-5'), variant('claude-fable-5-1'), variant('gpt-6-astra'), variant('grok-4-6')]));
   assert.deepEqual(kept, ['claude-opus-5-5', 'grok-4-6']);
-});
-
-test('blended price $3/1M or above is excluded up front; boundary included, unknown and free stay (price-cap-3m)', () => {
-  assert.equal(PRICE_EXCLUSION_THRESHOLD, 3);
-  const mk = (modelId: string, blendedCost?: number): ModelVariant =>
-    ({ modelId, baseModelId: modelId, effort: 'default', value: 80, ...(blendedCost !== undefined && { blendedCost }) });
-  const kept = ids(filterCandidates([mk('cheap', 2.99), mk('at-three', 3), mk('pricey', 6),
-    mk('opaque'), mk('free-m', 0)]));
-  assert.deepEqual(kept, ['cheap', 'opaque', 'free-m']);
 });
 
 test('same family keeps only the highest version, including middle version groups (gpt-…-sol/flash)', () => {

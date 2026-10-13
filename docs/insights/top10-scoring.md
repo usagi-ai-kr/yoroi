@@ -87,6 +87,7 @@ Top 10 압축 레터의 오케스트레이터·워커 선정 및 가성비 최�
   - OpenCode Go Plus: Kimi K3는 5시간당 440회 추정 제한(Plus 기준, 월 $60 상당)이 공식 명시되어 `usageLimit`에 기록하고 표기(`OpenCode Go Plus(440회/5h)`)한다.
   - Ollama Cloud Pro: 요금제 수준에 사용 방식(credit: $60/월, 토큰 단가 차감, concurrency 3, sourceUrl: ollama.com/pricing)을 기록하고, 레터 접근 표기에 `Ollama Cloud Pro(크레딧 $60/월)`로 표기한다. 모델 단가는 기존 AA/공식 단가(Kimi K3: 입력 $3.00, 출력 $15.00/1M)를 사용하며 혼합 단가 $6.00/1M에 정상 반영된다.
 - **0.8.3 계획 (#117, 2026-10-13)**: Cursor 요금제를 추가해 Grok 접근을 표시하고, Free 전용 후보는 유료 Top10과 구분한 별도 섹션으로 안내한다.
+- **Cursor 표기 단순화 (2026-10-13 사용자 지시: "API 정가 표현은 제외")**: 접근 요금제 열의 Cursor 표지를 `Cursor(API 정가)`·`Cursor(주간 풀)`에서 `Cursor`로 통일했다. 타사 모델의 Cursor 경위 자체는 유지하며, 풀/정가 구분은 `plan-catalog.ts`의 `billing` 필드에 사실 기록으로만 남는다(표기에는 쓰지 않는다).
 - off-peak 창은 공급자별로 다르다: DeepSeek 플랫폼 peak=월–금 UTC 01:00–04:00·06:00–10:00(중국 공휴일 제외), 그 외·주말·공휴일 off-peak(반값). Ollama Cloud peak=평일 UTC 12:00–18:00, off-peak=평일 그 외+주말 전일. 두 창을 하나로 묶지 않는다.
 - 적용 규칙: 레터 발행 시각 09:00 KST = 00:00 UTC는 두 공급자 모두 off-peak 창이므로, DeepSeek 4.1 Flash(V4.1-Flash) 혼합단가·가성비에 off-peak 단가(입력 $0.15/출력 $0.60, cache miss)를 사용하고 행에 `off-peak`를 표기한다(OpenCode Go 경유 포함). 발행 시각이 바뀌어 peak 창에 들면 재검토한다.
 - Ollama의 다른 모델은 off-peak 단가가 공개되지 않아 미확인(적용 안 함). 캐시 적중 단가는 §6대로 가성비 계산에 미반영한다.

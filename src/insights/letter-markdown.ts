@@ -4,7 +4,7 @@ import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { LEGEND_LINES, changeNote, exitLine, formatChange } from './letter-top10-legend.js';
-import { cursorLabelFor, freeLists, freeOnlyModelIds, renderFreeSectionMarkdown } from './letter-markdown-free.js';
+import { freeLists, freeOnlyModelIds, renderFreeSectionMarkdown } from './letter-markdown-free.js';
 
 export { escapeShields, OMISSION_MARK, MARKDOWN_LIMIT } from './letter-markdown-format.js';
 export type { RoleLists, RoleList, RoleEntry, RoleExit } from './letter-top10-unified.js';
@@ -16,7 +16,7 @@ function renderTable(role: OptimalZoneRole, list: RoleList): string {
     const rank = `${e.isPareto ? '⭐ ' : ''}${e.belowZone ? '▽ ' : ''}${e.rank}`;
     const successor = e.successorOf ? ` (${e.successorOf} 선행)` : '';
     return `| ${rank} | ${e.modelId}${successor}${e.both ? ' ↔' : ''} | ${e.repEffort} | ${e.scoreText ?? '-'} | ` +
-      `${e.indexText} | ${e.blendedCostText} | ${e.plans.map(p => cursorLabelFor(e.modelId, p)).join('+')} | ${formatChange(e.change)} |`;
+      `${e.indexText} | ${e.blendedCostText} | ${e.plans.join('+')} | ${formatChange(e.change)} |`;
   });
   const exits = list.exits.map(x => exitLine(x.modelId, x.previousRank));
   return [`${SECTION_HEADINGS[role]}\n\n${TABLE_HEAD}`, ...rows, ...(exits.length ? ['', ...exits] : [])].join('\n');

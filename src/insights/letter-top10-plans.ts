@@ -20,16 +20,10 @@ export function freeOnlyModelIds(): readonly string[] {
   return [...freeAccess].filter(id => !paidAccess.has(id)).sort();
 }
 
-/** Cursor 과금 방식: 평문 'Cursor' 라벨에 공식 페이지 근거의 풀/정가 구분을 붙인다(접근 열 표기). */
-export function cursorLabelFor(modelId: string, label: string): string {
-  if (label !== 'Cursor') return label;
-  const billing = PLANS.find(p => p.planId === 'cursor')?.models.get(normalizeModelName(modelId))?.billing;
-  return `Cursor(${billing === 'pool' ? '주간 풀' : 'API 정가'})`;
-}
 /** 압축 렌더용 요금제 약칭: 괄호 주석(크레딧·한도·풀/정가)을 벗기고 긴 플랜명을 줄인다. */
 const PLAN_SHORT: Readonly<Record<string, string>> = {
   'Ollama Cloud Pro': 'Ollama', 'OpenCode Go Plus': 'Go Plus', 'OpenCode Zen Free': 'Zen Free',
-  'Antigravity Free': 'Antigravity F', 'OpenCode Go Free': 'Go Free', 'Cursor': 'Cursor',
+  'Antigravity Free': 'Antigravity F', 'OpenCode Go Free': 'Go Free',
 };
 export function shortPlan(label: string): string {
   const bare = label.replace(/\([^)]*\)/g, '');
@@ -44,7 +38,6 @@ export function plansForModel(modelId: string): string[] {
   return PLANS.flatMap(plan => {
     const entry = plan.models.get(norm);
     if (!entry) return [];
-    if (plan.planId === 'cursor') return [`Cursor(${entry.billing === 'pool' ? '주간 풀' : 'API 정가'})`];
     const base = plan.usagePolicy ? `${plan.planName}(크레딧 ${plan.usagePolicy.credit})` : plan.planName;
     if (entry.free === true) return [`${base}(Free)`];
     if (!entry.usageLimit) return [base];

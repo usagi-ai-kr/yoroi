@@ -75,6 +75,12 @@
 - 0.8.3 milestone: [#116](https://github.com/qus0in/yoroi/issues/116) Antigravity 요금제 추가. `plan-catalog.ts` 구현은 go1 진행 중이며, 0.8.3 dev → main PR을 준비한다.
 - 0.8.3 범위 확장: [#117](https://github.com/qus0in/yoroi/issues/117) Top10 10행 채움·Free 티어 섹션·표시 안내/이모지·Cursor 요금제·Cognition 1.1·AA FrontierCode 대비·Grok/Kimi 롤백을 추가한다.
 
+## 0.8.3 발행 및 0.8.4 준비 (2026-10-13)
+
+- v0.8.3 발행 완료: PR #120 → main `81b264c`, PR CI 1회 성공, main CI [38332564117](https://github.com/qus0in/yoroi/actions/runs/38332564117) attempt 1 success, [v0.8.3 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.3), 전역 CLI 0.8.3.
+- 실수집 status는 `all_healthy`로 Cognition 부분 수집 경고가 해소됐다. #116·#117 close 및 0.8.3 milestone close 완료.
+- 0.8.4 milestone: [#121](https://github.com/qus0in/yoroi/issues/121) Cursor 접근 표기 단순화, 구현 go1 진행 중; dev → main PR 준비.
+
 ## 버전 이력 요약
 
 - **0.1.0**–**0.1.2** (2026-10-08): MVP, CLI 개선, .env 병합 로드 완료 및 발행.

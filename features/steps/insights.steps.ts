@@ -11,11 +11,11 @@ const CLOCK = Date.parse('2026-10-08T15:30:00Z'); // 2026-10-09 00:30 KST
 const rows = [0, 1, 2].map(i => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i,
   rating_lower: 1490, rating_upper: 1510, variance: 2, vote_count: 10 + i, rank: i + 1, category: 'overall',
   leaderboard_publish_date: '2026-10-08' }));
-/** arena-parser 삭제(p16) 후 BDD 전용 최소 파서(주입 포트 배선 확인용). */
-const parseArenaStub = (payload: unknown, at: string) => (payload as typeof rows).map((r, index) => ({ ok: true as const, index, warnings: [],
-  records: [{ source: 'arena' as const, modelId: r.model_name, metric: 'rating', value: r.rating, unit: 'score', category: r.category,
-    observedAt: at, sourceAsOf: r.leaderboard_publish_date, sourceUrl: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset',
-    sourceName: 'lmarena-ai LMArena Leaderboard Dataset', license: 'CC-BY-4.0', attributionText: 'x', method: 'bradley-terry', schemaVersion: 'arena-hf-v1' }] }));
+/** BDD 전용 날짜형(OpenRouter 형태) 최소 파서(주입 포트 배선 확인용). */
+const parseDatedStub = (payload: unknown, at: string) => (payload as typeof rows).map((r, index) => ({ ok: true as const, index, warnings: [],
+  records: [{ source: 'openrouter' as const, modelId: r.model_name, metric: 'total_tokens', value: r.rating, unit: 'tokens', category: r.category,
+    observedAt: at, sourceAsOf: r.leaderboard_publish_date, metadata: { date: r.leaderboard_publish_date }, sourceUrl: 'https://example.test/data',
+    sourceName: 'Synthetic Source', license: null, attributionText: 'x', method: 'synthetic', schemaVersion: 'openrouter-rankings-v1' }] }));
 const keep = () => Object.assign(new MemoryInsightHistory(), { close() {} });
 const world: { dir: string; out: string[]; err: string[]; code: number; calls: number; failing: boolean;
   history?: ReturnType<typeof keep> } = { dir: '', out: [], err: [], code: -1, calls: 0, failing: false };
@@ -30,15 +30,15 @@ async function run(argv: string[]): Promise<void> {
     output: { stdout: line => world.out.push(line), stderr: line => world.err.push(line) },
     subscribeSignals: () => () => {},
     insights: { clock: () => CLOCK, openHistory: () => history, createPorts: () => [{
-      id: 'arena' as const,
+      id: 'openrouter' as const,
       fetch: async () => { world.calls += 1; if (world.failing) throw new SourceError('network'); return rows; },
-      parse: parseArenaStub,
+      parse: parseDatedStub,
     }] },
   }).run(argv);
 }
-When('I run insights once with a synthetic Arena source', () => run(['insights', 'once']));
-When('I run insights once --full with a synthetic Arena source', () => run(['insights', 'once', '--full']));
-When('I run insights once --markdown with a synthetic Arena source', () => run(['insights', 'once', '--markdown']));
+When('I run insights once with a synthetic dated source', () => run(['insights', 'once']));
+When('I run insights once --full with a synthetic dated source', () => run(['insights', 'once', '--full']));
+When('I run insights once --markdown with a synthetic dated source', () => run(['insights', 'once', '--markdown']));
 When('I run insights once twice on the same KST day', async () => { await run(['insights', 'once']); await run(['insights', 'once']); });
 When('I run insights once with a failing source', () => { world.failing = true; return run(['insights', 'once']); });
 When('I run insights once --json', () => run(['insights', 'once', '--json']));

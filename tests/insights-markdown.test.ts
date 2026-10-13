@@ -78,7 +78,6 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
   assert.ok(md.includes(`- ${EXCLUSION_NOTE}`));
   assert.ok(md.includes('- ⭐ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태(가성비 경계선)') && !md.includes('- ★ 파레토 최적'));
   assert.ok(md.includes('⚠️ synthetic-source'));
-  assert.ok(!md.includes('LMArena')); // Arena 제외(2026-10-13)
   assert.ok(md.includes('OpenRouter'));
   assert.ok(md.includes('Artificial Analysis'));
   assert.ok(md.includes('Cognition FrontierCode'));

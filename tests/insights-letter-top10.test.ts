@@ -78,23 +78,3 @@ test('Cognition-only success still renders the compact letter with 자료 부족
   assert.ok(text.length <= 3600);
   assert.match(stderr.join(''), /인사이트: Artificial Analysis: /);
 });
-
-test('composition keeps arena data unlisted: production-shaped metric:rank rows never reach the letter', async (t) => {
-  const { dir } = setup(t);
-  const model = (id: string, intel: number, coding: number) => ({ id, slug: id, name: id, release_date: null,
-    model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: intel, artificial_analysis_coding_index: coding }, pricing: {}, performance: {} });
-  const aa = { tier: 'free', intelligence_index_version: 4, pagination: { page: 1, page_size: 50, total_pages: 1, has_more: false },
-    data: [model('claude-opus-5-5', 90, 85), model('gpt-6-1-sol', 80, 76)] };
-  const arenaRow = (name: string, rating: number, rank: number) => ({ model_name: name, organization: 'o', license: 'L', rating,
-    rating_lower: rating - 10, rating_upper: rating + 10, variance: 2, vote_count: 10, rank, category: 'overall', leaderboard_publish_date: '2026-10-11' });
-  const aaPort: InsightSourcePort = { id: 'artificial-analysis', fetch: async () => [{ page: 1, payload: aa }], parse: (payload, at) => parseAaPages(payload, at, {}) };
-  const arenaPort: InsightSourcePort = { id: 'arena', fetch: async () => [arenaRow('claude-opus-5-5', 1500, 2), arenaRow('gpt-6-1-sol', 1400, 1)],
-    parse: (payload, at) => (payload as ReturnType<typeof arenaRow>[]).map((r, index) => ({ ok: true as const, index, warnings: [], records: (['rating', 'rank'] as const).map(metric =>
-      ({ source: 'arena' as const, modelId: r.model_name, metric, value: metric === 'rank' ? r.rank : r.rating, unit: 'score', category: r.category, observedAt: at, sourceAsOf: r.leaderboard_publish_date, sourceUrl: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset', sourceName: 'lmarena-ai LMArena Leaderboard Dataset', license: 'CC-BY-4.0', attributionText: 'x', method: 'bradley-terry', schemaVersion: 'arena-hf-v1' })) })) };
-  const stdout: string[] = [], stderr: string[] = [];  const program = compose({ configEnv: { YOROI_DATA_DIR: dir }, dataDir: dir,
-    output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) }, subscribeSignals: () => () => {},
-    insights: { clock: () => NOW, openHistory: () => Object.assign(new MemoryInsightHistory(), { close() {} }),
-      createPorts: () => [aaPort, arenaPort] } });
-  assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
-  assert.match(text, /claude-opus-5-5/); assert.match(text, /gpt-6-1-sol/); assert.doesNotMatch(text, /Arena \d/); assert.ok(!text.includes('lmarena'), text);
-});

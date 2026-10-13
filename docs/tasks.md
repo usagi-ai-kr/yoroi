@@ -94,3 +94,4 @@
 - 사용자 결정: Arena 수집 제외(스코어 입력이 아니어서 순위 변화 없음, sources 배지 5→4), "kimi-k2-7-code와 kimk-k3는 다른 계열로 봄"(원문 오기 그대로 기록, 코드 식별자는 `kimi-k3`) — Kimi 분리는 기존 동작과 같아 코드 변경 없음.
 - o2 별도 작업(AA 미측정 근거 유지) 결과도 같은 워킹트리에 함께 있으며, 근거 규칙 상세는 [top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md)만 본다(중복 기록 없음).
 - 검증: 단위 879/879, BDD 41/41, typecheck·build·validate-repo PASS. 실수집 DB 사본 렌더 `insights once --markdown` exit 0, 근거 산출은 레터 Top10과 일치 확인(근거: scratch/reports/yoroi-final-report.md). 버전·PR·발행은 0.9.0(미커밋) 예정, 사용자 승인 대기하며 dev 워킹트리에만 보관.
+- Arena 소스 완전 제거(2026-10-13 사용자 지시, o2): `InsightSource`·기본 schema/scope/rank 설정·검증 분기·`hf-rows` 파이프라인 삭제, 테스트 fixture는 날짜형 OpenRouter(`metadata.date`)로 교체, `arena-transport.md` 삭제. 과거 릴리스·조사 기록의 Arena 언급은 역사로 유지.

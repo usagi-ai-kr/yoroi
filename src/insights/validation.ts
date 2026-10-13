@@ -51,7 +51,7 @@ export function validateInsightRecord(value: unknown): RecordValidation {
     return { ok: true, value: { record, comparisonDate: null, comparisonUnavailable: 'n/a: 기준일 미상' } };
   }
   if (record.metadata?.sourceAsOfBasis === 'observedAt-fallback') return { ok: false, reason: 'invalid-date' };
-  const date = record.source === 'arena' ? record.sourceAsOf : record.metadata?.date;
+  const date = record.metadata?.date;
   if (!isIsoDate(date)) return { ok: false, reason: 'invalid-date' };
   return { ok: true, value: { record, comparisonDate: date } };
 }

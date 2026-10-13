@@ -10,12 +10,12 @@ import { validateInsightRecord } from '../src/insights/validation.js';
 import type { InsightRecord } from '../src/insights/record.js';
 
 const issuedAt = '2026-10-10T15:00:00Z';
-const base: InsightRecord = { source: 'arena', modelId: 'A', metric: 'rating', value: 20, unit: 'score', category: 'Text',
-  observedAt: '2026-10-10T10:00:00Z', sourceAsOf: '2026-10-10', sourceUrl: 'https://example.test/data',
-  sourceName: 'Synthetic Arena', license: 'CC-BY-4.0', attributionText: 'Source: Synthetic Arena', method: 'synthetic', schemaVersion: 'v1' };
+const base: InsightRecord = { source: 'openrouter', modelId: 'A', metric: 'rating', value: 20, unit: 'score', category: 'Text',
+  observedAt: '2026-10-10T10:00:00Z', sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' }, sourceUrl: 'https://example.test/data',
+  sourceName: 'Synthetic Source', license: 'CC-BY-4.0', attributionText: 'Source: Synthetic Source', method: 'synthetic', schemaVersion: 'v1' };
 function measure(extra: Partial<InsightRecord> = {}): LetterMeasurement {
   const checked = validateInsightRecord({ ...base, ...extra }); assert.ok(checked.ok);
-  const prior = validateInsightRecord({ ...checked.value.record, sourceAsOf: '2026-10-09', value: 10 }); assert.ok(prior.ok);
+  const prior = validateInsightRecord({ ...checked.value.record, sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, value: 10 }); assert.ok(prior.ok);
   const store = new MemoryInsightHistory();
   const key = { source: checked.value.record.source, schemaVersion: 'v1', requestScope: 'text', publicationDate: '2026-10-11' };
   store.saveDaily(key, { ok: true, source: key.source, records: [prior.value, checked.value], rejectedRows: 0 });
@@ -23,7 +23,7 @@ function measure(extra: Partial<InsightRecord> = {}): LetterMeasurement {
   return { measurement: checked.value, comparison: compareInsightPrevious(checked.value, prior.value),
     trend: computeInsightTrend(checked.value, store.sevenDays(series, '2026-10-10')) };
 }
-const source = (measurements: readonly LetterMeasurement[]): LetterSourceInput => ({ source: 'arena', ok: true, measurements });
+const source = (measurements: readonly LetterMeasurement[]): LetterSourceInput => ({ source: 'openrouter', ok: true, measurements });
 
 test('structured internal Korean letter preserves citations, collection time, actual date and KST issue day', () => {
   const input = [source([measure()])]; const before = JSON.stringify(input);
@@ -63,17 +63,17 @@ test('partial failures retain good evidence; empty or entirely failed runs never
   const letter = buildInsightLetter([source([measure()]), { source: 'cognition', ok: false, failure: 'fetch' }], issuedAt);
   assert.ok(letter.ok); assert.equal(letter.sections.find(s => s.kind === 'failures')!.entries[0]?.source, 'cognition');
   assert.equal(letter.sections.find(s => s.kind === 'evidence')!.rows.length, 1);
-  assert.equal(buildInsightLetter([{ source: 'arena', ok: false, failure: 'parse' }], issuedAt).ok, false);
+  assert.equal(buildInsightLetter([{ source: 'openrouter', ok: false, failure: 'parse' }], issuedAt).ok, false);
   assert.equal(buildInsightLetter([source([])], issuedAt).ok, false);
   const partial = buildInsightLetter([{ ...source([measure()]), partial: true } as LetterSourceInput], issuedAt);
   assert.ok(partial.ok && partial.sections.find(s => s.kind === 'failures')!.entries.length === 1);
 });
 
 test('C2 rank evidence is scoped and cited; trend gaps and initial history remain explicit', () => {
-  const item = measure(); const prior = measure({ sourceAsOf: '2026-10-09' }).measurement;
+  const item = measure(); const prior = measure({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' } }).measurement;
   const ranks = computeInsightRankChanges({ complete: true, records: [item.measurement] },
     { complete: true, records: [prior] }, 'descending');
-  const letter = buildInsightLetter([{ source: 'arena', ok: true, measurements: [item], ranks: [
+  const letter = buildInsightLetter([{ source: 'openrouter', ok: true, measurements: [item], ranks: [
     { reference: item.measurement, previousDate: '2026-10-09', result: ranks }] }], issuedAt); assert.ok(letter.ok);
   const group = letter.sections.find(s => s.kind === 'ranks')!.groups[0]!;
   assert.equal(group.metric, 'rating'); assert.equal(group.sourceUrl, base.sourceUrl);
@@ -83,11 +83,11 @@ test('C2 rank evidence is scoped and cited; trend gaps and initial history remai
 
 test('C2 numeric rank movement summaries link to rank evidence', () => {
   const item = measure(), b = measure({ modelId: 'B', value: 30 }).measurement;
-  const old = [measure({ sourceAsOf: '2026-10-09', value: 20 }).measurement,
-    measure({ sourceAsOf: '2026-10-09', modelId: 'B', value: 5 }).measurement];
+  const old = [measure({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, value: 20 }).measurement,
+    measure({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, modelId: 'B', value: 5 }).measurement];
   const result = computeInsightRankChanges({ complete: true, records: [item.measurement, b] }, { complete: true, records: old }, 'descending');
-  const letter = buildInsightLetter([{ source: 'arena', ok: true, measurements: [item],
+  const letter = buildInsightLetter([{ source: 'openrouter', ok: true, measurements: [item],
     ranks: [{ reference: item.measurement, previousDate: '2026-10-09', result }] }], issuedAt); assert.ok(letter.ok);
   assert.ok(letter.sections.find(s => s.kind === 'summary')!.items.some(item => /순위 상승/.test(item.text) &&
-    item.evidenceIds.includes('arena:rank:0')));
+    item.evidenceIds.includes('openrouter:rank:0')));
 });

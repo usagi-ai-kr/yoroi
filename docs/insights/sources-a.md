@@ -34,5 +34,5 @@
 ## 2026-10-12 최신 override — AA·OpenRouter 상위 50 (사용자 승인, [top50-decision.md](top50-decision.md))
 - 구 상위 20 결정(2026-10-11)은 역사로 보존하며, 전 소스 수집·순위창이 상위 50(rank<=50)으로 갱신됐다.
 - AA: free tier 4쪽 전체 수집 후 `coding_index` 상위 50과 `intelligence_index` 상위 50의 합집합(동점 포함) 저장, requestScope `aa-v2:free:language-models:coding-intel-top50`.
-- OpenRouter: 비교일별 `total_tokens` 상위 50(동점 포함) 보존, requestScope `rankings-daily:day:top50`. (Arena `overall-top50` 연계).
-- 레터: 기본 출력은 Top 10 압축 레터(오케스트레이터·워커 Top10, Arena/OR 참고 순위 표기), `--full` 옵션 시 50개 전체 상세 레터를 보존한다. 스코프 갱신으로 전환일 비교는 의도적 '이전 기록 없음'.
+- OpenRouter: 비교일별 `total_tokens` 상위 50(동점 포함) 보존, requestScope `rankings-daily:day:top50`. (Arena 연계 스코프는 2026-10-13 제거).
+- 레터: 기본 출력은 Top 10 압축 레터(오케스트레이터·워커 Top10, OR 참고 순위 표기), `--full` 옵션 시 50개 전체 상세 레터를 보존한다. 스코프 갱신으로 전환일 비교는 의도적 '이전 기록 없음'.

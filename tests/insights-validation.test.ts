@@ -10,8 +10,8 @@ import type { InsightRecord } from '../src/insights/record.js';
 import type { ParseRowResult } from '../src/insights/parse-utils.js';
 
 const now = '2026-10-11T00:00:00Z';
-const base: InsightRecord = { source: 'arena', modelId: 'synthetic', metric: 'rating', value: 0,
-  unit: 'score', category: 'Text', observedAt: now, sourceAsOf: '2026-10-10',
+const base: InsightRecord = { source: 'openrouter', modelId: 'synthetic', metric: 'rating', value: 0,
+  unit: 'score', category: 'Text', observedAt: now, sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' },
   sourceUrl: 'https://example.test/data', sourceName: 'Synthetic', license: null,
   attributionText: 'Synthetic attribution', method: 'synthetic', schemaVersion: 'v1' };
 const row = (...records: InsightRecord[]): ParseRowResult => ({ ok: true, index: 0, records, warnings: [] });
@@ -20,9 +20,9 @@ const fixture = (name: string): unknown => JSON.parse(readFileSync(
   new URL(`./fixtures/insights/${name}-sample.json`, import.meta.url), 'utf8'));
 
 test('empty results, every failed row and zero measurements cannot become source success', () => {
-  assert.deepEqual(validateInsightRows('arena', []), { ok: false, reason: 'empty-result', rejectedRows: 0 });
-  assert.deepEqual(validateInsightRows('arena', [failed]), { ok: false, reason: 'all-rows-failed', rejectedRows: 1 });
-  assert.deepEqual(validateInsightRows('arena', [row()]), { ok: false, reason: 'no-valid-measurements', rejectedRows: 0 });
+  assert.deepEqual(validateInsightRows('openrouter', []), { ok: false, reason: 'empty-result', rejectedRows: 0 });
+  assert.deepEqual(validateInsightRows('openrouter', [failed]), { ok: false, reason: 'all-rows-failed', rejectedRows: 1 });
+  assert.deepEqual(validateInsightRows('openrouter', [row()]), { ok: false, reason: 'no-valid-measurements', rejectedRows: 0 });
   assert.equal(validateInsightRows('unknown', [row(base)]).ok, false);
 });
 
@@ -34,7 +34,7 @@ test('required persistence fields, unknown sources and non-finite metrics are re
   for (const change of [{ source: 'unknown' }, { value: NaN }, { value: Infinity }, { value: '0' },
     { modelId: ' ' }, { category: '' }, { sourceUrl: 'file:///tmp/x' }, { sourceUrl: 'https://u:p@example.test' },
     { observedAt: '2026-02-30T00:00:00Z' }, { observedAt: '2026-10-11T00:00:00+00:00' },
-    { sourceAsOf: '2026-02-30' }, { license: undefined }, { metadata: { raw: undefined } }]) {
+    { sourceAsOf: '2026-02-30', metadata: { date: '2026-02-30' } }, { license: undefined }, { metadata: { raw: undefined } }]) {
     assert.equal(validateInsightRecord({ ...base, ...change }).ok, false);
   }
   assert.equal(validateInsightRecord(null).ok, false);
@@ -43,11 +43,11 @@ test('required persistence fields, unknown sources and non-finite metrics are re
 
 test('malformed rows are atomic, valid rows survive, source identity cannot cross a cache boundary', () => {
   const invalid = { ...base, unit: '' };
-  const result = validateInsightRows('arena', [row(base, invalid), failed, row(base)]);
+  const result = validateInsightRows('openrouter', [row(base, invalid), failed, row(base)]);
   assert.equal(result.ok, true);
   if (result.ok) { assert.equal(result.records.length, 1); assert.equal(result.rejectedRows, 2); }
   assert.equal(validateInsightRows('cognition', [row(base)]).ok, false);
-  const duplicate = validateInsightRows('arena', [row(base), row()]);
+  const duplicate = validateInsightRows('openrouter', [row(base), row()]);
   assert.equal(duplicate.ok, true, 'parser-skipped duplicate rows are not source failure');
 });
 
@@ -88,6 +88,6 @@ test('malformed record containers and cyclic metadata fail without echoing input
   const result = validateInsightRecord({ ...base, metadata });
   assert.deepEqual(result, { ok: false, reason: 'invalid-record' });
   assert.equal(JSON.stringify(result).includes('synthetic-secret'), false);
-  assert.equal(validateInsightRows('arena', [row(null as unknown as InsightRecord)]).ok, false);
+  assert.equal(validateInsightRows('openrouter', [row(null as unknown as InsightRecord)]).ok, false);
   assert.equal(validateInsightRecord({ ...base, metadata: { sourceAsOfBasis: 'observedAt-fallback' } }).ok, false);
 });

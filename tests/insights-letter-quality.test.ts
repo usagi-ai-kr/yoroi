@@ -25,12 +25,11 @@ test('summary deltas carry the exact previous/current dates so past-day changes 
 test('evidence display values are rounded while huge counts stay exact', () => {
   const rounded = evidenceRow(measurement(4_100_000_000_000, '2026-10-05'), 'id1');
   assert.equal(rounded.value, 4_100_000_000_000);
-  const arena = evidenceRow({ measurement: validated({ ...record(1533.8551230242795, '2026-10-08'), source: 'arena',
-    sourceName: 'LMArena', sourceUrl: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset',
-    metric: 'rating', unit: 'score', category: 'overall', schemaVersion: 'arena-hf-v1' } as InsightRecord),
+  const score = evidenceRow({ measurement: validated({ ...record(1533.8551230242795, '2026-10-08'),
+    metric: 'rating', unit: 'score', category: 'overall' } as InsightRecord),
     comparison: { comparable: false, reason: 'n/a: 이전 기록 없음' },
     trend: { status: 'unavailable', reason: 'n/a: 기준일 미상' } }, 'id2');
-  assert.equal(arena.value, 1533.8551);
+  assert.equal(score.value, 1533.8551);
 });
 test('summary keeps the raw comparison semantics (dates still validated by the comparison layer)', () => {
   const row: LetterEvidence = evidenceRow(measurement(4_100_000_000_000, '2026-10-05'), 'id3');

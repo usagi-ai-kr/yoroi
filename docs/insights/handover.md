@@ -20,7 +20,7 @@
 | `YOROI_OPENROUTER_API_KEY` | OpenRouter 인증(bearer). 없으면 해당 소스만 실패로 표시 |
 | `YOROI_DATA_DIR` | 로컬 데이터 디렉터리. 기본 `${XDG_DATA_HOME:-~/.local/share}/yoroi` |
 
-Arena·Cognition은 키가 없다. 설정 오류(잘못된 값·중복 인자)는 exit 2, 소스 실패는 레터에
+Cognition·OpenCode Data는 키가 없다. 설정 오류(잘못된 값·중복 인자)는 exit 2, 소스 실패는 레터에
 부분 실패로 남는다. 키는 실행 셸 환경 또는 로컬 `.env`에서만 읽는다.
 
 ## 출력과 종료 코드
@@ -58,7 +58,6 @@ Arena·Cognition은 키가 없다. 설정 오류(잘못된 값·중복 인자)�
 
 | 소스 | 라이선스 / 이용 조건 | 인용·표기 요구사항 |
 | --- | --- | --- |
-| **Arena** | CC-BY-4.0 (HF 데이터셋) | 저작자 표시 필수: lmarena-ai LMArena Leaderboard Dataset. arena.ai 웹 스크래핑 금지 준수 |
 | **Artificial Analysis** | Terms of Use / Data Platform Terms | 귀속 필수(byline/link): Artificial Analysis (artificialanalysis.ai). 재배포·외부 발행 조건 미확인(sources-a.md) |
 | **OpenRouter** | CC-BY-4.0 (Rankings Dataset) | `Source: OpenRouter (openrouter.ai/rankings), as of {as_of}` 필수 표기 |
 | **Cognition** | Website Terms §3.1 (약관: personal use only / 사용자 결정: 내부 전용) | 사전 서면 허가 없이 상업적 복제·재배포·전송 금지. 사용자 결정에 따라 내부 전용(6-A)으로 한정 |

@@ -33,7 +33,7 @@ test('--full and the legacy boolean keep the detailed letter instead of the comp
   assert.match(renderInsights(view, {}).stdout, /\[AI 인사이트 레터\]/, 'no-injection fallback stays detailed');
 });
 test('a failed letter keeps the legacy failure contract in both modes', () => {
-  const failed: InsightLetterView = { ok: false, reason: '전체 소스 실패', failedSources: ['arena'] };
+  const failed: InsightLetterView = { ok: false, reason: '전체 소스 실패', failedSources: ['openrouter'] };
   for (const options of [{ compact }, { full: true }]) {
     const rendered = renderInsights(failed, options);
     assert.equal(rendered.exitCode, 1); assert.equal(rendered.stdout, '');

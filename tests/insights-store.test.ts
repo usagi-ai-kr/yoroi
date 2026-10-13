@@ -8,9 +8,9 @@ import { openInsightsHistory } from '../src/infra/sqlite/insights-store.js';
 import type { InsightDailyKey, InsightHistoryPort, InsightSeriesKey } from '../src/insights/history-port.js';
 import { validateInsightRows, type InsightValidation } from '../src/insights/validation.js';
 import type { InsightRecord } from '../src/insights/record.js';
-const key: InsightDailyKey = { source: 'arena', publicationDate: '2026-10-11', requestScope: 'text:public', schemaVersion: 'v1' };
-const base: InsightRecord = { source: 'arena', modelId: 'synthetic', metric: 'rating', value: 10,
-  unit: 'score', category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10',
+const key: InsightDailyKey = { source: 'openrouter', publicationDate: '2026-10-11', requestScope: 'text:public', schemaVersion: 'v1' };
+const base: InsightRecord = { source: 'openrouter', modelId: 'synthetic', metric: 'rating', value: 10,
+  unit: 'score', category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' },
   sourceUrl: 'https://example.test/data', sourceName: 'Synthetic', license: null,
   attributionText: 'Synthetic', method: 'synthetic', schemaVersion: 'v1' };  // 합성 전용
 const series: InsightSeriesKey = { ...key, modelId: base.modelId, metric: base.metric, unit: base.unit, category: base.category };
@@ -28,7 +28,7 @@ const withStore = <T>(run: (store: InsightHistoryPort) => T): T => {
 /** S1 계약 케이스. 메모리·SQLite 양쪽에 같은 단언을 그대로 돌려 동일성을 증명한다. */
 const CASES: readonly (readonly [string, (store: InsightHistoryPort) => void])[] = [
   ['a failure, a reuse and a failed refresh never disturb the stored success', (store) => {
-    const failed = validateInsightRows('arena', []);
+    const failed = validateInsightRows('openrouter', []);
     assert.equal(store.saveDaily(key, failed), false); assert.equal(store.getDaily(key), undefined);
     assert.equal(store.saveDaily(key, success()), true);
     assert.equal(store.saveDaily(key, success({ value: 20 })), false);
@@ -42,12 +42,12 @@ const CASES: readonly (readonly [string, (store: InsightHistoryPort) => void])[]
       assert.equal(store.getDaily({ ...key, ...changed }), undefined, '키가 다르면 다른 일일 결과다'); }],
   ['an incomplete page and a failed source are never stored and retry the same day', (store) => {
     assert.equal(store.saveDaily(key, success(), { complete: false }), false);
-    assert.equal(store.saveDaily(key, validateInsightRows('arena', [])), false);
+    assert.equal(store.saveDaily(key, validateInsightRows('openrouter', [])), false);
     assert.equal(store.getDaily(key), undefined); assert.equal(store.saveDaily(key, success()), true);
     assert.equal(store.saveDaily(key, success({ value: 99 }), { complete: false }), false);
     assert.equal(store.getDaily(key)?.records[0]?.record.value, 10); }],
   ['an exact previous day is required and seven days keep real gaps', (store) => {
-    store.saveDaily(key, success({ sourceAsOf: '2026-10-08' }));
+    store.saveDaily(key, success({ sourceAsOf: '2026-10-08', metadata: { date: '2026-10-08' } }));
     store.saveDaily({ ...key, publicationDate: '2026-10-12' }, success());
     assert.equal(store.previous(series, '2026-10-10'), undefined, '가장 가까운 과거 값으로 대체하지 않는다');
     assert.equal(store.previous(series, '2026-10-11')?.record.value, 10);
@@ -67,12 +67,12 @@ const CASES: readonly (readonly [string, (store: InsightHistoryPort) => void])[]
     assert.ok(store.sevenDays({ ...series, source: 'cognition' }, '2026-10-11')
       .every(day => !day.measurement), '기준일 미상은 날짜 이력을 만들지 않는다');
     assert.equal(store.saveDaily(key, success({ schemaVersion: 'v2' })), false);
-    assert.equal(store.saveDaily(key, { ok: true, source: 'arena', records: [], rejectedRows: 0 }), false);
+    assert.equal(store.saveDaily(key, { ok: true, source: 'openrouter', records: [], rejectedRows: 0 }), false);
     assert.equal(store.saveDaily(key, success({ source: 'cognition' })), false); }],
   ['retention keeps 90 publication days and a later day replaces the same comparison date', (store) => {
     const result = success();
     store.saveDaily({ ...key, publicationDate: '2026-07-13' }, result);
-    store.saveDaily({ ...key, publicationDate: '2026-07-14' }, success({ sourceAsOf: '2026-10-09' }));
+    store.saveDaily({ ...key, publicationDate: '2026-07-14' }, success({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' } }));
     if (result.ok) (result.records[0]!.record as { value: number }).value = 999;
     assert.equal(store.getDaily({ ...key, publicationDate: '2026-07-13' })?.records[0]?.record.value, 10);
     const read = store.previous(series, '2026-10-11')!; (read.record as { value: number }).value = 999;

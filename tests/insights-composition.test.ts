@@ -15,10 +15,10 @@ import type { InsightSourcePort } from '../src/insights/source-port.js';
 
 const AA_KEY = 'synthetic-aa-key-must-not-leak', OR_KEY = 'synthetic-or-key-must-not-leak';
 const clock = () => Date.parse('2026-10-08T15:30:00Z');   // 2026-10-09 00:30 in KST
-const arenaRow = (i: number) => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i, rating_lower: 1490, rating_upper: 1510, variance: 2,
+const datedRow = (i: number) => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i, rating_lower: 1490, rating_upper: 1510, variance: 2,
   vote_count: 10 + i, rank: i + 1, category: 'overall', leaderboard_publish_date: '2026-10-08' });
-const parseArenaStub = (payload: unknown, at: string) => (payload as ReturnType<typeof arenaRow>[]).map((r, index) => ({ ok: true as const, index, warnings: [], records: [
-  { source: 'arena' as const, modelId: r.model_name, metric: 'rating', value: r.rating, unit: 'score', category: r.category, observedAt: at, sourceAsOf: r.leaderboard_publish_date, sourceUrl: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset', sourceName: 'lmarena-ai LMArena Leaderboard Dataset', license: 'CC-BY-4.0', attributionText: 'x', method: 'bradley-terry', schemaVersion: 'arena-hf-v1' }] }));
+const parseDatedStub = (payload: unknown, at: string) => (payload as ReturnType<typeof datedRow>[]).map((r, index) => ({ ok: true as const, index, warnings: [], records: [
+  { source: 'openrouter' as const, modelId: r.model_name, metric: 'total_tokens', value: r.rating, unit: 'tokens', category: r.category, observedAt: at, sourceAsOf: r.leaderboard_publish_date, metadata: { date: r.leaderboard_publish_date }, sourceUrl: 'https://example.test/data', sourceName: 'Synthetic Source', license: null, attributionText: 'x', method: 'synthetic', schemaVersion: 'openrouter-rankings-v1' }] }));
 const bodies: Record<string, unknown> = {
   'artificialanalysis.ai': { tier: 'free', intelligence_index_version: 3, pagination: { page: 1, page_size: 10, total_pages: 1, has_more: false },
     data: [{ id: 'a', slug: 'a', name: 'A', release_date: null, model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 42, artificial_analysis_coding_index: 38 }, pricing: {}, performance: {} }] },
@@ -52,7 +52,6 @@ test('a run opens its own database, stores per KST day, reuses on rerun and repl
   assert.match(String(oc.requests[0]!.headers['user-agent']), /^yoroi\/\d+\.\d+\.\d+ \(\+https:\/\/github\.com\/qus0in\/yoroi; internal reference, once daily\)$/);
   assert.ok(first.sources.every(r => r.status === 'collected' && r.saved === true));
   assert.deepEqual(first.sources.map(r => r.source), ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
-  assert.ok(h.requests.every(r => new URL(r.url).host !== 'datasets-server.huggingface.co')); // Arena 제외(2026-10-13)
   const header = (host: string) => h.requests.find(r => new URL(r.url).host === host)!.headers;
   assert.deepEqual([header('artificialanalysis.ai')?.['x-api-key'], header('openrouter.ai')?.Authorization, header('cognition.com')], [AA_KEY, `Bearer ${OR_KEY}`, undefined]);
   assert.ok(!JSON.stringify(first).includes(AA_KEY) && !JSON.stringify(first).includes(OR_KEY) && h.requests.every(r => !r.url.includes('key')));
@@ -79,7 +78,7 @@ test('the database is opened and closed once per run, and an unopenable database
 test('every source failing is exit 1 (reasons are codes only); injected ports flow through the same run', async t => {
   const s = setup(t), down = await runInsights({ ...s, http: http(503).client, clock, sourceOptions: { ...noWait, opencodeTransport: async () => ({ status: 503, body: '' }) } });
   assert.deepEqual([down.exitCode, down.letter.ok, down.sources.every(r => r.failure === 'fetch' && r.reason === 'unavailable')], [1, false, true]);
-  const port: InsightSourcePort = { id: 'arena', fetch: async () => [arenaRow(0), arenaRow(1)], parse: parseArenaStub };
+  const port: InsightSourcePort = { id: 'openrouter', fetch: async () => [datedRow(0), datedRow(1)], parse: parseDatedStub };
   const run = await runInsights({ ...s, clock, createPorts: () => [port] });
   assert.deepEqual([run.exitCode, run.sources.map(r => r.status)], [0, ['collected']]);
 });

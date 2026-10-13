@@ -8,7 +8,7 @@ CLI·합성 테스트 및 8-A 실측 완료; 사용자 결정으로 0.5.0 검증
 
 ## 이미 확정된 범위
 
-- 수집 대상은 Arena(HF 데이터셋), Artificial Analysis(AA), OpenRouter, Cognition FrontierCode **4곳**이다. **Arena 제외(2026-10-13 사용자 결정)**: 기본 수집 소스 목록에서 빼서 외부 요청·`insight_daily` 저장·레터 표시를 하지 않는다(수집은 AA·OpenRouter·Cognition·OpenCode Data).
+- 수집 대상은 Arena(HF 데이터셋), Artificial Analysis(AA), OpenRouter, Cognition FrontierCode **4곳**이다. **Arena 제거(2026-10-13 사용자 결정)**: 소스 id(`InsightSource`)·기본 설정·검증 분기까지 지웠다(수집은 AA·OpenRouter·Cognition·OpenCode Data).
 - AA·OpenRouter 키의 로컬 `.env` 보관은 [#79](https://github.com/qus0in/yoroi/issues/79)에서 결정됐다. 값은 문서·로그·Git에 넣지 않는다.
 - OpenCode Data·Vals AI는 [#80](https://github.com/qus0in/yoroi/issues/80)·[#81](https://github.com/qus0in/yoroi/issues/81)에 따라 제외한다.
 - [Cognition 추가 결정](https://github.com/qus0in/yoroi/issues/70#issuecomment-6096818456)은 내부 전용이다. 외부 재사용 권한은 승인되지 않았다.
@@ -35,7 +35,7 @@ CLI·합성 테스트 및 8-A 실측 완료; 사용자 결정으로 0.5.0 검증
 | **3-A 확정** | AA/Cognition의 원자료 기준일 미상은 그대로 “미상”; 관측일 fallback으로 전일/7일 증감을 계산하지 않음 | 근거 없는 전일 비교 방지. 최신값·수집 시각은 표시하되 변화량은 `n/a: 기준일 미상` |
 | ~~3-B~~ 기각 | AA/Cognition을 KST 일별 관측 스냅샷으로 비교하고 “관측일 대비 변화, 원자료 갱신일 미상”을 수치 옆에 표시 | 기각. 관측일 변화가 실제 갱신일 변화로 오독될 여지가 있어 기준일 미상을 유지한다 |
 
-확정된 공통 제안: OpenRouter는 `metadata.date`, Arena는 `leaderboard_publish_date`를 실제 비교 날짜로 사용한다.
+확정된 공통 제안: OpenRouter는 `metadata.date`를 실제 비교 날짜로 사용한다(Arena `leaderboard_publish_date` 경로는 2026-10-13 제거).
 초기 적재는 `n/a: 이전 기록 없음`, 정확한 전일이 없으면 `n/a: 전일 결측`; 가장 가까운 과거 값을 전일로 대체하지 않는다.
 7일 추세는 실제 날짜/관측 근거와 결측 수를 표시하고 보간하지 않는다. 동일 기준일 재수집은 “새 데이터 아님”으로 표시한다.
 실제 기준일·UTC 수집 시각(`observedAt`)·KST 발행일을 분리한다. 현재 파서의 fallback 메타데이터는 표시/비교 계층까지 전달한다.

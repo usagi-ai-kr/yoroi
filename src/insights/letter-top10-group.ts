@@ -3,6 +3,7 @@ export interface ModelVariant {
   readonly baseModelId: string;
   readonly effort: string; // 'default' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
   readonly value: number;
+  readonly indexMissing?: boolean;
   readonly blendedCost?: number; // USD per 1M tokens; undefined = 가격 결측
   readonly effectiveCost?: number; // 혼합 단가 × AA effort cost_per_task 배율
   readonly costPerTask?: number;

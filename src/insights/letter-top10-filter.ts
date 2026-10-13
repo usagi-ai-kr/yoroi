@@ -1,8 +1,8 @@
 import { calcBlendedCost, calcCostEfficiency, type ModelVariant } from './letter-top10-group.js';
 import { findOffPeakRate, isOffPeakHour, OFF_PEAK_RATES, type OffPeakRate } from './model-price-overrides.js';
 
-/** 사용자 규칙 제외 계열(소문자 부분 일치). Grok 제외 사유: 사용자 취향(docs/insights/top10-scoring.md). */
-export const EXCLUDED_PATTERNS = ['fable', 'astra', 'grok'] as const;
+/** 사용자 규칙 제외 계열(소문자 부분 일치): Fable·Astra. */
+export const EXCLUDED_PATTERNS = ['fable', 'astra'] as const;
 
 export function isExcludedModel(modelId: string): boolean {
   const id = modelId.toLowerCase();

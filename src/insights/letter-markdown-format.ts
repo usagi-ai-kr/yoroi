@@ -41,4 +41,5 @@ export const SCORE_FORMULA_LINES: readonly string[] = [
   '- 정규화: 역할별 후보 풀 min-max(비용·사용량·속도는 log10, 싼 쪽·빠른 쪽 1), 단가 결측 0·사용량 결측 0·속도 결측 중앙값',
   '- 추천 effort: 변형별 실효 단가(혼합 단가 × cost_per_task 비율)로 스코어링한 최고 변형',
   '- default: AA에 effort 변형 또는 cost_per_task가 없어 단일 구성으로 평가',
+  '- Free 섹션: 비용 항목 동일(무료)이라 지수·사용량·속도로 사실상 정렬',
 ];

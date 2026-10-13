@@ -23,7 +23,18 @@
   - `subsets`: `{ main: 100, extended: 150 }`
   - `data`: 모델 → effort → subset(`main`/`extended`) → 지표 객체
 - 지표 객체 필드: `correct`(0–1), `new_score`(0–1), `tokens`(수), `cost`(USD), `ote`(null). v1_1 일부에 `duration_min`, `tool_calls`, `steps`, `flagged_rate`(0–1). 없는 값은 `null`.
+- `tool_calls`·`steps`는 **행 단위 평균값이라 소수**다(2026-10-13 실측: `Claude Opus 5.5/high/main` `tool_calls: 43.1`, `steps: 74.6`). 정수 단언은 이 두 필드가 채워진 모든 v1_1 행을 `invalid-row`로 거절했다.
 - [미확인] JSON에 갱신 시각·revision 발행일 필드 없음. 페이지 changelog 날짜(최신 Oct 7, 2026), revision 날짜(1.1=07.07.26, 1.0=06.08.26)로만 근사.
+
+## 리비전 선택 규칙 (2026-10-13)
+
+| 항목 | 규칙 |
+| --- | --- |
+| 우선 리비전 | `v1_1`(FrontierCode 1.1). v1_1이 없거나 `data`가 비면 `v1`로 fallback |
+| 중복 처리 | 두 리비전을 섞지 않는다. 같은 모델이 두 곳에 있어도 선택한 리비전만 emit |
+| schemaVersion | 사용한 리비전에 맞춤 — v1_1 → `cognition-frontiercode-v1_1`, v1 → `cognition-frontiercode-v1` |
+| 레터 근거줄 | category·schemaVersion을 그대로 노출하므로 v1_1 선택 시 근거줄은 `v1_1/<effort>/<subset>` + `cognition-frontiercode-v1_1`. record emit 순서가 `main`→`extended`라 첫 rank 코호트는 main 기준 |
+| 봉인 검사 | present한 리비전은 전부 `models`·`subsets`·`data` 구조 검사. 하나라도 잘못되면 `invalid-response`(fallback 아님) |
 
 ## 약관·라이선스
 

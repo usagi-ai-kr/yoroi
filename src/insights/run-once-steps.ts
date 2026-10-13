@@ -9,7 +9,7 @@ import { computeInsightTrend } from './trend.js';
 
 /** Default parser schema versions (daily-reuse lookup happens before any fetch). A stale entry only misses the cache. */
 export const DEFAULT_SCHEMA_VERSIONS: Readonly<Record<InsightSource, string>> = Object.freeze({
-  arena: 'arena-hf-v1', 'artificial-analysis': 'aa-v2-free', openrouter: 'openrouter-rankings-v1', cognition: 'cognition-frontiercode-v1',
+  arena: 'arena-hf-v1', 'artificial-analysis': 'aa-v2-free', openrouter: 'openrouter-rankings-v1', cognition: 'cognition-frontiercode-v1_1',
   'opencode-data': 'opencode-data-v1' });
 /** Opaque, secret-free request scope per source (subset/period/filter/tier); part of every history key. */
 export const DEFAULT_REQUEST_SCOPES: Readonly<Record<InsightSource, string>> = Object.freeze({

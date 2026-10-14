@@ -4,12 +4,15 @@ import { COGNITION_COST_METRIC, COGNITION_DURATION_METRIC, COGNITION_METRIC, FRE
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 import { ORCHESTRATOR_EFFORT_ORDER } from './letter-top10-score-policy.js';
 
-/** p54 score core 원값 수집. 성능·토큰은 base 최선값, 속도·가격·Cognition 시간·비용은 effort별로 모아 대표 effort가 정해진 뒤 역할별로 고른다. */
+/** p54 score core 원값 수집. 성능·토큰은 base 최선값, 속도·가격·Cognition 시간·비용은 effort별로 모아 대표 effort가 정해진 뒤 역할별로 고른다.
+ *  p85: 워커 성능 지표는 AA intelligence_index다. 가격 근거 AA cost_per_task·total_cost도 effort별로 모은다. */
 export const ROLE_AA_METRIC: Readonly<Record<OptimalZoneRole, string>> = {
-  orchestrator: 'artificial_analysis_intelligence_index', worker: 'artificial_analysis_coding_index' };
+  orchestrator: 'artificial_analysis_intelligence_index', worker: 'artificial_analysis_intelligence_index' };
+export const AA_COST_PER_TASK_METRIC = 'intelligence_index_cost_per_task', AA_TOTAL_COST_METRIC = 'intelligence_index_total_cost';
 export interface Raw { aaPerf?: number | undefined; cogCorrect?: number | undefined; or?: number; ocd?: number; aaSpeed?: number | undefined; cogDuration?: number | undefined;
-  aaPrice?: number | undefined; cogCost?: number | undefined; free?: boolean; aaEffort?: Map<string, number>; cogEffort?: Map<string, number>;
-  aaSpeedE?: Map<string, number>; aaPriceE?: Map<string, number>; cogDurE?: Map<string, number>; cogCostE?: Map<string, number> }
+  aaPrice?: number | undefined; cogCost?: number | undefined; aaCpt?: number | undefined; aaTotal?: number | undefined; free?: boolean; aaEffort?: Map<string, number>; cogEffort?: Map<string, number>;
+  aaSpeedE?: Map<string, number>; aaPriceE?: Map<string, number>; cogDurE?: Map<string, number>; cogCostE?: Map<string, number>;
+  aaCptE?: Map<string, number>; aaTotalE?: Map<string, number> }
 const SPEED = 'median_output_tokens_per_second', OR = 'total_tokens', OCD = 'opencode_data_tokens';
 export const baseOf = (id: string): string => normalizeModelName(splitBaseAndEffort(id).base);
 export const best = (m?: ReadonlyMap<string, number>) => m && [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
@@ -32,11 +35,13 @@ export function collect(pool: readonly Top10RecordInput[], role: OptimalZoneRole
     else if (r.metric === SPEED && v > 0) putMax(x.aaSpeedE ??= new Map(), effort, v);
     else if (r.metric === COGNITION_DURATION_METRIC && v > 0) putMin(x.cogDurE ??= new Map(), effort, v);
     else if (r.metric === COGNITION_COST_METRIC) putMin(x.cogCostE ??= new Map(), effort, v);
+    else if (r.metric === AA_COST_PER_TASK_METRIC && v > 0) putMin(x.aaCptE ??= new Map(), effort, v);
+    else if (r.metric === AA_TOTAL_COST_METRIC && v > 0) putMin(x.aaTotalE ??= new Map(), effort, v);
   }
   return out;
 }
 export const hasEvidence = (r: Raw): boolean => r.free === true || r.aaPerf !== undefined || r.cogCorrect !== undefined || r.or !== undefined ||
-  r.ocd !== undefined || [r.aaSpeedE, r.aaPriceE, r.cogDurE, r.cogCostE].some(m => !!m?.size);
+  r.ocd !== undefined || [r.aaSpeedE, r.aaPriceE, r.cogDurE, r.cogCostE, r.aaCptE, r.aaTotalE].some(m => !!m?.size);
 /** base 공통 값: 2개 이상 effort의 관측값이 모두 같거나(예: API 단가), effort 구분 없는 단일 관측('default')뿐일 때. 그 외 undefined. */
 const common = (m?: ReadonlyMap<string, number>) => m?.size && new Set(m.values()).size === 1 && (m.size > 1 || m.has('default')) ? [...m.values()][0] : undefined;
 const extreme = (m: ReadonlyMap<string, number> | undefined, f: (...v: number[]) => number) => m?.size ? f(...m.values()) : undefined;
@@ -48,9 +53,12 @@ export function orchestratorVariants(r: Raw): string[] {
   return ranked.length ? [...ranked] : ['default'];
 }
 /** 오케: 변형 effort 값만 쓴다. 소스에 그 값이 없으면 base 공통 값(2개 이상 effort 동일 또는 단일 default)만 공유하고 그 외는 결측.
- *  성능·속도 모두 같은 effort다(p58 정정; p75: 오케 가성비 제거, 단가는 파레토·표시용으로만 남는다). 워커: 승인 정의대로 AA 속도 최대·단가 최소(base best), 성능은 base 최선값. */
+ *  성능·속도 모두 같은 effort다(p58 정정; p75: 오케 가성비 제거, 단가는 파레토·표시용으로만 남는다).
+ *  워커(p85): AA 속도 최대·단가 최소·AA cost_per_task 최소·AA total_cost 최소(base best), 성능은 base 최선값. */
 export function pickEffortValues(r: Raw, effort: string, role: OptimalZoneRole): void {
-  if (role === 'worker') { r.aaSpeed = extreme(r.aaSpeedE, Math.max); r.aaPrice = extreme(r.aaPriceE, Math.min); return; }
+  if (role === 'worker') { r.aaSpeed = extreme(r.aaSpeedE, Math.max); r.aaPrice = extreme(r.aaPriceE, Math.min);
+    r.aaCpt = extreme(r.aaCptE, Math.min); r.aaTotal = extreme(r.aaTotalE, Math.min);
+    r.cogCorrect = r.cogEffort?.get(effort) ?? best(r.cogEffort)?.[1]; return; }
   const at = (m?: ReadonlyMap<string, number>) => m?.get(effort) ?? common(m);
   r.aaPerf = at(r.aaEffort); r.cogCorrect = at(r.cogEffort); r.aaSpeed = at(r.aaSpeedE); r.aaPrice = at(r.aaPriceE);
   r.cogDuration = at(r.cogDurE); r.cogCost = at(r.cogCostE);

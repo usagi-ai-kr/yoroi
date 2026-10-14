@@ -9,7 +9,8 @@ export const DIMENSION_LABELS: Readonly<Record<ScoreDimension, string>> = { perf
 /** 역할별 표시·가중 차원. 오케·리뷰어는 성능/사용량/속도 세 칸, 워커·메신저는 네 칸(가격 포함). */
 export const ROLE_DIMENSIONS: Readonly<Record<OptimalZoneRole, readonly ScoreDimension[]>> = ROLE_WEIGHT_DIMENSIONS;
 /** 오케·리뷰어는 판단 성능 82%에 사용량 6%·속도 12%를 더한다(p75: 70:5:10을 비례 재배분, 가성비 제거).
- *  값은 `config/score-weights.json`(p65)에서 읽고, 파일이 없으면 저장소 기본값을 쓴다. 워커·메신저 가중치도 같은 파일에서 온다. */
+ *  워커·메신저는 p85 확정 산식: 기본 100×(0.375·성능 + 0.125·속도 + 0.5·가격)에 가산(최대 WORKER_BONUS_CAP점).
+ *  값은 `config/score-weights.json`(p65)에서 읽고, 파일이 없으면 저장소 기본값을 쓴다. */
 export const ROLE_DIMENSION_WEIGHTS: Readonly<Record<OptimalZoneRole, Readonly<Partial<Record<ScoreDimension, number>>>>> = SCORE_WEIGHTS;
 /** 차원별 사용 소스. 계열마다 속도·가격 정의가 다르다: 워커는 AA 출력 토큰/s·AA API 혼합 단가만 쓴다(Cognition 시간·비용 불참).
  *  오케 사용량은 워커와 같은 OR·OCD 토큰(log10)을 쓰되 가중치만 가볍다(0.06). 오케 price 차원은 없다(p75). */
@@ -19,8 +20,11 @@ export const ROLE_SOURCES: Readonly<Record<OptimalZoneRole, Readonly<Record<Scor
 /** 가격 근거가 모두 없을 때의 가격 차원값(최저 관측가 1 다음). 풀 전체에 관측 가격이 없으면 0. 워커에만 적용. */
 export const PRICE_MISSING_VALUE = 0.99;
 export const PRICE_MISSING: Readonly<Record<OptimalZoneRole, number | undefined>> = { orchestrator: undefined, worker: PRICE_MISSING_VALUE };
-/** 워커는 전체 후보 풀에서 표준화한 성능이 이 값 미만이면(결측 포함) 후보·보충에서 제외한다. 재정규화하지 않는다. */
+/** 워커는 전체 후보 풀에서 표준화한 성능이 이 값 미만이면(결측 포함) 후보·보충에서 제외한다. 재정규화하지 않는다.
+ *  p85: 표준화 하한은 폐지하고 원값 하한(WORKER_INTEL_FLOOR)을 쓴다. 상수는 이전 규칙 기록으로 둔다. */
 export const WORKER_PERFORMANCE_FLOOR = 0.7;
+/** p85: 워커 성능 하한은 AA intelligence_index 원값 33이다. 후보·▽ 보충 자격 모두에 적용한다. intel이 없으면 후보에서 제외한다. */
+export const WORKER_INTEL_FLOOR = 33;
 /** p58 오케 effort 변형 순서(동점이면 낮은 쪽). minimal은 AA 등급이라 low 아래에 둔다. default는 순서에 없다(단일일 때만 변형). */
 export const ORCHESTRATOR_EFFORT_ORDER = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 export const PERFORMANCE_FLOOR: Readonly<Record<OptimalZoneRole, number | undefined>> = { orchestrator: undefined, worker: WORKER_PERFORMANCE_FLOOR };

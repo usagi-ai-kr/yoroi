@@ -16,16 +16,26 @@ export const SCORE_WEIGHTS_PATH = resolve(packageRootFrom(import.meta.url), 'con
 /** 저장소 기본값. 사용자가 파일로 바꾸기 전까지 이 숫자를 코드에서 바꾸지 않는다. */
 export const SCORE_WEIGHTS_DEFAULTS: ScoreWeights = {
   orchestrator: { performance: 0.82, usage: 0.06, speed: 0.12 },
-  worker: { performance: 0.3, usage: 0.2, speed: 0.1, price: 0.4 } };
+  worker: { performance: 0.375, usage: 0, speed: 0.125, price: 0.5 } };
+/** p85: 워커 가산 상한(점). 기본 점수에 더하는 가산(bonus) 최대값이다. */
+export const WORKER_BONUS_CAP_DEFAULT = 5;
 
 const invalid = (detail: string): never => { throw new Error(`Invalid score weights: ${detail}`); };
 const includes = (list: readonly string[], value: string): boolean => list.includes(value);
 
-/** 잘못된 값은 조용히 무시하지 않고 예외로 멈춘다. 반환값은 역할별 차원(ROLE_WEIGHT_DIMENSIONS)이 모두 있는 표다. */
+const checkBonusCap = (cap: unknown): number => {
+  if (cap === undefined) return WORKER_BONUS_CAP_DEFAULT;
+  if (typeof cap !== 'number' || !Number.isFinite(cap) || cap < 0)
+    throw new Error('Invalid score weights: workerBonusCap must be a finite number >= 0');
+  return cap;
+};
+
+/** 잘못된 값은 조용히 무시하지 않고 예외로 멈춘다. 반환값은 역할별 차원(ROLE_WEIGHT_DIMENSIONS)이 모두 있는 표다.
+ *  p85: 최상위 `workerBonusCap`(워커 가산 상한, 유한한 0 이상 수)은 차원이 아니라 별도로 검증한다. */
 export function validateScoreWeights(raw: unknown): ScoreWeights {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) invalid('root must be an object');
   const source = raw as Record<string, unknown>;
-  for (const role of Object.keys(source)) if (!includes(SCORE_WEIGHT_ROLES, role)) invalid(`unknown role '${role}'`);
+  for (const role of Object.keys(source)) if (role !== 'workerBonusCap' && !includes(SCORE_WEIGHT_ROLES, role)) invalid(`unknown role '${role}'`);
   const result = {} as Record<ScoreWeightRole, Partial<Record<ScoreWeightDimension, number>>>;
   for (const role of SCORE_WEIGHT_ROLES) {
     const weights = source[role];
@@ -44,6 +54,7 @@ export function validateScoreWeights(raw: unknown): ScoreWeights {
     if (Math.abs(sum - 1) > 1e-9) invalid(`${role} weights must sum to 1 (got ${sum})`);
     result[role] = values;
   }
+  checkBonusCap(source['workerBonusCap']);
   return result;
 }
 
@@ -53,5 +64,15 @@ export function loadScoreWeights(path: string = SCORE_WEIGHTS_PATH): ScoreWeight
   return validateScoreWeights(JSON.parse(readFileSync(path, 'utf8')) as unknown);
 }
 
+/** p85: 워커 가산 상한을 읽는다. 없으면 기본값, 있으면 유한한 0 이상 수여야 한다. */
+export function loadWorkerBonusCap(path: string = SCORE_WEIGHTS_PATH): number {
+  if (!existsSync(path)) return WORKER_BONUS_CAP_DEFAULT;
+  const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) invalid('root must be an object');
+  return checkBonusCap((raw as Record<string, unknown>)['workerBonusCap']);
+}
+
 /** 제품이 쓰는 가중치(모듈 로드 시 1회 읽는다). */
 export const SCORE_WEIGHTS: ScoreWeights = loadScoreWeights();
+/** 제품이 쓰는 워커 가산 상한(모듈 로드 시 1회 읽는다). */
+export const WORKER_BONUS_CAP: number = loadWorkerBonusCap();

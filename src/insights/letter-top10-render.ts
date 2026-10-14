@@ -6,7 +6,7 @@ import { freeListsFrom, renderFreeSectionCompact, shortPlan, unmeasuredFreeEntri
 import type { PlanCatalogEntry } from './plan-catalog.js';
 import type { Top10RecordInput } from './letter-top10-rank.js';
 import { top10OptionsFrom } from './letter-top10-render-options.js';
-import { LEGEND_LINES, PARETO_MARK, ROLE_HEADINGS, ROLE_LABELS, ZONE_TEXT, changeNote, exitLine, formatChange, leadText, dimensionsText } from './letter-top10-legend.js';
+import { LEGEND_LINES, PARETO_MARK, ROLE_HEADINGS, ROLE_LABELS, ZONE_TEXT, changeNote, exitLine, formatChange, leadText, dimensionsText, bonusSuffix } from './letter-top10-legend.js';
 
 export interface Top10LetterInput {
   readonly publicationDate: string; // YYYY-MM-DD
@@ -33,7 +33,7 @@ function section(role: OptimalZoneRole, list: RoleList): string[] {
   for (const e of list.entries) {
     const rank = e.belowZone ? `▽ ${e.rank}` : String(e.rank);
     const refs = [e.openrouterRankText, e.isPareto ? PARETO_MARK : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
-    lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${dimensionsText(e, role)}` +
+    lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${dimensionsText(e, role)}${bonusSuffix(e, role)}` +
       ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' off-peak' : ''} · 접근 ${e.plans.map(shortPlan).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
       ` · ${formatChange(e.change)}`);

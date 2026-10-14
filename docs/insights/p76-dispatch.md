@@ -22,6 +22,12 @@ o(`w12:p13`)는 분배만 맡는다. 단계마다 앞 단계 보고를 o가 확�
 | L | w1 | 전역 CLI 0.11.0으로 `yoroi insights once --markdown > scratch/reports/letter-2026-10-14-v0110.md`(`--refresh` 금지), 표시 확인 | yoroi-p76-w1l-report.json |
 | X | w3 | #138 본문 갱신 + 댓글 한 줄(0.11.0 기준: 오케 82/6/12·가성비 없음·Free 한 표) | yoroi-p76-w3x-report.json |
 
+## 변경 (메신저 전달: "다됐으면 발행좀")
+
+- PR #140 머지는 메신저가 처리한다 → V(w4) 취소. G(tag·Release·전역 CLI)는 머지 후 별도 확인.
+- L: 전역 CLI가 아직 0.10.0이라 워킹트리 dev(0.11.0, 미커밋 0) 기준으로 렌더(w1).
+- X: 발행은 렌더하지 않은 w4가 맡는다(w3는 P 진행 중).
+
 ## 공통 금지
 
 main 직접 push, 모델·세션 변경, 실제 API 호출·`--refresh`, 시크릿·개인 사용량 원본 노출, 공유 트리 `git switch`, 파일당 100줄 초과.

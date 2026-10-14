@@ -10,19 +10,20 @@ REPO="${YOROI_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CLI="${YOROI_CLI:-yoroi once}"
 cd "$REPO" || { echo "⚠️ 조회 실패 | yoroi | 레포 경로를 찾지 못했다: ${REPO}"; exit 0; }
 
-# 1) 스냅샷 갱신: 빌드에 영향을 주는 파일이 바뀌었을 때만 다시 설치한다.
-#    버전만 보면 버전이 그대로인 코드 변경을 놓치므로 내용 지문(HEAD + 변경 목록 + diff)을 쓴다.
-#    지문 파일은 레포 밖에 둔다(레포 안에 두면 그 파일 때문에 지문이 계속 바뀐다). 실패해도 이전 스냅샷으로 계속 보고한다.
+# 1) 스냅샷 갱신: 배포가 반영된 뒤에만 다시 설치한다.
+#    지문은 package.json 버전 + origin/main SHA다. 워커가 편집할 때마다 갱신하지 않는다.
+#    성공 문구는 실제로 갱신했을 때만 낸다(실패는 항상 알린다). 지문 파일은 레포 밖에 둔다.
 STALE=""
 if [ "${YOROI_SKIP_UPDATE:-0}" != "1" ]; then
-  PATHS="src config package.json tsconfig.json"
-  fp="$( { git -C "$REPO" rev-parse HEAD; git -C "$REPO" status --porcelain -- $PATHS;
-    git -C "$REPO" diff HEAD -- $PATHS; } 2>/dev/null | shasum -a 256 | cut -c1-16 )"
+  git -C "$REPO" fetch --quiet origin main 2>/dev/null || true
+  ver="$(node -p "require('$REPO/package.json').version" 2>/dev/null || echo none)"
+  main_sha="$(git -C "$REPO" rev-parse --short origin/main 2>/dev/null || echo none)"
+  want="v${ver}+${main_sha}"
   fpfile="${YOROI_FINGERPRINT:-$HOME/.cache/yoroi/usage-hourly-fingerprint}"
-  if [ "$fp" != "$(cat "$fpfile" 2>/dev/null)" ]; then
+  if [ "$want" != "$(cat "$fpfile" 2>/dev/null)" ]; then
     if pnpm --silent run update:global > /dev/null 2>&1; then
-      mkdir -p "$(dirname "$fpfile")" && printf '%s' "$fp" > "$fpfile"
-      echo "🔄 전역 CLI 갱신 | yoroi | 레포 변경(${fp})을 반영해 다시 설치했다"
+      mkdir -p "$(dirname "$fpfile")" && printf '%s' "$want" > "$fpfile"
+      echo "🔄 전역 CLI 갱신 | yoroi | 배포 반영(${want})"
     else
       STALE="⚠️ 스냅샷 갱신 실패 | yoroi | 이전 스냅샷으로 보고한다 — 레포에서 pnpm run update:global 확인"
     fi

@@ -40,8 +40,8 @@ test("ollama-pro pretty renders only the monthly row while keeping the table int
 
 test("current ollama schema hides activity and purchased credits rows but keeps the snapshot", () => {
   const result: UsageResult = { provider: "ollama-pro", snapshot: createSnapshot("ollama-pro", observedAt, [
-    { id: "credits:included", unit: "USD", remaining: 6, limit: 10, used: 4,
-      percent: 40, resetAt: "2026-11-01T00:00:00Z" },
+    { id: "credits:included", unit: "USD", remaining: 0.1, limit: 10, used: 9.9,
+      percent: 99, resetAt: "2026-11-01T00:00:00Z" },
     { id: "credits:purchased", unit: "USD", remaining: 2 },
     { id: "activity:7d:request_count", unit: "requests", used: 4 },
     { id: "activity:7d:usage_usd", unit: "USD", used: 1.25 },

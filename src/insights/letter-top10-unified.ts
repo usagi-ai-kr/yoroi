@@ -77,7 +77,7 @@ export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: To
   const freeRows = catalog.filter(p => p.tier === 'free').flatMap(p => p.models.filter(m => m.verified).map(m => ({ modelId: m.modelId, metric: FREE_ACCESS_METRIC, value: 0 })));
   const evidence = [...(opts?.openrouterRecords ?? []), ...(opts?.opencodeDataRecords ?? []), ...(opts?.cognitionRecords ?? []), ...freeRows];
   const candidates = buildCandidatePool(records, catalog, evidence).accessibleRecords;
-  // p75: 오케 성능·사용량·속도, 워커 성능·사용량·속도·가격, 역할별 가중치(ROLE_DIMENSION_WEIGHTS)·AA 지표. 두 계열 간 강제 배제 없음.
+  // p75: 오케 성능·사용량·속도, p85: 워커 성능·속도·가격+가산(사용량은 가산 입력), 역할별 가중치(ROLE_DIMENSION_WEIGHTS)·AA 지표. 두 계열 간 강제 배제 없음.
   const pick = (role: OptimalZoneRole) => buildList(candidates, role, opts ?? {}, catalog, excluded, scoreRoleCandidatesFromSources(candidates, role, opts));
   const orchestrator = pick('orchestrator'), worker = pick('worker');
   const oKeys = new Set(orchestrator.entries.map(e => normalizeModelName(e.modelId)));

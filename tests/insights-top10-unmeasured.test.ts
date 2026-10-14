@@ -40,15 +40,21 @@ test('AA-unmeasured evidence models stay orchestrator candidates; p75 orchestrat
   assert.ok(Math.abs((dual?.usage ?? 0) - 0.759) < 0.001 && dual?.dimensionSources?.usage === 'opencode', 'OCD 사용량이 표준화되어 반영된다(p70)');
 });
 
-test('worker: opencode-only evidence is a standardized usage source, OR and OCD share one dimension, and the letter renders it', () => {
-  const cognitionRecords = ['oc-heavy-high', 'oc-dual-high'].map(modelId => ({ modelId, metric: 'cognition_correct', value: 0.9 })); // 워커 하한 통과용
+test('worker: intel is required; opencode-only evidence without intel cannot enter, OR and OCD share one dimension', () => {
+  const cognitionRecords = ['oc-heavy-high', 'oc-dual-high'].map(modelId => ({ modelId, metric: 'cognition_correct', value: 0.9 }));
   const w = computeRoleTop10(AA_ROWS, { ...opts, cognitionRecords }).worker.entries, at = (id: string) => w.find(e => e.modelId === id)?.scoreComponents;
-  assert.deepEqual([at('oc-heavy')?.sources?.['usage:opencode'], at('oc-heavy')?.dimensionSources?.usage], [1, 'opencode']);
-  // oc-dual: OR 0(100 < 5000), OCD (9-6)/(log10 9e9 - 6) ≈ .759 → 사용량은 둘 중 높은 값 하나(이중 가산 없음).
-  assert.ok(Math.abs((at('oc-dual')?.usage ?? 0) - 3 / (Math.log10(9e9) - 6)) < 1e-9 && at('oc-dual')?.sources?.['usage:openrouter'] === 0);
-  assert.ok(!computeRoleTop10(AA_ROWS, opts).worker.entries.some(e => e.modelId === 'oc-heavy'), '성능 결측(<.70)이면 사용량만으로 워커에 진입하지 않는다');
+  // p85: 사용량 근거만으로는 워커에 진입하지 못한다(성능 intel 없음 → 제외). Cog correct가 있어도 intel이 없으면 마찬가지다.
+  assert.ok(!w.some(e => e.modelId === 'oc-heavy'), 'intel 없으면 사용량·Cog만으로 워커에 진입하지 않는다');
+  assert.ok(!w.some(e => e.modelId === 'oc-dual'), 'intel 없으면 OR+OCD가 있어도 제외된다');
   const letter = renderTop10FromRecords({ publicationDate: '2026-10-13', records: [...AA_ROWS, ...OC_ROWS], ...opts });
-  assert.ok(letter.includes('oc-heavy'), 'AA 미측정이지만 참고 자료가 있으면 레터에도 나온다');
+  assert.ok(letter.includes('oc-heavy'), 'AA 미측정이지만 참고 자료가 있으면 레터 Free 표에는 나온다');
+  // OR·OCD는 하나의 사용량 차원을 공유한다(이중 가산 없음): intel이 있는 모델로 확인한다.
+  const shared = computeRoleTop10([...AA_ROWS,
+    { modelId: 'oc-dual', value: 50, metric: INTEL },
+    { modelId: 'oc-dual', value: 100, metric: 'total_tokens' },
+    { modelId: 'oc-dual', value: 1_000_000_000, metric: 'opencode_data_tokens' }], opts).worker.entries
+    .find(e => e.modelId === 'oc-dual')?.scoreComponents;
+  assert.ok(shared !== undefined && Math.abs(shared.usage - Math.max(shared.sources?.['usage:openrouter'] ?? 0, shared.sources?.['usage:opencode'] ?? 0)) < 1e-9);
 });
 
 test('a model both AA-recorded and evidence-backed keeps its AA index without placeholder duplication', () => {

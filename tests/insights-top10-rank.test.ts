@@ -78,10 +78,10 @@ test('fewer than ten candidates show all rows with below-zone fill; previous com
   const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }], cognitionRecords: [['claude-opus-5-5-max', 0.6], ['gpt-6-1-sol-high', 0.5], ['claude-haiku-5-5-max', 0.4]].map(([modelId, value]) => ({ modelId: String(modelId), metric: 'cognition_correct', value: Number(value) })) });
   assert.equal(lists.orchestrator.entries.length, 3); // 후보 3개라 사용 가능한 행 모두 표시
   assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // p75 82/6/12: 성능만 반영(Opus 1·Haiku .91·GPT .5), 순서 유지
-  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5']); // p54 워커 하한: 성능 Opus 1·GPT max(AA 0, Cog .5)·Haiku 0 → Opus만 ≥.70
+  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5', 'gpt-6-1-sol', 'claude-haiku-5-5']); // p85 원값 하한 33: intel 96·85·95 모두 통과
   assert.ok(lists.orchestrator.entries.some(e => e.isPareto));
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.both, true);
-  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, false, 'worker floor removes Haiku from the worker list');
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, true, 'intel 95로 워커에도 남는다');
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.change, '진입');
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '유지'); // 종합 점수에서도 1위 유지
 });

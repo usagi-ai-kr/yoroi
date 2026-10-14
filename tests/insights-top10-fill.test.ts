@@ -25,8 +25,12 @@ test('orchestrator fills below-zone rows while the worker performance floor remo
     ['claude-haiku-5-5', '11.7', true], ['gpt-6-luna', '0.0', true],
   ]);
   assert.ok(lists.orchestrator.entries.every(e => e.plans.includes('Free Test')));
-  assert.equal(lists.worker.entries.length, 8, 'Cog performance below 0.70 removes Haiku and Luna before fill');
-  assert.ok(lists.worker.entries.every(e => !e.belowZone && e.plans.includes('Free Test')));
+  // p85: 원값 하한 33 — luna(intel 38.1)는 통과하지만 표준화 성능은 풀 최저라 0.0▽, haiku(intel 없음)는 제외된다.
+  assert.equal(lists.worker.entries.length, 9, 'luna passes the raw floor, haiku (no intel) is excluded before fill');
+  assert.deepEqual(lists.worker.entries.at(-1), lists.worker.entries.find(e => e.modelId === 'gpt-6-luna'));
+  assert.deepEqual([lists.worker.entries.at(-1)!.scoreText, lists.worker.entries.at(-1)!.belowZone], ['0.0', true]);
+  assert.ok(!lists.worker.entries.some(e => e.modelId === 'claude-haiku-5-5'), 'intel 없으면 후보에서 제외된다');
+  assert.ok(lists.worker.entries.every(e => e.plans.includes('Free Test')));
   const gpt = lists.orchestrator.entries.find(e => e.modelId === 'gpt-6-luna')!;
   const haiku = lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!;
   assert.deepEqual([gpt.rank, gpt.indexText, gpt.indexMissing, gpt.belowZone, gpt.scoreText], [10, '38.1', undefined, true, '0.0']);

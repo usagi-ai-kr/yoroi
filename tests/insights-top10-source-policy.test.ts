@@ -18,7 +18,7 @@ const orch = (opts: Parameters<typeof computeRoleTop10>[1], records: Parameters<
 test('role weights are exported, sum to 1 per role, and differ by role', () => {
   for (const w of Object.values(ROLE_DIMENSION_WEIGHTS)) assert.equal(Math.round(SCORE_DIMENSIONS.reduce((s, d) => s + (w[d] ?? 0), 0) * 1e9), 1e9);
   assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.82, usage: 0.06, speed: 0.12 },
-    worker: { performance: 0.3, usage: 0.2, speed: 0.1, price: 0.4 } });
+    worker: { performance: 0.375, usage: 0, speed: 0.125, price: 0.5 } });
   assert.equal(WORKER_PERFORMANCE_FLOOR, 0.7);
   assert.deepEqual([ROLE_SOURCES.orchestrator.usage, ROLE_SOURCES.orchestrator.speed, ROLE_SOURCES.orchestrator.price,
     ROLE_SOURCES.worker.speed, ROLE_SOURCES.worker.price], [['openrouter', 'opencode'], ['aa', 'cognition'], [], ['aa'], ['aa']]);
@@ -56,14 +56,15 @@ test('role weights differentiate the two lists without forcing exclusion: a mode
   const cognitionRecords = [{ modelId: 'm-paid-high', metric: COG, value: 0.9 }, { modelId: 'm-fast-high', metric: COG, value: 0.8 }, { modelId: 'm-both-high', metric: COG, value: 0.1 }];
   const lists = computeRoleTop10(records, { catalog: [PAID], cognitionRecords });
   assert.deepEqual(lists.orchestrator.entries.map(e => [e.modelId, e.scoreText]), [['m-fast', '83.7'], ['m-paid', '82.0'], ['m-both', '0.0']]);
-  assert.deepEqual(lists.worker.entries.map(e => [e.modelId, e.scoreText, e.both]), [['m-fast', '36.3', true], ['m-paid', '30.0', true]]);
-  assert.ok(!lists.worker.entries.some(e => e.modelId === 'm-both'), 'performance below .70 is removed before zone fill');
+  // 워커(p85): 성능은 AA intel만(m-paid 1·m-fast 0), Cog correct는 가산으로만 들어간다. m-both는 intel이 없어 제외된다.
+  assert.deepEqual(lists.worker.entries.map(e => [e.modelId, e.scoreText, e.both]), [['m-paid', '42.5', true], ['m-fast', '16.9', true]]);
+  assert.ok(!lists.worker.entries.some(e => e.modelId === 'm-both'), 'intel 없으면 후보에서 제외된다');
 });
 
 test('render shows original prices, the 99 missing-price cell, and role weights in the formula', () => {
   const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-14', records: same(['m-paid'], () => 2), catalog: [PAID], freeCatalog: [FREE] } as never);
   const o = md.slice(md.indexOf('## 🧭'), md.indexOf('## 🛠️'));
   assert.ok(o.includes('| 1 | 👍 | m-paid | default | 82.0 | 100/-/- |') && o.includes('| m-free | default | 0.0 | -/-/- |') && !md.includes('무료(Free 경로)'), o);
-  assert.ok(md.includes('- 가중치: 오케·리뷰어 성능 82%·사용량 6%·속도 12% / 워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%'));
-  assert.ok(md.includes('워커 성능<0.7·결측 제외'));
+  assert.ok(md.includes('- 가중치: 오케·리뷰어 성능 82%·사용량 6%·속도 12% / 워커·메신저 성능 37.5%·속도 12.5%·가격 50%'));
+  assert.ok(md.includes('워커 intel<33·결측 제외'));
 });

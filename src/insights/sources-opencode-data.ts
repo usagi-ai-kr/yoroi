@@ -2,11 +2,12 @@ import ky from 'ky';
 import metadata from '../../package.json' with { type: 'json' };
 import { SourceError } from '../app/usage-source.js';
 import type { InsightHistoryPort, InsightSuccess } from './history-port.js';
+import { OPENCODE_DATA_FULL_REQUEST_SCOPE } from './opencode-data-json-parser.js';
 
 /** 사용자 결정(2026-10-12): 내부 전용 참조 수집(위험 수용). 약관상 자동 추출 제한을 존중해
  *  예의 있는 수집만 한다 — 순차 요청·연락처 UA·차단 시 즉시 중단(재시도 0)·하루 1회·원문 미저장. */
 export const OPEN_CODE_DATA_URL = 'https://opencode.ai/data/index.json';
-export const OPEN_CODE_DATA_SCOPE = 'opencode-data:internal-daily';
+export const OPEN_CODE_DATA_SCOPE = OPENCODE_DATA_FULL_REQUEST_SCOPE;
 export const OPEN_CODE_DATA_SCHEMA = 'opencode-data-v1';
 export const OPEN_CODE_DATA_USER_AGENT =
   `yoroi/${metadata.version} (+https://github.com/qus0in/yoroi; internal reference, once daily)`;
@@ -44,8 +45,11 @@ export async function fetchOpenCodeData(options: OpenCodeDataOptions = {}): Prom
   return { jsonText: response.body, requests: 1, statuses: [response.status] };
 }
 
-/** 렌더 소유자(agy1·ollama)가 참고 열에 쓸 수 있는 조회 함수 — 수집은 run-once 담당. */
+/** 전 날짜 저장분에서 최신 실제 데이터 날짜만 참고 열에 반환한다. 수집은 run-once 담당. */
 export function readOpenCodeDataReference(history: InsightHistoryPort, publicationDate: string): InsightSuccess | undefined {
-  return history.getDaily({ source: 'opencode-data', publicationDate, requestScope: OPEN_CODE_DATA_SCOPE,
+  const stored = history.getDaily({ source: 'opencode-data', publicationDate, requestScope: OPEN_CODE_DATA_SCOPE,
     schemaVersion: OPEN_CODE_DATA_SCHEMA });
+  if (!stored) return undefined;
+  const latest = stored.records.map(v => v.comparisonDate).filter((date): date is string => date !== null).sort().at(-1);
+  return latest ? { ...stored, records: stored.records.filter(v => v.comparisonDate === latest) } : undefined;
 }

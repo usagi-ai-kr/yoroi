@@ -13,7 +13,7 @@ export interface Top10LetterInput {
   readonly partialSources?: readonly string[]; readonly free?: RoleLists | undefined; readonly freeUnmeasured?: readonly string[];
 }
 
-const ATTRIBUTIONS = ['출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)', '출처: OpenRouter (CC-BY-4.0)',
+const ATTRIBUTIONS = ['출처: OpenRouter (CC-BY-4.0)',
   '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
   '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)'] as const;
 
@@ -31,7 +31,7 @@ function section(role: OptimalZoneRole, list: RoleList): string[] {
   if (!list.entries.length) lines.push('자료 부족: 존을 통과한 접근 가능 모델이 없습니다.');
   for (const e of list.entries) {
     const rank = e.belowZone ? `▽ ${e.rank}` : String(e.rank);
-    const refs = [e.openrouterRankText, e.arenaRankText, e.isPareto ? '⭐' : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
+    const refs = [e.openrouterRankText, e.isPareto ? '⭐' : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
     lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)}${e.both ? ' ↔' : ''} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${clean(e.indexText, 80)}` +
       ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' off-peak' : ''} · 접근 ${e.plans.map(shortPlan).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
@@ -81,20 +81,20 @@ export function renderTop10Letter(data: Top10LetterInput): string {
       .replace(/^(- 선두: 오케스트레이터 )([^ ]+)( · 워커 )([^ ]+)$/m, (_m, a, b, c, d) => `${a}${clip(b)}${c}${clip(d)}`);
   }
   if (text.length > 3600) { const c = text.replace(/ · 변형 [^\n]*/g, ''); if (c !== text) text = `${c}\n안내: 길이 예산으로 변형 나열을 생략했습니다.`; }
-  if (text.length > 3600) { const c = text.replace(/ · (?:OpenRouter|Arena) \d+위/g, ''); if (c !== text) text = `${c}\n안내: 길이 예산으로 참고순위를 생략했습니다.`; }
+  if (text.length > 3600) { const c = text.replace(/ · OpenRouter \d+위/g, ''); if (c !== text) text = `${c}\n안내: 길이 예산으로 참고순위를 생략했습니다.`; }
   return text;
 }
 
 export interface CompactLetterInput { readonly publicationDate: string; readonly records: readonly Top10RecordInput[];
-  readonly arenaRecords?: readonly Top10RecordInput[]; readonly openrouterRecords?: readonly Top10RecordInput[];
+  readonly openrouterRecords?: readonly Top10RecordInput[]; readonly opencodeDataRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
   readonly partialSources?: readonly string[]; readonly freeCatalog?: readonly PlanCatalogEntry[] }
 /** Builds the compact letter from letter rows (no I/O): per-role zone policy over AA indices. */
 export function renderTop10FromRecords(input: CompactLetterInput): string {
-  const options = { ...(input.arenaRecords && { arenaRecords: input.arenaRecords }), ...(input.openrouterRecords && { openrouterRecords: toRankedRecords(input.openrouterRecords) }),
-    ...(input.previousRanks && { previousCohort: input.previousRanks }), excludeModelIds: new Set(freeOnlyModelIds()) };
+  const options = { ...(input.openrouterRecords && { openrouterRecords: toRankedRecords(input.openrouterRecords) }),
+    ...(input.opencodeDataRecords && { opencodeDataRecords: input.opencodeDataRecords }), ...(input.previousRanks && { previousCohort: input.previousRanks }),
+    excludeModelIds: new Set(freeOnlyModelIds()) };
   return renderTop10Letter({ publicationDate: input.publicationDate, lists: computeRoleTop10(input.records, options), free: freeListsFrom(input.records, input.freeCatalog, options),
     freeUnmeasured: unmeasuredFreeIds(input.freeCatalog, input.records), ...(input.failedSources && { failedSources: input.failedSources }),
-    ...(input.notes && { notes: input.notes }),
-    ...(input.partialSources && { partialSources: input.partialSources }) });
+    ...(input.notes && { notes: input.notes }), ...(input.partialSources && { partialSources: input.partialSources }) });
 }

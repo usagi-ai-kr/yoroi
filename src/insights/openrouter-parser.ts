@@ -1,14 +1,15 @@
 import type { InsightRecord } from './record.js';
 import { isObject, isText, isIsoDate, isIsoTimestamp, unknownFields,
   type ParseRowResult } from './parse-utils.js';
-import { filterOpenRouterTop50 } from './openrouter-top50.js';
-
 const sourceUrl = 'https://openrouter.ai/rankings';
+/** 전체(모든 날짜·모델·other) 저장용 request scope. 기존 top50 부분집합 캐시와 구분한다(p5 설계 §1). */
+export const OPENROUTER_FULL_REQUEST_SCOPE = 'rankings-daily:day:all';
 export class OpenRouterParseError extends Error {
   constructor(readonly code: 'invalid-row' | 'invalid-response') { super(`OpenRouter ${code}`); }
 }
 export type OpenRouterRowResult = ParseRowResult;
-/** Parses the unfiltered daily v1 dataset; filtered/week/month requests need separate context. */
+/** Parses the daily v1 dataset and keeps every valid row (all dates·models·other); the top-50 cut
+ * stays in openrouter-top50 for query time. Filtered/week/month requests need separate context. */
 export function parseOpenRouterResponse(payload: unknown, observedAt: string): readonly OpenRouterRowResult[] {
   if (!isObject(payload) || !Array.isArray(payload.data) || !isObject(payload.meta) || !isIsoTimestamp(observedAt))
     throw new OpenRouterParseError('invalid-response');
@@ -18,7 +19,7 @@ export function parseOpenRouterResponse(payload: unknown, observedAt: string): r
   const common = [...unknownFields(payload, ['data', 'meta'], 'response'),
     ...unknownFields(meta, ['as_of', 'start_date', 'end_date', 'version'], 'meta')];
   const seen = new Map<string, number>();
-  return filterOpenRouterTop50(payload.data.map((row: unknown, index): OpenRouterRowResult => {
+  return payload.data.map((row: unknown, index): OpenRouterRowResult => {
     const warnings = [...common];
     try {
       if (!isObject(row)) throw new OpenRouterParseError('invalid-row');
@@ -46,5 +47,5 @@ export function parseOpenRouterResponse(payload: unknown, observedAt: string): r
       seen.set(identity, value);
       return { ok: true, index, records: [record], warnings };
     } catch { return { ok: false, index, reason: 'OpenRouter invalid-row', warnings }; }
-  }))
+  });
 }

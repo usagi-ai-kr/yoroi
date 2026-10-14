@@ -13,7 +13,7 @@ const LISTS: RoleLists = {
     entries: [
       entry({ rank: 1, modelId: 'provider/orch-model', indexText: '85.5', repEffort: 'high',
         blendedCostText: '$1.50', scoreText: '78.4', openrouterRankText: 'OpenRouter 3위',
-        arenaRankText: 'Arena 2위', isPareto: true, both: true, change: '신규' }),
+        isPareto: true, both: true, change: '신규' }),
       entry({ rank: 2, modelId: 'provider/orch-up', indexText: '80.0', repEffort: 'default',
         blendedCostText: '$0.50', scoreText: '71.2', change: '▲2' }),
       entry({ rank: 3, modelId: 'provider/orch-new', indexText: '76.0', change: '진입' }),
@@ -52,14 +52,14 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
 
   assert.ok(md.includes('## 🧭 오케스트레이터 Top10 (판단·계획 / Intelligence Index)'));
   assert.ok(md.includes('## 🛠️ 워커 Top10 (실행·코딩 / Coding Index)'));
-  const expectedHeader = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 접근 요금제 | 변동 |';
+  const expectedHeader = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 변동 |';
   assert.ok(md.includes(expectedHeader));
-  assert.ok(md.includes('| --- | --- | --- | --- | --- | --- | --- | --- |'));
-  assert.ok(md.includes('| ⭐ 1 | provider/orch-model ↔ | high | 78.4 | 85.5 | $1.50 | ChatGPT Plus | 🌱 |'));
-  assert.ok(md.includes('| 2 | provider/orch-up | default | 71.2 | 80.0 | $0.50 | ChatGPT Plus | ▲2 |'));
-  assert.ok(md.includes('| 3 | provider/orch-new | high | 97.0 | 76.0 | $1.50 | ChatGPT Plus | 🆕 |'));
-  assert.ok(md.includes('| 4 | provider/orch-hold | high | 96.0 | 75.0 | $1.50 | ChatGPT Plus | ➖ |'));
-  assert.ok(md.includes('| 1 | provider/worker-down | default | 66.9 | 75.0 | $0.20 | Ollama Cloud Pro | ▼1 |'));
+  assert.ok(md.includes('| --- | --- | --- | --- | --- | --- | --- |'));
+  assert.ok(md.includes('| ⭐ 1 | provider/orch-model ↔ | high | 78.4 | 85.5 | $1.50 | 🌱 |'));
+  assert.ok(md.includes('| 2 | provider/orch-up | default | 71.2 | 80.0 | $0.50 | ▲2 |'));
+  assert.ok(md.includes('| 3 | provider/orch-new | high | 97.0 | 76.0 | $1.50 | 🆕 |'));
+  assert.ok(md.includes('| 4 | provider/orch-hold | high | 96.0 | 75.0 | $1.50 | ➖ |'));
+  assert.ok(md.includes('| 1 | provider/worker-down | default | 66.9 | 75.0 | $0.20 | ▼1 |'));
   assert.ok(md.includes('🚪 이탈: provider/orch-old (전일 5위)'));
 
   assert.ok(md.includes('<details><summary>출처 및 산출 공식</summary>'));
@@ -78,7 +78,7 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
   assert.ok(md.includes(`- ${EXCLUSION_NOTE}`));
   assert.ok(md.includes('- ⭐ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태(가성비 경계선)') && !md.includes('- ★ 파레토 최적'));
   assert.ok(md.includes('⚠️ synthetic-source'));
-  assert.ok(md.includes('LMArena'));
+  assert.ok(!md.includes('LMArena')); // Arena 제외(2026-10-13)
   assert.ok(md.includes('OpenRouter'));
   assert.ok(md.includes('Artificial Analysis'));
   assert.ok(md.includes('Cognition FrontierCode'));

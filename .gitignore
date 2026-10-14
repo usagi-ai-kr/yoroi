@@ -19,5 +19,6 @@ build/
 dist/
 coverage/
 tmp/
+scratch/
 *.log
 gen-lang*

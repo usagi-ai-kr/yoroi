@@ -1,8 +1,13 @@
 import { calcBlendedCost, calcCostEfficiency, type ModelVariant } from './letter-top10-group.js';
+import { normalizeModelName } from './model-id.js';
 import { findOffPeakRate, isOffPeakHour, OFF_PEAK_RATES, type OffPeakRate } from './model-price-overrides.js';
 
 /** 사용자 규칙 제외 계열(소문자 부분 일치): Fable·Astra. */
 export const EXCLUDED_PATTERNS = ['fable', 'astra'] as const;
+
+/** 사용자 규칙: 혼합 단가(1M당 USD, off-peak 적용값)가 이 값 이상인 모델은 애초에 후보에서 제외한다(경계 포함).
+ *  단가 미상은 판정 불가로 제외하지 않고 기존 규칙(후순위·★ 보류)을 따른다. */
+export const PRICE_EXCLUSION_THRESHOLD = 3;
 
 export function isExcludedModel(modelId: string): boolean {
   const id = modelId.toLowerCase();
@@ -35,23 +40,31 @@ export function compareVersions(a: readonly number[], b: readonly number[]): num
 /** GPT의 같은 세대 하위 등급 토큰. */
 export const GRADE_TOKENS = ['luna', 'terra', 'sol'] as const;
 
+/** parseFamilyVersion의 기본 family별로 확인된 후속 등급만 등록한다. */
+const BASE_MODEL_GRADES: Readonly<Record<string, readonly string[]>> = { 'mimo-v2': ['flash', 'pro'], 'kimi-k2': ['code'] };
+
 /** GPT family 꼬리 등급만 합친다. 다른 벤더의 같은 토큰은 별도 family로 둔다. */
 export function vendorLine(family: string): string {
   const parts = family.split('-'), grade = parts.at(-1)!;
   return parts[0] === 'gpt' && (GRADE_TOKENS as readonly string[]).includes(grade) ? parts.slice(0, -1).join('-') : family;
 }
 
-const modelKey = (id: string): string => id.trim().toLowerCase().replace(/\./g, '-');
+const modelKey = (id: string): string => normalizeModelName(id);
 const isGptGrade = (family: string): boolean => {
   const parts = family.split('-');
   return parts[0] === 'gpt' && (GRADE_TOKENS as readonly string[]).includes(parts.at(-1)!);
 };
-/** 같은 family는 전체 버전, GPT 등급 family끼리는 메이저 세대만 비교한다. */
+/** 같은 family는 전체 버전, GPT 등급끼리는 메이저, 등록된 기본형→등급은 전체 버전을 비교한다. */
 function supersedes(newer: NonNullable<ReturnType<typeof parseFamilyVersion>>,
   older: NonNullable<ReturnType<typeof parseFamilyVersion>>): boolean {
   if (newer.family === older.family) return compareVersions(newer.version, older.version) > 0;
-  return isGptGrade(newer.family) && isGptGrade(older.family) && vendorLine(newer.family) === vendorLine(older.family) &&
-    (newer.version[0] ?? 0) > (older.version[0] ?? 0);
+  if (isGptGrade(newer.family) && isGptGrade(older.family) && vendorLine(newer.family) === vendorLine(older.family) &&
+    (newer.version[0] ?? 0) > (older.version[0] ?? 0)) return true;
+  if (isGptGrade(older.family)) return false;
+  const grades = BASE_MODEL_GRADES[older.family];
+  const parts = newer.family.split('-');
+  return grades?.includes(parts.at(-1)!) === true &&
+    parts.slice(0, -1).join('-') === older.family && compareVersions(newer.version, older.version) > 0;
 }
 /** 전체 접근 가능 AA 모델 집합에서 같은 등급은 전체 버전, GPT 교차 등급은 메이저 세대를 비교한다. */
 export function olderGenerationModelIds(modelIds: readonly string[]): ReadonlySet<string> {
@@ -66,7 +79,7 @@ export function dropOlderVersions(variants: readonly ModelVariant[]): ModelVaria
   return variants.filter(v => !older.has(modelKey(v.baseModelId)));
 }
 
-/** 후보 파이프라인 1단계: 제외 계열 → 최신 버전만 → off-peak 단가 적용(실행 시각이 off-peak일 때만, 표기 플래그 포함). */
+/** 후보 파이프라인 1단계: 제외 계열 → 최신 버전만 → off-peak 단가 적용(실행 시각이 off-peak일 때만, 표기 플래그 포함) → 제외 단가 상한($3/1M 이상 제외). */
 export function filterCandidates(variants: readonly ModelVariant[],
   overrides: Readonly<Record<string, OffPeakRate>> = OFF_PEAK_RATES,
   nowUtc?: string): ModelVariant[] {
@@ -79,5 +92,5 @@ export function filterCandidates(variants: readonly ModelVariant[],
     const multiplier = v.blendedCost && v.effectiveCost !== undefined ? v.effectiveCost / v.blendedCost : 1;
     const effectiveCost = blendedCost * multiplier, costEfficiency = calcCostEfficiency(v.value, effectiveCost);
     return { ...v, blendedCost, effectiveCost, ...(costEfficiency !== undefined && { costEfficiency }), offPeak: true };
-  });
+  }).filter(v => v.blendedCost === undefined || v.blendedCost < PRICE_EXCLUSION_THRESHOLD);
 }

@@ -1,6 +1,6 @@
 import type { ModelGroup } from './letter-top10-group.js';
 
-/** 최적 존 임계와 역할별 단일 종합 점수 가중치. */
+/** 최적 존 임계와 역할별 단일 종합 점수 가중치. usage는 OpenRouter 사용량 우선, 미측정이면 OpenCode Data 토큰 보조(2026-10-13 사용자 지시). */
 export const OPTIMAL_ZONE_THRESHOLDS = { orchestrator: 0.85, worker: 0.75 } as const;
 export const ROLE_SCORE_WEIGHTS = {
   orchestrator: { index: 0.40, cost: 0.40, usage: 0.15, speed: 0.05 },
@@ -42,7 +42,7 @@ function scoreGroups(groups: readonly ModelGroup[], role: OptimalZoneRole): { sc
   const index = normalize(groups.map(g => g.repVariant.indexMissing ? undefined : g.repVariant.value));
   const cost = normalize(groups.map(g => { const c = g.repVariant.effectiveCost ?? g.repVariant.blendedCost;
     return c !== undefined && c >= 0 ? Math.log10(c + 0.01) : undefined; }), true);
-  const usage = normalize(groups.map(g => logPositive(g.repVariant.openrouterTokens)));
+  const usage = normalize(groups.map(g => logPositive(g.repVariant.openrouterTokens ?? g.repVariant.opencodeTokens)));
   const speeds = groups.map(g => g.repVariant.outputTokensPerSecond).filter((v): v is number => Number.isFinite(v) && v! >= 0);
   const speedLogs = groups.map(g => logPositive(g.repVariant.outputTokensPerSecond));
   const knownSpeed = normalize(speedLogs), speedMedian = speeds.length

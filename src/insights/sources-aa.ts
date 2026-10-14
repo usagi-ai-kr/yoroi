@@ -31,19 +31,20 @@ export async function fetchAaPages(client: HttpClient, request: AaPageRequest, s
 }
 
 export const AA_TOP_N = 50;
-const AA_COHORT_METRICS = ['artificial_analysis_coding_index', 'artificial_analysis_intelligence_index'] as const;
-import { selectAaValueTop } from './aa-value-top.js';
-/** AA 선택: coding/intelligence 지수 top50 ∪ 각 지수의 가성비(효율) top50 — 동점 포함, 결측 단가는 효율 코호트에서 제외. */
+/** 조회·표시용 top50 선택기(F 패킷 배정). 저장 경로는 전체 records를 쓰고 이 선택기를 호출하지 않는다. */
 export { selectAaValueTop as selectAaTopModels } from './aa-value-top.js';
-/** Merge pages (H3) into per-model rows, keeping the coding-union-intelligence top 50 (ties included). */
+/** 전체(4페이지 병합) 저장용 request scope. 기존 top50 부분집합 캐시와 구분한다(p5 설계 §1). */
+export const AA_FULL_REQUEST_SCOPE = 'aa-v2:free:language-models:all';
+/** Merge pages (H3) into per-model rows and keep every valid record; the top-50 cut now lives at report/query time.
+ *  거절된 행(ok:false)은 원본 그대로 끝에 함께 반환해 validation의 rejectedRows>0(partial) 판정으로 이어진다(4-A). */
 export function parseAaPages(payload: unknown, observedAt: string, options: PolicyFetchOptions): readonly ParseRowResult[] {
   if (!Array.isArray(payload)) throw new SourceError('parse');
   const merged = mergeAaPages(payload as AaPageInput[], { observedAt, ...(options.policy && { policy: options.policy }) });
   if (merged.status === 'failed') throw new SourceError('parse');
   if (merged.status === 'partial') throw new SourceError('unavailable');
-  const topRecords = selectAaValueTop(merged.records, AA_TOP_N);
   const byModel = new Map<string, InsightRecord[]>();
-  for (const record of topRecords) byModel.set(record.modelId, [...(byModel.get(record.modelId) ?? []), record]);
+  for (const record of merged.records) byModel.set(record.modelId, [...(byModel.get(record.modelId) ?? []), record]);
   if (byModel.size === 0) throw new SourceError('parse');
-  return [...byModel.values()].map((records, index) => ({ ok: true as const, index, records, warnings: index === 0 ? merged.warnings : [] }));
+  const grouped = [...byModel.values()].map((records, index) => ({ ok: true as const, index, records, warnings: index === 0 ? merged.warnings : [] }));
+  return [...grouped, ...merged.rejected.map((row, index) => ({ ...row, index: grouped.length + index }))];
 }

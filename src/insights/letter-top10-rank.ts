@@ -1,13 +1,16 @@
+import { normalizeModelName } from './model-id.js';
+export { normalizeModelName } from './model-id.js';
 import { splitBaseAndEffort, effortForModel, calcBlendedCost, calcCostEfficiency, type ModelVariant } from './letter-top10-group.js';
 import { filterCandidates } from './letter-top10-filter.js';
 import type { OffPeakRate } from './model-price-overrides.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 
 export interface Top10RecordInput { readonly modelId: string; readonly modelAlias?: string; readonly value?: number; readonly metric?: string; readonly rank?: number; readonly priceInput?: number;
-  readonly priceOutput?: number; readonly successorOf?: string }
-export interface Top10Options { readonly arenaRecords?: readonly Top10RecordInput[]; readonly openrouterRecords?: readonly Top10RecordInput[]; readonly previousCohort?: readonly Top10RecordInput[] | null;
+  readonly priceOutput?: number; readonly successorOf?: string; readonly releaseDate?: string }
+export interface Top10Options { readonly openrouterRecords?: readonly Top10RecordInput[]; readonly previousCohort?: readonly Top10RecordInput[] | null;
   readonly priceOverrides?: Readonly<Record<string, OffPeakRate>>; readonly nowUtc?: string;
-  readonly catalog?: readonly PlanCatalogEntry[]; readonly excludeModelIds?: ReadonlySet<string> }
+  readonly catalog?: readonly PlanCatalogEntry[]; readonly excludeModelIds?: ReadonlySet<string>;
+  readonly opencodeDataRecords?: readonly Top10RecordInput[] }
 const SPEED_METRIC = 'median_output_tokens_per_second';
 const COST_PER_TASK_METRIC = 'intelligence_index_cost_per_task';
 export function effortCostMultiplier(costPerTask?: number, baseCostPerTask?: number): number {
@@ -18,10 +21,6 @@ const variantKey = (r: Top10RecordInput): string => {
   const { base } = splitBaseAndEffort(r.modelId);
   return `${normalizeModelName(base)}|${effortForModel(r.modelId, r.modelAlias)}`;
 };
-export function normalizeModelName(id: string): string {
-  const base = (id.split('/').pop() ?? '').toLowerCase().trim();
-  return base.replace(/-(?:\d{4}-\d{2}-\d{2}|\d{8}|\d{4})$/, '').replace(/\./g, '-');
-}
 export function assignCompetitionRanks<T extends { value?: number; modelId: string }>(items: readonly T[]): { item: T; rank: number }[] {
   const sorted = [...items].sort((a, b) => (b.value ?? 0) - (a.value ?? 0) || a.modelId.localeCompare(b.modelId)); let rank = 1;
   return sorted.map((item, idx) => {
@@ -51,9 +50,9 @@ export function toRankedRecords(records: readonly Top10RecordInput[]): readonly 
   return [...records].sort((a, b) => usage(b) - usage(a) || a.modelId.localeCompare(b.modelId))
     .map((r, index) => ({ ...r, rank: index + 1 }));
 }
-/** 지표 행을 variants로 만들고 제외 계열(Fable·Astra)·최신 버전만·off-peak 단가 규칙을 적용한다. */
+/** 지표 행을 variants로 만들고 제외 계열(Fable·Astra)·최신 버전만·off-peak 단가 규칙·제외 단가 상한($3/1M)을 적용한다. */
 export function buildVariants(records: readonly Top10RecordInput[], metric: string, opts?: Top10Options): ModelVariant[] {
-  const orMap = toRefMap(opts?.openrouterRecords, 'total_tokens'), arenaMap = toRefMap(opts?.arenaRecords, 'rating');
+  const orMap = toRefMap(opts?.openrouterRecords, 'total_tokens');
   const speedMap = new Map(records.filter(r => r.metric === SPEED_METRIC && Number.isFinite(r.value)).map(r => [normalizeModelName(r.modelId), r.value!]));
   const taskCosts = new Map(records.filter(r => r.metric === COST_PER_TASK_METRIC && Number.isFinite(r.value)).map(r => [variantKey(r), r.value!]));
   const baseCosts = new Map(records.filter(r => r.metric === COST_PER_TASK_METRIC && splitBaseAndEffort(r.modelId).effort === 'default' && Number.isFinite(r.value))
@@ -66,11 +65,13 @@ export function buildVariants(records: readonly Top10RecordInput[], metric: stri
     const eff = calcCostEfficiency(r.value!, effectiveCost);
     const orTokens = opts?.openrouterRecords?.find(o => normalizeModelName(o.modelId) === normalizeModelName(r.modelId) ||
       normalizeModelName(o.modelId) === normalizeModelName(base))?.value;
-    const aRank = arenaMap.get(normalizeModelName(r.modelId)) ?? arenaMap.get(normalizeModelName(base));
+    const ocTokens = opts?.opencodeDataRecords?.find(o => normalizeModelName(o.modelId) === normalizeModelName(r.modelId) ||
+      normalizeModelName(o.modelId) === normalizeModelName(base))?.value;
     const speed = speedMap.get(normalizeModelName(r.modelId));
     return { modelId: r.modelId, baseModelId: base, effort, value: r.value!, ...(cost !== undefined && { blendedCost: cost }),
       ...(taskCost !== undefined && { costPerTask: taskCost }), ...(effectiveCost !== undefined && { effectiveCost }),
       ...(eff !== undefined && { costEfficiency: eff }), ...(orTokens !== undefined && { openrouterTokens: orTokens }),
-      ...(aRank !== undefined && { arenaRank: aRank }), ...(speed !== undefined && { outputTokensPerSecond: speed }) };
+      ...(ocTokens !== undefined && { opencodeTokens: ocTokens }),
+      ...(speed !== undefined && { outputTokensPerSecond: speed }) };
   }), opts?.priceOverrides, opts?.nowUtc);
 }

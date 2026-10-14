@@ -1,91 +1,90 @@
 # 협업 분담·중단 (레포 전용 값)
 
-일반 절차는 스킬을 따른다. 여기에는 이 레포의 pane·경로·역할 값만 둔다.
+일반 절차는 스킬을 따른다. 이 문서는 현재 pane·모델·역할과 레포 운영 값을 기록한다.
 
 - 분담·패킷·감사: [agent-coordination](../.agents/skills/agent-coordination/SKILL.md)
 - 중단·체크포인트·재개: [graceful-stop](../.agents/skills/graceful-stop/SKILL.md)
 
-## Herdr pane 역할
+## 현재 구성 (2026-10-13 사용자 지시, root 확인)
 
-워크스페이스 `w12`의 pane 번호 기준이다(사용자 구성, 2026-10-10). root는 p1에서 오케스트레이터로 동작한다.
+메신저는 Hermes다. o1·o2는 오케스트레이터이자 리뷰어, w1·w2는 워커다.
 
-| pane | 모델 (사용자 지정) | 역할 | 비고 |
+| pane | 이름 | 모델 (사용자 지정) | 역할 |
 | --- | --- | --- | --- |
-| `w12:p1` | Claude Opus 5.5 | root 오케스트레이터 | 범위·패킷·감사·통합 |
-| `w12:p2` | Claude Sonnet 5.5 | worker | 구현·검증 |
-| `w12:p3` | Codex GPT-6.1-Sol | worker | 구현·조사 |
-| `w12:p4` | Codex GPT-6-Luna | worker | 구현·조사 |
-| `w12:p5` | OpenCode Zen Space Bunny Free | worker | 한도 감시 대상 |
-| `w12:p6` | OpenCode Go LongCat 2.5 Preview Free | worker | 구현·검증 |
-| `w12:p7` | OpenCode Go Step 5 Preview Free | worker | 구현·검증 |
-| `w12:p8` | Ollama Cloud DeepSeek V4.1 Flash | worker | 문서·검증 |
+| `w12:pQ` | o1 | Claude Opus 5.5 | 오케스트레이터·리뷰어 |
+| `w12:pR` | o2 | Claude Opus 5.5 (Claude Code, 2026-10-13 사용자 교체) | 오케스트레이터·리뷰어 |
 
-- **p5 한도 감시(임시, #72 훅 도입 전)**: 패킷 전송 전과 작업 진행 중 visible 화면에서
-  `Free usage exceeded`·재시도 문구를 확인하고, 보이면 p5를 가용 worker에서 제외한다.
-  모델·pane은 바꾸지 않는다(사용자 결정).
-- OpenCode worker(p5–p7)는 `/tmp` 접근 권한 프롬프트가 뜰 수 있고 승인은 사용자가 한다.
-  root는 대신 승인하지 않고 다른 가용 pane에 재배정한다.
-- 같은 파일을 두 pane에 동시에 배정하지 않는다. 현재 소유표는 [tasks.md](tasks.md)에 둔다.
-- pane의 에이전트·모델은 사용자가 정한다. root는 `herdr agent list`와 화면의 모델 표시로 현재 상태를
-  배정 직전에 확인한 뒤 그 안에서 배정하고, `/exit`·`herdr agent start`·모델 선택·권한 승인은 요청 시에만 한다.
-- 2026-10-08 사고: root가 p3·p4·p5를 임의로 종료하고 DeepSeek V4 Pro로 재시작했고, p4에서는 확인 없는
-  키 입력으로 모델이 바뀌었다. 이후 구성은 사용자가 정했고 현재 값은 위 표(2026-10-10 갱신)다.
+o2는 Codex GPT-6.1-Sol capacity 오류(2026-10-13 o1 보고)와 사용자 지시에 따라 GLM-5.3-Flash(Ollama Cloud)로 교체됐다(2026-10-13, pane 상태줄 확인).
+| `w12:pS` | w1 | OpenCode DeepSeek V4.1 Flash (Ollama Cloud) | 워커 |
+| `w12:pT` | w2 | Codex GPT-6.1-Sol (2026-10-13 사용자 교체) | 워커 |
 
-## root 역할 (2026-10-10 사용자 지시, Hermes 전달)
+## 메신저 역할
 
-- root의 중심 업무는 worker 결과 리뷰, 작업 분배, 회고와 배운 점 전파다. 직접 구현·조사로 응답을
-  오래 막지 않고 백그라운드 실행을 활용한다.
-- 계획·마일스톤·우선순위·설계 판단은 root 혼자 확정하지 않는다. 판단 가능한 worker(Claude Sonnet,
-  Codex Sol/Luna 등)에 같은 질문을 독립 분배해 비교·종합하고, 구현 worker와 검토 worker를 분리한다.
-- Hermes는 사용자 원문 전달과 진행·결과 전달만 하는 메신저다.
-- agy가 두 pane이면 agy1을 우선 쓰고 agy2는 병렬 분할·독립 확인용으로 쓰며 같은 요청을 중복 배정하지 않는다(2026-10-11).
-- agy 서브에이전트 병렬 권장은 철회한다(2026-10-12 사용자 지시). agy는 단일 세션으로 작업시키고, 배정 전 각 pane의
-  한도 문구(quota·usage limit·resets)를 확인해 한도에 걸린 pane에는 배정하지 않는다.
+1. 사용자 요청을 컨텍스트·현 상황과 함께 오케스트레이터/리뷰어에게 전달하고 필요시 직접 처리한다.
+2. 환경변수·비밀값·인프라·결정·PR 승인 등 사용자가 해야 하는 조치를 확실히 전달한다.
+3. 컨텍스트를 반영한 질문 보완·상세화 외 업무는 오케스트레이터에게 위임한다.
+4. 오케스트레이터의 사용량 초과로 인한 작업 불능을 확인하고, 필요시 적절한 기존 워커/리뷰어를
+   오케스트레이터로 승격해 인계한다. 다른 역할 재배분에도 대응하되 모델·세션은 사용자 결정을 따른다.
 
-## 배운 점 (2026-10-10)
+## 오케스트레이터 역할
 
-- 상태 문서 갱신 패킷은 버전 줄을 옛 값으로 두거나 재번호·이동 이력을 지우는 일이 반복됐다(2026-10-11·12). root는 머지 전 버전 줄과 삭제된 줄(`git diff | grep '^-'`)을 직접 대조한다.
+1. 메신저의 작업을 워커에게 분배하고 자세한 요구·소유 파일·완료 기준을 docs로 전달한다.
+2. 5분 안에 마칠 단위로 분배한다. 긴 테스트·빌드는 서브에이전트나 백그라운드로 유도한다.
+   느린 워커의 요금제·환각·비효율·권한 문제를 확인하고 해결한다. 사용자 조치가 필요하면 메신저에게 전달한다.
+3. 리뷰어의 PR 발행 여부를 백그라운드로 감지해 작업 종료를 판정한다. PR 발행은 머지 승인이 아니다.
+4. 가능한 작업을 쥐고 있지 않는다. 백그라운드나 일부 서브에이전트는 메신저 요청 누락 방지를 위해 허용한다.
 
-- 공식 페이지 근거를 요구한 조사에서 worker가 페이지에 없는 인용문을 만든 사례가 있다(2026-10-13, 요금제 접근).
-  요금제·가격처럼 레터에 박히는 사실은 root가 해당 URL을 직접 조회해 대조한 뒤 반영한다.
-- watch_workers.sh의 LIMIT·BLOCKED 판정은 패킷 본문 문구나 순간 상태로 오탐할 수 있다. 신호가 오면 `agent get` 상태와
-  visible 화면으로 확인하고, 반복 오탐 시 보고서 파일 생성만 기다리는 방식으로 전환한다.
-- 작업 중 pane은 `herdr agent read --source visible`만 통한다(recent 읽기는 실패). 전송 전·진행 중 확인도 visible을 쓴다.
-- zsh에서 `set -- $x` 반복 전송은 단어 분리가 안 돼 빈 프롬프트가 된다. 전송 전에 인자 분리·내용을 검증한다.
-- 루프 감시는 스킬 스크립트로 일반화했다([watch_workers.sh](../.agents/skills/agent-coordination/scripts/watch_workers.sh)).
-  이 레포에서 쓰는 호출 예시는 다음과 같다(pane·보고서 경로가 레포 고유 값이므로 여기에 둔다).
+## 워커 역할 (2개 이상)
 
-  ```bash
-  bash .agents/skills/agent-coordination/scripts/watch_workers.sh \
-    --reports /tmp/yoroi-<task>-report.json [...] --panes w12:p5 w12:p6 --interval 20 --max-polls 120
-  ```
+1. 진행 중 주요 내용을 docs에 보고하고 최종 의견·분석은 허가된 범위의 issue에 남긴다.
+   외부 기록이 허가되지 않았거나 원격이 없으면 [tasks.md](tasks.md)에 기록한다.
+2. 복잡한 판단을 먼저 하지 않고 단위테스트·요청/문서 일치도를 확인한다. 상세 판단은 리뷰어에게 넘긴다.
 
-  종료 조건은 새 보고서 생성, `blocked` pane, 무료 모델 한도 문구다. 한도 대상은 p5다.
+## 리뷰어 역할
+
+- 워커 결과를 평가·판단한다. 작은 문제는 직접 개선하거나 오케스트레이터에게 재분배를 요청한다.
+- 큰 문제가 없으면 dev → main PR을 요청·발행한다. main 직접 push는 금지하며 머지는 사용자 승인을 받는다.
+- 외부 기록은 root 독점이 아니다. 워커의 issue 기록·리뷰어의 PR 발행도 사용자 허가 범위에서 수행한다.
+
+## 배정·권한·중단
+
+- 같은 파일을 동시에 두 작업에 배정하지 않는다. 현재 소유표는 [tasks.md](tasks.md)에 둔다.
+- 배정 전 `herdr agent list`와 visible 화면으로 실행 중 모델·상태·한도 문구를 확인한다.
+- 워커 모델·세션은 사용자가 정한다. 종료·재시작·모델 변경은 사용자 명시 요청 시에만 한다.
+- 권한 프롬프트·요금제 문제는 오케스트레이터가 임의 승인하지 않는다. 필요한 조치를 메신저를 통해
+  사용자에게 전달하고 가능한 기존 워커에 재배정한다. 비밀값은 이슈·로그·커밋에 노출하지 않는다.
+- memo 이슈는 사람 전용으로 수정·생성·라벨 부착·close하지 않는다.
+- 중단 시 새 작업을 시작하지 않고 해당 작업의 워커·백그라운드 실행에 중단을 전파한다.
+- 임시 체크포인트는 `/tmp/yoroi-handoff.md`에 만든다(`stop_checkpoint.py create`).
+  기존 파일은 덮어쓰지 않고 새 이름 또는 사용자 확인 후 `--force`를 쓴다.
+- [session-handoff.md](session-handoff.md)는 커밋되는 인수인계다. 다음 세션에 필요한 결정·남은 작업만 옮긴다.
+- 체크포인트의 `재개 금지`는 사용자 명시 재개 요청까지 유효하다. 재개 시 현재 요청 범위만 수행한다.
 
 ## 패킷·보고서 경로
 
 | 항목 | 경로 |
 | --- | --- |
 | 작업 패킷 | `/tmp/<task_id>-packet.json` |
-| worker 보고서 | `/tmp/<task_id>-report.json` (패킷 `report_path`) |
+| 워커 보고서 | `/tmp/<task_id>-report.json` (패킷 `report_path`) |
 
-- `task_id`는 `yoroi-` 접두어를 쓴다(예: `yoroi-orch-docs`).
-- `/tmp` 파일은 임시다. 커밋하지 않으며 남길 결론은 docs/에 옮긴다.
+- `task_id`는 `yoroi-` 접두어를 쓴다(예: `yoroi-orch-docs`). 사용자 지정 패킷 ID·보고 경로를 우선한다.
+- `/tmp` 파일은 임시다. 커밋하지 않으며 진행 내용은 docs, 최종 의견·분석은 issue에 남긴다.
+- 보고서 생성·blocked·한도 감시는 아래 스크립트로 한다. 리뷰어 PR 발행 감시는 별도로 수행한다.
 
-## 중단 체크포인트
+```bash
+bash .agents/skills/agent-coordination/scripts/watch_workers.sh \
+  --reports /tmp/yoroi-<task>-report.json [...] --panes w12:pS w12:pT --interval 20 --max-polls 120
+```
 
-- 중단 시 임시 체크포인트는 `/tmp/yoroi-handoff.md`에 만든다(`stop_checkpoint.py create`).
-  기존 파일이 있으면 덮어쓰지 않고 새 이름을 쓰거나 사용자 확인 후 `--force`를 쓴다.
-- [session-handoff.md](session-handoff.md)는 커밋되는 세션 회고·인수인계다.
-  임시 체크포인트 중 다음 세션에 필요한 결정·남은 작업만 root가 옮긴다.
-- 체크포인트의 `재개 금지`는 사용자가 명시적으로 재개를 요청할 때까지 유효하다.
+## 배운 점 (기존 운영 기록)
 
-## root 직접 vs 분담 (이 레포 기준)
-
-| root가 직접 | 패킷으로 분담 |
-| --- | --- |
-| 사용자 범위 확인, 패킷 발행, pane 배정 | `src/`·`tests/` 구현과 테스트 |
-| 보고서 감사, `git diff --stat` 대조 | 스킬·스크립트 수정(p2), CI·버전(p3) |
-| 통합 충돌 해소, 한두 줄 정정 | Wiki 소스·게시 준비(p3) |
-| 커밋·push·PR·merge·이슈 close | 문서·회고 초안, 이슈 현황 정리(p3) |
-| AGENTS.md 규칙 반영(사용자 요청 시) | `pnpm run check`, `validate-repo.py` 실행·보고 |
+- 상태 문서 갱신에서 버전 줄·재번호·이동 이력이 누락됐다(2026-10-11·12). 머지 전 버전과 삭제 줄을 대조한다.
+- 공식 페이지에 없는 인용문을 만든 사례가 있다(2026-10-13, 요금제 접근). 리뷰어는 해당 URL로 사실을 대조한다.
+- watch_workers.sh의 LIMIT·BLOCKED는 패킷 문구나 순간 상태로 오탐할 수 있다. `agent get`과 visible 화면으로 확인한다.
+  반복 오탐 시 보고서 생성만 기다린다. 보고서 생성은 전체 작업 종료와 구분한다.
+- 작업 중 pane은 `herdr agent read --source visible`로 읽는다(recent 읽기는 실패).
+- zsh의 `set -- $x`는 단어 분리가 안 돼 빈 전송이 된다. 전송 전 인자 분리·내용을 확인한다.
+- 2026-10-08 임의 종료·재시작·키 입력으로 모델이 바뀐 사고 이후 모델·세션은 사용자 결정으로 유지한다.
+- 근거 산출 스크립트가 렌더 경로 옵션(가격·previousRanks·excludeModelIds·toRankedRecords)을 빠뜨리면 레터와 결괏값이 어긋난다(2026-10-13, p9). 산출물은 레터 Top10 일치 여부를 먼저 대조한다.
+- 동시 작업 중 비소유 파일이 바뀌면(예: model-id.ts 분리) 패킷 소유 목록을 즉시 좁혀 재발행한다. 눈으로 확인한 소유 상태를 믿지 않는다.
+- 리뷰어 모델 capacity 오류 시 결과 보고 전에 정지한다. 중간 확인값은 화면에서 회수하고 사용자에게 알린 뒤 재배분을 받는다.

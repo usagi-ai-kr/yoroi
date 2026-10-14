@@ -7,7 +7,6 @@ function fakeLists(prefix: string): RoleLists {
   const entries = (): RoleEntry[] => Array.from({ length: 10 }, (_, i) => ({
     rank: i + 1, modelId: `${prefix}-model-${i + 1}`, indexText: (95.0 - i * 2.5).toFixed(1), repEffort: 'high',
     scoreText: (90.0 - i * 3).toFixed(1), blendedCostText: '$2.00/1M', costEffRankText: `가성비 ${i + 1}위`, plans: ['ChatGPT Plus'],
-    arenaRankText: i < 5 ? `Arena ${i + 1}위` : 'Arena -',
     openrouterRankText: i < 3 ? `OpenRouter ${i + 1}위` : 'OpenRouter -',
     isPareto: i % 2 === 0, both: i < 2,
     change: i === 0 ? '유지' as const : i === 1 ? '▲1' as const : '신규' as const }));
@@ -29,12 +28,12 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('1. unified-model-1 ↔ · effort high · 스코어 90.0 · 95.0 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(rendered.includes('3. unified-model-3 · effort high · 스코어 84.0 · 90.0 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(!rendered.includes('가성비 1위 · 접근'));
-  for (const t of ['OpenRouter 1위', 'Arena 1위', '➖', '⭐']) assert.ok(rendered.includes(t), t);
+  for (const t of ['OpenRouter 1위', '➖', '⭐']) assert.ok(rendered.includes(t), t);
   assert.ok(rendered.includes('🚪 이탈: unified-old-model (전일 8위)'));
   assert.ok(rendered.includes('## 📖 표시 안내') && rendered.includes('- ⭐ 파레토 최적: 더 싸고 더 좋은 모델이 없는 상태(가성비 경계선)'));
   assert.ok(rendered.indexOf('## 📖 표시 안내') < rendered.indexOf('## 출처 및 안내'));
   assert.ok(rendered.includes('## 출처 및 안내'));
-  for (const t of ['출처: lmarena-ai LMArena Leaderboard Dataset (CC-BY-4.0)', '출처: OpenRouter (CC-BY-4.0)',
+  for (const t of ['출처: OpenRouter (CC-BY-4.0)',
     '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
     '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)',
     '수집 실패 소스: cognition', '혼합 단가=(3×입력+출력)/4 USD/1M',
@@ -54,7 +53,7 @@ test('renderTop10Letter summarizes all-new, partial-new, and no-new cohorts per 
   const mkLists = (changes: readonly ('신규' | '유지' | '▲1' | '진입')[]): RoleLists => ({
     orchestrator: { entries: changes.map((change, i) => ({ rank: i + 1, modelId: `m-${i + 1}`, indexText: '90.0',
       repEffort: 'high', blendedCostText: '$1.00/1M', costEffRankText: `가성비 ${i + 1}위`, plans: ['ChatGPT Plus'],
-      arenaRankText: 'Arena -', openrouterRankText: 'OpenRouter -', isPareto: false, both: false, change })), exits: [] },
+      openrouterRankText: 'OpenRouter -', isPareto: false, both: false, change })), exits: [] },
     worker: { entries: [], exits: [] } });
   const allNew = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['신규', '신규']) });
   assert.ok(allNew.includes('- 변동: 🌱 오케스트레이터 첫 집계: 전일 기록 없음 · 워커 자료 부족'));

@@ -25,15 +25,15 @@ test('identical AA+OR snapshots compare with OR on both sides: below-threshold f
   const history = new MemoryInsightHistory();
   const idx = 'artificial_analysis_intelligence_index';
   const aa = [rec('gpt-6-1-sol', idx, 90, '2026-10-11'), rec('claude-opus-5-5', idx, 80, '2026-10-11'), rec('claude-haiku-5-5', idx, 60, '2026-10-11'),
-    rec('gpt-6-1-sol', 'price_1m_input_tokens', 10, '2026-10-11'), rec('gpt-6-1-sol', 'price_1m_output_tokens', 10, '2026-10-11'),
-    rec('claude-opus-5-5', 'price_1m_input_tokens', 12, '2026-10-11'), rec('claude-opus-5-5', 'price_1m_output_tokens', 12, '2026-10-11')];
+    rec('gpt-6-1-sol', 'price_1m_input_tokens', 1, '2026-10-11'), rec('gpt-6-1-sol', 'price_1m_output_tokens', 1, '2026-10-11'),
+    rec('claude-opus-5-5', 'price_1m_input_tokens', 1.2, '2026-10-11'), rec('claude-opus-5-5', 'price_1m_output_tokens', 1.2, '2026-10-11')];
   const or = [orRec('gpt-6-1-sol', 300, '2026-10-11'), orRec('claude-opus-5-5', 100, '2026-10-11')];
   assert.equal(history.saveDaily({ source: 'openrouter', publicationDate: '2026-10-11',
     requestScope: 'rankings-daily:day:top50', schemaVersion: 'openrouter-rankings-v1' },
     { ok: true, source: 'openrouter', rejectedRows: 0, records: or }), true);
   const current: Top10RecordInput[] = [
-    { modelId: 'gpt-6-1-sol', value: 90, metric: idx, priceInput: 10, priceOutput: 10 },
-    { modelId: 'claude-opus-5-5', value: 80, metric: idx, priceInput: 12, priceOutput: 12 },
+    { modelId: 'gpt-6-1-sol', value: 90, metric: idx, priceInput: 1, priceOutput: 1 },
+    { modelId: 'claude-opus-5-5', value: 80, metric: idx, priceInput: 1.2, priceOutput: 1.2 },
     { modelId: 'claude-haiku-5-5', value: 60, metric: idx, priceInput: 1, priceOutput: 1 }];
   const noOr = computeRoleTop10(current).orchestrator.entries.map(e => `${e.modelId}${e.rank}`);
   assert.deepEqual(noOr, ['gpt-6-1-sol1', 'claude-opus-5-52', 'claude-haiku-5-53']); // 존 통과 후 Haiku를 보충
@@ -68,4 +68,29 @@ test('historical successor takes predecessor rank through the shared candidate p
     { modelId: 'glm-5-3-flash', metric: code, value: 71.5, priceInput: 12, priceOutput: 12 }], { previousCohort: build.ranks });
   assert.equal(today.worker.entries[0]!.change, '▲1');
   assert.ok(!today.worker.exits.some(row => row.modelId === 'deepseek-v4-flash'));
+});
+test('previous ranks include previous-day OpenCode Data evidence like today’s candidate pool', () => {
+  const idx = 'artificial_analysis_intelligence_index';
+  const aa = [rec('gpt-6-1-sol', idx, 90, '2026-10-11'), rec('gpt-6-1-sol', 'price_1m_input_tokens', 1, '2026-10-11'),
+    rec('gpt-6-1-sol', 'price_1m_output_tokens', 1, '2026-10-11')];
+  const prevAa = { ok: true as const, source: 'artificial-analysis' as const, rejectedRows: 0, records: aa };
+  const oc: Top10RecordInput[] = [{ modelId: 'claude-haiku-5-5', value: 100, metric: 'opencode_data_tokens' }];
+  const ids = (b: ReturnType<typeof buildPreviousRanks>) => b.ranks.filter(r => r.metric === 'orchestrator').map(r => r.modelId);
+  const without = buildPreviousRanks(new MemoryInsightHistory(), '2026-10-12', prevAa, 'x', undefined, false);
+  const withOc = buildPreviousRanks(new MemoryInsightHistory(), '2026-10-12', prevAa, 'x', undefined, false, oc);
+  assert.ok(!ids(without).includes('claude-haiku-5-5'));
+  assert.ok(ids(withOc).includes('claude-haiku-5-5'));
+});
+test('previous cohort applies the same release rule: older dated release rows drop when releaseDate is stored', () => {
+  const dated = (v: ValidatedInsightRecord, releaseDate?: string): ValidatedInsightRecord =>
+    releaseDate ? { ...v, record: { ...v.record, metadata: { ...(v.record.metadata ?? {}), releaseDate } } } : v;
+  const cod = 'artificial_analysis_coding_index', idx = 'artificial_analysis_intelligence_index';
+  const aa = (meta: boolean) => ({ ok: true as const, source: 'artificial-analysis' as const, rejectedRows: 0, records: [
+    dated(rec('deepseek-v4-pro', idx, 50, '2026-10-11'), meta ? '2026-08-13' : undefined),
+    dated(rec('deepseek-v4-pro-0424', cod, 90, '2026-10-11'), meta ? '2026-04-24' : undefined),
+    rec('glm-5-3', cod, 60, '2026-10-11')] });
+  const worker = (meta: boolean) => buildPreviousRanks(new MemoryInsightHistory(), '2026-10-12', aa(meta), 'x', undefined, false)
+    .ranks.filter(r => r.metric === 'worker').map(r => r.modelId);
+  assert.equal(worker(false)[0], 'deepseek-v4-pro'); // 판정 불가: 구 릴리스 coding 90이 남는다
+  assert.equal(worker(true)[0], 'glm-5-3'); // 0424 행 제거 → 0813에는 coding 지수가 없다
 });

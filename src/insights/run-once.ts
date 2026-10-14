@@ -1,14 +1,15 @@
 import { type InsightHistoryPort, type InsightSuccess, insightPublicationDate, shiftInsightDate } from './history-port.js';
 import type { ValidatedInsightRecord } from './validation.js';
 import { buildInsightLetter, type InsightLetterResult } from './letter.js';
-import type { LetterFailure, LetterSourceInput } from './letter-sections.js';
+import type { LetterFailure } from './letter-sections.js';
 import type { InsightSource } from './record.js';
-import { buildMeasurements, buildRanks, DEFAULT_REQUEST_SCOPES, DEFAULT_SCHEMA_VERSIONS, failureKind } from './run-once-steps.js';
+import { DEFAULT_REQUEST_SCOPES } from './run-once-steps.js';
+import { runSource, type SourceRun } from './run-source-stored.js';
 import { buildPriceMap, type ModelPrices } from './letter-top10-price.js';
 import { withSuccessors } from './letter-top10-candidates.js';
 import { buildPreviousRanks } from './letter-top10-history.js';
-import { collectInsightSource, type InsightSourcePort } from './source-port.js';
-import { validateInsightRows } from './validation.js';
+import { getDailyWithLegacyFallback } from './legacy-scopes.js';
+import type { InsightSourcePort } from './source-port.js';
 export interface InsightRunDeps {
   readonly ports: readonly InsightSourcePort[];
   readonly history: InsightHistoryPort;
@@ -30,14 +31,17 @@ export interface InsightSourceReport {
   readonly rejectedRows?: number; readonly partial?: boolean; readonly saved?: boolean;
 }
 export interface InsightTop10Row { readonly modelId: string; readonly modelAlias?: string; readonly value?: number; readonly metric?: string; readonly rank?: number;
-  readonly priceInput?: number; readonly priceOutput?: number }
-export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly arenaRecords: readonly InsightTop10Row[]; readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
+  readonly priceInput?: number; readonly priceOutput?: number; readonly releaseDate?: string }
+export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
+  readonly opencodeDataRecords?: readonly InsightTop10Row[];
   readonly previousRanks: readonly { readonly modelId: string; readonly rank: number; readonly metric: string }[];
+  readonly warnings?: readonly string[];
   readonly observedAt?: string; readonly nowUtc?: string }
 const top10Row = (value: ValidatedInsightRecord, metric: string, prices?: ModelPrices): InsightTop10Row =>
   ({ modelId: value.record.modelId, ...(value.record.modelAlias && { modelAlias: value.record.modelAlias }), value: value.record.value, metric,
     ...(prices?.input !== undefined && { priceInput: prices.input }), ...(prices?.output !== undefined && { priceOutput: prices.output }),
-    ...(typeof value.record.metadata?.successorOf === 'string' && { successorOf: value.record.metadata.successorOf }) });
+    ...(typeof value.record.metadata?.successorOf === 'string' && { successorOf: value.record.metadata.successorOf }),
+    ...(typeof value.record.metadata?.releaseDate === 'string' && { releaseDate: value.record.metadata.releaseDate }) });
 export interface InsightRunResult {
   /** 1-A: success and partial success 0; every source failed 1. Argument errors (2) belong to the CLI. */
   readonly exitCode: 0 | 1; readonly publicationDate: string; readonly letter: InsightLetterResult;
@@ -45,29 +49,8 @@ export interface InsightRunResult {
   /** Full validated top rows for the compact top-10 letter (uncapped by evidence limits). */
   readonly top10?: InsightTop10Data;
 }
-type SourceRun = { readonly input: LetterSourceInput; readonly report: InsightSourceReport; readonly success?: InsightSuccess };
-async function runSource(deps: InsightRunDeps, port: InsightSourcePort, publicationDate: string, observedAt: string): Promise<SourceRun> {
-  const source = port.id, scope = deps.requestScopes?.[source] ?? DEFAULT_REQUEST_SCOPES[source];
-  const failed = (failure: LetterFailure, reason: string): SourceRun => ({ input: { source, ok: false, failure },
-    report: { source, status: 'failed', failure, reason } });
-  try {
-    const dailyKey = { source, publicationDate, requestScope: scope, schemaVersion: deps.schemaVersions?.[source] ?? DEFAULT_SCHEMA_VERSIONS[source] };
-    let success: InsightSuccess | undefined = deps.refresh ? undefined : deps.history.getDaily(dailyKey);
-    let report: InsightSourceReport = { source, status: 'reused' }, partial = false;
-    if (!success) {
-      const collected = await collectInsightSource(port, observedAt, deps.signal);
-      if (!collected.ok) return failed(failureKind(collected.error), collected.error.code);
-      const validation = validateInsightRows(source, collected.rows);
-      if (!validation.ok) return failed(failureKind(undefined, validation), validation.reason);
-      success = validation; partial = validation.rejectedRows > 0;
-      const saved = deps.history.saveDaily({ ...dailyKey, schemaVersion: validation.records[0]!.record.schemaVersion }, validation,
-        { refresh: deps.refresh === true, complete: !partial });
-      report = { source, status: 'collected', rejectedRows: validation.rejectedRows, saved, ...(partial && { partial }) };
-    }
-    return { report, success, input: { source, ok: true, measurements: buildMeasurements(deps.history, scope, success, deps.evidenceLimit ?? 20),
-      ranks: buildRanks(deps.history, scope, publicationDate, success, !partial, deps.rankGroupLimit ?? 5), ...(partial && { partial }) } };
-  } catch { return failed('parse', 'internal-error'); }
-}
+/** 집계 행(OpenRouter `other`·OpenCode Data `Other`)은 모델이 아니므로 근거 행에서 뺀다. */
+const isAggregateRow = (v: ValidatedInsightRecord): boolean => v.record.metadata?.aggregate === true || v.record.modelId.trim().toLowerCase() === 'other';
 function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: readonly SourceRun[], observedAt: string): InsightTop10Data {
   const success = (source: InsightSource) => runs.find(r => r.report.source === source)?.success;
   const intact = (source: InsightSource) => { const run = runs.find(r => r.report.source === source);
@@ -75,15 +58,24 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
   const aa = withSuccessors(success('artificial-analysis')?.records ?? []);
   const first = aa[0]?.record, prices = buildPriceMap(aa);
   const records = aa.filter(v => ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index', 'median_output_tokens_per_second', 'intelligence_index_cost_per_task'].includes(v.record.metric)).map(v => top10Row(v, v.record.metric, prices.get(v.record.modelId)));
-  let previous: InsightSuccess | undefined;  try { previous = first && deps.history.getDaily({ source: 'artificial-analysis', publicationDate: shiftInsightDate(publicationDate, -1),
-    requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'], schemaVersion: first.schemaVersion }) || undefined; } catch { previous = undefined; }
-  const arenaRecords = intact('arena') ? (success('arena')?.records ?? []).filter(v => v.record.metric === 'rank').map(v => ({ modelId: v.record.modelId, rank: v.record.value, metric: 'rank' })) : [];
+  let previous: InsightSuccess | undefined;  try { previous = first && getDailyWithLegacyFallback(deps.history, { source: 'artificial-analysis',
+    publicationDate: shiftInsightDate(publicationDate, -1),
+    requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'],
+    schemaVersion: first.schemaVersion }) || undefined; } catch { previous = undefined; }
   const orRecords = intact('openrouter') ? (success('openrouter')?.records ?? []) : [];
   const latest = orRecords.map(v => v.comparisonDate).filter((date): date is string => date !== null).sort().at(-1) ?? null;
-  const openrouterRecords = orRecords.filter(v => v.record.metric === 'total_tokens' && v.comparisonDate === latest && v.record.metadata?.aggregate !== true && v.record.modelId.trim().toLowerCase() !== 'other').map(v => top10Row(v, 'total_tokens'));
-  const prev = buildPreviousRanks(deps.history, publicationDate, previous, DEFAULT_REQUEST_SCOPES['openrouter'],
-    success('openrouter')?.records[0]?.record.schemaVersion, openrouterRecords.length > 0);
-  return { records, arenaRecords, openrouterRecords, previousRanks: prev.ranks, failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source),
+  const openrouterRecords = orRecords.filter(v => v.record.metric === 'total_tokens' && v.comparisonDate === latest && !isAggregateRow(v)).map(v => top10Row(v, 'total_tokens'));
+  const ocRows = intact('opencode-data') ? (success('opencode-data')?.records ?? []) : [];
+  const ocLatest = ocRows.map(v => v.comparisonDate).filter((date): date is string => date !== null).sort().at(-1) ?? null;
+  const opencodeDataRecords = ocLatest === null ? [] : ocRows.filter(v => v.record.metric === 'opencode_data_tokens' && v.comparisonDate === ocLatest && !isAggregateRow(v))
+    .map(v => top10Row(v, 'opencode_data_tokens'));
+  const orScope = deps.requestScopes?.['openrouter'] ?? DEFAULT_REQUEST_SCOPES['openrouter'];
+  const ocPrevDate = ocRows.map(v => v.comparisonDate).filter((d): d is string => d !== null && ocLatest !== null && d < ocLatest).sort().at(-1);
+  const prevOc = ocRows.filter(v => v.record.metric === 'opencode_data_tokens' && v.comparisonDate === ocPrevDate && !isAggregateRow(v)).map(v => top10Row(v, 'opencode_data_tokens'));
+  const prev = buildPreviousRanks(deps.history, publicationDate, previous, orScope,
+    success('openrouter')?.records[0]?.record.schemaVersion, openrouterRecords.length > 0, prevOc);
+  return { records, openrouterRecords, previousRanks: prev.ranks, failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source),
+    ...(opencodeDataRecords.length > 0 && { opencodeDataRecords }),
     observedAt, nowUtc: observedAt, ...(prev.warnings.length && { warnings: prev.warnings }) };
 }
 /** One internal-only run: collect/reuse → validate → store → compare → letter. No rendering, delivery or LLM. */

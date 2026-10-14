@@ -9,7 +9,7 @@ export interface ModelVariant {
   readonly costPerTask?: number;
   readonly costEfficiency?: number; // value / max(effectiveCost ?? blendedCost,0.01); undefined = 가격 결측
   readonly openrouterTokens?: number;
-  readonly arenaRank?: number;
+  readonly opencodeTokens?: number; // OpenCode Data 최신 일 토큰 — OpenRouter 사용량이 없을 때의 usage 보조 근거
   readonly offPeak?: boolean; // off-peak 단가가 적용된 행
   readonly outputTokensPerSecond?: number; // AA median_output_tokens_per_second
 }

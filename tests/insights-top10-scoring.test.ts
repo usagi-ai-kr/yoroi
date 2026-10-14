@@ -27,14 +27,14 @@ test('AA alias overrides slug effort and ignores non-effort parenthetical tokens
 
 test('cost-per-task scales effective mixed price and absent task data keeps the unit price', () => {
   const records = [
-    { modelId: 'claude-sonnet-5-5', modelAlias: 'Claude Sonnet 5.5 (Max, Default Fallback)', metric, value: 56, priceInput: 2, priceOutput: 10 },
-    { modelId: 'claude-sonnet-5-5-xhigh', modelAlias: 'Claude Sonnet 5.5 (Xhigh)', metric, value: 51.9, priceInput: 2, priceOutput: 10 },
+    { modelId: 'claude-sonnet-5-5', modelAlias: 'Claude Sonnet 5.5 (Max, Default Fallback)', metric, value: 56, priceInput: 1, priceOutput: 5 },
+    { modelId: 'claude-sonnet-5-5-xhigh', modelAlias: 'Claude Sonnet 5.5 (Xhigh)', metric, value: 51.9, priceInput: 1, priceOutput: 5 },
     { modelId: 'claude-sonnet-5-5', modelAlias: 'Claude Sonnet 5.5 (Max)', metric: 'intelligence_index_cost_per_task', value: 5.46 },
     { modelId: 'claude-sonnet-5-5-xhigh', modelAlias: 'Claude Sonnet 5.5 (Xhigh)', metric: 'intelligence_index_cost_per_task', value: 2.01 },
   ];
   const built = buildVariants(records, metric, { priceOverrides: {} });
-  assert.equal(built.find(v => v.effort === 'max')?.effectiveCost, 4);
-  assert.ok(Math.abs(built.find(v => v.effort === 'xhigh')!.effectiveCost! - 4 * 2.01 / 5.46) < 1e-12);
+  assert.equal(built.find(v => v.effort === 'max')?.effectiveCost, 2);
+  assert.ok(Math.abs(built.find(v => v.effort === 'xhigh')!.effectiveCost! - 2 * 2.01 / 5.46) < 1e-12);
   const missing = buildVariants([records[1]!], metric, { priceOverrides: {} })[0]!;
   assert.equal(missing.effectiveCost, missing.blendedCost);
 });

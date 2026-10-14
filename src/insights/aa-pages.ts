@@ -24,6 +24,8 @@ export interface AaMergeResult {
   readonly missingPages: readonly number[];
   /** 상한 때문에 이후 페이지를 가져오지 못했는지. */
   readonly truncated: boolean;
+  /** 파서가 거절한 행(ok:false) 원본과 수 — validation이 partial(complete=false)로 판정하게 한다(4-A). */
+  readonly rejected: readonly AaRowResult[]; readonly rejectedRows: number;
 }
 
 /** 이미 n건을 보낸 뒤 다음 1건이 4-A 상한 안에 들어가는지 request-policy에 판정만 한다(카운터는 호출자 소유). */
@@ -43,6 +45,7 @@ export function mergeAaPages(pages: readonly AaPageInput[], options: AaMergeOpti
   const seen = new Set<number>();
   const keys = new Set<string>();
   const records: InsightRecord[] = [];
+  const rejected: AaRowResult[] = [];
   let succeeded = 0, duplicates = 0, truncated = false, skipped = 0;
   for (const input of [...pages].sort((a, b) => a.page - b.page)) {
     if (!Number.isSafeInteger(input.page) || input.page < 1) {
@@ -65,7 +68,8 @@ export function mergeAaPages(pages: readonly AaPageInput[], options: AaMergeOpti
     succeeded += 1;
     for (const row of parsed) {
       warnings.push(...row.warnings.map(w => `page ${input.page} row ${row.index}: ${w}`));
-      for (const record of row.ok ? row.records : []) {
+      if (!row.ok) { rejected.push(row); continue; }
+      for (const record of row.records) {
         const key = aaRecordKey(record);
         if (keys.has(key)) { duplicates += 1; continue; }
         keys.add(key); records.push(record);
@@ -86,5 +90,5 @@ export function mergeAaPages(pages: readonly AaPageInput[], options: AaMergeOpti
   if (status === 'failed') warnings.push('Artificial Analysis: every requested page failed');
   if (!records.length) warnings.push('Artificial Analysis: no usable measurements');
   return { status, records, warnings, pagesRequested: seen.size, pagesSucceeded: succeeded,
-    duplicatesRemoved: duplicates, missingPages, truncated };
+    duplicatesRemoved: duplicates, missingPages, truncated, rejected, rejectedRows: rejected.length };
 }

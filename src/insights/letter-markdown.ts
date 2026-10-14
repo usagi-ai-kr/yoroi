@@ -4,19 +4,20 @@ import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { LEGEND_LINES, changeNote, exitLine, formatChange } from './letter-top10-legend.js';
-import { barePlan, freeListsFrom, freeOnlyModelIds, renderFreeSectionMarkdown, unmeasuredFreeIds } from './letter-markdown-free.js';
+import { freeListsFrom, freeOnlyModelIds, renderFreeSectionMarkdown, unmeasuredFreeIds } from './letter-markdown-free.js';
+import { renderAccessMatrixMarkdown } from './letter-markdown-access.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 
 export { escapeShields, OMISSION_MARK, MARKDOWN_LIMIT } from './letter-markdown-format.js';
 export type { RoleLists, RoleList, RoleEntry, RoleExit } from './letter-top10-unified.js';
 
-const TABLE_HEAD = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 접근 요금제 | 변동 |\n| --- | --- | --- | --- | --- | --- | --- | --- |';
+const TABLE_HEAD = '| 순위 | 모델 | 추천 effort | 스코어 | 지수 | 혼합 단가 | 변동 |\n| --- | --- | --- | --- | --- | --- | --- |';
 
 function renderTable(role: OptimalZoneRole, list: RoleList): string {
   const rows = list.entries.map(e => {
     const rank = `${e.isPareto ? '⭐ ' : ''}${e.belowZone ? '▽ ' : ''}${e.rank}`;
     return `| ${rank} | ${e.modelId}${e.both ? ' ↔' : ''} | ${e.repEffort} | ${e.scoreText ?? '-'} | ` +
-      `${e.indexText} | ${e.blendedCostText}${e.offPeak ? ' off-peak' : ''} | ${e.plans.map(barePlan).join('+')} | ${formatChange(e.change)} |`;
+      `${e.indexText} | ${e.blendedCostText}${e.offPeak ? ' off-peak' : ''} | ${formatChange(e.change)} |`;
   });
   const exits = list.exits.map(x => exitLine(x.modelId, x.previousRank));
   return [`${SECTION_HEADINGS[role]}\n\n${TABLE_HEAD}`, ...rows, ...(exits.length ? ['', ...exits] : [])].join('\n');
@@ -47,6 +48,7 @@ export function renderTop10Markdown(data: {
     `- ${EXCLUSION_NOTE}`,
   ].join('\n');
   const warnings = notes.length ? `\n\n### 경고\n` + notes.map(n => `- ⚠️ ${n}`).join('\n') : '';
+  const accessMatrix = renderAccessMatrixMarkdown(data.lists);
   const details = `<details><summary>출처 및 산출 공식</summary>\n\n### 산출 공식 및 정책\n` +
     `${formulas}\n\n### 실패 소스 안내\n${sourceStatusLines(failed, partial).join('\n')}${warnings}\n\n### 출처\n` +
     `${SOURCE_LINES.join('\n')}\n</details>`;
@@ -57,6 +59,7 @@ export function renderTop10Markdown(data: {
     summarize(data.lists),
     renderTable('orchestrator', data.lists.orchestrator),
     renderTable('worker', data.lists.worker),
+    ...(accessMatrix.length ? [accessMatrix.join('\n')] : []),
     renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? []).join('\n'),
     LEGEND_LINES.join('\n'),
     details,
@@ -66,15 +69,16 @@ export function renderTop10Markdown(data: {
 
 export interface MarkdownLetterInput {
   readonly publicationDate: string; readonly records: readonly Top10RecordInput[];
-  readonly arenaRecords?: readonly Top10RecordInput[]; readonly openrouterRecords?: readonly Top10RecordInput[];
+  readonly openrouterRecords?: readonly Top10RecordInput[];
+  readonly opencodeDataRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[];
   readonly notes?: readonly string[]; readonly partialSources?: readonly string[];
   readonly freeCatalog?: readonly PlanCatalogEntry[];
 }
 export function renderTop10MarkdownFromRecords(input: MarkdownLetterInput): string {
   const opts = {
-    ...(input.arenaRecords && { arenaRecords: input.arenaRecords }),
     ...(input.openrouterRecords && { openrouterRecords: toRankedRecords(input.openrouterRecords) }),
+    ...(input.opencodeDataRecords && { opencodeDataRecords: input.opencodeDataRecords }),
     ...(input.previousRanks && { previousCohort: input.previousRanks }),
     excludeModelIds: new Set(freeOnlyModelIds()),
   };

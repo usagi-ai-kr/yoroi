@@ -41,7 +41,7 @@ export function buildInsightLetter(sources: readonly LetterSourceInput[], issued
   }
   const notes = new Set(['내부 전용: 외부 재배포 권한을 뜻하지 않습니다.',
     '서로 다른 소스·모델·지표·단위·평가 버전은 합산하지 않습니다. 전체 시장점유율로 해석하지 않습니다.',
-    '순위 창: 상위 50(Arena overall, AA intelligence·coding 지수)만 수집·저장하므로, 이탈은 순위 하락(51위 이하) 또는 서비스 제외를 뜻하며 진입은 상위 50 신규 진입을 뜻합니다.',
+    '순위 창: 저장은 소스별 유효 측정 전량(AA·OpenRouter·Cognition·OpenCode Data)을 보존하고, 상위 50은 조회·표시 단계의 비교 창입니다. 이탈은 순위 하락(51위 이하) 또는 서비스 제외를 뜻하며 진입은 상위 50 신규 진입을 뜻합니다.',
     '증감은 지표 수치의 변화이며 성능 개선이나 통계적 유의성을 뜻하지 않습니다.']);
   for (const row of rows) {
     if (!row.comparison.comparable) notes.add(row.comparison.reason);

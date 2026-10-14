@@ -72,7 +72,10 @@ test('letter limitations include top 20 window notes explicitly', () => {
 
   assert.ok(letter.ok);
   const limitations = letter.sections.find(s => s.kind === 'limitations')!;
-  assert.ok(limitations.items.some(it => it.includes('상위 50(Arena overall, AA intelligence·coding 지수)만')));
+  const windowNote = limitations.items.find(it => it.includes('순위 창:'));
+  assert.ok(windowNote?.includes('유효 측정 전량(AA·OpenRouter·Cognition·OpenCode Data)을 보존')); // full-storage.md와 일치
+  assert.ok(windowNote?.includes('상위 50은 조회·표시 단계의 비교 창'));
+  assert.ok(!windowNote?.includes('Arena') && !windowNote?.includes('만 수집·저장')); // Arena 제외(2026-10-13)
 });
 
 test('run-once buildRanks synthesizes top 50 labels in summary', () => {

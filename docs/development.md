@@ -48,7 +48,7 @@ pnpm run check
   전체 실패는 exit 1, 선택·timeout 등 잘못된 설정은 exit 2다.
 - `YOROI_TIMEOUT_MS`: 기본 10000. `YOROI_<공급자>_TIMEOUT_MS`로 개별 override.
 - `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로, 기본 PATH 탐색.
-- `YOROI_OPENCODE_TARGET`: `v1`|`v2`, 기본 `v1`. 무료 모델 목록 소스 선택(v2는 실측 전 stub). 그 밖의 값은 설정 오류로 exit 2다.
+- `YOROI_OPENCODE_TARGET`: `v1`|`v2`, 기본 `v1`. V2는 `models --standalone`으로 무료 모델을 읽는다([실측](opencode-v2-migration.md)). 그 밖의 값은 설정 오류로 exit 2다.
 - Claude는 CLI를 실행하지 않고 OAuth 사용량 GET만 호출한다. 인증 우선순위는
   `YOROI_CLAUDE_OAUTH_TOKEN` → `CLAUDE_CODE_OAUTH_TOKEN` → 기존 저장소다.
   `CLAUDE_CONFIG_DIR` 또는 실행 계정 HOME의 설정을 읽는다. 로그인·갱신·저장은 수행하지 않는다.

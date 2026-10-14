@@ -28,18 +28,25 @@ test('AA-unmeasured models stay in the pool when OpenRouter or OpenCode evidence
   for (const id of ['or-bunny', 'oc-heavy', 'oc-lite']) assert.ok(accessible.has(id), id);
 });
 
-test('evidence-backed AA-unmeasured models fill Top10 after zone rows, ordered by usage evidence', () => {
+test('AA-unmeasured evidence models stay orchestrator candidates; p70 orchestrator usage contributes and missing value-for-money scores 0', () => {
   const entries = computeRoleTop10(AA_ROWS, opts).orchestrator.entries;
-  // oc-dual은 OR tokens(100)을 우선 사용하므로 oc-heavy(OpenCode 9e9)보다 usage가 낮다 — OR 우선 근거.
-  assert.deepEqual(entries.map(e => e.modelId), ['fixture-zone-a', 'fixture-zone-b', 'oc-heavy', 'oc-lite', 'or-bunny', 'oc-dual']);
-  for (const e of entries.slice(2)) { assert.equal(e.indexMissing, true); assert.equal(e.belowZone, true); }
+  // p70 오케 70/5/10/15: zone-a 성능 70+가성비 15(90²/0.51 > 80²/0.51)=85.0, zone-b 0. AA 미측정은 I·P 결측 → 가성비 0(.99 없음),
+  // 사용량(OR·OCD 표준화 × 5%)만 기여 → 최고 근거 모델 5.0, 동점은 모델명.
+  assert.deepEqual(entries.map(e => [e.modelId, e.scoreText, e.belowZone]), [['fixture-zone-a', '85.0', undefined], ['oc-heavy', '5.0', true],
+    ['or-bunny', '5.0', true], ['oc-dual', '3.8', true], ['fixture-zone-b', '0.0', true], ['oc-lite', '0.0', true]]);
+  assert.deepEqual(entries.filter(e => e.indexMissing).map(e => e.modelId), ['oc-heavy', 'or-bunny', 'oc-dual', 'oc-lite']);
+  const dual = entries.find(e => e.modelId === 'oc-dual')?.scoreComponents;
+  assert.deepEqual([dual?.cost, dual?.dimensionSources?.price], [0, undefined]);
+  assert.ok(Math.abs((dual?.usage ?? 0) - 0.759) < 0.001 && dual?.dimensionSources?.usage === 'opencode', 'OCD 사용량이 표준화되어 반영된다(p70)');
 });
 
-test('opencode-only evidence feeds the usage component and renders in the letter', () => {
-  const variants = buildRoleVariants([...AA_ROWS, ...OC_ROWS], INTEL, { catalog, opencodeDataRecords: OC_ROWS });
-  const heavy = variants.find(v => v.modelId === 'oc-heavy');
-  assert.equal(heavy?.opencodeTokens, 9_000_000_000);
-  assert.equal(heavy?.indexMissing, true);
+test('worker: opencode-only evidence is a standardized usage source, OR and OCD share one dimension, and the letter renders it', () => {
+  const cognitionRecords = ['oc-heavy-high', 'oc-dual-high'].map(modelId => ({ modelId, metric: 'cognition_correct', value: 0.9 })); // 워커 하한 통과용
+  const w = computeRoleTop10(AA_ROWS, { ...opts, cognitionRecords }).worker.entries, at = (id: string) => w.find(e => e.modelId === id)?.scoreComponents;
+  assert.deepEqual([at('oc-heavy')?.sources?.['usage:opencode'], at('oc-heavy')?.dimensionSources?.usage], [1, 'opencode']);
+  // oc-dual: OR 0(100 < 5000), OCD (9-6)/(log10 9e9 - 6) ≈ .759 → 사용량은 둘 중 높은 값 하나(이중 가산 없음).
+  assert.ok(Math.abs((at('oc-dual')?.usage ?? 0) - 3 / (Math.log10(9e9) - 6)) < 1e-9 && at('oc-dual')?.sources?.['usage:openrouter'] === 0);
+  assert.ok(!computeRoleTop10(AA_ROWS, opts).worker.entries.some(e => e.modelId === 'oc-heavy'), '성능 결측(<.70)이면 사용량만으로 워커에 진입하지 않는다');
   const letter = renderTop10FromRecords({ publicationDate: '2026-10-13', records: [...AA_ROWS, ...OC_ROWS], ...opts });
   assert.ok(letter.includes('oc-heavy'), 'AA 미측정이지만 참고 자료가 있으면 레터에도 나온다');
 });

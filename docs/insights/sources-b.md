@@ -44,4 +44,4 @@ style control 기본값. 웹 페이지 스크래핑은 약관 금지이므로 HF
 - Arena coding 탐색 halt 및 구 상위 20 결정은 역사로 보존하며, 전 소스 수집·순위창이 상위 50(rank<=50)으로 갱신됐다.
 - Arena: overall rank≤50(동점 포함, 첫 100행 안 경계 확인, 2쪽 미조회 unavailable, maxRequests 2 유지), requestScope `hf-rows:text:latest:overall-top50`. 600행 상한 불필요(역사 보존).
 - 연계 스코프: OpenRouter `rankings-daily:day:top50`, Cognition `frontiercode:data-json:top50`, AA `coding-intel-top50`. 전환일 비교는 '이전 기록 없음'.
-- 레터: 기본 출력은 Top 10 압축 레터(오케스트레이터·워커 Top10, Arena/OR 참고 순위 표기), `--full` 플래그 지정 시 전체 순위 상세 레터를 출력한다.
+- 레터: 기본 출력은 Top 10 압축 레터(오케스트레이터·워커 Top10, OR 참고 순위 표기; Arena는 2026-10-13 제거), `--full` 플래그 지정 시 전체 순위 상세 레터를 출력한다.

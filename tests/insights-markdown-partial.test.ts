@@ -40,9 +40,9 @@ test('sources badge and attribution list follow the INSIGHT_SOURCES registry', (
 
 test('records path forwards partialSources and notes into the markdown', () => {
   const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-12', records: [],
-    partialSources: ['arena'], notes: ['전일 Arena 자료 없음'] });
-  assert.ok(md.includes('부분 수집 소스: arena'));
-  assert.ok(md.includes('전일 Arena 자료 없음'));
+    partialSources: ['openrouter'], notes: ['전일 OpenRouter 자료 없음'] });
+  assert.ok(md.includes('부분 수집 소스: openrouter'));
+  assert.ok(md.includes('전일 OpenRouter 자료 없음'));
   assert.ok(!md.includes('all_healthy'));
 });
 

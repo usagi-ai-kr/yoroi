@@ -36,6 +36,15 @@ test("adds a prefix only when the same label repeats in one provider", () => {
   assert.deepEqual(windowLabels("claude", [w("weekly:sonnet:7d")]), ["w"]);
 });
 
+test("agy prefixes a lone five-hour window when two series share the provider", () => {
+  assert.deepEqual(windowLabels("agy", [
+    w("gemini-models:weekly-limit-remaining"),
+    w("claude-and-gpt-models:weekly-limit-remaining"),
+    w("claude-and-gpt-models:five-hour-limit-remaining"),
+  ]), ["g-w", "c-w", "c-5h"]);
+  assert.deepEqual(windowLabels("agy", [w("gemini-models:five-hour-limit-remaining")]), ["5h"]);
+});
+
 test("codex prefers kind initials then bucket plus kind when buckets differ", () => {
   assert.deepEqual(windowLabels("codex", [
     w("codex:primary:300m"), w("codex:secondary:300m"),

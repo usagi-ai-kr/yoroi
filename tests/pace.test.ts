@@ -54,3 +54,24 @@ test("agy applies expected to every weekly window", () => {
   assert.equal(usageStatus("agy", claudeGpt, windows, observedAt), "optimal");
   assert.equal(usageStatus("agy", fiveHour, windows, observedAt), "n/a");
 });
+
+test("actual 98% 이상이면 예상과 무관하게 limit", () => {
+  for (const percent of [98, 99, 100, 120]) {
+    const window = win("weekly", { percent });
+    assert.equal(usageStatus("opencode-go", window, [window], observedAt), "limit", `percent=${percent}`);
+  }
+  const usedLimit = win("weekly", { used: 98, limit: 100 }); // percent 없이 used/limit로 계산
+  assert.equal(usageStatus("opencode-go", usedLimit, [usedLimit], observedAt), "limit");
+});
+
+test("actual 98 미만(97.99·97)은 98 기준으로 기존 규칙 그대로", () => {
+  const justBelow = win("weekly", { percent: 97.99 }); // expected 50 → over
+  assert.equal(usageStatus("opencode-go", justBelow, [justBelow], observedAt), "over");
+  const wasLimit = win("weekly", { percent: 97 }); // 이전(97 기준)에는 limit이던 값 → over
+  assert.equal(usageStatus("opencode-go", wasLimit, [wasLimit], observedAt), "over");
+});
+
+test("expected를 못 구해도 actual 99면 limit", () => {
+  const noReset = bare("weekly", { percent: 99 }); // resetAt 없음 → expected 없음
+  assert.equal(usageStatus("opencode-go", noReset, [noReset], observedAt), "limit");
+});

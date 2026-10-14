@@ -3,8 +3,8 @@ import type { UsageHistory, UsageHistoryContext, UsageHistoryKey, UsageHistoryRe
   UsageObservation, UsageObservationFilter, UsageObservationPair } from '../../app/usage-history-port.js';
 import type { ProviderId, UsageSnapshot, UsageWindow } from '../../domain/usage.js';
 import { resolveDbPath } from './data-dir.js';
-import { isBusy, openUsageDatabase, SAFE_ID } from './usage-cache-store.js';
-import { loadSqlite } from './database.js';
+import { isBusy, openUsageDatabase, SAFE_ID, USAGE_BUSY_TIMEOUT_MS } from './usage-cache-store.js';
+import { loadSqlite, withBusyDeadline } from './database.js';
 
 interface Row {
   provider: string; account_scope: string; contract_version: string; window_id: string; unit: string; observed_at: string;
@@ -50,9 +50,9 @@ export class SqliteUsageHistory implements UsageHistory {
   latestTwo(key: UsageHistoryKey): UsageObservationPair {
     assertIdentity(key);
     try {
-      const rows = this.db.prepare(`SELECT * FROM observation_samples WHERE provider = ? AND account_scope = ?
+      const rows = this.busy(() => this.db.prepare(`SELECT * FROM observation_samples WHERE provider = ? AND account_scope = ?
         AND contract_version = ? AND window_id = ? AND unit = ? ORDER BY observed_at DESC LIMIT 2`)
-        .all(key.provider, key.scope, key.contractVersion, key.windowId, key.unit) as unknown as Row[];
+        .all(key.provider, key.scope, key.contractVersion, key.windowId, key.unit) as unknown as Row[]);
       const [first, second] = rows.map(toObservation);
       return first ? second ? [first, second] : [first] : [];
     } catch (error) { if (isBusy(error)) return []; throw error; }
@@ -84,10 +84,11 @@ export class SqliteUsageHistory implements UsageHistory {
 
   close(): void { if (this.ownsConnection) this.db.close(); }
 
+  /** 실제 벽시계 100ms 안에서만 BUSY를 재시도한다(p55). 쓰기 트랜잭션은 BEGIN부터 통째로 다시 시도한다. */
+  private busy<T>(run: () => T): T { return withBusyDeadline(this.db, USAGE_BUSY_TIMEOUT_MS, run); }
   private transaction<T>(run: () => T): T {
-    this.db.exec('BEGIN IMMEDIATE');
-    try { const result = run(); this.db.exec('COMMIT'); return result; }
-    catch (error) { this.db.exec('ROLLBACK'); throw error; }
+    return this.busy(() => { this.db.exec('BEGIN IMMEDIATE');
+      try { const result = run(); this.db.exec('COMMIT'); return result; } catch (error) { this.db.exec('ROLLBACK'); throw error; } });
   }
 }
 

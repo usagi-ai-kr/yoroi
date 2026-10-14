@@ -8,7 +8,6 @@ import { opencodeTarget } from '../src/config/load-config.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import type { ProcessRunner } from '../src/infra/process-port.js';
 import { collectOpenCodeFreeModels } from '../src/insights/opencode-free-models.js';
-import { OPENCODE_V2_UNVERIFIED_DIAGNOSTIC } from '../src/insights/opencode-models-source.js';
 
 test('YOROI_OPENCODE_TARGET defaults to v1, accepts v1|v2 and rejects anything else', () => {
   assert.equal(opencodeTarget({}), 'v1');
@@ -17,14 +16,15 @@ test('YOROI_OPENCODE_TARGET defaults to v1, accepts v1|v2 and rejects anything e
   assert.throws(() => opencodeTarget({ YOROI_OPENCODE_TARGET: '2' }), /Invalid opencode target/);
 });
 
-test('v2 target is an unverified stub: no CLI call, empty list and exactly one diagnostic', async () => {
-  let calls = 0;
-  const runner: ProcessRunner = { run: async () => { calls += 1; return { stdout: 'opencode/exo-free', stderr: '', exitCode: 0 }; } };
+test('v2 discovers free models with a private server; v1 keeps its original command', async () => {
+  const calls: (readonly string[])[] = [];
+  const runner: ProcessRunner = { run: async request => { calls.push(request.args); return { stdout: 'opencode/exo-free', stderr: '', exitCode: 0 }; } };
   const diagnostics: string[] = [];
-  assert.deepEqual(await collectOpenCodeFreeModels(runner, { target: 'v2', diagnostic: line => diagnostics.push(line) }), []);
-  assert.deepEqual([calls, diagnostics], [0, [OPENCODE_V2_UNVERIFIED_DIAGNOSTIC]]);
+  assert.deepEqual(await collectOpenCodeFreeModels(runner, { target: 'v2', diagnostic: line => diagnostics.push(line) }),
+    [{ provider: 'opencode', originalId: 'opencode/exo-free', modelId: 'exo' }]);
+  assert.deepEqual(diagnostics, []);
   assert.equal((await collectOpenCodeFreeModels(runner, { target: 'v1' })).length, 1); // v1은 기존 CLI 경로
-  assert.equal(calls, 1);
+  assert.deepEqual(calls, [['models', '--standalone'], ['models']]);
 });
 
 test('insights once rejects an unsupported YOROI_OPENCODE_TARGET as a config error (exit 2) before any collection', async (t: TestContext) => {

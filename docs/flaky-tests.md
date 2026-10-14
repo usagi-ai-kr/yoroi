@@ -15,6 +15,11 @@
   시간 단언이 기능 단언보다 먼저라 시간 초과 실행으로 후속 기능 검증 통과까지 주장하지 않는다.
 - 대응: 전체 실패 로그와 같은 환경의 단독 3회 시간을 함께 남긴다. 동일 커밋의 다른 환경·CI 결과와 비교한다.
   단독에서도 계속 실패하면 환경 차이를 조사하며, 기능 단언 실패나 새로운 오류는 별도 결함으로 다룬다.
+- 2026-10-14 p55 계측: 지연은 miss 1건의 쓰기 2회(`cache.set`, `history.record`)가 각각 busy_timeout 100ms를 기다린 몫이다(hit 4건은 쓰기 없음).
+  수정 전에는 일반·Codex seatbelt 모두 각 쓰기 약 118–147ms, 합계 248–290ms였고 824–1548ms는 재현되지 않았다.
+  SQLite 기본 busy handler는 실제 경과가 아니라 명목 sleep 합으로 timeout을 센다. 그래서 sleep이 늘어지는 환경에서는 쓰기 1회 대기가 100ms를 넘을 수 있다.
+  이를 막도록 usage 캐시·이력의 읽기·쓰기(`queryObservations` 제외)를 `withBusyDeadline`(호출 동안만 busy_timeout 0, 5ms 폴링, 벽시계 100ms 기한)으로 감쌌다.
+  연결의 busy_timeout 값 100은 유지한다. 수정 후 각 쓰기 95–103ms, 합계 194–199ms(일반·seatbelt), 테스트 단독 5회 257–282ms로 통과했다.
 
 ## CLI 프로세스: `tests/cli-process.test.ts`
 

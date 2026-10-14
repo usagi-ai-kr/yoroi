@@ -11,6 +11,8 @@
 
 ## 2. 명령 계약과 파일 소유권
 
+- 분배·상태·전송·감사는 `coord.py`로만 한다. `herdr` 원시 명령이나 `watch_workers.sh` 직접 예시 대신 coord 예시를 쓴다. CLI 밖 조작은 메신저에게 요청한다.
+
 - 오케스트레이터는 지시 전 CLI `--help`·공식 1차 문서로 실제 명령을 확인한다.
 - 과거 정정: Claude Code는 `claude login` 대신 `claude auth login`이었다.
 - 과거 AGY 1.3.1은 login/auth 하위 명령이 없어 대화형 인증을 썼다. 현재 명령도 배정 시 재확인한다.

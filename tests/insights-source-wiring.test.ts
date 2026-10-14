@@ -19,16 +19,9 @@ function harness(respond: (request: HttpRequest, n: number) => HttpResponse) {
 }
 const of = (url: string, name: string) => new URL(url).searchParams.get(name);
 
-test('the registry holds the four approved ports plus the OpenCode Data internal reference; Arena·Vals AI stay excluded', () => {
+test('the registry holds the four approved ports plus the OpenCode Data internal reference; Vals AI stays excluded', () => {
   assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
   assert.deepEqual([...harness(() => json({})).ports.keys()], ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
-});
-test('Arena is excluded from the default ports: no HF request is ever sent (2026-10-13 결정)', async () => {
-  const h = harness(() => json({}));
-  assert.equal(INSIGHT_SOURCES.some(e => e.id === 'arena'), false);
-  assert.equal(h.ports.has('arena'), false);
-  assert.equal(INSIGHT_SOURCES.some(e => e.pipeline === 'hf-rows'), false);
-  assert.equal(h.requests.length, 0);
 });
 test('AA pages are fetched with the key on every request, merged by H3, and the key never appears in URLs or errors', async () => {
   const h = harness(request => { const page = Number(of(request.url, 'page') ?? 1); return json(aaPage(page, 3, `model-${page}`)); });

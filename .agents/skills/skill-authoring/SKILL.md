@@ -20,9 +20,11 @@ metadata:
 
 ```bash
 bash <skill-authoring-dir>/scripts/validate.sh <skill-dir> <max-lines>
+bash <skill-authoring-dir>/scripts/check-portability.sh .agents/skills
 ```
 
 Bash와 기본 유틸리티를 사용하는 구조 검사이며 전체 YAML 문법 검사는 아니다.
+`check-portability.sh`는 스킬·룰에 프로젝트 고유 값(절대 경로·프로젝트명·pane id·모델·요금제 이름)이 남았는지 본다. 위반이 있으면 exit 1이고, `validate-repo.py`가 함께 실행한다.
 `skills-ref`가 설치되어 있으면 추가 검증을 실행한다. 설치는 필수가 아니다.
 
 ## 회고

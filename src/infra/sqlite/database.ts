@@ -30,7 +30,7 @@ export interface OpenDatabaseOptions {
 }
 
 const MIGRATION_ATTEMPTS = 6;
-const MIGRATION_RETRY_BUDGET_MS = 900;
+const MIGRATION_RETRY_BUDGET_MS = 900, BUSY_POLL_MS = 5;
 
 /** SQLite primary/extended BUSY·LOCKED codes and Node's database-is-locked errors. */
 export function isBusy(error: unknown): boolean {
@@ -55,6 +55,22 @@ export function withMigrationRetry<T>(run: () => T): T {
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
     }
   }
+}
+
+/** BUSY를 벽시계 기한(ms) 안에서만 재시도한다. SQLite 기본 busy handler는 명목 sleep 합으로 timeout을 세므로
+ * sleep이 늘어지는 환경에서는 실제 대기가 timeout을 넘는다. 호출 동안만 busy_timeout을 0으로 두고 원래 값으로 되돌린다. */
+export function withBusyDeadline<T>(db: DatabaseSync, deadlineMs: number, run: () => T): T {
+  const began = performance.now(), prev = (db.prepare('PRAGMA busy_timeout').get() as { timeout: number }).timeout;
+  db.exec('PRAGMA busy_timeout = 0');
+  try {
+    for (;;) {
+      try { return run(); }
+      catch (error) {
+        if (!isBusy(error) || performance.now() - began + BUSY_POLL_MS > deadlineMs) throw error;
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, BUSY_POLL_MS);
+      }
+    }
+  } finally { db.exec(`PRAGMA busy_timeout = ${prev}`); }
 }
 
 /** 파일을 0600으로 만들고 WAL·busy_timeout·마이그레이션을 적용해 연다. */

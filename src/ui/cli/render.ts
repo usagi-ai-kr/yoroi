@@ -15,6 +15,7 @@ const statusColors: Readonly<Record<UsageStatus, (text: string) => string>> = {
   "optimal": (text) => pc.green(text),
   under: (text) => pc.cyan(text),
   over: (text) => pc.yellow(text),
+  limit: (text) => pc.red(text),
   "n/a": (text) => text,
 };
 

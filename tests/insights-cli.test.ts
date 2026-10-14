@@ -72,8 +72,8 @@ test('storage=memory adds a diagnostic without changing the exit code; a throwin
 const rows = [0, 1, 2].map(i => ({ model_name: `m${i}`, organization: 'o', license: 'L', rating: 1500 - i,
   rating_lower: 1490, rating_upper: 1510, variance: 2, vote_count: 10 + i, rank: i + 1, category: 'overall',
   leaderboard_publish_date: '2026-10-08' }));
-const parseArenaStub = (payload: unknown, at: string) => (payload as typeof rows).map((r, index) => ({ ok: true as const, index, warnings: [], records: [
-  { source: 'arena' as const, modelId: r.model_name, metric: 'rating', value: r.rating, unit: 'score', category: r.category, observedAt: at, sourceAsOf: r.leaderboard_publish_date, sourceUrl: 'https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset', sourceName: 'lmarena-ai LMArena Leaderboard Dataset', license: 'CC-BY-4.0', attributionText: 'x', method: 'bradley-terry', schemaVersion: 'arena-hf-v1' }] }));
+const parseDatedStub = (payload: unknown, at: string) => (payload as typeof rows).map((r, index) => ({ ok: true as const, index, warnings: [], records: [
+  { source: 'openrouter' as const, modelId: r.model_name, metric: 'total_tokens', value: r.rating, unit: 'tokens', category: r.category, observedAt: at, sourceAsOf: r.leaderboard_publish_date, metadata: { date: r.leaderboard_publish_date }, sourceUrl: 'https://example.test/data', sourceName: 'Synthetic Source', license: null, attributionText: 'x', method: 'synthetic', schemaVersion: 'openrouter-rankings-v1' }] }));
 test('compose wires insights once to fake ports: KST publication day, same-day reuse and no network', async (t: TestContext) => {
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-insights-cli-')); t.after(() => rmSync(dir, { recursive: true, force: true }));
   let calls = 0; const stdout: string[] = [], stderr: string[] = [];
@@ -81,10 +81,10 @@ test('compose wires insights once to fake ports: KST publication day, same-day r
   const program = compose({ configEnv: { YOROI_DATA_DIR: dir }, dataDir: dir,
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) }, subscribeSignals: () => () => {},
     insights: { clock: () => Date.parse('2026-10-08T15:30:00Z'), openHistory: () => history,
-      createPorts: () => [{ id: 'arena', fetch: async () => { calls += 1; return rows; }, parse: parseArenaStub }] } });
+      createPorts: () => [{ id: 'openrouter', fetch: async () => { calls += 1; return rows; }, parse: parseDatedStub }] } });
   assert.equal(await program.run(['insights', 'once']), 0);
   const compactOut = stdout.join('');
-  assert.ok(compactOut.includes('## 🧭 오케스트레이터 Top10') && compactOut.includes('## 🛠️ 워커 Top10'), compactOut);
+  assert.ok(compactOut.includes('## 🧭 오케스트레이터·리뷰어 Top10') && compactOut.includes('## 🛠️ 워커·메신저 Top10'), compactOut);
   assert.ok(stdout.join('').length <= 3600);
   assert.deepEqual(stderr, []);
   assert.equal(await program.run(['insights', 'once']), 0);

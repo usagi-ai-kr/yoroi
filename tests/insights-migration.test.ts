@@ -94,7 +94,7 @@ test('the measurement value may be negative and the daily completeness is constr
     assert.equal((db.prepare('SELECT count(*) n FROM insight_history').get() as { n: number }).n, 2,
       'a null comparison date stays distinct, so 기준일 미상 행은 날짜 이력에 중복 적재되지 않는다');
     assert.throws(() => db.prepare(`INSERT INTO insight_daily (source, publication_date, request_scope,
-      schema_version, complete, record_count, payload, saved_at) VALUES ('arena','2026-10-12','s','v',2,0,'{}','t')`)
+      schema_version, complete, record_count, payload, saved_at) VALUES ('openrouter','2026-10-12','s','v',2,0,'{}','t')`)
       .run(), /CHECK|constraint/i);
   });
 });

@@ -58,3 +58,4 @@
 - [agent-coordination](.agents/skills/agent-coordination/SKILL.md)
 - [graceful-stop](.agents/skills/graceful-stop/SKILL.md)
 - [global-cli-update](.agents/skills/global-cli-update/SKILL.md)
+- [coordination-rules](.agents/skills/coordination-rules/SKILL.md)

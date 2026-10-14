@@ -5,12 +5,12 @@ import { validateInsightRecord, type ValidatedInsightRecord } from '../src/insig
 import type { InsightRecord } from '../src/insights/record.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 
-const base: InsightRecord = { source: 'arena', modelId: 'A', metric: 'rating', value: 10, unit: 'score',
-  category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10',
+const base: InsightRecord = { source: 'openrouter', modelId: 'A', metric: 'rating', value: 10, unit: 'score',
+  category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' },
   sourceUrl: 'https://example.test/data', sourceName: 'Synthetic', license: null,
   attributionText: 'Synthetic', method: 'synthetic', schemaVersion: 'v1' };
 const entry = (modelId: string, value: number, date: string, extra: Partial<InsightRecord> = {}): ValidatedInsightRecord => {
-  const result = validateInsightRecord({ ...base, modelId, value, sourceAsOf: date, ...extra });
+  const result = validateInsightRecord({ ...base, modelId, value, sourceAsOf: date, metadata: { date: date }, ...extra });
   assert.ok(result.ok); return result.value;
 };
 const snapshot = (values: readonly (readonly [string, number])[], date: string, complete = true): InsightRankSnapshot =>
@@ -46,7 +46,7 @@ test('incomplete cohorts expose missing evidence instead of false movement, entr
 });
 
 test('other and aggregate rows never alter ranks; empty cohorts cannot prove mass entry or exit', () => {
-  const extra = [entry('other', 999, '2026-10-10'), entry('total', 999, '2026-10-10', { metadata: { aggregate: true } })];
+  const extra = [entry('other', 999, '2026-10-10'), entry('total', 999, '2026-10-10', { metadata: { aggregate: true, date: '2026-10-10' } })];
   assert.deepEqual(computeInsightRankChanges({ ...current, records: [...extra, ...current.records] }, prior, 'descending'),
     computeInsightRankChanges(current, prior, 'descending'));
   assert.equal(computeInsightRankChanges({ complete: true, records: extra }, prior, 'descending').comparable, false);
@@ -55,7 +55,7 @@ test('other and aggregate rows never alter ranks; empty cohorts cannot prove mas
 });
 
 test('C1 group/date/schema/unit checks apply even when cohorts have no common model', () => {
-  for (const change of [{ source: 'openrouter' as const, sourceAsOf: base.observedAt, metadata: { date: '2026-10-09' } },
+  for (const change of [{ source: 'opencode-data' as const },
     { metric: 'rank' }, { category: 'Code' }, { unit: 'tokens' }, { schemaVersion: 'v2' }, { method: 'other' }]) {
     assert.deepEqual(computeInsightRankChanges(current,
       { complete: true, records: [entry('X', 1, '2026-10-09', change)] }, 'descending'),
@@ -86,8 +86,8 @@ test('3-A unknown/fallback dates stay n/a; inputs are not mutated', () => {
 
 test('S1 cached validated snapshots feed rank comparison directly', () => {
   const store = new MemoryInsightHistory();
-  const key = { source: 'arena' as const, schemaVersion: 'v1', requestScope: 'text:public', publicationDate: '2026-10-09' };
-  store.saveDaily(key, { ok: true, source: 'arena', records: prior.records, rejectedRows: 0 });
+  const key = { source: 'openrouter' as const, schemaVersion: 'v1', requestScope: 'text:public', publicationDate: '2026-10-09' };
+  store.saveDaily(key, { ok: true, source: 'openrouter', records: prior.records, rejectedRows: 0 });
   const restored = store.getDaily(key)!;
   assert.deepEqual(computeInsightRankChanges(current, { records: restored.records, complete: true }, 'descending'),
     computeInsightRankChanges(current, prior, 'descending'));

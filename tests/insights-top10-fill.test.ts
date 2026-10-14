@@ -6,33 +6,37 @@ import { EXCLUSION_NOTE } from '../src/insights/top10-policy.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
-const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index';
+const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', COG = 'cognition_correct';
 const row = (modelId: string, metric: string, value: number): Top10RecordInput => ({ modelId, metric, value });
 const catalogFor = (ids: readonly string[]): readonly PlanCatalogEntry[] => [{ planId: 'free-test', planName: 'Free Test',
   models: ids.map(modelId => ({ modelId, displayName: modelId, sourceUrl: 'https://example.test', checkedOn: '2026-10-13', verified: true })) }];
 
-test('fills ten zone-first rows and keeps missing role indexes at zero in a full injected pool', () => {
+test('orchestrator fills below-zone rows while the worker performance floor removes unqualified candidates', () => {
   const ids = ['fixture-alpha', 'fixture-bravo', 'fixture-charlie', 'fixture-delta', 'fixture-echo', 'fixture-foxtrot', 'fixture-golf', 'fixture-hotel'];
   const special = ['gpt-6-luna', 'claude-haiku-5-5'], catalog = catalogFor([...ids, ...special]);
-  const records = ids.flatMap((id, i) => [row(id, INTEL, 100 - i), row(id, CODE, 100 - i)]);
+  const records = ids.flatMap((id, i) => [row(id, INTEL, 100 - i / 2), row(id, CODE, 100 - i / 2)]);
   records.push(row('gpt-6-luna', INTEL, 38.1), row('claude-haiku-5-5', CODE, 39));
-  const lists = computeRoleTop10(records, { catalog });
-  for (const list of [lists.orchestrator, lists.worker]) {
-    assert.equal(list.entries.length, 10);
-    assert.equal(list.entries.slice(0, 8).some(e => e.belowZone), false);
-    assert.equal(list.entries.slice(8).every(e => e.belowZone), true);
-    assert.ok(list.entries.every(e => e.plans.includes('Free Test')));
-  }
+  const cognitionRecords = [...ids.map((id, i) => ({ modelId: `${id}-high`, metric: COG, value: 0.9 - 0.005 * i })),
+    { modelId: 'gpt-6-luna-max', metric: COG, value: 0.2 }, { modelId: 'claude-haiku-5-5-max', metric: COG, value: 0.3 }];
+  const lists = computeRoleTop10(records, { catalog, cognitionRecords });
+  assert.equal(lists.orchestrator.entries.length, 10);
+  assert.equal(lists.orchestrator.entries.slice(0, 8).some(e => e.belowZone), false);
+  assert.deepEqual(lists.orchestrator.entries.slice(8).map(e => [e.modelId, e.scoreText, e.belowZone]), [
+    ['claude-haiku-5-5', '10.0', true], ['gpt-6-luna', '0.0', true],
+  ]);
+  assert.ok(lists.orchestrator.entries.every(e => e.plans.includes('Free Test')));
+  assert.equal(lists.worker.entries.length, 8, 'Cog performance below 0.70 removes Haiku and Luna before fill');
+  assert.ok(lists.worker.entries.every(e => !e.belowZone && e.plans.includes('Free Test')));
   const gpt = lists.orchestrator.entries.find(e => e.modelId === 'gpt-6-luna')!;
   const haiku = lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!;
-  assert.deepEqual([gpt.rank, gpt.indexText, gpt.indexMissing, gpt.belowZone], [9, '38.1', undefined, true]);
-  assert.deepEqual([haiku.rank, haiku.indexText, haiku.indexMissing, haiku.scoreComponents?.index], [10, '-', true, 0]);
-  assert.equal(lists.worker.entries.find(e => e.modelId === 'gpt-6-luna')?.scoreComponents?.index, 0);
-  const paid = computeRoleTop10(records, { catalog, excludeModelIds: new Set(['gpt-6-luna']) });
+  assert.deepEqual([gpt.rank, gpt.indexText, gpt.indexMissing, gpt.belowZone, gpt.scoreText], [10, '38.1', undefined, true, '0.0']);
+  assert.deepEqual([haiku.rank, haiku.indexText, haiku.indexMissing, Math.round((haiku.scoreComponents?.sources?.['performance:cognition'] ?? 0) * 1e6), haiku.scoreText],
+    [9, '-', true, Math.round((1 / 7) * 1e6), '10.0']);
+  const paid = computeRoleTop10(records, { catalog, cognitionRecords, excludeModelIds: new Set(['gpt-6-luna']) });
   assert.ok(!paid.orchestrator.entries.some(e => e.modelId === 'gpt-6-luna'));
 });
 
-test('below-zone fill lowers the index floor first and puts missing indexes last by score', () => {
+test('any dimension qualifies a model (price-only included); orchestrator weighs performance 70% and value-for-money 15% (p70)', () => {
   const ids = ['index-peak', 'fallback-near', 'fallback-cheap', 'missing-free', 'missing-paid'];
   const catalog = catalogFor(ids), records: Top10RecordInput[] = [
     row('index-peak', INTEL, 100),
@@ -42,25 +46,25 @@ test('below-zone fill lowers the index floor first and puts missing indexes last
     { ...row('missing-paid', CODE, 80), priceInput: 1, priceOutput: 1 },
   ];
   const entries = computeRoleTop10(records, { catalog }).orchestrator.entries;
-  assert.deepEqual(entries.map(e => e.modelId), ids);
-  assert.ok(Number(entries[1]!.scoreText) < Number(entries[2]!.scoreText), 'near-threshold index outranks the cheaper, higher-score fallback');
-  assert.deepEqual(entries.slice(3).map(e => e.indexMissing), [true, true]);
-  assert.ok(Number(entries[3]!.scoreText) > Number(entries[4]!.scoreText), 'missing-index fillers remain score-sorted');
+  // I²/(P+.01) log-minmax: known I/P rows determine the ratio; missing I or P contributes 0.
+  assert.deepEqual(entries.map(e => [e.modelId, e.scoreText, e.belowZone]), [['index-peak', '70.0', undefined], ['fallback-near', '51.3', true],
+    ['fallback-cheap', '15.0', true], ['missing-free', '0.0', true], ['missing-paid', '0.0', true]]);
+  assert.equal(entries[0]!.scoreComponents?.sources?.['price:missing'], undefined);
 });
 
-test('fallback order uses maximum effort index while displaying the selected representative', () => {
+test('fill order follows the score and the representative effort is the highest-scoring variant; cost_per_task is ignored', () => {
   const zone = ['zone-a', 'zone-b', 'zone-c', 'zone-d', 'zone-e', 'zone-f'];
   const ids = [...zone, 'step-5', 'claude-haiku-5-5', 'glm-5-3-flash', 'gemini-3-8-flash', 'gpt-6-luna'];
   const records = [...zone.map((id, i) => row(id, INTEL, 100 - i)), row('step-5', INTEL, 90)];
   records.push(
-    { ...row('claude-haiku-5-5-medium', INTEL, 34.5), priceInput: 1, priceOutput: 1 },
-    { ...row('claude-haiku-5-5-max', INTEL, 43.4), priceInput: 1, priceOutput: 1 },
+    row('claude-haiku-5-5-medium', INTEL, 34.5),
+    row('claude-haiku-5-5-max', INTEL, 43.4),
     row('claude-haiku-5-5', 'intelligence_index_cost_per_task', 100),
     row('claude-haiku-5-5-medium', 'intelligence_index_cost_per_task', 10),
     row('claude-haiku-5-5-max', 'intelligence_index_cost_per_task', 100),
     row('glm-5-3-flash', INTEL, 41.8), row('gemini-3-8-flash', INTEL, 40.9),
-    { ...row('gpt-6-luna-high', INTEL, 32.9), priceInput: 1, priceOutput: 1 },
-    { ...row('gpt-6-luna-max', INTEL, 38.1), priceInput: 1, priceOutput: 1 },
+    row('gpt-6-luna-high', INTEL, 32.9),
+    row('gpt-6-luna-max', INTEL, 38.1),
     row('gpt-6-luna', 'intelligence_index_cost_per_task', 100),
     row('gpt-6-luna-high', 'intelligence_index_cost_per_task', 10),
     row('gpt-6-luna-max', 'intelligence_index_cost_per_task', 100),
@@ -70,8 +74,8 @@ test('fallback order uses maximum effort index while displaying the selected rep
   assert.ok(!entries.some(e => e.modelId === 'step-5'));
   const fills = entries.filter(e => e.belowZone);
   assert.deepEqual(fills.map(e => e.modelId), ['claude-haiku-5-5', 'glm-5-3-flash', 'gemini-3-8-flash', 'gpt-6-luna']);
-  assert.deepEqual([fills[0]!.repEffort, fills[0]!.indexText], ['medium', '34.5']);
-  assert.deepEqual([fills[3]!.repEffort, fills[3]!.indexText], ['high', '32.9']);
+  assert.deepEqual([fills[0]!.repEffort, fills[0]!.indexText], ['max', '43.4']);
+  assert.deepEqual([fills[3]!.repEffort, fills[3]!.indexText], ['max', '38.1']);
   for (const id of fills.slice(0, 3).map(e => e.modelId)) {
     const before = all.find(e => e.modelId === id)!, after = entries.find(e => e.modelId === id)!;
     assert.deepEqual([after.repEffort, after.indexText, after.scoreText], [before.repEffort, before.indexText, before.scoreText]);
@@ -81,8 +85,8 @@ test('fallback order uses maximum effort index while displaying the selected rep
 test('Kimi K3 and Grok stay in both role lists after exclusion rollback', () => {
   const ids = ['kimi-k3', 'kimi-k2-6', 'grok-4-6'];
   const catalog = catalogFor(ids);
-  const records = ids.flatMap((id, i) => [row(id, INTEL, 100 - i), row(id, CODE, 100 - i)]);
-  const lists = computeRoleTop10(records, { catalog });
+  const records = ids.flatMap(id => [row(id, INTEL, 100), row(id, CODE, 100)]);
+  const lists = computeRoleTop10(records, { catalog, cognitionRecords: ids.map(id => ({ modelId: `${id}-max`, metric: COG, value: 0.5 })) });
   assert.deepEqual(EXCLUDED_PATTERNS, ['fable', 'astra']);
   assert.doesNotMatch(EXCLUSION_NOTE, /Grok|Kimi K3/);
   for (const [role, list] of [['orchestrator', lists.orchestrator], ['worker', lists.worker]] as const) {

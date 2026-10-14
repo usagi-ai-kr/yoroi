@@ -6,12 +6,12 @@ import { shiftInsightDate, type InsightHistoryDay } from '../src/insights/histor
 import { validateInsightRecord, type ValidatedInsightRecord } from '../src/insights/validation.js';
 import type { InsightRecord } from '../src/insights/record.js';
 
-const base: InsightRecord = { source: 'arena', modelId: 'A', metric: 'rating', value: 10, unit: 'score',
-  category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10',
+const base: InsightRecord = { source: 'openrouter', modelId: 'A', metric: 'rating', value: 10, unit: 'score',
+  category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' },
   sourceUrl: 'https://example.test/data', sourceName: 'Synthetic', license: null,
   attributionText: 'Synthetic', method: 'synthetic', schemaVersion: 'v1' };
 const entry = (date: string, value = 10, extra: Partial<InsightRecord> = {}): ValidatedInsightRecord => {
-  const checked = validateInsightRecord({ ...base, sourceAsOf: date, value, ...extra });
+  const checked = validateInsightRecord({ ...base, sourceAsOf: date, metadata: { date: date }, value, ...extra });
   assert.ok(checked.ok); return checked.value;
 };
 const current = entry('2026-10-10');
@@ -76,9 +76,9 @@ test('C1 identities, 3-A, fallback and measurement dates cannot be bypassed', ()
 
 test('S1 sevenDays slots are accepted directly and unknown-basis history stays unavailable', () => {
   const store = new MemoryInsightHistory();
-  const key = { source: 'arena' as const, schemaVersion: 'v1', requestScope: 'text:public', publicationDate: '2026-10-11' };
+  const key = { source: 'openrouter' as const, schemaVersion: 'v1', requestScope: 'text:public', publicationDate: '2026-10-11' };
   const records = slots([1, 2, 3, 4, 5, 6, 7]).map(slot => slot.measurement!);
-  store.saveDaily(key, { ok: true, source: 'arena', records, rejectedRows: 0 });
+  store.saveDaily(key, { ok: true, source: 'openrouter', records, rejectedRows: 0 });
   const series = { ...key, modelId: base.modelId, metric: base.metric, unit: base.unit, category: base.category };
   assert.equal(computeInsightTrend(current, store.sevenDays(series, current.comparisonDate!)).status, 'complete');
   const unknown = entry(base.observedAt, 10, { source: 'cognition' });

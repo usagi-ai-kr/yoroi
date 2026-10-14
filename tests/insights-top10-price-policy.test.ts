@@ -32,31 +32,34 @@ test('previous ranks use the same composite-score and fill policy', () => {
     { modelId: 'claude-haiku-5-5', value: 60, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
   ];
   const ranks = previousRanks(records).orchestrator;
-  assert.deepEqual([ranks.get('gpt-6-1-sol'), ranks.get('claude-opus-5-5'), ranks.get('claude-haiku-5-5')], [1, 2, 3]);
-  // GPT=(.875 index, 1 cost, 0 usage, .5 speed)=77.5; Opus=42.5. Haiku 60 < 100*.85, then fills rank 3.
+  assert.deepEqual([ranks.get('claude-opus-5-5'), ranks.get('gpt-6-1-sol'), ranks.get('claude-haiku-5-5')], [2, 1, 3]);
+  // p70 70/5/10/15: GPT가 I²/P 최고(가성비 15% × 1)로 성능 차(.875 vs 1)를 뒤집어 1위, Opus 2위(75.4 < 76.3). 모두 AA 단가 행 사용.
 });
 
-test('kimi-k3 at its official price is excluded up front, yet Top10 stays filled with cheap models (price-cap-3m)', () => {
+test('kimi-k3 at its official blended price remains eligible and Top10 fills normally', () => {
   const metric = 'artificial_analysis_intelligence_index';
   const cheap = ['claude-haiku-5-5', 'deepseek-v4-1-flash', 'gemma4', 'glm-5-3-flash', 'kimi-k2-7-code',
     'minimax-m3', 'mistral-large-4', 'nemotron-3-super', 'qwen3-7-plus', 'space-bunny', 'hy3', 'grok-4-6'];
   const records: Top10RecordInput[] = [
-    { modelId: 'kimi-k3', value: 99, priceInput: 3, priceOutput: 15, metric }, // 혼합 $6.00 → 제외
+    { modelId: 'kimi-k3', value: 99, priceInput: 3, priceOutput: 15, metric }, // 혼합 $6.00
     ...cheap.map((modelId, i) => ({ modelId, value: 95 - i, priceInput: 0.5, priceOutput: 0.5, metric }))];
   const entries = computeRoleTop10(records).orchestrator.entries;
-  assert.ok(entries.every(e => e.modelId !== 'kimi-k3'), 'kimi-k3 공식 단가($3.00/$15.00, 혼합 $6)는 단가 상한으로 제외');
-  assert.equal(entries.length, 10, '제외 뒤에도 부족분 보충으로 Top10은 10개를 채운다');
+  // 상한 없음: 비싼 kimi-k3도 후보다(가격 차원 0점이라 이 풀에선 11위 밖일 수 있어 작은 풀로 확인).
+  assert.ok(computeRoleTop10(records.slice(0, 4)).orchestrator.entries.some(e => e.modelId === 'kimi-k3'), 'kimi-k3 공식 단가($3.00/$15.00, 혼합 $6)도 후보로 남는다');
+  assert.equal(entries.length, 10, 'Top10은 10개를 채운다');
   assert.equal(entries.at(-1)!.rank, 10);
 });
 
-test('off-peak adjusted price dropping under $3 keeps a candidate that peak price would exclude (price-cap-3m)', () => {
+test('high peak and adjusted off-peak prices both keep a candidate', () => {
   const rate: OffPeakRate = { input: 0.5, output: 2, sourceUrl: 'https://example.invalid/off-peak',
     checkedOn: '2026-10-13', provider: 'deepseek-platform' };
   const records = [{ modelId: 'deepseek-v4-1-flash', value: 90, priceInput: 8, priceOutput: 8,
     metric: 'artificial_analysis_intelligence_index' }];
   const withRate = { priceOverrides: { 'deepseek-v4-1-flash': rate }, nowUtc: '2026-10-12T00:00:00Z' };
-  // 02:00 UTC = DeepSeek peak → off-peak 미적용 → 혼합 8 → 제외
-  assert.equal(computeRoleTop10(records, { ...withRate, nowUtc: '2026-10-12T02:00:00Z' }).orchestrator.entries.length, 0);
+  // 02:00 UTC = DeepSeek peak → off-peak 미적용 → 혼합 8도 후보로 남는다.
+  const peak = computeRoleTop10(records, { ...withRate, nowUtc: '2026-10-12T02:00:00Z' }).orchestrator.entries;
+  assert.equal(peak.length, 1);
+  assert.equal(peak[0]!.offPeak, undefined);
   const kept = computeRoleTop10(records, withRate).orchestrator.entries; // 00:00 UTC = off-peak → 혼합 0.875
   assert.equal(kept.length, 1);
   assert.equal(kept[0]!.offPeak, true);

@@ -10,9 +10,9 @@ import { buildRanks } from '../src/insights/run-once-steps.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 
 const baseRecord = (modelId: string, value: number, date: string): ValidatedInsightRecord => {
-  const raw: InsightRecord = { source: 'arena', modelId, metric: 'rating', value, unit: 'score',
-    category: 'overall', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: date,
-    sourceUrl: 'https://example.test/arena', sourceName: 'Synthetic Arena', license: 'CC-BY-4.0',
+  const raw: InsightRecord = { source: 'openrouter', modelId, metric: 'total_tokens', value, unit: 'score',
+    category: 'overall', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: date, metadata: { date: date },
+    sourceUrl: 'https://example.test/data', sourceName: 'Synthetic Source', license: 'CC-BY-4.0',
     attributionText: 'Synthetic', method: 'synthetic', schemaVersion: 'v1' };
   const res = validateInsightRecord(raw); assert.ok(res.ok); return res.value;
 };
@@ -49,7 +49,7 @@ test('summarizeLetter reflects top window entry and exit notes', () => {
   assert.ok(result.comparable);
 
   const ref = currSnap.records[0]!;
-  const group: LetterRankEvidence = rankRow({ reference: ref, previousDate: '2026-10-09', result }, 'arena:rank:0');
+  const group: LetterRankEvidence = rankRow({ reference: ref, previousDate: '2026-10-09', result }, 'openrouter:rank:0');
   const summary = summarizeLetter([], [group]);
 
   const m2Summary = summary.find(s => s.text.includes('M2'));
@@ -66,7 +66,7 @@ test('letter limitations include top 20 window notes explicitly', () => {
   const ranks = computeInsightRankChanges(snapshot([['M1', 100]], '2026-10-10'), snapshot([['M1', 95]], '2026-10-09'), 'descending');
 
   const letter = buildInsightLetter([{
-    source: 'arena', ok: true, measurements: [mInput],
+    source: 'openrouter', ok: true, measurements: [mInput],
     ranks: [{ reference: item, previousDate: '2026-10-09', result: ranks }]
   }], '2026-10-11T12:00:00Z');
 
@@ -75,17 +75,17 @@ test('letter limitations include top 20 window notes explicitly', () => {
   const windowNote = limitations.items.find(it => it.includes('순위 창:'));
   assert.ok(windowNote?.includes('유효 측정 전량(AA·OpenRouter·Cognition·OpenCode Data)을 보존')); // full-storage.md와 일치
   assert.ok(windowNote?.includes('상위 50은 조회·표시 단계의 비교 창'));
-  assert.ok(!windowNote?.includes('Arena') && !windowNote?.includes('만 수집·저장')); // Arena 제외(2026-10-13)
+  assert.ok(!windowNote?.includes('만 수집·저장'));
 });
 
 test('run-once buildRanks synthesizes top 50 labels in summary', () => {
   const store = new MemoryInsightHistory();
-  const k = { source: 'arena' as const, publicationDate: '2026-10-09', requestScope: 'overall', schemaVersion: 'v1' };
-  store.saveDaily(k, { ok: true, source: 'arena', records: [baseRecord('M1', 100, '2026-10-09'), baseRecord('M2', 90, '2026-10-09')], rejectedRows: 0 });
-  const today = { ok: true as const, source: 'arena' as const, records: [baseRecord('M1', 100, '2026-10-10'), baseRecord('M3', 95, '2026-10-10')], rejectedRows: 0 };
+  const k = { source: 'openrouter' as const, publicationDate: '2026-10-09', requestScope: 'overall', schemaVersion: 'v1' };
+  store.saveDaily(k, { ok: true, source: 'openrouter', records: [baseRecord('M1', 100, '2026-10-09'), baseRecord('M2', 90, '2026-10-09')], rejectedRows: 0 });
+  const today = { ok: true as const, source: 'openrouter' as const, records: [baseRecord('M1', 100, '2026-10-10'), baseRecord('M3', 95, '2026-10-10')], rejectedRows: 0 };
   const ranks = buildRanks(store, 'overall', '2026-10-10', today, true, 5);
   const m = { measurement: today.records[0]!, comparison: compareInsightPrevious(today.records[0]!, baseRecord('M1', 100, '2026-10-09')), trend: { status: 'unavailable' as const, reason: 'n/a: 기준일 미상' as const } };
-  const letter = buildInsightLetter([{ source: 'arena', ok: true, measurements: [m], ranks }], '2026-10-11T12:00:00Z');
+  const letter = buildInsightLetter([{ source: 'openrouter', ok: true, measurements: [m], ranks }], '2026-10-11T12:00:00Z');
   assert.ok(letter.ok);
   const summary = letter.sections.find(s => s.kind === 'summary')!;
   assert.ok(summary.items.some(it => it.text.includes('M2: 상위 50 이탈')));

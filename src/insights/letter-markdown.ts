@@ -4,7 +4,7 @@ import type { Top10RecordInput } from './letter-top10-rank.js';
 import { top10OptionsFrom } from './letter-top10-render-options.js';
 import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
-import { LEGEND_LINES, PARETO_MARK, ROLE_HEADINGS, ROLE_LABELS, dimensionsLabel, ZONE_TEXT, changeNote, exitLine, formatChange, leadText, dimensionsText } from './letter-top10-legend.js';
+import { LEGEND_LINES, PARETO_MARK, ROLE_HEADINGS, ROLE_LABELS, dimensionsLabel, ZONE_TEXT, changeNote, exitLine, formatChange, leadText, dimensionsText, bonusText } from './letter-top10-legend.js';
 import { freeListsFrom, renderFreeSectionMarkdown, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 
@@ -12,14 +12,17 @@ export { escapeShields, OMISSION_MARK, MARKDOWN_LIMIT } from './letter-markdown-
 export type { RoleLists, RoleList, RoleEntry, RoleExit } from './letter-top10-unified.js';
 
 /** 파레토 최적은 순위·모델 칸에 섞지 않고 독립 열(👍)로 둔다(2026-10-13 사용자 지시). 교집합 표시는 두지 않는다. */
-/** 두 계열 공통 열(2026-10-13): 스코어 옆에 스코어에 쓰인 상위 2 근거를, AA 지수는 역할 지표(Intelligence/Coding)를 보인다. */
-const tableHead = (role: OptimalZoneRole): string => `| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | ${dimensionsLabel(role)} | AA 지수 | 혼합 단가 | 변동 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |`;
+/** 두 계열 공통 열(2026-10-13): 스코어 옆에 스코어에 쓰인 근거를, AA 지수는 두 역할 모두 Intelligence(p85)를 보인다. 워커만 `가산` 열이 더 있다. */
+const columns = (role: OptimalZoneRole): string[] => ['순위', '파레토', '모델', '추천 effort', '스코어', dimensionsLabel(role),
+  ...(role === 'worker' ? ['가산'] : []), 'AA 지수', '혼합 단가', '변동'];
+const tableHead = (role: OptimalZoneRole): string => `| ${columns(role).join(' | ')} |\n| ${columns(role).map(() => '---').join(' | ')} |`;
 
 function renderTable(role: OptimalZoneRole, list: RoleList): string {
   const rows = list.entries.map(e => {
     const rank = `${e.belowZone ? '▽ ' : ''}${e.rank}`;
-    return `| ${rank} | ${e.isPareto ? PARETO_MARK : ''} | ${e.modelId} | ${e.repEffort} | ${e.scoreText ?? '-'} | ` +
-      `${dimensionsText(e, role)} | ${e.indexText} | ${e.blendedCostText}${e.offPeak ? ' off-peak' : ''} | ${formatChange(e.change)} |`;
+    const cells = [rank, e.isPareto ? PARETO_MARK : '', e.modelId, e.repEffort, e.scoreText ?? '-', dimensionsText(e, role),
+      ...(role === 'worker' ? [bonusText(e, role)] : []), e.indexText, `${e.blendedCostText}${e.offPeak ? ' off-peak' : ''}`, formatChange(e.change)];
+    return `| ${cells.join(' | ')} |`;
   });
   const exits = list.exits.map(x => exitLine(x.modelId, x.previousRank));
   return [`${ROLE_HEADINGS[role]}\n\n${tableHead(role)}`, ...rows, ...(exits.length ? ['', ...exits] : [])].join('\n');
@@ -43,7 +46,7 @@ export function renderTop10Markdown(data: {
   ].join('\n');
 
   const formulas = [
-    `- 자격: ${ZONE_TEXT} · 역할별 차원(오케 3·워커 4) 중 하나 이상 근거(검증 Free 경로 포함) · 보유 요금제 접근 모델만`,
+    `- 자격: ${ZONE_TEXT} · 오케 3차원 중 하나 이상 근거(검증 Free 경로 포함)·워커 AA intel 원값 하한 통과 · 보유 요금제 접근 모델만`,
     '- 혼합 단가=(3×입력+출력)/4 USD/1M',
     ...SCORE_FORMULA_LINES,
     `- ${EXCLUSION_NOTE}`,

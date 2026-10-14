@@ -9,6 +9,7 @@ export interface FreeRow {
   readonly worker?: FreeCell | undefined;
   readonly pareto: boolean;
   readonly effort?: string | undefined;
+  readonly indexText?: string | undefined;
   readonly unmeasured: boolean;
 }
 export interface UnmeasuredRow { readonly modelId: string; readonly plans: readonly string[] }
@@ -23,8 +24,9 @@ const starsOf = (entries: readonly RoleEntry[]): ReadonlySet<string> => {
   return new Set(values.filter(([id, value]) => value !== undefined &&
     !values.some(([other, ov]) => other !== id && ov !== undefined && ov > value)).map(([id]) => id));
 };
-interface Builder { plans: readonly string[]; orchestrator?: FreeCell; worker?: FreeCell; pareto?: boolean; effort?: string; unmeasured?: boolean }
-/** 두 역할의 상위 limit개와 미측정 행을 모델 기준으로 합친다(같은 모델은 한 행). */
+interface Builder { plans: readonly string[]; orchestrator?: FreeCell; worker?: FreeCell; pareto?: boolean; effort?: string; indexText?: string; unmeasured?: boolean }
+/** 두 역할의 랭크 행(limit 밖 포함)과 미측정 행을 모델 기준으로 합친다(같은 모델은 한 행).
+ *  p78 2a: 랭크된 모델은 limit과 무관하게 행이 되고, 한 역할에만 랭크된 모델의 반대 칸은 근거가 있으므로 ✗다. */
 export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRow[], limit: number): FreeRow[] {
   const rows = new Map<string, Builder>();
   const at = (modelId: string, plans: readonly string[]): Builder =>
@@ -36,6 +38,7 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
       const cell: FreeCell = { score: entry.scoreText ?? '-', passed: !entry.belowZone };
       if (role === 'orchestrator') row.orchestrator = cell; else row.worker = cell;
       row.effort ??= entry.repEffort;
+      row.indexText ??= entry.indexText;
       row.pareto = row.pareto === true || stars.has(entry.modelId);
     }
   }
@@ -44,9 +47,16 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
     row.plans = item.plans;
     row.unmeasured = true;
   }
+  const missing: FreeCell = { score: '-', passed: false }; // 근거는 있는데 이 역할 목록에 없는 경우(하한 탈락 등)
+  for (const row of rows.values()) {
+    if (row.unmeasured === true) continue;
+    row.orchestrator ??= missing;
+    row.worker ??= missing;
+  }
   return freeRowOrder([...rows].map(([modelId, row]) => ({ modelId, plans: row.plans,
     ...(row.orchestrator && { orchestrator: row.orchestrator }), ...(row.worker && { worker: row.worker }),
-    pareto: row.pareto === true, ...(row.effort && { effort: row.effort }), unmeasured: row.unmeasured === true })));
+    pareto: row.pareto === true, ...(row.effort && { effort: row.effort }),
+    ...(row.indexText !== undefined && { indexText: row.indexText }), unmeasured: row.unmeasured === true })));
 }
 const tier = (row: FreeRow): number => row.orchestrator?.passed ? 0 : row.worker?.passed ? 1 : 2;
 const scoreNum = (cell?: FreeCell): number => cell?.passed && Number.isFinite(Number(cell.score)) ? Number(cell.score) : -Infinity;

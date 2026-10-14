@@ -37,9 +37,9 @@ test("plain and pretty both render the ranked order", () => {
   const result: UsageResult = {
     provider: "opencode-go",
     snapshot: createSnapshot("opencode-go", observedAt, [
-      { id: "rolling", unit: "percent", percent: 4, resetAt: "2026-10-07T12:00:00Z" },
-      { id: "monthly", unit: "percent", percent: 10, resetAt: "2026-11-07T00:00:00Z" },
-      { id: "weekly", unit: "percent", percent: 3, resetAt: "2026-10-14T00:00:00Z" },
+      { id: "rolling", unit: "percent", percent: 99, resetAt: "2026-10-07T12:00:00Z" },
+      { id: "monthly", unit: "percent", percent: 99, resetAt: "2026-11-07T00:00:00Z" },
+      { id: "weekly", unit: "percent", percent: 99, resetAt: "2026-10-14T00:00:00Z" },
     ]),
   };
   const plain = renderResults([result]);

@@ -1,5 +1,6 @@
 import { SOURCE_ATTRIBUTIONS } from './source-attribution.js';
-import { DIMENSION_LABELS, ROLE_DIMENSION_WEIGHTS, ROLE_DIMENSIONS, WORKER_PERFORMANCE_FLOOR } from './letter-top10-score.js';
+import { DIMENSION_LABELS, ROLE_DIMENSION_WEIGHTS, ROLE_DIMENSIONS, WORKER_INTEL_FLOOR, type ScoreDimension } from './letter-top10-score.js';
+import { WORKER_BONUS_CAP } from './letter-top10-score-weights.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 
 export const MARKDOWN_LIMIT = 65536;
@@ -35,14 +36,17 @@ export function truncateAtRowBoundary(text: string, limit = MARKDOWN_LIMIT): str
   return `${cut > 0 ? clipped.slice(0, cut) : clipped}\n\n${OMISSION_MARK}`;
 }
 
-/** 스코어 산출 공식 문구(p75: 오케 성능/사용량/속도 3차원, 워커 4차원, 역할별 가중치). 상수는 letter-top10-score.ts에서 읽는다. */
+/** 표시·가중 차원: 역할 차원 중 가중치가 0보다 큰 것만이다(p85 워커는 사용량 0 → 성능/속도/가격, 사용량은 가산 입력). */
+export const displayDimensions = (role: OptimalZoneRole): readonly ScoreDimension[] =>
+  ROLE_DIMENSIONS[role].filter(d => (ROLE_DIMENSION_WEIGHTS[role][d] ?? 0) > 0);
+/** 스코어 산출 공식 문구(p75: 오케 성능/사용량/속도, p85: 워커 성능/속도/가격+가산, 역할별 가중치). 상수는 letter-top10-score.ts에서 읽는다. */
 const weightsText = (role: OptimalZoneRole): string =>
-  ROLE_DIMENSIONS[role].map(d => `${DIMENSION_LABELS[d]} ${Number(((ROLE_DIMENSION_WEIGHTS[role][d] ?? 0) * 100).toFixed(1))}%`).join('·');
+  displayDimensions(role).map(d => `${DIMENSION_LABELS[d]} ${Number(((ROLE_DIMENSION_WEIGHTS[role][d] ?? 0) * 100).toFixed(1))}%`).join('·');
 export const SCORE_FORMULA_LINES: readonly string[] = [
   `- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점(재분배 없음), 동점 모델명`,
   `- 가중치: 오케·리뷰어 ${weightsText('orchestrator')} / 워커·메신저 ${weightsText('worker')}`,
-  '- 성능: AA Int/Code·Cog 정답률; 사용량: 두 역할 OR/OCD 토큰(log10)',
-  '- 속도: 오케 AA·Cog, 워커 AA; 워커 가격 결측 99',
-  `- 워커 성능<${WORKER_PERFORMANCE_FLOOR}·결측 제외; 오케 E=전 변형 풀 표준화·P1 최고점(성능·사용량·속도, 동점 낮은 effort); AA 지수도 E값`,
+  '- 성능: 오케 AA Int·Cog, 워커 AA Int; 사용량: OR/OCD log10(워커는 가산); 속도: 오케 AA·Cog, 워커 AA',
+  `- 워커 가격 = cost_per_task·total_cost log 역방향 min-max 평균(없으면 혼합 단가 \`*\`); 가산 = ${WORKER_BONUS_CAP}×평균(Cog 정답률·사용량, 있는 것만)`,
+  `- 워커 intel ≥${WORKER_INTEL_FLOOR}(결측 제외); 오케 E=전 변형 풀 표준화·P1 최고점(성능·사용량·속도, 동점 낮은 effort); AA 지수도 E값`,
   '- off-peak·파레토, score 원 API',
 ];

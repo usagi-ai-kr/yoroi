@@ -6,7 +6,7 @@ import type { RoleEntry, RoleExit, RoleLists } from '../src/insights/letter-top1
 function fakeLists(prefix: string, withDimensions = false): RoleLists {
   const entries = (): RoleEntry[] => Array.from({ length: 10 }, (_, i) => ({
     rank: i + 1, modelId: `${prefix}-model-${i + 1}`, indexText: (95.0 - i * 2.5).toFixed(1), repEffort: 'high',
-    scoreText: (90.0 - i * 3).toFixed(1), blendedCostText: '$2.00/1M', costEffRankText: `가성비 ${i + 1}위`, plans: ['ChatGPT Plus'],
+    scoreText: (90.0 - i * 3).toFixed(1), blendedCostText: '$2.00/1M', plans: ['ChatGPT Plus'],
     ...(withDimensions && { scoreComponents: { index: 1, cost: 0.75, usage: 0.4, speed: 0.5,
       dimensionSources: { performance: 'aa', usage: 'openrouter', speed: 'aa', price: 'aa' } } }),
     openrouterRankText: i < 3 ? `OpenRouter ${i + 1}위` : 'OpenRouter -',
@@ -22,11 +22,11 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('두 목록 Top10: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/75%(워커·메신저) 통과 모델, 보유 요금제 접근 가능만'));
   assert.ok(rendered.includes('정렬: 스코어 내림차순(동점 시 모델명)'));
   assert.ok(rendered.includes('스코어 = 100 × Σ(가중치 × 차원값)'));
-  assert.ok(rendered.includes('오케·리뷰어 성능 70%·사용량 5%·속도 10%·가성비 15%'));
+  assert.ok(rendered.includes('오케·리뷰어 성능 82%·사용량 6%·속도 12% / 워커'));
   assert.ok(rendered.includes('워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%'));
   assert.ok(rendered.includes('워커 성능<0.7·결측 제외; 오케 E=전 변형 풀 표준화·P1 최고점'));
-  assert.ok(rendered.includes('가성비: 오케 max(AA I²/P·USD/1M, Cog USD/task) 소스별 log min-max'));
-  assert.ok(rendered.includes('- 오케 가성비 결측 0; 워커 가격 결측 99'));
+  assert.ok(rendered.includes('- 속도: 오케 AA·Cog, 워커 AA; 워커 가격 결측 99'));
+  assert.ok(!rendered.includes('오케 가성비') && !rendered.includes('I²/P') && !rendered.includes('성능·가성비 고려'), 'p75: 오케 가성비 문구 없음');
   assert.ok(!rendered.includes('오케 사용량') && !rendered.includes('오케·리뷰어 사용량'));
   assert.ok(rendered.includes('off-peak·파레토, score 원 API'));
   assert.ok(!rendered.includes('가중치 재정규화'));
@@ -39,7 +39,7 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(!rendered.includes('가성비 1위 · 접근'));
   for (const t of ['➖', '👍']) assert.ok(rendered.includes(t), t);
   assert.ok(rendered.includes('🚪 이탈: unified-old-model (전일 8위)'));
-  assert.ok(rendered.includes('## 📖 표시 안내') && rendered.includes('- 👍 파레토 최적(파레토 열): 더 싸고 더 좋은 모델이 없는 상태(가성비 경계선)') && !rendered.includes('↔'));
+  assert.ok(rendered.includes('## 📖 표시 안내') && rendered.includes('- 👍 파레토 최적(파레토 열): 더 싸고 더 좋은 모델이 없는 상태(단가 대비 스코어 경계선)') && !rendered.includes('↔'));
   assert.ok(rendered.indexOf('## 📖 표시 안내') < rendered.indexOf('## 출처 및 안내'));
   assert.ok(rendered.includes('## 출처 및 안내'));
   for (const t of ['출처: OpenRouter (CC-BY-4.0)',
@@ -61,7 +61,7 @@ test('renderTop10Letter indicates all sources normal and keeps the whole compact
 test('renderTop10Letter summarizes all-new, partial-new, and no-new cohorts per list', () => {
   const mkLists = (changes: readonly ('신규' | '유지' | '▲1' | '진입')[]): RoleLists => ({
     orchestrator: { entries: changes.map((change, i) => ({ rank: i + 1, modelId: `m-${i + 1}`, indexText: '90.0',
-      repEffort: 'high', blendedCostText: '$1.00/1M', costEffRankText: `가성비 ${i + 1}위`, plans: ['ChatGPT Plus'],
+      repEffort: 'high', blendedCostText: '$1.00/1M', plans: ['ChatGPT Plus'],
       openrouterRankText: 'OpenRouter -', isPareto: false, both: false, change })), exits: [] },
     worker: { entries: [], exits: [] } });
   const allNew = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['신규', '신규']) });

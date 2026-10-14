@@ -22,7 +22,7 @@ test('orchestrator fills below-zone rows while the worker performance floor remo
   assert.equal(lists.orchestrator.entries.length, 10);
   assert.equal(lists.orchestrator.entries.slice(0, 8).some(e => e.belowZone), false);
   assert.deepEqual(lists.orchestrator.entries.slice(8).map(e => [e.modelId, e.scoreText, e.belowZone]), [
-    ['claude-haiku-5-5', '10.0', true], ['gpt-6-luna', '0.0', true],
+    ['claude-haiku-5-5', '11.7', true], ['gpt-6-luna', '0.0', true],
   ]);
   assert.ok(lists.orchestrator.entries.every(e => e.plans.includes('Free Test')));
   assert.equal(lists.worker.entries.length, 8, 'Cog performance below 0.70 removes Haiku and Luna before fill');
@@ -31,12 +31,12 @@ test('orchestrator fills below-zone rows while the worker performance floor remo
   const haiku = lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!;
   assert.deepEqual([gpt.rank, gpt.indexText, gpt.indexMissing, gpt.belowZone, gpt.scoreText], [10, '38.1', undefined, true, '0.0']);
   assert.deepEqual([haiku.rank, haiku.indexText, haiku.indexMissing, Math.round((haiku.scoreComponents?.sources?.['performance:cognition'] ?? 0) * 1e6), haiku.scoreText],
-    [9, '-', true, Math.round((1 / 7) * 1e6), '10.0']);
+    [9, '-', true, Math.round((1 / 7) * 1e6), '11.7']);
   const paid = computeRoleTop10(records, { catalog, cognitionRecords, excludeModelIds: new Set(['gpt-6-luna']) });
   assert.ok(!paid.orchestrator.entries.some(e => e.modelId === 'gpt-6-luna'));
 });
 
-test('any dimension qualifies a model (price-only included); orchestrator weighs performance 70% and value-for-money 15% (p70)', () => {
+test('any dimension qualifies a model (price-only included); orchestrator weighs performance 82% and has no value-for-money (p75)', () => {
   const ids = ['index-peak', 'fallback-near', 'fallback-cheap', 'missing-free', 'missing-paid'];
   const catalog = catalogFor(ids), records: Top10RecordInput[] = [
     row('index-peak', INTEL, 100),
@@ -46,9 +46,9 @@ test('any dimension qualifies a model (price-only included); orchestrator weighs
     { ...row('missing-paid', CODE, 80), priceInput: 1, priceOutput: 1 },
   ];
   const entries = computeRoleTop10(records, { catalog }).orchestrator.entries;
-  // I²/(P+.01) log-minmax: known I/P rows determine the ratio; missing I or P contributes 0.
-  assert.deepEqual(entries.map(e => [e.modelId, e.scoreText, e.belowZone]), [['index-peak', '70.0', undefined], ['fallback-near', '51.3', true],
-    ['fallback-cheap', '15.0', true], ['missing-free', '0.0', true], ['missing-paid', '0.0', true]]);
+  // p75: 가격은 스코어에 쓰지 않는다. 성능 min-max(40~100)만 반영: near (84-40)/60×82, cheap 0.
+  assert.deepEqual(entries.map(e => [e.modelId, e.scoreText, e.belowZone]), [['index-peak', '82.0', undefined], ['fallback-near', '60.1', true],
+    ['fallback-cheap', '0.0', true], ['missing-free', '0.0', true], ['missing-paid', '0.0', true]]);
   assert.equal(entries[0]!.scoreComponents?.sources?.['price:missing'], undefined);
 });
 

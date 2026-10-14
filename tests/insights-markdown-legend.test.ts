@@ -6,7 +6,7 @@ import { renderTop10Letter } from '../src/insights/letter-top10-render.js';
 import type { RoleChange, RoleEntry, RoleLists } from '../src/insights/letter-top10-unified.js';
 
 const entry = (e: Partial<RoleEntry> & Pick<RoleEntry, 'rank' | 'modelId' | 'indexText' | 'change'>): RoleEntry =>
-  ({ repEffort: 'high', blendedCostText: '$1.50', costEffRankText: '-', scoreText: (100 - e.rank).toFixed(1),
+  ({ repEffort: 'high', blendedCostText: '$1.50', scoreText: (100 - e.rank).toFixed(1),
     plans: ['ChatGPT Plus'], isPareto: false, both: false, ...e });
 const lists: RoleLists = {
   orchestrator: { entries: [
@@ -37,16 +37,16 @@ test('the guide section lists every marker with one meaning', () => {
   assert.equal(LEGEND_LINES[0], LEGEND_HEADING);
   assert.equal(LEGEND_LINES.length, 8);
   for (const text of ['👍 파레토 최적(파레토 열)', '▲N / ▼N', '➖ 유지', '🆕 신규 진입', '🌱 첫 집계', '🚪 이탈',
-    '▽ 하한 보충', '0~100 차원: 두 역할 성능/사용량/속도/',
+    '▽ 하한 보충', '0~100 차원: 오케 성능/사용량/속도, 워커 성능/사용량/속도/가격',
     '속도: 오케 AA·Cog, 워커 AA',
-    '가성비: 오케 max(AA I²/P·USD/1M, Cog USD/task)', '워커 성능<0.7·결측 제외', '워커 가격 99는 근거 없음', '⚠️ 한도·주의', '🔒 접근 제한', '🆓 무료']) assert.ok(LEGEND_LINES.some(l => l.includes(text)), text);
+    '워커 성능<0.7·결측 제외', '워커 가격 99는 근거 없음', '⚠️ 한도·주의', '🔒 접근 제한', '🆓 무료']) assert.ok(LEGEND_LINES.some(l => l.includes(text)), text);
   assert.ok(LEGEND_LINES.some(l => l.includes('두 역할 OR/OCD')));
 });
 
-test('dimension cells keep all four dimensions for both roles (p70: orchestrator usage restored)', () => {
+test('dimension cells: orchestrator 3 dimensions, worker 4 (p75: orchestrator price removed)', () => {
   const e = { ...lists.orchestrator.entries[0]!, scoreComponents: { index: 0.9, cost: 0.8, usage: 0.7, speed: 0.6,
     dimensionSources: { performance: 'aa', usage: 'openrouter', speed: 'aa', price: 'aa' } } };
-  assert.equal(dimensionsText(e, 'orchestrator'), '90/70/60/80');
+  assert.equal(dimensionsText(e, 'orchestrator'), '90/70/60');
   assert.equal(dimensionsText(e, 'worker'), '90/70/60/80');
 });
 

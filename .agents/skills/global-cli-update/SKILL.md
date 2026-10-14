@@ -1,13 +1,13 @@
 ---
 name: global-cli-update
-description: 전역 yoroi CLI 설치를 레포 최신 빌드와 동기화하고 버전 일치를 검증한다. 버전 변경 main 머지 후 갱신, 전역 CLI 버전 불일치 확인, 전역 설치 검증 절차에 사용한다.
+description: 전역 CLI 설치를 레포 최신 빌드와 동기화하고 버전 일치를 검증한다. 버전 변경 main 머지 후 갱신, 전역 CLI 버전 불일치 확인, 전역 설치 검증 절차에 사용한다.
 metadata:
   version: "1.0"
 ---
 
 # 전역 CLI 갱신
 
-전역 설치된 yoroi가 레포 최신 빌드와 일치하는지 확인하고 갱신한다.
+전역 설치된 CLI가 레포 최신 빌드와 일치하는지 확인하고 갱신한다.
 명령 이름·경로·규칙은 [docs/global-install.md](../../../docs/global-install.md)에서 확인한다.
 
 ## 언제 실행
@@ -25,7 +25,7 @@ metadata:
 
 ## 검증
 
-- 갱신 후 `yoroi --version`이 레포 `package.json` 버전과 같은지 확인.
+- 갱신 후 `<CLI> --version`이 레포 `package.json` 버전과 같은지 확인(명령 이름은 호스트 문서에서 확인).
 - 읽기 전용 검사 종료 코드(일치 0, 불일치 1, 미설치 2) 확인.
 
 ## 보고

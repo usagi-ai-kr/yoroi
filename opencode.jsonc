@@ -1,0 +1,6 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // 이 레포의 공용 스킬·룰 폴더를 opencode가 발견하도록 등록한다.
+  // 스킬 본문은 .agents/skills/<name>/SKILL.md 이고, 역할·분배 규칙은 docs/orchestration.md에 있다.
+  "skills": { "paths": [".agents/skills"] }
+}

@@ -5,18 +5,20 @@
 - 분담·패킷·감사: [agent-coordination](../.agents/skills/agent-coordination/SKILL.md)
 - 중단·체크포인트·재개: [graceful-stop](../.agents/skills/graceful-stop/SKILL.md)
 
-## 현재 구성 (2026-10-13 사용자 지시, root 확인)
+## 현재 구성 (2026-10-14, list·visible 확인)
 
-메신저는 Hermes다. o1·o2는 오케스트레이터이자 리뷰어, w1·w2는 워커다.
+메신저는 코테츠다. 라벨·pane id는 세션마다 바뀌므로 배정 전에 다시 읽는다.
 
-| pane | 이름 | 모델 (사용자 지정) | 역할 |
+| pane | 이름 | 현재 화면 모델 | 역할 |
 | --- | --- | --- | --- |
-| `w12:pQ` | o1 | Claude Opus 5.5 | 오케스트레이터·리뷰어 |
-| `w12:pR` | o2 | Claude Opus 5.5 (Claude Code, 2026-10-13 사용자 교체) | 오케스트레이터·리뷰어 |
+| `w12:p13` | o | OpenCode Grok 4.7 xAI | 오케스트레이터 |
+| `w12:p12` | w1 | OpenCode | 워커 |
+| `w12:p0` | w2 | OpenCode | 워커 |
+| `w12:p11` | w3 | OpenCode | 워커 |
+| `w12:pV` | w4 | OpenCode | 워커 |
 
-o2는 Codex GPT-6.1-Sol capacity 오류(2026-10-13 o1 보고)와 사용자 지시에 따라 GLM-5.3-Flash(Ollama Cloud)로 교체됐다(2026-10-13, pane 상태줄 확인).
-| `w12:pS` | w1 | OpenCode DeepSeek V4.1 Flash (Ollama Cloud) | 워커 |
-| `w12:pT` | w2 | Codex GPT-6.1-Sol (2026-10-13 사용자 교체) | 워커 |
+배정 전에 `coord status`로 모델·상태를 확인한다. 모델·세션 변경은 사용자 결정이다.
+패킷: `scratch/packets/`.
 
 ## 메신저 역할
 
@@ -28,11 +30,14 @@ o2는 Codex GPT-6.1-Sol capacity 오류(2026-10-13 o1 보고)와 사용자 지�
 
 ## 오케스트레이터 역할
 
-1. 메신저의 작업을 워커에게 분배하고 자세한 요구·소유 파일·완료 기준을 docs로 전달한다.
-2. 5분 안에 마칠 단위로 분배한다. 긴 테스트·빌드는 서브에이전트나 백그라운드로 유도한다.
-   느린 워커의 요금제·환각·비효율·권한 문제를 확인하고 해결한다. 사용자 조치가 필요하면 메신저에게 전달한다.
-3. 리뷰어의 PR 발행 여부를 백그라운드로 감지해 작업 종료를 판정한다. PR 발행은 머지 승인이 아니다.
-4. 가능한 작업을 쥐고 있지 않는다. 백그라운드나 일부 서브에이전트는 메신저 요청 누락 방지를 위해 허용한다.
+o는 분배·진척 파악·막힘 원인 해결·우선순위 조정만 맡는다. 구현·검증·리뷰는 물론 **문서 읽기·조사·분석도 워커 패킷으로 인계**한다.
+본인이 직접 하는 것은 분배 판단에 필요한 최소 확인뿐이다. 토큰을 아끼려고 문서·로그를 전문 읽지 않는다.
+**리뷰는 구현자와 다른 에이전트가 맡는다.** 자기가 구현한 것을 자기가 리뷰하지 않는다.
+
+1. 메신저의 작업을 워커에게 분배하고 요구·소유 파일·완료 기준을 docs·패킷으로 전달한다. 5분 단위로 나눈다.
+2. 느린 워커의 요금제·환각·비효율·권한 문제를 확인해 해결한다. 사용자 조치는 메신저에게 전달한다.
+3. 리뷰어의 PR 발행 여부를 백그라운드로 감지해 종료를 판정한다. PR 발행은 머지 승인이 아니다.
+4. 가능한 작업을 쥐고 있지 않는다. 긴 테스트·빌드는 서브에이전트·백그라운드로 유도한다.
 
 ## 워커 역할 (2개 이상)
 
@@ -72,9 +77,14 @@ o2는 Codex GPT-6.1-Sol capacity 오류(2026-10-13 o1 보고)와 사용자 지�
 - 보고서 생성·blocked·한도 감시는 아래 스크립트로 한다. 리뷰어 PR 발행 감시는 별도로 수행한다.
 
 ```bash
-bash .agents/skills/agent-coordination/scripts/watch_workers.sh \
-  --reports /tmp/yoroi-<task>-report.json [...] --panes w12:pS w12:pT --interval 20 --max-polls 120
+python3 .agents/skills/agent-coordination/scripts/coord.py watch w2 w3 \
+  --reports /tmp/yoroi-<task>-report.json --interval 20 --max-polls 120
 ```
+
+## 분배 CLI (coord)
+
+- 분배·상태·전송·감사는 `coord.py`로만 한다. `herdr` 원시 명령·키 입력·화면 읽기·세션 조작은 직접 하지 않는다.
+- CLI가 다루지 않는 조작은 메신저(코테츠)에게 요청한다. 로스터 표는 1열 백틱 pane·2열 라벨 계약을 유지한다.
 
 ## 배운 점 (기존 운영 기록)
 

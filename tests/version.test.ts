@@ -11,7 +11,6 @@ test('CLI version matches package.json without credentials, source creation or e
   const dataDir = mkdtempSync(join(tmpdir(), 'yoroi-version-'));
   t.after(() => rmSync(dataDir, { recursive: true, force: true }));
   const metadata = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(metadata.version, '0.10.0');
   assert.match(metadata.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
   const stdout: string[] = [], stderr: string[] = [];
   const cli = compose({ dataDir, configEnv: { YOROI_PROVIDERS: 'opencode-go' },

@@ -56,6 +56,24 @@ o(`w12:p13`)는 분배·진척만 맡는다. 보고는 각 패킷 `report_path` 
 - w2b: `f9251a8` 묶음 6 · `649221f` 묶음 5 · `5d616ec` 0.10.0·roadmap. 940/940, validate PASS.
   범위 확대 인정: `tests/version.test.ts` 버전 고정 1줄(범프로 필연, w2 pane 사용자 승인). 기존 플레이크 usage-history 100ms 1회.
 
+## 3단계: 버전 가드 하드코딩 제거 (사용자 지시 "버전 가드 좀 하드코딩으로 하지 마라", w2, dev에서 → PR #139)
+
+1. `tests/version.test.ts`의 리터럴 단언(`'0.10.0'`)을 지우고 package.json↔CLI 출력 일치·SemVer 형식 정규식만 남긴다.
+2. `tests`·`src`·`features` 버전 리터럴 재확인. `src/infra/codex-source.ts:11` clientInfo `'0.0.0'`도
+   패키지 버전 단일 원본을 쓰게 한다(기존 metadata 모듈 재사용, 어렵거나 의도된 값이면 보고만).
+3. `scripts/version.py --bump`에 테스트 파일 수정 처리가 있으면 없앤다(없으면 확인 결과만).
+4. 검증: `node --import tsx --test tests/version.test.ts`, `pnpm run typecheck`, `pnpm run test` 실패 0.
+5. dev에 별도 커밋(메시지에 "하드코딩 제거", 5d616ec의 "버전 가드 갱신"은 이 커밋으로 대체됨을 명시) 후 `git push origin dev`.
+
+## 3단계 결과 (w2, dev에서 별도 커밋 → PR #139)
+
+- `tests/version.test.ts`: 버전 리터럴 단언을 삭제하고 SemVer 형식 정규식·package.json↔CLI 출력 일치만 남겼다(범프 때 테스트를 고치지 않는다).
+- `src/infra/codex-source.ts`: clientInfo `version: '0.0.0'` 하드코딩을 `package.json` `metadata.version`으로 교체(composition-root와 같은 JSON 단일 원본 패턴).
+- `scripts/version.py --bump`: 테스트 파일 수정 처리는 없음(manifest만 기록) — 확인 결과만, 변경 없음.
+- 잔여 버전 리터럴: `src`·`tests`·`features` 재확인 결과 없음.
+- 검증: `node --import tsx --test tests/version.test.ts` pass, `pnpm run typecheck` exit 0, `pnpm test` 940/940, `validate-repo.py` PASS(564 files, 7 skills).
+- 이 "하드코딩 제거" 커밋이 `5d616ec`의 "버전 가드 갱신"(리터럴 1줄)을 대체한다.
+
 ## 공통 금지
 
 모델·세션 변경, 실제 유료 API 호출, 시크릿·개인 사용량 원본 노출, 소유 밖 파일 수정, 파일당 100줄 초과.

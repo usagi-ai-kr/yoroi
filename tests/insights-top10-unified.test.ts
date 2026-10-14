@@ -26,8 +26,8 @@ const cohortOf = (records: readonly Top10RecordInput[]) => {
 
 test('one candidate pool feeds both lists: intersection appears twice, excluded/inaccessible never', () => {
   const { orchestrator, worker } = computeRoleTop10(RECORDS, W);
-  assert.deepEqual(orchestrator.entries.map(e => [e.modelId, e.scoreText]), [['gpt-6-1-sol', '80.8'], ['claude-opus-5-5', '70.0'], ['claude-haiku-5-5', '15.0']],
-    'p64 70/0/15/15·변형 평가: 변형은 Cog high/max 하나, AA 단일 default 값 공유 → GPT 70+15×.720, Opus 70+0, Haiku 0+15');
+  assert.deepEqual(orchestrator.entries.map(e => [e.modelId, e.scoreText]), [['claude-opus-5-5', '82.0'], ['gpt-6-1-sol', '82.0'], ['claude-haiku-5-5', '0.0']],
+    'p75 82/6/12·변형 평가: 가성비가 없어 단가는 점수에 쓰지 않는다 → Opus·GPT 성능 1(동점은 모델명), Haiku 성능 0');
   assert.deepEqual(worker.entries.map(e => [e.modelId, e.scoreText]), [['gpt-6-1-sol', '57.4'], ['claude-opus-5-5', '25.0']],
     'p54 워커 30·성능+40·AA 가격 — GPT 1+.685, Opus max(AA .75, Cog .833)+0, Haiku 성능 0 < .70 탈락');
   assert.deepEqual(worker.entries.map(e => e.both), [true, true], 'intersection models are marked in both lists');
@@ -37,7 +37,7 @@ test('one candidate pool feeds both lists: intersection appears twice, excluded/
   assert.ok(!orchestrator.entries.some(e => e.modelId === 'fable-pro'), '제외 계열은 존 계산 전에 걸러진다');
   assert.ok(orchestrator.entries.every(e => e.plans.length > 0));
   assert.equal(orchestrator.entries[0]!.rank, 1);
-  assert.equal(orchestrator.entries[0]!.indexText, '88.0');
+  assert.equal(orchestrator.entries[0]!.indexText, '90.0');
   assert.match(orchestrator.entries[0]!.scoreText ?? '', /^\d+\.\d$/); assert.ok(orchestrator.entries[0]!.scoreComponents);
   assert.equal(worker.entries[0]!.indexText, '80.0');
 });

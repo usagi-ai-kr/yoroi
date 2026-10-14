@@ -14,7 +14,7 @@ export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = {
 export type RoleChange = '유지' | `▲${number}` | `▼${number}` | '진입' | '신규';
 export interface RoleEntry {
   readonly rank: number; readonly modelId: string; readonly indexText: string; readonly repEffort: string;
-  readonly blendedCostText: string; readonly costEffRankText: string; readonly scoreText?: string;
+  readonly blendedCostText: string; readonly scoreText?: string;
   readonly scoreComponents?: ScoreComponents; readonly plans: readonly string[];
   readonly change: RoleChange; readonly isPareto: boolean; readonly both: boolean; readonly offPeak?: boolean;
   readonly belowZone?: boolean; readonly indexMissing?: boolean;
@@ -44,7 +44,6 @@ function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, 
     return { rank: i + 1, modelId: g.baseModelId, indexText: rep.indexMissing ? '-' : rep.value.toFixed(1), repEffort: rep.effort,
       // p52: Free 경로도 원 API 단가(off-peak 포함)를 그대로 표시한다. 가격 결측 보정(0.99)은 단가 '-'로 둔다.
       blendedCostText: costTextOf(rep.effectiveCost ?? rep.blendedCost),
-      costEffRankText: s.costEffRank === 0 ? '가성비 n/a' : `가성비 ${s.costEffRank}위`,
       scoreText: s.score.toFixed(1), scoreComponents: s.components,
       plans: plansForCatalogModel(g.baseModelId, catalog), isPareto: g.isPareto, both: false,
       ...(rep.indexMissing && { indexMissing: true }), ...(s.belowZone && { belowZone: true }),
@@ -78,7 +77,7 @@ export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: To
   const freeRows = catalog.filter(p => p.tier === 'free').flatMap(p => p.models.filter(m => m.verified).map(m => ({ modelId: m.modelId, metric: FREE_ACCESS_METRIC, value: 0 })));
   const evidence = [...(opts?.openrouterRecords ?? []), ...(opts?.opencodeDataRecords ?? []), ...(opts?.cognitionRecords ?? []), ...freeRows];
   const candidates = buildCandidatePool(records, catalog, evidence).accessibleRecords;
-  // p52: 성능·사용량·속도·가격 4차원, 역할별 가중치(ROLE_DIMENSION_WEIGHTS)·AA 지표. 두 계열 간 강제 배제 없음.
+  // p75: 오케 성능·사용량·속도, 워커 성능·사용량·속도·가격, 역할별 가중치(ROLE_DIMENSION_WEIGHTS)·AA 지표. 두 계열 간 강제 배제 없음.
   const pick = (role: OptimalZoneRole) => buildList(candidates, role, opts ?? {}, catalog, excluded, scoreRoleCandidatesFromSources(candidates, role, opts));
   const orchestrator = pick('orchestrator'), worker = pick('worker');
   const oKeys = new Set(orchestrator.entries.map(e => normalizeModelName(e.modelId)));

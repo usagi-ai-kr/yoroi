@@ -32,8 +32,8 @@ test('previous ranks use the same composite-score and fill policy', () => {
     { modelId: 'claude-haiku-5-5', value: 60, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
   ];
   const ranks = previousRanks(records).orchestrator;
-  assert.deepEqual([ranks.get('claude-opus-5-5'), ranks.get('gpt-6-1-sol'), ranks.get('claude-haiku-5-5')], [2, 1, 3]);
-  // p70 70/5/10/15: GPT가 I²/P 최고(가성비 15% × 1)로 성능 차(.875 vs 1)를 뒤집어 1위, Opus 2위(75.4 < 76.3). 모두 AA 단가 행 사용.
+  assert.deepEqual([ranks.get('claude-opus-5-5'), ranks.get('gpt-6-1-sol'), ranks.get('claude-haiku-5-5')], [1, 2, 3]);
+  // p75 82/6/12: 가성비가 없어 성능이 높은 Opus가 1위, 단가 차이는 순위에 영향이 없다.
 });
 
 test('kimi-k3 at its official blended price remains eligible and Top10 fills normally', () => {
@@ -44,7 +44,7 @@ test('kimi-k3 at its official blended price remains eligible and Top10 fills nor
     { modelId: 'kimi-k3', value: 99, priceInput: 3, priceOutput: 15, metric }, // 혼합 $6.00
     ...cheap.map((modelId, i) => ({ modelId, value: 95 - i, priceInput: 0.5, priceOutput: 0.5, metric }))];
   const entries = computeRoleTop10(records).orchestrator.entries;
-  // 상한 없음: 비싼 kimi-k3도 후보다(가격 차원 0점이라 이 풀에선 11위 밖일 수 있어 작은 풀로 확인).
+  // 상한 없음: 비싼 kimi-k3도 후보다(오케 스코어는 가격과 무관하다. 작은 풀로도 확인).
   assert.ok(computeRoleTop10(records.slice(0, 4)).orchestrator.entries.some(e => e.modelId === 'kimi-k3'), 'kimi-k3 공식 단가($3.00/$15.00, 혼합 $6)도 후보로 남는다');
   assert.equal(entries.length, 10, 'Top10은 10개를 채운다');
   assert.equal(entries.at(-1)!.rank, 10);

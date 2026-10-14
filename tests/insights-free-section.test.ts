@@ -20,20 +20,20 @@ const RECORDS = [
   { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 },
   { modelId: 'claude-sonnet-5-5', value: 88, metric: INTEL, priceInput: 1, priceOutput: 5 }];
 
-test('the free section renders from the injected freeCatalog with notes limited to Zen/Go Free', () => {
+test('the free section renders one merged table with notes limited to Zen/Go Free', () => {
   const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG });
   const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
-  assert.ok(section.includes('### 오케스트레이터') && section.includes('### 워커'));
-  assert.ok(section.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가성비 | Free 경로 |'));
-  assert.ok(section.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | Free 경로 |'));
-  assert.ok(section.includes('| 1 | 👍 | step-5 | default | 70.0 | 100/-/-/0 | OpenCode Zen Free'));
-  assert.ok(section.includes('| 1 | 👍 | big-pickle | default | 70.0 | 100/-/-/100 | OpenCode Zen Free'));
-  assert.ok(section.includes('| 1 | 👍 | step-5 |'), 'free orchestrator leader: 👍 in the pareto column, no ↔');
-  assert.ok(!section.includes('↔') && !section.includes('⭐'));
+  assert.ok(!section.includes('### 오케스트레이터') && !section.includes('### 워커'), '한 표로 합쳐 소제목을 두지 않는다');
+  assert.ok(section.includes('| 모델 | 오케 | 워커 | Free 경로 | 비고 |'));
+  const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
+  assert.ok(rows.length >= 3, section);
+  assert.ok(rows.some(line => /^\| [^|]+ \| ✓ [\d.]+ \| /.test(line)), '오케 통과 행은 ✓ 스코어를 쓴다');
+  assert.ok(rows.every(line => /^\| [^|]+ \| (✓ [\d.]+|✗|-) \| (✓ [\d.]+|✗|-) \| .+ \| .+ \|$/.test(line)), section);
   assert.ok(section.includes('OpenCode Go Free ⚠️세션 헤더 필요'), 'Go Free session-header caveat kept');
   assert.ok(section.includes('OpenCode Zen Free+OpenCode Go Free ⚠️세션 헤더 필요'));
   assert.ok(section.includes('- OpenCode Zen Free: 기간 한정 무료'));
   assert.ok(section.includes('- OpenCode Go Free: Unlimited·기간 한정'));
+  assert.ok(!section.includes('↔') && !section.includes('⭐'));
   assert.ok(!section.includes('Antigravity Free') && !section.includes('미확인'), 'Antigravity/unknown lines removed');
 });
 
@@ -73,22 +73,23 @@ const STAR_COGNITION = [{ modelId: 'mimo-v2-5', value: 0.7, metric: 'cognition_c
 test('free pareto marks only score-undominated rows; dominated rows carry no mark', () => {
   const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: STAR_RECORDS, cognitionRecords: STAR_COGNITION, freeCatalog: FREE_CATALOG });
   const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
-  const orch = section.slice(section.indexOf('### 오케스트레이터'), section.indexOf('### 워커'));
-  const worker = section.slice(section.indexOf('### 워커'));
-  // p70: 성능 70%·사용량 5%·속도 10%·가성비 15%; Free access adds no price anchor.
-  for (const row of ['| 1 | 👍 | step-5 |', '| ▽ 2 |  | mimo-v2-5 |', '| ▽ 3 |  | big-pickle |', '| ▽ 4 |  | ling-3-0-flash-fin |']) assert.ok(orch.includes(row), row);
-  assert.ok(worker.includes('| 1 | 👍 | mimo-v2-5 |'), 'only Mimo meets the worker performance floor');
-  assert.ok(!worker.includes('big-pickle') && !worker.includes('ling-3-0-flash-fin') && !worker.includes('step-5'));
+  const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
+  const marked = rows.filter(line => line.includes('👍 파레토'));
+  assert.ok(marked.length > 0, section);
+  assert.ok(marked.every(line => /^\| [^|]+ \| ✓ [\d.]+ \| /.test(line)), '파레토 표시는 그 영역을 통과한 행에만 붙는다');
+  assert.ok(rows.some(line => /^\| [^|]+ \| ✗ \| /.test(line)), '근거는 있고 미달인 행은 ✗');
 });
 
-test('a verified Free path alone is access evidence, not orchestration price evidence; no placeholder rows', () => {
+test('a verified Free path alone is access evidence, not price evidence; unmeasured rows keep - cells', () => {
   const sparse = [{ modelId: 'step-5', value: 43.7, metric: INTEL, priceInput: 0, priceOutput: 0 },
     { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 }];
   const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
+  const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
   for (const id of ['big-pickle', 'mimo-v2-5']) {
-    assert.ok(md.includes(`| ${id} | default | 0.0 | -/-/-/- | OpenCode Zen Free |`), `orchestrator: ${id}`);
+    assert.ok(section.includes(`| ${id} | ✗ | - | OpenCode Zen Free | `), `${id}: Free 접근 근거만으로는 두 영역 다 통과하지 못한다`);
   }
-  assert.ok(!md.includes('| 근거 없음 |') && !md.includes('- AA 미측정(순위 제외)'));
+  assert.ok(!section.includes('근거 없음'), '이 픽스처에는 스코어를 못 내는 미측정 행이 없다');
+  assert.ok(!md.includes('- AA 미측정(순위 제외)'));
   const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
-  assert.ok(!text.includes('· 근거 없음 ·') && text.includes('mimo-v2-5 · effort default · 스코어 0.0 · -/-/-/- · 단가 -'), text);
+  assert.ok(text.includes('big-pickle · 오케 ✗ · 워커 - · OpenCode Zen Free · '), text);
 });

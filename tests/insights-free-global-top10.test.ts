@@ -20,8 +20,10 @@ test('Free metadata preserves original paid API price and cannot grant a score b
     const free = withFree[role].entries.find(e => e.modelId === 'z-free')!;
     const paid = withFree[role].entries.find(e => e.modelId === 'paid-a')!;
     assert.equal(free.blendedCostText, '$99.00/1M');
-    assert.ok(Number(free.scoreText) < Number(paid.scoreText));
-    assert.equal(free.scoreComponents?.cost, 0);
+    // p75 A: 오케는 가격 차원을 제거해 가격이 점수를 깎지 않는다(무료 경로 보너스도 없다). 워커는 가격 40%가 유지된다.
+    if (role === 'worker') assert.ok(Number(free.scoreText) < Number(paid.scoreText));
+    else assert.equal(free.scoreText, paid.scoreText);
+    assert.equal(free.scoreComponents?.cost ?? 0, 0);
     assert.deepEqual(withFree[role].entries.map(e => [e.modelId, e.scoreText]),
       withoutFree[role].entries.map(e => [e.modelId, e.scoreText]));
   }
@@ -41,8 +43,14 @@ test('observed original zero prices remain zero without relying on a Free path',
   const zero = records.map(r => r.modelId === 'z-free' ? { ...r, priceInput: 0, priceOutput: 0 } : r);
   for (const role of ['orchestrator', 'worker'] as const) {
     const e = computeRoleTop10(zero, options)[role].entries.find(e => e.modelId === 'z-free')!;
-    assert.equal(e.scoreComponents?.cost, 1);
-    assert.equal(e.scoreComponents?.dimensionSources?.price, 'aa');
+    // p75 A: 오케는 가격 차원을 제거해 가격이 점수에 관여하지 않는다. 워커는 가격 40%가 유지되어 관측 0이 최저가 1이 된다.
+    if (role === 'worker') {
+      assert.equal(e.scoreComponents?.cost, 1);
+      assert.equal(e.scoreComponents?.dimensionSources?.price, 'aa');
+    } else {
+      assert.equal(e.scoreComponents?.cost ?? 0, 0);
+      assert.equal(e.scoreComponents?.dimensionSources?.price, undefined);
+    }
   }
 });
 test('Free access alone ranks in orchestrator but cannot bypass the worker performance floor', () => {

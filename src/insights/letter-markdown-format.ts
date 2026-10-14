@@ -1,5 +1,6 @@
 import { SOURCE_ATTRIBUTIONS } from './source-attribution.js';
-import { ROLE_SCORE_WEIGHTS } from './letter-top10-worker.js';
+import { ROLE_DIMENSION_LABELS, ROLE_DIMENSION_WEIGHTS, SCORE_DIMENSIONS, WORKER_PERFORMANCE_FLOOR } from './letter-top10-score.js';
+import type { OptimalZoneRole } from './letter-top10-worker.js';
 
 export const MARKDOWN_LIMIT = 65536;
 export const OMISSION_MARK = '(이하 생략 — 전체는 `--full`)';
@@ -34,13 +35,15 @@ export function truncateAtRowBoundary(text: string, limit = MARKDOWN_LIMIT): str
   return `${cut > 0 ? clipped.slice(0, cut) : clipped}\n\n${OMISSION_MARK}`;
 }
 
-/** 스코어 산출 공식 문구. 가중치는 letter-top10-worker.ts 상수에서 직접 읽어 렌더/코드 드리프트를 막는다. */
+/** 스코어 산출 공식 문구(p52: 역할별 4차원 가중치, p70: 오케도 사용량 포함). 상수는 letter-top10-score.ts에서 읽는다. */
+const weightsText = (role: OptimalZoneRole): string =>
+  SCORE_DIMENSIONS.map(d => `${ROLE_DIMENSION_LABELS[role][d]} ${Number((ROLE_DIMENSION_WEIGHTS[role][d] * 100).toFixed(1))}%`).join('·');
 export const SCORE_FORMULA_LINES: readonly string[] = [
-  '- 스코어 = 100 × Σ(가중치 × 정규화값), 스코어 내림차순 정렬(동점 시 지수)',
-  `- 가중치 오케스트레이터: 지수 ${ROLE_SCORE_WEIGHTS.orchestrator.index} · 비용 ${ROLE_SCORE_WEIGHTS.orchestrator.cost} · 사용량 ${ROLE_SCORE_WEIGHTS.orchestrator.usage} · 속도 ${ROLE_SCORE_WEIGHTS.orchestrator.speed} / 워커: 지수 ${ROLE_SCORE_WEIGHTS.worker.index} · 비용 ${ROLE_SCORE_WEIGHTS.worker.cost} · 사용량 ${ROLE_SCORE_WEIGHTS.worker.usage} · 속도 ${ROLE_SCORE_WEIGHTS.worker.speed}`,
-  '- 정규화: 역할별 후보 풀 min-max(비용·사용량·속도는 log10, 싼 쪽·빠른 쪽 1), 단가 결측 0·사용량 결측 0·속도 결측 중앙값',
-  '- 추천 effort: 변형별 실효 단가(혼합 단가 × cost_per_task 비율)로 스코어링한 최고 변형',
-  '- default: AA에 effort 변형 또는 cost_per_task가 없어 단일 구성으로 평가',
-  '- Free 섹션: 비용 항목 동일(무료)이라 지수·사용량·속도로 사실상 정렬',
-  '- off-peak: 실행 시각 기준 확인된 할인 단가 적용',
+  `- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점(재분배 없음), 동점 모델명`,
+  `- 가중치: 오케·리뷰어 ${weightsText('orchestrator')} / 워커·메신저 ${weightsText('worker')}`,
+  '- 성능: AA Int/Code·Cog 정답률; 사용량: 두 역할 OR/OCD 토큰(log10)',
+  '- 속도: 오케 AA·Cog, 워커 AA; 가성비: 오케 max(AA I²/P·USD/1M, Cog USD/task) 소스별 log min-max',
+  '- 오케 가성비 결측 0; 워커 가격 결측 99',
+  `- 워커 성능<${WORKER_PERFORMANCE_FLOOR}·결측 제외; 오케 E=전 변형 풀 표준화·P1 최고점(성능·가성비 고려, 동점 낮은 effort); AA 지수도 E값`,
+  '- off-peak·파레토, score 원 API',
 ];

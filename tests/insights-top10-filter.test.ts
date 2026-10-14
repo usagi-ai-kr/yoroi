@@ -47,9 +47,9 @@ test('threshold max is computed after filtering: an excluded Fable top model doe
   assert.deepEqual([empty.orchestrator.size, empty.worker.size], [0, 0]);
 });
 
-test('ChatGPT line keeps only GPT-6.1 Sol: 6 Sol and 5.6 Sol are pruned by the latest-only rule', () => {
+test('GPT-6.1 Sol and GPT-6 Sol remain separate; GPT-5.6 Sol is pruned', () => {
   const kept = ids(dropOlderVersions([variant('gpt-6-1-sol', 51.8), variant('gpt-6-sol', 47.6), variant('gpt-5-6-sol', 47.0)]));
-  assert.deepEqual(kept, ['gpt-6-1-sol']);
+  assert.deepEqual(kept, ['gpt-6-1-sol', 'gpt-6-sol']);
 });
 
 test('a higher generation in the same GPT vendor line drops every lower-generation grade (gpt-gen-112)', () => {
@@ -70,7 +70,7 @@ test('a higher generation in the same GPT vendor line drops every lower-generati
 
 test('GPT cross-grade replacement compares major generations, while same-grade compares full versions', () => {
   const candidates = ['gpt-6-1-sol', 'gpt-6-luna', 'gpt-6-sol', 'gpt-5-6-luna', 'gpt-5-6-terra', 'gpt-5-6-sol'];
-  assert.deepEqual(ids(dropOlderVersions(candidates.map(id => variant(id)))), ['gpt-6-1-sol', 'gpt-6-luna']);
+  assert.deepEqual(ids(dropOlderVersions(candidates.map(id => variant(id)))), ['gpt-6-1-sol', 'gpt-6-luna', 'gpt-6-sol']);
 });
 
 test('generation pruning keeps unrelated vendor lines and unparseable models', () => {
@@ -79,8 +79,18 @@ test('generation pruning keeps unrelated vendor lines and unparseable models', (
   for (const pair of pairs) assert.deepEqual(ids(dropOlderVersions(pair.map(id => variant(id)))), pair);
 });
 
-test('accessible global GPT pool retains 6 Luna while dropping same-grade 6 Sol and every 5.6 grade', () => {
+test('accessible global GPT pool retains both 6 Sol models and 6 Luna while dropping 5.6 grades', () => {
   const pool = buildCandidatePool(['gpt-6-1-sol', 'gpt-6-luna', 'gpt-6-sol', 'gpt-5-6-luna',
     'gpt-5-6-terra', 'gpt-5-6-sol'].map((modelId, i) => ({ modelId, metric: i === 1 ? 'artificial_analysis_intelligence_index' : 'artificial_analysis_coding_index', value: 80 })));
-  assert.deepEqual(pool.accessibleRecords.map(r => r.modelId).sort(), ['gpt-6-1-sol', 'gpt-6-luna']);
+  assert.deepEqual(pool.accessibleRecords.map(r => r.modelId).sort(), ['gpt-6-1-sol', 'gpt-6-luna', 'gpt-6-sol']);
+});
+
+test('successor metadata cannot prune GPT-6 Sol when GPT-6.1 Sol is present', () => {
+  const records = [
+    { modelId: 'gpt-6-1-sol', metric: 'artificial_analysis_intelligence_index', value: 90, successorOf: 'gpt-6-sol' },
+    { modelId: 'gpt-6-sol', metric: 'artificial_analysis_intelligence_index', value: 80 }];
+  const pool = buildCandidatePool(records);
+  assert.deepEqual(pool.accessibleRecords.map(r => r.modelId).sort(), ['gpt-6-1-sol', 'gpt-6-sol']);
+  assert.deepEqual(computeRoleTop10(records).orchestrator.entries.map(e => [e.modelId, e.successorOf]),
+    [['gpt-6-1-sol', undefined], ['gpt-6-sol', undefined]]);
 });

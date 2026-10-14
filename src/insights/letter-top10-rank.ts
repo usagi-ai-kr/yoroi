@@ -10,7 +10,16 @@ export interface Top10RecordInput { readonly modelId: string; readonly modelAlia
 export interface Top10Options { readonly openrouterRecords?: readonly Top10RecordInput[]; readonly previousCohort?: readonly Top10RecordInput[] | null;
   readonly priceOverrides?: Readonly<Record<string, OffPeakRate>>; readonly nowUtc?: string;
   readonly catalog?: readonly PlanCatalogEntry[]; readonly excludeModelIds?: ReadonlySet<string>;
-  readonly opencodeDataRecords?: readonly Top10RecordInput[] }
+  readonly opencodeDataRecords?: readonly Top10RecordInput[];
+  /** Cognition main subset만. modelId는 정규화 base+effort 접미사. metric: `cognition_correct`(정답률 0..1)·
+   *  `cognition_cost`(USD/task)·`cognition_duration_min`(분/task). p51 4차원 점수의 성능·가격·속도 근거. */
+  readonly cognitionRecords?: readonly Top10RecordInput[];
+  /** p51: 런타임 검증 free 카탈로그(tier 'free'). 전체 Top10 후보 풀에 합친다(p52: 접근 근거일 뿐 가격 불변). */
+  readonly freeCatalog?: readonly PlanCatalogEntry[] }
+/** Cognition main 근거 지표: 정답률(ratio)·작업당 비용(USD/task)·작업당 소요 시간(분). */
+export const COGNITION_METRIC = 'cognition_correct', COGNITION_COST_METRIC = 'cognition_cost', COGNITION_DURATION_METRIC = 'cognition_duration_min';
+/** p51: 검증 free 카탈로그 경로 표지 행(값은 의미 없음, 가격 아님). 후보 풀에서 접근 근거 행으로만 다룬다. */
+export const FREE_ACCESS_METRIC = 'verified_free_access';
 const SPEED_METRIC = 'median_output_tokens_per_second';
 const COST_PER_TASK_METRIC = 'intelligence_index_cost_per_task';
 export function effortCostMultiplier(costPerTask?: number, baseCostPerTask?: number): number {

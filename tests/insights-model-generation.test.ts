@@ -31,7 +31,7 @@ test('olderGenerationModelIds: 미등록 라인·등급과 GPT 등급은 기본�
   assert.deepEqual(older(['mimo-v2-5', 'mimo-v2-6-mini']), []);
   assert.deepEqual(older(['glm-5-2', 'glm-5-3-flash']), []);
   assert.deepEqual(older(['foo-1', 'foo-2']), ['foo-1']);
-  assert.deepEqual(older(['gpt-6-sol', 'gpt-6-1-sol']), ['gpt-6-sol']);
+  assert.deepEqual(older(['gpt-6-sol', 'gpt-6-1-sol']), []);
   assert.deepEqual(older(['gpt-5-6-sol', 'gpt-6-luna']), ['gpt-5-6-sol']);
 });
 

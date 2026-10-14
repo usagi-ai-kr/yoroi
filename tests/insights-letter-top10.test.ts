@@ -15,7 +15,7 @@ const NOW = Date.parse('2026-10-12T00:00:00Z');
 const MODELS: readonly (readonly [string, number, number])[] = [['claude-opus-5-5',100,95],['glm-5-3-flash',70,99],['gpt-oss-120b',65,98],['gpt-oss-20b',60,97],['kimi-k3',55,96],['kimi-k2-7-code',50,95],['gemini-3-1-pro',94,60],['minimax-m3',93,58],['claude-sonnet-5-5',92,88],['mistral-large-4',91,56],['nemotron-3-nano',90,54],['nemotron-3-super',89,52],['nemotron-3-ultra',88,50],['space-bunny',87,48],['qwen3-7-plus',86,46],['mimo-v2-6-flash',85,44],['claude-haiku-5-5',84,80],['muse-spark-1-3-contributor',83,79],['longcat-2-5-preview-free',82,78],['step-5-preview-free',81,77],['gpt-6-1-sol',80,76],['gpt-6-luna',79,75],['gpt-5-6-terra',78,74],['gpt-5-thinking-mini',77,73],['deepseek-v4-1-flash',76,72],['deepseek-v4-pro',75,71],['gemma4',74,70],['glm-5-3',73,69],['minimax-m2-7',72,68],['kimi-k2-6',71,67]];
 const aaPayload = { tier: 'free', intelligence_index_version: 4, pagination: { page: 1, page_size: 200, total_pages: 1, has_more: false },
   data: MODELS.map(([slug, intel, coding]) => ({ id: slug, slug, name: slug, release_date: null, model_creator: { id: 'c', name: 'C' },
-    evaluations: { artificial_analysis_intelligence_index: intel, artificial_analysis_coding_index: coding }, pricing: { input: 1.1, output: 4.4 }, performance: {} })) };
+    evaluations: { artificial_analysis_intelligence_index: intel, artificial_analysis_coding_index: 99 }, pricing: { input: 1.1, output: 4.4 }, performance: {} })) };
 const aaPort: InsightSourcePort = { id: 'artificial-analysis', fetch: async () => [{ page: 1, payload: aaPayload }],
   parse: (payload, at) => parseAaPages(payload, at, {}) };
 const setup = (t: TestContext) => { const dir = mkdtempSync(join(tmpdir(), 'yoroi-top10-wire-'));
@@ -40,15 +40,14 @@ test('composition compact path covers the unified AA top ten, unified previous c
     insights: { clock: () => NOW, openHistory: () => history, createPorts: () => [aaPort] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
   assert.ok(text.length <= 3600, `length=${text.length}`);
-  assert.equal((text.match(/^## (🧭 오케스트레이터|🛠️ 워커) Top10/m) ?? []).length, 2);
+  assert.equal((text.match(/^## (🧭 오케스트레이터·리뷰어|🛠️ 워커·메신저) Top10/gm) ?? []).length, 2);
   assert.match(text, /claude-opus-5-5 .*➖/, 'per-role previous cohort keeps the leader at rank 1');
   assert.match(text, /mistral-large-4/, 'orchestrator list must keep the mid-ranked model');
   const orch = text.slice(text.indexOf('## 🧭 오케스트레이터'), text.indexOf('## 🛠️ 워커'));
-  const work = text.slice(text.indexOf('## 🛠️ 워커'), text.indexOf('## 출처 및 안내'));
-  assert.equal((orch.match(/^\d+\. /gm) ?? []).length, 10, 'orchestrator top10 must have 10 rows');
-  assert.equal((work.match(/^\d+\. /gm) ?? []).length, 10, 'worker top10 must have 10 rows');
-  const drop = work.match(/(\d+)\. gpt-6-1-sol .*▼(\d+)/); assert.ok(drop && Number(drop[1]) - Number(drop[2]) === 2, 'worker keeps the previous rank-2 model with a rank drop');
-  assert.ok(text.includes(' ↔'), 'intersection models are marked in both lists');
+  assert.equal((orch.match(/^(▽ )?\d+\. /gm) ?? []).length, 10, 'orchestrator top10 must have 10 rows (fill rows carry ▽)');
+  const work = text.slice(text.indexOf('## 🛠️ 워커'), text.indexOf('## 🆓'));
+  assert.equal((work.match(/^(▽ )?\d+\. /gm) ?? []).length, 10, 'p54: AA Coding is 99 for all models, so normalized worker performance is 1 and all pass the floor');
+  assert.ok(!text.includes('↔'), 'intersection mark is not shown (2026-10-13)');
   assert.doesNotMatch(text, /인사이트: /);
   stdout.length = 0; stderr.length = 0;
   assert.equal(await program.run(['insights', 'once', '--full']), 0);

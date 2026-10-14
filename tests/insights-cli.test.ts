@@ -84,7 +84,7 @@ test('compose wires insights once to fake ports: KST publication day, same-day r
       createPorts: () => [{ id: 'openrouter', fetch: async () => { calls += 1; return rows; }, parse: parseDatedStub }] } });
   assert.equal(await program.run(['insights', 'once']), 0);
   const compactOut = stdout.join('');
-  assert.ok(compactOut.includes('## 🧭 오케스트레이터 Top10') && compactOut.includes('## 🛠️ 워커 Top10'), compactOut);
+  assert.ok(compactOut.includes('## 🧭 오케스트레이터·리뷰어 Top10') && compactOut.includes('## 🛠️ 워커·메신저 Top10'), compactOut);
   assert.ok(stdout.join('').length <= 3600);
   assert.deepEqual(stderr, []);
   assert.equal(await program.run(['insights', 'once']), 0);

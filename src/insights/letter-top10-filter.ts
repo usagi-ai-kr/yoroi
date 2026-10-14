@@ -46,6 +46,10 @@ export function vendorLine(family: string): string {
 }
 
 const modelKey = (id: string): string => normalizeModelName(id);
+/** 사용량 초과 시 별도로 선택하는 두 Sol 모델은 버전 교체 대상으로 보지 않는다(2026-10-14 사용자 결정). */
+export const separateGptSolModels = (a: string, b: string): boolean =>
+  new Set([normalizeModelName(a), normalizeModelName(b)]).size === 2 &&
+  ['gpt-6-sol', 'gpt-6-1-sol'].every(id => id === normalizeModelName(a) || id === normalizeModelName(b));
 const isGptGrade = (family: string): boolean => {
   const parts = family.split('-');
   return parts[0] === 'gpt' && (GRADE_TOKENS as readonly string[]).includes(parts.at(-1)!);
@@ -53,7 +57,11 @@ const isGptGrade = (family: string): boolean => {
 /** 같은 family는 전체 버전, GPT 등급끼리는 메이저, 등록된 기본형→등급은 전체 버전을 비교한다. */
 function supersedes(newer: NonNullable<ReturnType<typeof parseFamilyVersion>>,
   older: NonNullable<ReturnType<typeof parseFamilyVersion>>): boolean {
-  if (newer.family === older.family) return compareVersions(newer.version, older.version) > 0;
+  if (newer.family === older.family) {
+    if (newer.family === 'gpt-sol' && separateGptSolModels(
+      `gpt-${newer.version.join('-')}-sol`, `gpt-${older.version.join('-')}-sol`)) return false;
+    return compareVersions(newer.version, older.version) > 0;
+  }
   if (isGptGrade(newer.family) && isGptGrade(older.family) && vendorLine(newer.family) === vendorLine(older.family) &&
     (newer.version[0] ?? 0) > (older.version[0] ?? 0)) return true;
   if (isGptGrade(older.family)) return false;

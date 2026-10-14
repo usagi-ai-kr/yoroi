@@ -64,7 +64,7 @@ export function buildCandidatePool(records: readonly Top10RecordInput[], catalog
   return { allRecords, accessibleRecords, supersededModelIds, releaseWarnings: releases.warnings };
 }
 const AA_METRICS = new Set(['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index',
-  'median_output_tokens_per_second', 'intelligence_index_cost_per_task']);
+  'median_output_tokens_per_second', 'intelligence_index_cost_per_task', 'intelligence_index_total_cost']);
 /** Keep AA-recorded candidates without this role's index as zero-index fallback variants, and keep
  *  AA-unmeasured candidates too when OpenRouter·OpenCode Data evidence rows exist (user rule 2026-10-13). */
 export function buildRoleVariants(records: readonly Top10RecordInput[], metric: string, opts?: Top10Options): ModelVariant[] {

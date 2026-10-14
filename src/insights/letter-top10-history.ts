@@ -11,7 +11,7 @@ export interface PreviousRankBuild { readonly ranks: readonly { modelId: string;
 export interface CurrentTop10Coverage { readonly aaOrchestrator: boolean; readonly aaWorker: boolean;
   readonly cognition: boolean; readonly openrouter: boolean; readonly opencodeData: boolean }
 const AA_TOP10_METRICS = new Set(['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index',
-  'median_output_tokens_per_second', 'intelligence_index_cost_per_task']);
+  'median_output_tokens_per_second', 'intelligence_index_cost_per_task', 'intelligence_index_total_cost']);
 const AA_PRICE_METRICS = new Set(['price_1m_input_tokens', 'price_1m_output_tokens']);
 /** Keep one paired-price fallback row only when a model has no ordinary AA Top10 row. */
 export function buildAaTop10Inputs(records: readonly ValidatedInsightRecord[]): Top10RecordInput[] {

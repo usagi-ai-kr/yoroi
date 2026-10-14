@@ -3,6 +3,7 @@ import test from 'node:test';
 import { runInsights } from '../src/composition/insights.js';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { buildAaTop10Inputs } from '../src/insights/letter-top10-history.js';
+import { scoreRoleCandidatesFromSources } from '../src/insights/letter-top10-score.js';
 import { top10OptionsFrom } from '../src/insights/letter-top10-render-options.js';
 import { buildPreviousCognitionTop10Records } from '../src/insights/cognition-top10.js';
 import { DEFAULT_REQUEST_SCOPES, DEFAULT_SCHEMA_VERSIONS } from '../src/insights/run-once-steps.js';
@@ -61,4 +62,22 @@ test('current and prior inputs preserve AA/Cognition original prices and keep Fr
   const free = result.top10!.freeCatalog!;
   assert.ok(free.flatMap(plan => plan.models).every(model => !('priceInput' in model) && !('priceOutput' in model)));
   assert.deepEqual(top10OptionsFrom({ freeCatalog: free }).freeCatalog, free);
+});
+
+test('AA total cost survives buildAaTop10Inputs and changes the worker price dimension average', () => {
+  const aaRows = [
+    rec('artificial-analysis', 'm-one', 'artificial_analysis_intelligence_index', 80),
+    rec('artificial-analysis', 'm-one', 'intelligence_index_cost_per_task', 1),
+    rec('artificial-analysis', 'm-two', 'artificial_analysis_intelligence_index', 70),
+    rec('artificial-analysis', 'm-two', 'intelligence_index_cost_per_task', 2),
+    rec('artificial-analysis', 'm-two', 'intelligence_index_total_cost', 10),
+  ];
+  const built = buildAaTop10Inputs(valid('artificial-analysis', aaRows, TODAY).records);
+  assert.ok(built.some(row => row.modelId === 'm-two' && row.metric === 'intelligence_index_total_cost' && row.value === 10));
+  const withBoth = scoreRoleCandidatesFromSources(built, 'worker');
+  const singleOnly = scoreRoleCandidatesFromSources(built.filter(row => row.metric !== 'intelligence_index_total_cost'), 'worker');
+  const bothCost = withBoth.find(row => row.group.baseModelId === 'm-two')!.components.cost;
+  const singleCost = singleOnly.find(row => row.group.baseModelId === 'm-two')!.components.cost;
+  assert.notEqual(bothCost, singleCost);
+  assert.equal(withBoth.find(row => row.group.baseModelId === 'm-two')!.components.priceFallback, undefined);
 });

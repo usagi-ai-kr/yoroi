@@ -29,7 +29,7 @@ test('오케도 OR·OCD 사용량을 점수·소스 기여로 반영한다(p70) 
   const { byId } = run(rows, ['alpha', 'bravo', 'charlie', 'delta']); near(score(byId.get('alpha')), 100*W.performance);
   near(score(byId.get('charlie')), 100*W.usage); assert.equal(byId.get('charlie')!.scoreComponents?.dimensionSources?.usage, 'openrouter');
   near(score(byId.get('delta')), 0, 'OR 토큰 최저는 사용량 0');
-  assert.equal(referenceDimensions(rows, 'worker').length, 0, '성능 근거 없는 워커는 품질 하한 제외');
+  assert.equal(referenceDimensions(rows, 'worker').length, 2, 'intel이 있는 alpha·bravo만 워커 후보(charlie·delta는 intel 없음)');
 });
 test('AA 결측도 Cog 성능으로 평가하고, 오케 가격 근거(I/P·Cog USD/task)는 점수에 쓰지 않는다(p75) — 오케 사용량 반영', () => {
   const rows = [row('aa', IQ, 70, [1, 1]), row('noaa', COG, 0.9), row('aa', COG, 0.2), row('noaa', COST, 0), row('noaa', OR, 1e12)];
@@ -54,16 +54,18 @@ test('오케 I=0·가격결측·Free 접근만 근거·pool 전체 무가격 모
   assert.equal(byId.get('freeonly')!.scoreComponents?.sources?.['price:missing'],undefined);
   const none=run([row('a',IQ,50),row('b',COST,0)],['a','b']); assert.deepEqual(none.list.entries.map(e=>[e.modelId,e.scoreComponents!.cost]),[['a',0],['b',0]],'Cog USD/task도 오케 가격 근거가 아니다');
 });
-test('역할별 가중치는 p75(오케 82/6/12, 가성비 없음)이며 워커는 AA 가격·속도와 사용량을 그대로 반영한다', () => {
+test('역할별 가중치는 p85(오케 82/6/12·워커 37.5/0/12.5/50+가산)이며 워커 가격은 cpt·total 평균이다', () => {
   assert.deepEqual(scoreModule.ROLE_DIMENSION_WEIGHTS,{orchestrator:{performance:.82,usage:.06,speed:.12},worker:ROLE_WEIGHTS.worker});
-  const rows=[row('wa',CODE,80,[1,5]),row('wb',CODE,80,[.1,.4]),row('wc',CODE,80),row('wc',COST,0),row('wc',DUR,1),row('wa',TPS,100),row('wc',OR,1e8)];
+  assert.deepEqual(ROLE_WEIGHTS.worker,{performance:.375,usage:0,speed:.125,price:.5});
+  const rows=[row('wa',IQ,70),row('wa',CODE,80,[1,5]),row('wb',IQ,60),row('wb',CODE,80,[.1,.4]),row('wc',IQ,50),row('wc',CODE,80),row('wc',COST,0),row('wc',DUR,1),row('wa',TPS,100),row('wc',OR,1e8)];
   const { byId,refBy }=run(rows,['wa','wb','wc'],[],'worker'); assert.equal(byId.get('wc')!.scoreComponents!.cost,PRICE_MISSING);
   assert.equal(byId.get('wc')!.scoreComponents!.usage,1); assert.equal(byId.get('wc')!.scoreComponents?.sources?.['price:cognition'],undefined);
   for(const [id,e] of byId) near(score(e),refBy.get(id)!.score,id);
 });
-test('워커 성능 하한은 전체 풀 표준화 후 적용하며 미달을 보충하지 않는다', () => {
-  const rows=[row('a',CODE,100,[1,1]),row('b',CODE,90,[2,2]),row('c',CODE,80,[.1,.1]),row('d',CODE,40,[3,3])];
-  const { list,byId,refBy }=run(rows,['a','b','c','d'],[],'worker'); assert.deepEqual(list.entries.map(e=>e.modelId),['a','b']);
+test('워커 하한은 AA intelligence 원값 33이며 미달을 보충하지 않는다(p85)', () => {
+  const rows=[row('a',IQ,100,[1,1]),row('b',IQ,90,[2,2]),row('c',IQ,80,[.1,.1]),row('d',IQ,40,[3,3])];
+  const { list,byId,refBy }=run(rows,['a','b','c','d'],[],'worker');
+  assert.deepEqual(list.entries.map(e=>e.modelId),['c','a','b','d'], '점수순: c(가격 1) > a > b > d');
   for(const [id,e] of byId) near(score(e),refBy.get(id)!.score,id);
 });
 test('오케 Cog 시간은 대표 effort만 사용하고 Cog 비용은 점수에 쓰지 않는다(p75)', () => {
@@ -85,9 +87,9 @@ test('독립 참조 구현과 의사난수 10모델 풀에서 두 역할의 순�
     list.entries.forEach((e, k) => { near(score(e), want[k]!.score, `${role} ${e.modelId}`); assert.equal(e.repEffort, want[k]!.effort, `${role} ${e.modelId} effort`); assert.equal(Boolean(e.belowZone), want[k]!.score < cut); });
   }
 });
-test('워커 품질 하한은 정확히 .70인 경계를 포함한다', () => {
-  const { byId } = run([row('a', CODE, 100), row('b', CODE, 70), row('c', CODE, 0)], ['a', 'b', 'c'], [], 'worker');
-  assert.ok(byId.has('b')); assert.equal(byId.get('b')!.scoreComponents?.index, 0.7); assert.ok(!byId.has('c'));
+test('워커 하한 33 경계는 포함한다: 33은 남고 32는 빠진다(p85)', () => {
+  const { byId } = run([row('a', IQ, 100), row('b', IQ, 33), row('c', IQ, 32)], ['a', 'b', 'c'], [], 'worker');
+  assert.ok(byId.has('b')); assert.ok(!byId.has('c'));
 });
 test('독립 참조는 전 변형 풀로 표준화하고 점수 상충·동점에서 낮은 effort를 선택한다', () => {
   const rows=[row('x-low',IQ,89.5,[.1,.1]),row('x-low',TPS,400),row('x-high',IQ,90,[10,10]),row('x-high',TPS,50),row('y',IQ,60,[1,1]),row('t-low',IQ,80,[1,1]),row('t-high',IQ,80,[1,1])];

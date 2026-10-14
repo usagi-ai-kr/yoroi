@@ -8,11 +8,11 @@ import { renderTop10MarkdownFromRecords } from '../src/insights/letter-markdown.
 import { calcBlendedCost } from '../src/insights/letter-top10-group.js';
 
 const NOW = '2026-10-12T00:00:00Z';
-/** AA 합성 fixture: GLM-5.3 Flash 코딩 지수 76.2, 입력 $3·출력 $15 → 혼합 단가 (3×3+15)/4 = $6.00/1M. */
+/** AA 합성 fixture: GLM-5.3 Flash 코딩 지수 76.2·인텔리전스 71.5, 입력 $3·출력 $15 → 혼합 단가 (3×3+15)/4 = $6.00/1M. */
 const aaData = { tier: 'free', intelligence_index_version: 3, pagination: { page: 1, page_size: 1, total_pages: 1, has_more: false },
   data: [{ id: 'glm-5-3-flash', slug: 'glm-5-3-flash', name: 'GLM-5.3 Flash', release_date: null,
     model_creator: { id: 'zai', name: 'Z.ai' },
-    evaluations: { artificial_analysis_coding_index: 76.2 },
+    evaluations: { artificial_analysis_coding_index: 76.2, artificial_analysis_intelligence_index: 71.5 },
     pricing: { price_1m_input_tokens: 3, price_1m_output_tokens: 15 }, performance: {} }] };
 
 test('AA blended cost (input $3 / output $15) stays $6.00/1M in storage and the model remains in the letter', async () => {

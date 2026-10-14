@@ -33,6 +33,12 @@ o는 분배만 맡는다. 결과: `scratch/reports/yoroi-p84-mimo-aa-observed.md
 - 범위 확대 인정: `tests/helpers/dimension-reference.ts`·`insights-free-section`·`insights-markdown`·`insights-top10-render` 테스트 기대값. 산식 변경으로 필연이고 w2 pane에서 사용자 승인을 받았다.
 - 남은 표시 문구(legend·formula '워커 성능<0.7' 등)는 I1b 몫이다.
 
+## 최신 사용자 지시 (2026-10-14, #138 갱신 지시 대체)
+
+- 0.11.1 실제 출시 후 새 레터 이슈를 발행하고 #142를 종료한다.
+- 새 이슈 발행 뒤 #142를 닫는다. `gh issue create --title "[letter] 2026-10-14 AI 인사이트 레터 (p85)" --body "$(yoroi insights once --markdown)" --label letter`
+- L 단계 전역 CLI 0.11.1로 렌더하고, #138 갱신 지시는 이 절차로 대체된다.
+
 ## 공통 금지
 
 main 직접 push, 실제 API 호출·`--refresh`, 모델명 조건, 모델·세션 변경, 시크릿 노출, 소유 밖 수정, 파일당 100줄 초과.

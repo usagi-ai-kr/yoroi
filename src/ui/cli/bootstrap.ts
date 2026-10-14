@@ -58,7 +58,7 @@ export function createCli(deps: CliDependencies): CliProgram {
     const now = new Date().toISOString();
     const retryAt = parsed.retryAt ?? (parsed.retryInSeconds !== undefined
       ? new Date(Date.parse(now) + parsed.retryInSeconds * 1000).toISOString() : undefined);
-    if (parsed.operation === "loaded") markZenLoaded(deps.zenLockStore, { observedAt: now });
+    if (parsed.operation === "loaded") markZenLoaded(deps.zenLockStore, { observedAt: now, ...(parsed.marker && { version: parsed.marker }) });
     const state = parsed.operation === "exceeded" ? markZenExceeded(deps.zenLockStore, {
       observedAt: now, ...(parsed.model && { model: parsed.model }),
       ...(parsed.reason && { reason: parsed.reason }), ...(retryAt && { retryAt }),

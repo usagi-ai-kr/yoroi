@@ -11,6 +11,8 @@ export interface ZenDetectInput {
   readonly opencodeStartedAtMs?: number;
   /** Grace after an OpenCode start before a missing load mark counts as stale. */
   readonly pluginStaleGraceMs: number;
+  /** 설치 타깃(p43, YOROI_OPENCODE_TARGET로 주입 예정): v2면 ps 대신 마커 버전으로만 판정. 기본 v1. */
+  readonly target?: 'v1' | 'v2';
 }
 
 const iso = (ms: number): string => new Date(ms).toISOString();
@@ -29,7 +31,7 @@ const isMark = (v: unknown): v is { mark: string } => typeof v === 'object' && v
  * ids and ISO times. Delivery is at-most-once: the cursor and dedupe marks are persisted before returning,
  * so a restart never repeats an event (a crash before printing loses it; `zen-free status` still shows it). */
 export function detectZen(input: ZenDetectInput): readonly ZenDetectEvent[] {
-  const { lock, state, nowMs, opencodeStartedAtMs, pluginStaleGraceMs } = input;
+  const { lock, state, nowMs, opencodeStartedAtMs, pluginStaleGraceMs, target = 'v1' } = input;
   if (!Number.isFinite(nowMs) || !(pluginStaleGraceMs >= 0)) throw new RangeError('Invalid zen detect input');
   const events: ZenDetectEvent[] = [];
   const observedAt = iso(nowMs);
@@ -58,6 +60,19 @@ export function detectZen(input: ZenDetectInput): readonly ZenDetectEvent[] {
     }
   } else if (state.get(detectKeys.zen('retry-passed')) !== undefined) state.delete(detectKeys.zen('retry-passed'));
   const loadedAt = safeIso(lock.loadedAt?.(ZEN_FREE_SCOPE));
+  if (target === 'v2') {
+    // p43: V2는 공용 백그라운드 서비스라 ps 시작 시각을 stale 근거로 쓰지 않는다. 설치 마커(v2)와
+    // 마지막 loaded 버전이 다르면(미로드 포함) stale이고, 맞으면 이전 판정을 해제한다.
+    const loadedVersion = lock.loadedVersion?.(ZEN_FREE_SCOPE);
+    const mark = `v2|${loadedVersion ?? 'never'}`;
+    if (loadedVersion !== 'v2') {
+      if (readState(state, detectKeys.zen('plugin-stale'), isMark)?.mark !== mark) {
+        writeState(state, detectKeys.zen('plugin-stale'), { mark });
+        events.push({ kind: 'plugin-stale', observedAt, marker: 'v2', ...(loadedAt && { loadedAt }) });
+      }
+    } else if (state.get(detectKeys.zen('plugin-stale')) !== undefined) state.delete(detectKeys.zen('plugin-stale'));
+    return events;
+  }
   const startMinute = opencodeStartedAtMs === undefined ? undefined : minuteOf(opencodeStartedAtMs);
   const stale = startMinute !== undefined && nowMs - opencodeStartedAtMs! >= pluginStaleGraceMs &&
     (loadedAt === undefined || Date.parse(loadedAt) < startMinute);

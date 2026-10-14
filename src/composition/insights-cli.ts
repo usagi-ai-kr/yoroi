@@ -1,3 +1,4 @@
+import { opencodeTarget } from '../config/load-config.js';
 import { runInsights } from './insights.js';
 import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
 import { renderTop10MarkdownFromRecords } from '../insights/letter-markdown.js';
@@ -36,6 +37,8 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
 }): Promise<number> {
   const opts = ctx.options;
   const runner = opts?.processRunner ?? new NodeProcessRunner();
+  // 미지원 설정값은 수집을 시작하기 전에 설정 오류(exit 2)로 끝낸다(docs/development.md 설정 절).
+  try { opencodeTarget(ctx.configEnv); } catch (error) { ctx.env.stderr(`insights: ${error instanceof Error ? error.message : 'Invalid runtime configuration'}`); return Promise.resolve(2); }
   if (parsed.operation === 'publish') {
     const controller = new AbortController(), unsubscribe = ctx.subscribeSignals(() => controller.abort());
     return publishInsightsLetter({ ...(parsed.dryRun && { dryRun: true }), ...(parsed.notBefore && { notBefore: parsed.notBefore }), runner,

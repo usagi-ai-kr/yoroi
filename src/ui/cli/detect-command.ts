@@ -10,6 +10,8 @@ export interface DetectCycleView {
   readonly events: readonly DetectEvent[]; readonly errors: readonly string[]; readonly skipped?: "lease-held"; readonly fenced?: true;
 }
 export interface DetectCommandDeps {
+  /** p45: 설치 타깃(detect-cli가 load-config에서 해석해 전달). 기본 v1. */
+  readonly opencodeTarget?: 'v1' | 'v2';
   readonly runCycle: (signal: AbortSignal) => Promise<DetectCycleView>;
   readonly readLease: () => DetectLease | undefined;
   readonly releaseLease: () => void;

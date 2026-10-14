@@ -40,6 +40,15 @@ test('--once runs one cycle: events on stdout only, no diagnostics, lease releas
   const store = openDetectStateStore(h.configEnv); t.after(() => store.close()); assert.equal(store.getLease(), undefined);
   assert.equal(await h.run(['detect', '--once']), 0); assert.equal(h.out.length, 1); assert.equal(h.sim.reads, 1);
 });
+test('p45 target v2: ps를 호출하지 않고 마커 버전으로 stale을 판정한다', async t => {
+  let ps = 0;
+  const h = harness(t); (h.configEnv as Record<string, string>).YOROI_OPENCODE_TARGET = 'v2';
+  assert.equal(await h.run(['detect', '--once'], { runProcess: () => { ps += 1; return '00:01 /usr/local/bin/opencode'; } }), 0);
+  assert.equal(ps, 0); // v2는 ps 미사용
+  assert.match(h.out.join('\n'), /plugin-stale marker=v2/);
+  h.out.length = 0; (h.configEnv as Record<string, string>).YOROI_OPENCODE_TARGET = 'v3';
+  assert.equal(await h.run(['detect', '--once']), 2); // 잘못된 target은 exit 2
+});
 test('--json prints one JSON object per event with its source and nothing else', async t => {
   const h = harness(t); h.sim.percent = 40; await h.run(['detect', '--once', '--json']); assert.deepEqual(h.out, []);
   h.sim.percent = 100; h.sim.now += 31 * 60_000; assert.equal(await h.run(['detect', '--once', '--json']), 0);

@@ -67,3 +67,7 @@
 
 - 2026-10-08 `.env` 설정으로 실제 계정 조회 성공: rolling/weekly/monthly 3개 창 파싱.
 - balance fallback 표현 필드는 미검증: Zen 크레딧 잔액은 이 endpoint에 없다(anomalyco/opencode#44189, 후속 범위).
+
+## 6. 훅 설치 대상
+- `node scripts/opencode-hook.mjs install --target v1|v2 --config-dir <경로>`: 기본 v1은 기존 엔트리·helpers, v2는 단일 파일만 설치한다. 대상 마커가 다르면 기본 거부하며 `--force`로 명시 교체한다.
+- `status`는 설치 target을 표시하고 `uninstall`은 버전과 무관하게 yoroi 관리 마커 파일만 제거한다. [V2 플러그인·공유 설정 경로 근거](https://opencode.ai/v2/docs/migrate-v1/); 설치기에는 미문서 API 필드 의존성이 없다.

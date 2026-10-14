@@ -44,9 +44,9 @@ test('unmanaged entry or helper refuses install and uninstall before any mutatio
   assert.equal(f.run('uninstall', '--config-dir', f.config).status, 1);
   assert.ok(await fs.stat(f.entry));
 });
-test('XDG default stays inside temp root and unsafe symlink targets are refused', async t => {
+test('explicit temporary XDG path and unsafe symlink targets are refused', async t => {
   const f = await fixture(t);
-  assert.equal(f.run('install').status, 0);
+  assert.equal(f.run('install', '--config-dir', path.join(f.env.XDG_CONFIG_HOME, 'opencode')).status, 0);
   assert.ok(await fs.stat(path.join(f.env.XDG_CONFIG_HOME, 'opencode/plugins/yoroi-zen-free.js')));
   await fs.mkdir(path.dirname(f.entry), { recursive: true });
   const victim = path.join(f.root, 'victim'); await fs.writeFile(victim, '// foreign');
@@ -60,7 +60,7 @@ test('symlink config diagnosis and OPENCODE_CONFIG_DIR install path warning are 
   const f = await fixture(t); const real = path.join(f.root, 'real'); await fs.mkdir(real);
   const link = path.join(f.root, 'link'); await fs.symlink(real, link);
   assert.match(f.run('install', '--config-dir', link).stderr, /symlink directory/);
-  const result = spawnSync(process.execPath, [script, 'install'], {
+  const result = spawnSync(process.execPath, [script, 'install', '--config-dir', real], {
     env: { ...f.env, OPENCODE_CONFIG_DIR: real }, encoding: 'utf8' });
   assert.equal(result.status, 0); assert.ok(result.stdout.includes(path.join(real, 'plugins')));
   assert.match(result.stdout, /OPENCODE_CONFIG_DIR.*discovery directory/);

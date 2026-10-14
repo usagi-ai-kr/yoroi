@@ -5,8 +5,8 @@ export function getZenLock(store: ZenLockStore): ZenLockState | undefined {
   return state && { ...state };
 }
 
-/** 로드 사실과 시각만 기록한다. 지원하지 않는 저장소면 아무것도 하지 않는다. */
-export function markZenLoaded(store: ZenLockStore, input: { observedAt: string }): void {
+/** 로드 사실·시각·마커 버전(p45, 생략=v1)만 기록한다. 지원하지 않는 저장소면 아무것도 하지 않는다. */
+export function markZenLoaded(store: ZenLockStore, input: { observedAt: string; version?: 'v1' | 'v2' }): void {
   store.markLoaded?.({ ...input, scope: ZEN_FREE_SCOPE });
 }
 

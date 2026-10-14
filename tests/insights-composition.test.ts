@@ -83,7 +83,7 @@ test('every source failing is exit 1 (reasons are codes only); injected ports fl
   const run = await runInsights({ ...s, clock, createPorts: () => [port] });
   assert.deepEqual([run.exitCode, run.sources.map(r => r.status)], [0, ['collected']]);
 });
-test('insights, usage, Zen and detect connections converge in every opening order (versions 1-5, all tables)', t => {
+test('insights, usage, Zen and detect connections converge in every opening order (versions 1-6, all tables)', t => {
   const openers = { insights: (e: NodeJS.ProcessEnv) => openInsightsHistory(e).close(), usage: (e: NodeJS.ProcessEnv) => openUsageDatabase(join(e.YOROI_DATA_DIR!, 'yoroi.db')).close(),
     zen: (e: NodeJS.ProcessEnv) => openZenLockStore(e).close(), detect: (e: NodeJS.ProcessEnv) => openDetectStateStore(e).close() };
   const permute = <T,>(items: T[]): T[][] => items.length < 2 ? [items] : items.flatMap((item, i) => permute([...items.slice(0, i), ...items.slice(i + 1)]).map(rest => [item, ...rest]));
@@ -92,7 +92,7 @@ test('insights, usage, Zen and detect connections converge in every opening orde
     for (const name of order) openers[name]({ YOROI_DATA_DIR: dir });
     const db = openDatabase(join(dir, 'yoroi.db'));
     try {
-      assert.deepEqual((db.prepare('SELECT version FROM schema_migrations ORDER BY version').all() as { version: number }[]).map(r => r.version), [1, 2, 3, 4, 5], order.join());
+      assert.deepEqual((db.prepare('SELECT version FROM schema_migrations ORDER BY version').all() as { version: number }[]).map(r => r.version), [1, 2, 3, 4, 5, 6], order.join());
       const names = (db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]).map(r => r.name);
       for (const need of ['insight_daily', 'insight_history', 'cache_entries', 'plugin_loads', 'detect_state']) assert.ok(names.includes(need), `${need} ${order.join()}`);
     } finally { db.close(); }

@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { DEFAULT_DETECT_INTERVAL_MS, type DetectSleep } from '../app/detect-scheduler.js';
 import { SourceError } from '../app/usage-source.js';
-import { loadConfig } from '../config/load-config.js';
+import { loadConfig, opencodeTarget } from '../config/load-config.js';
 import { resolveDbPath } from '../infra/sqlite/data-dir.js';
 import { opencodeStartedAtMs, type SyncProcessRun } from '../infra/opencode-process.js';
 import { openDetectStateStore } from '../infra/sqlite/detect-state-store.js';
@@ -35,16 +35,18 @@ export function runDetectCli(parsed: Extract<DetectParsedArgs, { kind: 'detect' 
   env: CliEnvironment; subscribeSignals: (handler: () => void) => () => void;
   configEnv: Readonly<Record<string, string | undefined>>; dataEnv: NodeJS.ProcessEnv; options?: DetectCliOptions }): Promise<number> {
   const { env, configEnv, dataEnv, options: o = {} } = ctx;
-  let config;
-  try { config = loadConfig(configEnv); }
+  let config, opencodeTargetValue: 'v1' | 'v2';
+  try { config = loadConfig(configEnv); opencodeTargetValue = opencodeTarget(configEnv); }
   catch (error) { env.stderr(error instanceof Error ? error.message : 'Invalid runtime configuration'); return Promise.resolve(2); }
   const now = o.now ?? Date.now, intervalMs = o.intervalMs ?? DEFAULT_DETECT_INTERVAL_MS;
   const owner = o.owner ?? `detector-${process.pid}-${randomBytes(3).toString('hex')}`;
-  // One read-only `ps` per cycle feeds plugin-staleness; a failure simply omits it (no stale verdict without it).
-  const probe = o.runProcess === undefined ? opencodeStartedAtMs(undefined, now) : opencodeStartedAtMs(o.runProcess, now);
+  // One read-only `ps` per cycle feeds plugin-staleness; v2(p45)는 공용 서비스라 ps를 아예 호출하지 않는다.
+  const probe = opencodeTargetValue === 'v2' ? undefined
+    : o.runProcess === undefined ? opencodeStartedAtMs(undefined, now) : opencodeStartedAtMs(o.runProcess, now);
   const deps: DetectCommandDeps = { now, intervalMs, sleep: o.sleep ?? timerSleep, subscribeSignals: ctx.subscribeSignals,
+    opencodeTarget: opencodeTargetValue,
     runCycle: signal => runDetectCycle({ config, env: configEnv, dataEnv, now, owner, intervalMs, thresholds: THRESHOLDS, signal,
-      opencodeStartedAtMs: probe, ...o.cycle }),
+      opencodeTarget: opencodeTargetValue, ...(probe && { opencodeStartedAtMs: probe }), ...o.cycle }),
     releaseLease: () => releaseDetectLease(owner, () => openDetectStateStore(dataEnv)),
     readLease: () => {
       if (!existsSync(resolveDbPath(dataEnv))) return undefined;

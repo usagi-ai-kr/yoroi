@@ -27,7 +27,7 @@ test('isInsightSource covers exactly the registered source ids', () => {
 });
 
 test('isNormalizedBenchmarkRecord requires identity, unit, and a finite value', () => {
-  const base = { source: 'arena', modelId: 'm', metric: 'rating', value: 1, unit: 'score',
+  const base = { source: 'openrouter', modelId: 'm', metric: 'rating', value: 1, unit: 'score',
     category: 'c', observedAt: now, sourceAsOf: now, license: null };
   assert.ok(isNormalizedBenchmarkRecord(base));
   assert.ok(isNormalizedBenchmarkRecord({ ...base, metadata: { k: 'v' } }));

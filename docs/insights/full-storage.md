@@ -10,14 +10,14 @@
 - 임시 SQLite(`mkdtempSync` + `openInsightsHistory`)에서 전체 적재 → `getDaily` 재조회 roundtrip으로
   레코드 수·행 내용 보존을 확인한다(합성 120 모델 × 3 지표 = 360행, 기존 AA 선택 컷 148보다 큼).
 - `insight_history`는 비교 전용으로만 유지한다. daily 적재와 history 적재 조건은 다르다.
-- **Arena 제외(2026-10-13 사용자 결정)**: 기본 소스 목록에서 빠져 새 수집·저장이 없고, 기존 저장본만 90일 보존으로 자연 소멸한다.
+- **Arena 제거(2026-10-13 사용자 결정)**: 소스 id·설정·검증 분기까지 코드에서 지웠다. 기존 저장본은 읽지 않으며 90일 보존으로 자연 소멸한다.
 
 ## 계약 유지
 
 - **3-A 유지**: AA/Cognition은 원자료 기준일을 알 수 없어 `comparisonDate=null`이다.
   해당 행은 daily에는 남지만 `insight_history`에는 넣지 않는다(`insights-store.ts:56` 건너뜀).
   관측일 fallback으로 전일/7일 증감을 계산하지 않으며 `previous`/`sevenDays`는 빈 결과를 돌려준다.
-  기준일이 확인된 소스(OpenRouter `metadata.date`, Arena `sourceAsOf`)만 history에 적재되어 전일 조회가 된다.
+  기준일이 확인된 소스(OpenRouter·OpenCode Data `metadata.date`)만 history에 적재되어 전일 조회가 된다.
 - **4-A 유지**: 같은 키의 일일 성공은 재사용해 `saveDaily`가 두 번째 저장을 거부하고,
   수동 `--refresh`(`refresh: true`)만 갱신한다. `prune(publicationDate)`은 90일 보존을 지키며
   그 밖 일일 스냅샷과 history를 함께 제거한다. 실패·불완전 페이지는 성공을 덮어쓰지 않는다.

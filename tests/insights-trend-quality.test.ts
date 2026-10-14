@@ -8,10 +8,10 @@ import type { InsightRecord } from '../src/insights/record.js';
 
 const rec = (value: number, comparisonDate: string) => {
   const result = validateInsightRecord({
-    source: 'arena', modelId: 'm1', metric: 'rating', value, unit: 'score', category: 'overall',
-    observedAt: '2026-10-11T00:00:00Z', sourceAsOf: comparisonDate, sourceUrl: 'https://example.test',
-    sourceName: 'Arena', license: 'CC-BY-4.0', attributionText: 'Synthetic', method: 'ips',
-    schemaVersion: 'arena-hf-v1' } as InsightRecord);
+    source: 'openrouter', modelId: 'm1', metric: 'rating', value, unit: 'score', category: 'overall',
+    observedAt: '2026-10-11T00:00:00Z', sourceAsOf: comparisonDate, metadata: { date: comparisonDate }, sourceUrl: 'https://example.test',
+    sourceName: 'Synthetic', license: 'CC-BY-4.0', attributionText: 'Synthetic', method: 'ips',
+    schemaVersion: 'v1' } as InsightRecord);
   assert.ok(result.ok);
   return result;
 };

@@ -5,6 +5,7 @@ import { type UsageResult } from "../src/app/usage-source.js";
 import { createSnapshot, type UsageWindow } from "../src/domain/usage.js";
 import { formatStatus, renderPretty } from "../src/ui/cli/render.js";
 import { renderResults } from "../src/ui/cli/render.js";
+import pc from "picocolors";
 
 const observedAt = "2026-10-07T05:30:00.000Z";
 const resetAt = "2026-10-08T00:00:00.000Z";
@@ -60,10 +61,23 @@ test("pretty header puts Status right after Provider", () => {
 });
 
 test("formatStatus colors each status and keeps the ok prefix", () => {
-  for (const status of ["under", "optimal", "over", "n/a"] as const) {
+  for (const status of ["under", "optimal", "over", "limit", "n/a"] as const) {
     const plainText = stripVTControlCharacters(formatStatus(false, status));
     const colored = stripVTControlCharacters(formatStatus(true, status));
     assert.equal(plainText, `ok ${status}`);
     assert.equal(colored, `ok ${status}`, "색상 유무와 무관한 텍스트");
   }
+});
+
+test("limit renders as red ok limit in pretty and usage_status=limit in plain", () => {
+  const weekly = win({ id: "weekly", percent: 99, resetAt });
+  const lines = renderPretty([plain(weekly)]);
+  const text = stripVTControlCharacters(lines.join("\n"));
+
+  assert.equal(statusOf(weekly), "limit");
+  assert.match(text, /│ opencode-go │ ok limit\s*│ w\s*│/);
+  assert.equal(stripVTControlCharacters(formatStatus(true, "limit")), "ok limit");
+  assert.equal(formatStatus(true, "limit"), `ok ${pc.red("limit")}`, "limit은 빨강(pc.red)");
+  const widths = lines.map((line) => stripVTControlCharacters(line).length);
+  assert.equal(new Set(widths).size, 1, "열 폭 불변");
 });

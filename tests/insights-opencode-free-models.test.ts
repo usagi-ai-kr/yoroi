@@ -52,7 +52,7 @@ test('injects the runner with a 30-second timeout and returns no cached data on 
   assert.equal(diagnostics.length, 2);
 });
 
-test('CLI composition passes live Free catalog and free-only IDs through Top10 data', async t => {
+test('CLI composition passes the full live Free catalog through Top10 data', async t => {
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-free-live-')); t.after(() => rmSync(dir, { recursive: true, force: true }));
   let calls = 0;
   const processRunner: ProcessRunner = { run: async () => { calls++; return { stdout: 'opencode/step-5-preview-free\nopencode-go/space-bunny-free', stderr: '', exitCode: 0 }; } };
@@ -60,6 +60,6 @@ test('CLI composition passes live Free catalog and free-only IDs through Top10 d
     createPorts: () => [], processRunner });
   assert.equal(calls, 1);
   assert.deepEqual(result.top10?.freeCatalog?.map(plan => plan.planName), ['OpenCode Zen Free', 'OpenCode Go Free']);
-  assert.ok(result.top10?.freeOnlyModelIds?.has('step-5'));
-  assert.ok(!result.top10?.freeOnlyModelIds?.has('space-bunny'));
+  assert.deepEqual(result.top10?.freeCatalog?.flatMap(plan => plan.models.map(model => model.modelId)), ['step-5', 'space-bunny']);
+  assert.ok(!('freeOnlyModelIds' in result.top10!));
 });

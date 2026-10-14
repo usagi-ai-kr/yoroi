@@ -8,16 +8,14 @@ import { renderTop10MarkdownFromRecords } from '../src/insights/letter-markdown.
 import { calcBlendedCost } from '../src/insights/letter-top10-group.js';
 
 const NOW = '2026-10-12T00:00:00Z';
-/** AA 합성 fixture: GLM-5.3 Flash 코딩 지수 76.2, 입력 $3·출력 $15 → 혼합 단가 (3×3+15)/4 = $6.00/1M.
- *  원 취지는 AA 단가 보존(0/0 대입 금지). 2026-10-13 사용자 지시로 혼합 단가 $3/1M 이상은 애초에 제외되므로,
- *  저장 단가는 그대로 두고 레터에서는 빠지는지를 검증한다. */
+/** AA 합성 fixture: GLM-5.3 Flash 코딩 지수 76.2, 입력 $3·출력 $15 → 혼합 단가 (3×3+15)/4 = $6.00/1M. */
 const aaData = { tier: 'free', intelligence_index_version: 3, pagination: { page: 1, page_size: 1, total_pages: 1, has_more: false },
   data: [{ id: 'glm-5-3-flash', slug: 'glm-5-3-flash', name: 'GLM-5.3 Flash', release_date: null,
     model_creator: { id: 'zai', name: 'Z.ai' },
     evaluations: { artificial_analysis_coding_index: 76.2 },
     pricing: { price_1m_input_tokens: 3, price_1m_output_tokens: 15 }, performance: {} }] };
 
-test('AA blended cost (input $3 / output $15) stays $6.00/1M in storage while the price cap excludes it from the letter', async () => {
+test('AA blended cost (input $3 / output $15) stays $6.00/1M in storage and the model remains in the letter', async () => {
   const run = await runInsightsOnce({ ports: [{ id: 'artificial-analysis', fetch: async () => aaData, parse: parseAaResponse }],
     history: new MemoryInsightHistory(), now: () => NOW });
   const top10 = run.top10!;
@@ -25,9 +23,9 @@ test('AA blended cost (input $3 / output $15) stays $6.00/1M in storage while th
   assert.deepEqual([row.priceInput, row.priceOutput], [3, 15]);
   assert.equal(calcBlendedCost(row.priceInput, row.priceOutput), 6);
   const compact = renderTop10FromRecords({ publicationDate: run.publicationDate, ...top10 });
-  assert.doesNotMatch(compact, / glm-5-3-flash(?: ↔)? · effort/);
+  assert.match(compact, / glm-5-3-flash(?: ↔)? · effort/);
   const md = renderTop10MarkdownFromRecords({ publicationDate: run.publicationDate, ...top10 });
-  assert.doesNotMatch(md, /\| glm-5-3-flash(?: ↔)? \|/);
+  assert.match(md, /\| glm-5-3-flash(?: ↔)? \|/);
 });
 test('a one-sided or missing AA price never invents a blended cost', async () => {
   const oneSided = { ...aaData, data: [{ ...aaData.data[0]!, pricing: { price_1m_input_tokens: 3 } }] };

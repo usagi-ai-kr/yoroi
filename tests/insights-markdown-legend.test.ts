@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { LEGEND_HEADING, LEGEND_LINES, changeNote, exitLine, formatChange } from '../src/insights/letter-top10-legend.js';
+import { LEGEND_HEADING, LEGEND_LINES, changeNote, dimensionsText, exitLine, formatChange } from '../src/insights/letter-top10-legend.js';
 import { renderTop10Markdown } from '../src/insights/letter-markdown.js';
 import { renderTop10Letter } from '../src/insights/letter-top10-render.js';
 import type { RoleChange, RoleEntry, RoleLists } from '../src/insights/letter-top10-unified.js';
@@ -35,9 +35,19 @@ test('changeNote uses 🌱 for the first cohort and 🚪 for exits', () => {
 
 test('the guide section lists every marker with one meaning', () => {
   assert.equal(LEGEND_LINES[0], LEGEND_HEADING);
-  assert.equal(LEGEND_LINES.length, 7);
-  for (const text of ['⭐ 파레토 최적', '↔ 양쪽 목록 교집합', '▲N / ▼N', '➖ 유지', '🆕 신규 진입', '🌱 첫 집계', '🚪 이탈',
-    '▽ 하한 보충', '지수 미측정(AA에 해당 역할 지수 없음, 지수 항목 0점)', '⚠️ 한도·주의', '🔒 접근 제한', '🆓 무료']) assert.ok(LEGEND_LINES.some(l => l.includes(text)), text);
+  assert.equal(LEGEND_LINES.length, 8);
+  for (const text of ['👍 파레토 최적(파레토 열)', '▲N / ▼N', '➖ 유지', '🆕 신규 진입', '🌱 첫 집계', '🚪 이탈',
+    '▽ 하한 보충', '0~100 차원: 두 역할 성능/사용량/속도/',
+    '속도: 오케 AA·Cog, 워커 AA',
+    '가성비: 오케 max(AA I²/P·USD/1M, Cog USD/task)', '워커 성능<0.7·결측 제외', '워커 가격 99는 근거 없음', '⚠️ 한도·주의', '🔒 접근 제한', '🆓 무료']) assert.ok(LEGEND_LINES.some(l => l.includes(text)), text);
+  assert.ok(LEGEND_LINES.some(l => l.includes('두 역할 OR/OCD')));
+});
+
+test('dimension cells keep all four dimensions for both roles (p70: orchestrator usage restored)', () => {
+  const e = { ...lists.orchestrator.entries[0]!, scoreComponents: { index: 0.9, cost: 0.8, usage: 0.7, speed: 0.6,
+    dimensionSources: { performance: 'aa', usage: 'openrouter', speed: 'aa', price: 'aa' } } };
+  assert.equal(dimensionsText(e, 'orchestrator'), '90/70/60/80');
+  assert.equal(dimensionsText(e, 'worker'), '90/70/60/80');
 });
 
 test('both renderers place the guide under the two tables, outside the details block', () => {
@@ -57,7 +67,7 @@ test('both renderers place the guide under the two tables, outside the details b
 test('belowZone rows carry ▽ in the rank cell and indexMissing keeps the dash', () => {
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists, failedSources: [] });
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists });
-  assert.ok(md.includes('| ▽ 4 | orch-d | high | 96.0 | - | $1.50 | 🌱 |'), md);
+  assert.ok(md.includes('| ▽ 4 |  | orch-d | high | 96.0 | - | - | $1.50 | 🌱 |'), md);
   assert.ok(compact.includes('▽ 4. orch-d · effort high · 스코어 96.0 · - · $1.50 · 접근 ChatGPT Plus · 🌱'), compact);
   assert.ok(!md.includes('| ▽ 1 |') && !compact.includes('▽ 1.'));
 });

@@ -66,6 +66,12 @@ def main():
         if check.returncode:
             errors.append(f"{skill.relative_to(ROOT)}: skill validation failed")
 
+    portable = ROOT / ".agents/skills/skill-authoring/scripts/check-portability.sh"
+    if portable.exists():
+        check = subprocess.run(["bash", str(portable), str(ROOT / ".agents/skills")], cwd=ROOT)
+        if check.returncode:
+            errors.append("skills: portability check failed (프로젝트 고유 값이 스킬에 남아 있음)")
+
     labels = json.loads((ROOT / ".github/labels.json").read_text())
     names = [label["name"] for label in labels]
     if len(names) != len(set(names)):

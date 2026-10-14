@@ -9,17 +9,17 @@ import { shiftInsightDate } from '../src/insights/history-port.js';
 import type { InsightRecord } from '../src/insights/record.js';
 import type { InsightLetterView } from '../src/ui/cli/insights-view.js';
 
-const base: InsightRecord = { source: 'arena', modelId: 'A', metric: 'rating', value: 20, unit: 'score', category: 'Text',
-  observedAt: '2026-10-10T10:00:00Z', sourceAsOf: '2026-10-10', sourceUrl: 'https://example.test/data',
-  sourceName: 'Synthetic Arena', license: 'CC-BY-4.0', attributionText: 'Source: Synthetic Arena', method: 'synthetic', schemaVersion: 'v1' };
+const base: InsightRecord = { source: 'openrouter', modelId: 'A', metric: 'rating', value: 20, unit: 'score', category: 'Text',
+  observedAt: '2026-10-10T10:00:00Z', sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' }, sourceUrl: 'https://example.test/data',
+  sourceName: 'Synthetic Source', license: 'CC-BY-4.0', attributionText: 'Source: Synthetic Source', method: 'synthetic', schemaVersion: 'v1' };
 function letter(extra: Partial<InsightRecord> = {}) {
   const checked = validateInsightRecord({ ...base, ...extra }); assert.ok(checked.ok);
   const measurement = checked.value;
-  const previous = validateInsightRecord({ ...measurement.record, sourceAsOf: '2026-10-09', value: 10 }); assert.ok(previous.ok);
+  const previous = validateInsightRecord({ ...measurement.record, sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, value: 10 }); assert.ok(previous.ok);
   const slots = Array.from({ length: 7 }, (_, index) => ({ date: shiftInsightDate('2026-10-10', index - 6) }));
   return buildInsightLetter([{ source: measurement.record.source, ok: true, measurements: [{ measurement,
     comparison: compareInsightPrevious(measurement, previous.value), trend: computeInsightTrend(measurement, slots) }] },
-    { source: 'openrouter', ok: false, failure: 'fetch' }], '2026-10-10T15:00:00Z');
+    { source: 'artificial-analysis', ok: false, failure: 'fetch' }], '2026-10-10T15:00:00Z');
 }
 
 test('L1 results structurally satisfy the UI contract without conversion', () => {
@@ -32,9 +32,9 @@ test('plain and pretty preserve Korean letter, source attribution, dates and cha
     const rendered = renderInsights(input, pretty);
     assert.equal(rendered.exitCode, 0);
     for (const text of ['내부 전용', '발행일(KST): 2026-10-11', '2026-10-10T10:00:00Z',
-      'https://example.test/data', 'Source: Synthetic Arena', 'CC-BY-4.0', '결측 7일', '초기 적재']) assert.ok(rendered.stdout.includes(text), text);
-    assert.match(rendered.stderr, /OpenRouter: 수집 실패/);
-    assert.ok(!rendered.stdout.includes('OpenRouter: 수집 실패'));
+      'https://example.test/data', 'Source: Synthetic Source', 'CC-BY-4.0', '결측 7일', '초기 적재']) assert.ok(rendered.stdout.includes(text), text);
+    assert.match(rendered.stderr, /Artificial Analysis: 수집 실패/);
+    assert.ok(!rendered.stdout.includes('Artificial Analysis: 수집 실패'));
     assert.equal(JSON.stringify(input), before);
     assert.equal(/[\u001b\u0000\r]/.test(rendered.stdout + rendered.stderr), false);
   }
@@ -55,7 +55,7 @@ test('unknown dates and zero denominators retain exact n/a wording', () => {
 
 test('total failure emits only diagnostics with exit 1 and no successful letter', () => {
   for (const pretty of [false, true]) {
-    const rendered = renderInsights({ ok: false, reason: '전체 소스 실패', failedSources: ['arena', 'secret=private'] }, pretty);
+    const rendered = renderInsights({ ok: false, reason: '전체 소스 실패', failedSources: ['openrouter', 'secret=private'] }, pretty);
     assert.equal(rendered.stdout, ''); assert.equal(rendered.exitCode, 1);
     assert.match(rendered.stderr, /전체 소스 실패/); assert.ok(!rendered.stderr.includes('private'));
   }

@@ -12,14 +12,13 @@ import type { ParseRowResult } from './parse-utils.js';
 
 type AuthKind = 'x-api-key' | 'bearer' | 'none';
 
-/** One registered source per #70 plus OpenCode Data 내부 참조(#102).
- *  Arena는 2026-10-13 사용자 결정으로 제외한다(HF 수집·저장·레터 표시 없음). Vals AI stays excluded. */
+/** One registered source per #70 plus OpenCode Data 내부 참조(#102). Vals AI stays excluded. */
 export interface InsightSourceEntry {
   readonly id: InsightSource;
   readonly displayName: string;
   /** Access URL (attribution). */
   readonly url: string;
-  readonly pipeline: 'http-json' | 'hf-rows' | 'aa-pages' | 'opencode-json';
+  readonly pipeline: 'http-json' | 'aa-pages' | 'opencode-json';
   readonly auth: AuthKind;
   /** Candidate env var name (docs/insights/sources-a.md, #79); user .env key name unconfirmed. */
   readonly authEnvName: string | null;

@@ -1,9 +1,9 @@
 import { expandSuccessors } from './model-successors.js';
 import { validateInsightRecord, type ValidatedInsightRecord } from './validation.js';
-import { isExcludedModel, olderGenerationModelIds } from './letter-top10-filter.js';
+import { isExcludedModel, olderGenerationModelIds, separateGptSolModels } from './letter-top10-filter.js';
 import { EVIDENCE_METRICS } from './top10-policy.js';
 import { effortForModel, splitBaseAndEffort, type ModelVariant } from './letter-top10-group.js';
-import { buildVariants, normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
+import { buildVariants, COGNITION_COST_METRIC, COGNITION_DURATION_METRIC, COGNITION_METRIC, FREE_ACCESS_METRIC, normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
 import { buildCatalogAliasResolver, resolveModelId } from './model-aliases.js';
 import { arbitrateReleases } from './release-snapshot.js';
 import { PLAN_CATALOG, type PlanCatalogEntry } from './plan-catalog.js';
@@ -54,15 +54,15 @@ export function buildCandidatePool(records: readonly Top10RecordInput[], catalog
   const merged = [...records, ...evidence.map(r => { const canonical = resolve(modelIdOf(r));
     return canonical === modelIdOf(r) ? r : { ...r, modelId: canonical }; })], modelIds = [...new Set(merged.map(modelIdOf))].filter(id => accessible.has(id) && !isExcludedModel(id));
   const supersededModelIds = new Set(olderGenerationModelIds(modelIds));
-  for (const r of merged) if (r.successorOf !== undefined && accessible.has(modelIdOf(r))) supersededModelIds.add(normalizeModelName(splitBaseAndEffort(r.successorOf).base));
+  for (const r of merged) if (r.successorOf !== undefined && accessible.has(modelIdOf(r)) &&
+    !separateGptSolModels(modelIdOf(r), splitBaseAndEffort(r.successorOf).base)) supersededModelIds.add(normalizeModelName(splitBaseAndEffort(r.successorOf).base));
   const eligible = merged.filter(r => !supersededModelIds.has(modelIdOf(r)));
-  const isEvidence = (r: Top10RecordInput): boolean => r.metric !== undefined && (EVIDENCE_METRICS as readonly string[]).includes(r.metric);
+  const isEvidence = (r: Top10RecordInput): boolean => r.metric !== undefined && [...EVIDENCE_METRICS, COGNITION_METRIC, COGNITION_COST_METRIC, COGNITION_DURATION_METRIC, FREE_ACCESS_METRIC].includes(r.metric);
   const releases = arbitrateReleases(eligible.filter(r => !isEvidence(r)), r => catalogIds.get(modelIdOf(r)) ?? modelIdOf(r));
   const allRecords = dedupeRecords([...releases.rows, ...eligible.filter(isEvidence)], catalogIds);
   const accessibleRecords = allRecords.filter(r => accessible.has(resolve(modelIdOf(r))) && !isExcludedModel(r.modelId));
   return { allRecords, accessibleRecords, supersededModelIds, releaseWarnings: releases.warnings };
 }
-
 const AA_METRICS = new Set(['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index',
   'median_output_tokens_per_second', 'intelligence_index_cost_per_task']);
 /** Keep AA-recorded candidates without this role's index as zero-index fallback variants, and keep

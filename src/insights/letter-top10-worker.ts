@@ -7,7 +7,7 @@ export const ROLE_SCORE_WEIGHTS = {
   worker: { index: 0.30, cost: 0.40, usage: 0.10, speed: 0.20 },
 } as const;
 export type OptimalZoneRole = keyof typeof OPTIMAL_ZONE_THRESHOLDS;
-export interface ScoreComponents { readonly index: number; readonly cost: number; readonly usage: number; readonly speed: number }
+export interface ScoreComponents { readonly index: number; readonly cost: number; readonly usage: number; readonly speed: number; readonly cognition?: number; readonly sources?: Readonly<Partial<Record<string, number>>>; readonly dimensionSources?: Readonly<Partial<Record<string, string>>> }
 export interface ScoredGroup {
   readonly group: ModelGroup; readonly indexRank: number; readonly costEffRank: number;
   readonly score: number; readonly components: ScoreComponents; readonly belowZone: boolean;

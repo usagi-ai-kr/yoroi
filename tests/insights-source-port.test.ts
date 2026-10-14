@@ -31,13 +31,12 @@ const orPayload = { meta: { as_of: '2026-10-09T00:00:00Z', start_date: '2026-10-
 const cogPayload = { v1_1: { models: ['M'], subsets: { main: 100 },
   data: { M: { high: { main: { correct: 0.5, cost: 1.25 } } } } } };
 
-test('registry holds the four go sources plus the OpenCode Data internal reference (#102); Arena excluded', () => { assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
+test('registry holds the four go sources plus the OpenCode Data internal reference (#102)', () => { assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
   const byId = new Map(INSIGHT_SOURCES.map(e => [e.id, e]));
   assert.equal(byId.get('artificial-analysis')?.url, 'https://artificialanalysis.ai/api/v2/language/models/free');
   assert.equal(byId.get('openrouter')?.url, 'https://openrouter.ai/api/v1/datasets/rankings-daily?period=day');
   assert.equal(byId.get('cognition')?.url, 'https://cognition.com/data/frontiercode-leaderboard/data.json');
   assert.deepEqual([...byId].map(([id, e]) => [id, e.pipeline]), [['artificial-analysis', 'aa-pages'], ['openrouter', 'http-json'], ['opencode-data', 'opencode-json'], ['cognition', 'http-json']]);
-  assert.equal(INSIGHT_SOURCES.some(e => e.pipeline === 'hf-rows'), false);
   assert.equal(byId.get('opencode-data')?.displayName, 'OpenCode Data (내부 참조 · 약관상 자동 추출 제한)');
   assert.deepEqual(INSIGHT_SOURCES.filter(e => e.authEnvName !== null).map(e => e.authEnvName), ['YOROI_AA_API_KEY', 'YOROI_OPENROUTER_API_KEY']);
 });
@@ -61,7 +60,7 @@ test('fetchJson passes spec through and classifies status and body errors', asyn
     (error: SourceError) => error instanceof SourceError && error.code === 'cancelled');
 });
 
-test('ports add auth headers from env without leaking keys; no arena port exists', async () => {
+test('ports add auth headers from env without leaking keys', async () => {
   const fake = fakeClient();
   fake.respond(() => ({ status: 200, headers: {}, body: '{}' }));
   const ports = new Map(createInsightSourcePorts(fake.client, env).map(p => [p.id, p]));
@@ -72,8 +71,6 @@ test('ports add auth headers from env without leaking keys; no arena port exists
   assert.ok((fake.requests.at(-1)!.headers!.Authorization ?? '').startsWith('Bearer '));
   await ports.get('cognition')!.fetch();
   assert.equal(fake.requests.at(-1)!.headers, undefined);
-  assert.equal(ports.has('arena'), false);
-  assert.ok(fake.requests.every(r => !r.url.includes('datasets-server.huggingface.co')));
   const noKey = createInsightSourcePorts(fake.client, () => undefined)
     .find(p => p.id === 'artificial-analysis')!;
   await assert.rejects(noKey.fetch(),

@@ -1,16 +1,17 @@
-import { computeRoleTop10, SECTION_HEADINGS, type RoleList, type RoleLists } from './letter-top10-unified.js';
+import { computeRoleTop10, type RoleList, type RoleLists } from './letter-top10-unified.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { SCORE_FORMULA_LINES } from './letter-markdown-format.js';
-import { freeListsFrom, freeOnlyModelIds, renderFreeSectionCompact, shortPlan, unmeasuredFreeIds } from './letter-markdown-free.js';
+import { freeListsFrom, renderFreeSectionCompact, shortPlan, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
-import { toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
-import { LEGEND_LINES, changeNote, exitLine, formatChange } from './letter-top10-legend.js';
+import type { Top10RecordInput } from './letter-top10-rank.js';
+import { top10OptionsFrom } from './letter-top10-render-options.js';
+import { LEGEND_LINES, PARETO_MARK, ROLE_HEADINGS, ROLE_LABELS, ZONE_TEXT, changeNote, exitLine, formatChange, leadText, dimensionsText } from './letter-top10-legend.js';
 
 export interface Top10LetterInput {
   readonly publicationDate: string; // YYYY-MM-DD
   readonly lists: RoleLists; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
-  readonly partialSources?: readonly string[]; readonly free?: RoleLists | undefined; readonly freeUnmeasured?: readonly string[];
+  readonly partialSources?: readonly string[]; readonly free?: RoleLists | undefined; readonly freeUnmeasured?: readonly UnmeasuredFree[];
 }
 
 const ATTRIBUTIONS = ['출처: OpenRouter (CC-BY-4.0)',
@@ -27,12 +28,12 @@ const clean = (value: string, limit = 120): string => value
 const NAME_LIMIT = 120, EXIT_LIMIT = 5, FAILURE_LIMIT = 3;
 
 function section(role: OptimalZoneRole, list: RoleList): string[] {
-  const lines = [SECTION_HEADINGS[role]];
+  const lines = [ROLE_HEADINGS[role]];
   if (!list.entries.length) lines.push('자료 부족: 존을 통과한 접근 가능 모델이 없습니다.');
   for (const e of list.entries) {
     const rank = e.belowZone ? `▽ ${e.rank}` : String(e.rank);
-    const refs = [e.openrouterRankText, e.isPareto ? '⭐' : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
-    lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)}${e.both ? ' ↔' : ''} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${clean(e.indexText, 80)}` +
+    const refs = [e.openrouterRankText, e.isPareto ? PARETO_MARK : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
+    lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${dimensionsText(e, role)}` +
       ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' off-peak' : ''} · 접근 ${e.plans.map(shortPlan).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
       ` · ${formatChange(e.change)}`);
@@ -44,14 +45,14 @@ function section(role: OptimalZoneRole, list: RoleList): string[] {
 function summarize(lists: RoleLists): string[] {
   const o = lists.orchestrator.entries[0], w = lists.worker.entries[0];
   return ['## 요약',
-    `- 선두: 오케스트레이터 ${o ? `${o.modelId} (${o.indexText})` : '자료 부족'} · 워커 ${w ? `${w.modelId} (${w.indexText})` : '자료 부족'}`,
-    `- 변동: ${changeNote('오케스트레이터', lists.orchestrator)} · ${changeNote('워커', lists.worker)}`,
+    `- 선두: ${ROLE_LABELS.orchestrator} ${leadText(o)} · ${ROLE_LABELS.worker} ${leadText(w)}`,
+    `- 변동: ${changeNote(ROLE_LABELS.orchestrator, lists.orchestrator)} · ${changeNote(ROLE_LABELS.worker, lists.worker)}`,
     '- 사실 기준 요약이며 추정 동향은 넣지 않습니다.'];
 }
 export function renderTop10Letter(data: Top10LetterInput): string {
   const lines: string[] = [
     `[AI 인사이트 데일리: ${data.publicationDate} KST (내부 전용)]`,
-    '두 목록 Top10: 오케스트레이터 존(지능 ≥ 후보 최고 85%)·워커 존(코딩 ≥ 후보 최고 75%) 통과 모델, 보유 요금제 접근 가능만',
+    `두 목록 Top10: ${ZONE_TEXT} 통과 모델, 보유 요금제 접근 가능만`,
     ...summarize(data.lists),
     '',
     ...section('orchestrator', data.lists.orchestrator),
@@ -69,7 +70,7 @@ export function renderTop10Letter(data: Top10LetterInput): string {
     ...(data.partialSources?.length ? [`부분 수집 소스: ${data.partialSources.slice(0, FAILURE_LIMIT).map(s => clean(s, 40)).join(', ')}`] : []),
     '혼합 단가=(3×입력+출력)/4 USD/1M',
     ...SCORE_FORMULA_LINES,
-    `정렬: 스코어 내림차순(동점 시 지수) · ${EXCLUSION_NOTE}`,
+    `정렬: 스코어 내림차순(동점 시 모델명) · ${EXCLUSION_NOTE}`,
     '상세 지표는 SQLite 이력에서 확인할 수 있습니다.',
     ...(data.notes ?? []).map(note => clean(note, 160)),
   ];
@@ -86,15 +87,14 @@ export function renderTop10Letter(data: Top10LetterInput): string {
 }
 
 export interface CompactLetterInput { readonly publicationDate: string; readonly records: readonly Top10RecordInput[];
-  readonly openrouterRecords?: readonly Top10RecordInput[]; readonly opencodeDataRecords?: readonly Top10RecordInput[];
+  readonly openrouterRecords?: readonly Top10RecordInput[]; readonly opencodeDataRecords?: readonly Top10RecordInput[]; readonly cognitionRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
   readonly partialSources?: readonly string[]; readonly freeCatalog?: readonly PlanCatalogEntry[] }
 /** Builds the compact letter from letter rows (no I/O): per-role zone policy over AA indices. */
 export function renderTop10FromRecords(input: CompactLetterInput): string {
-  const options = { ...(input.openrouterRecords && { openrouterRecords: toRankedRecords(input.openrouterRecords) }),
-    ...(input.opencodeDataRecords && { opencodeDataRecords: input.opencodeDataRecords }), ...(input.previousRanks && { previousCohort: input.previousRanks }),
-    excludeModelIds: new Set(freeOnlyModelIds()) };
-  return renderTop10Letter({ publicationDate: input.publicationDate, lists: computeRoleTop10(input.records, options), free: freeListsFrom(input.records, input.freeCatalog, options),
-    freeUnmeasured: unmeasuredFreeIds(input.freeCatalog, input.records), ...(input.failedSources && { failedSources: input.failedSources }),
+  const options = top10OptionsFrom(input);
+  const free = freeListsFrom(input.records, input.freeCatalog, options);
+  return renderTop10Letter({ publicationDate: input.publicationDate, lists: computeRoleTop10(input.records, options), free,
+    freeUnmeasured: unmeasuredFreeEntries(input.freeCatalog, input.records, free), ...(input.failedSources && { failedSources: input.failedSources }),
     ...(input.notes && { notes: input.notes }), ...(input.partialSources && { partialSources: input.partialSources }) });
 }

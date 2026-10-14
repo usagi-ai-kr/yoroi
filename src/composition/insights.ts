@@ -8,7 +8,7 @@ import { NodeProcessRunner } from '../infra/process-runner.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import { openInsightsHistory } from '../infra/sqlite/insights-store.js';
 import { opencodeTarget } from '../config/load-config.js';
-import { buildFreeCatalog, collectOpenCodeFreeModels, freeOnlyModelIdsFromCatalog, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
+import { buildFreeCatalog, collectOpenCodeFreeModels, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
 
 export interface InsightsRunOptions {
   /** Provider/key environment (AA and OpenRouter keys come from the usual .env/process env; values are never logged). */
@@ -29,7 +29,7 @@ export interface InsightsRunOptions {
   readonly createPorts?: (client: HttpClient, lookup: (name: string) => string | undefined, options: InsightPortOptions) => readonly InsightSourcePort[];
 }
 type InsightsTop10Data = NonNullable<InsightRunResult['top10']> & {
-  readonly freeCatalog?: readonly RuntimeFreePlan[]; readonly freeOnlyModelIds?: ReadonlySet<string>;
+  readonly freeCatalog?: readonly RuntimeFreePlan[];
 };
 export type InsightsRunOutcome = Omit<InsightRunResult, 'top10'> & { readonly top10?: InsightsTop10Data } & {
   /** `memory` means the database could not be opened: the run still works but nothing persists or compares. */
@@ -52,8 +52,7 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
       options.processRunner ? collectOpenCodeFreeModels(options.processRunner,
         { ...(options.signal && { signal: options.signal }), target }) : Promise.resolve(undefined)]);
     const freeCatalog = freeModels && buildFreeCatalog(freeModels, run.publicationDate);
-    const top10 = run.top10 && freeCatalog ? { ...run.top10, freeCatalog,
-      freeOnlyModelIds: freeOnlyModelIdsFromCatalog(freeCatalog) } : run.top10;
+    const top10 = run.top10 ? { ...run.top10, ...(freeCatalog && { freeCatalog }) } : run.top10;
     return { ...run, ...(top10 && { top10 }), storage };
   } finally { try { history.close?.(); } catch { /* close errors never change the result */ } }
 }

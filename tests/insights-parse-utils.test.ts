@@ -10,7 +10,7 @@ test("isObject/isText/isFiniteNumber accept only the documented shapes", () => {
   assert.ok(!isFiniteNumber(NaN)); assert.ok(!isFiniteNumber("1"));
 });
 
-test("isIsoDate matches the former arena validDate (leap and impossible days)", () => {
+test("isIsoDate accepts leap days and rejects impossible days", () => {
   assert.ok(isIsoDate("2024-02-29")); assert.ok(isIsoDate("2026-01-02"));
   assert.ok(!isIsoDate("2023-02-29")); assert.ok(!isIsoDate("2026-02-30"));
   assert.ok(!isIsoDate("2026-13-01")); assert.ok(!isIsoDate("2026-04-31"));

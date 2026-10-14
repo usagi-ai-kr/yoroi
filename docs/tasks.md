@@ -12,7 +12,6 @@
 - #111 범위: 오케스트레이터·워커 Top10 별도 유지, 교집합은 `↔`; GPT 6.x 세대가 있으면 지표 무관 전체 접근 모델 기준으로 GPT 5.6 luna·terra·sol 제외.
 - Kimi K3 참고 한도(2026-10-12): OpenCode Go Plus 440회/5h 추정([opencode.ai/go](https://opencode.ai/go)); Ollama Cloud Pro 크레딧 $60/월·토큰 차감·동시 3([ollama.com/pricing](https://ollama.com/pricing)).
 - #107 재현 실패 기록: SQLite WAL 동시 오픈 테스트 400라운드, 실패 0회. 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
-
 - 0.4.0: #89 실환경 스모크 2026-10-11 19:17:56 KST 1회 exit 0 성공, zen:plugin-stale 1건 관측(#77 근거로 계속 관측), #89 및 0.4.0 milestone close 완료.
 - 0.5.0: PR #95 머지(e34f217), main CI 38132032129 success, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행, 전역 CLI 0.5.0 갱신, #70 close, 0.5.0 milestone close 완료.
 - 0.5.1: PR #98 머지(2536baa), main CI 38141050373 success, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행, 전역 CLI 0.5.1 동기화, OpenCode 플러그인 재설치 installed(재시작 대기), #92·#93·#96·#97 close, 0.5.1 milestone close 완료.
@@ -31,16 +30,16 @@
 - [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지.
 - PR #86 후속(미착수): 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 미노출.
 
-## 소유표 (2026-10-13 사용자 지시 현황)
+## 소유표 (2026-10-14 p61·p62 배정 현황)
 
 | pane | 모델 | 역할 및 담당 | 상태 |
 | --- | --- | --- | --- |
-| w12:pQ | o1 Claude Opus 5.5 | 오케스트레이터·리뷰어 | 가동 중 |
-| w12:pR | o2 Claude Opus 5.5 (Claude Code, 2026-10-13 사용자 교체) | 오케스트레이터·리뷰어 | 가동 중 |
-| w12:pS | w1 OpenCode DeepSeek V4.1 Flash (Ollama Cloud) | 워커 | 가동 중 |
-| w12:pT | w2 Codex GPT-6.1-Sol (2026-10-13 사용자 교체) | 워커 | 가동 중 |
+| w12:pR | o agy Claude Opus 5.5 Medium (2026-10-14 o 인계) | 오케스트레이터(분배·리뷰만) | 가동 중 |
+| w12:p0 | w2 OpenCode DeepSeek V4.1 Flash max | 워커 (p61 w4 감사·p62 coord CLI 구현) | 가동 중 |
+| w12:p11 | w3 OpenCode Cat Jam Free max | 워커 (p61 종합 최종화·p62 규칙 문서) | 가동 중 |
+| w12:pV | w4 OpenCode MiMo V2.6 Flash Free | 워커 (p61 감사·w4b 주보고·p62 검증) | 가동 중 |
 
-- 같은 파일을 두 pane에 동시에 배정하지 않는다. 이전 구현 소유·병합 기록은 tasks-pre040.md·tasks-archive.md·issue-status.md에 있다.
+- 같은 파일을 두 pane에 동시에 배정하지 않는다. 배정 상세 원본은 worker-dispatch.md(p61 재분배)·coord-cli.md(p62), 이전 구현 소유·병합 기록은 tasks-pre040.md·tasks-archive.md·issue-status.md에 있다. w1·w12:p12는 p61 테이블 미배정(p12 모델 미확인 보류).
 
 ## 이슈·마일스톤 매핑
 
@@ -81,12 +80,10 @@
 - #115 본문 갱신(2026-10-13 13:07:28 KST), #123·0.8.5 milestone close 완료.
 - 0.8.6 범위: [#125](https://github.com/qus0in/yoroi/issues/125) 레터 발행을 Hermes 크론에서 yoroi 자체 PM2로 이관하고 `insights publish` 명령 추가; dev → main PR 준비.
 
-## price-cap-3m 및 o2 모델 교체 (2026-10-13, o2 수행)
+## o2 모델 교체·AA 미측정 근거 유지 (2026-10-13, o2 수행)
 
 - o2 모델을 GLM-5.3-Flash(Ollama Cloud)로 교체(사용자 지시, 직전 Codex GPT-6.1-Sol capacity 오류 보고 뒤). orchestration.md 반영.
-- Top10 제외 필터에 혼합 단가 $3/1M 이상 제외(price-cap-3m) 추가: `letter-top10-filter.ts` filterCandidates, `PRICE_EXCLUSION_THRESHOLD=3`, EXCLUSION_NOTE 갱신.
-- 실측(DB 사본 `/tmp/yoroi-p7.BOhred/yoroi.db`, 5소스 reused): 오케·워커 Top10 모두 10행 유지. 제외 6개 — grok-4-7($3.00)·claude-sonnet-5-5·gpt-6-1-sol($4.00)·gemini-3-pro($4.50)·kimi-k3($6.00)·claude-opus-5-5($8.00).
-- 검증: 유닛 867/867, BDD 41/41, typecheck, build 통과. 규칙 상세는 [top10-price-cap.md](insights/top10-price-cap.md).
+- 혼합 단가 $3 상한 폐지(2026-10-13 사용자 지시): 도입했던 단가 상한 제외 규칙·관련 문서를 걷어냈다(p45).
 - AA 미측정 요구도 같은 흐름으로 반영(unmeasured-evidence): OpenRouter·OpenCode tokens 근거 행 있으면 후보 풀 유지, usage 폴백. 풀 184→208, 두 역할 Top10 10행 유지. 상세는 [top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md).
 - 검증: 내 범위 유닛(top10·letter·run-once 전파 테스트) 전수 통과, BDD 41/41, typecheck·build 통과. 전체 스위트는 o1의 arena 제외 작업(2026-10-13 동시 진행, sources.ts·registry 테스트 갱신 대기) 일부 실패가 섞여 전수 녹색 미확정 — 내 변경 파일과 무관(격리 실행 확인).
 
@@ -94,5 +91,10 @@
 
 - 요청 3건 반영: 워커 후보 기준/MiMo 2.5 구세대 제외(등록 라인 `mimo-v2`의 신세대 등급이 있으면 무등급 구세대 제외), 접근 요금제를 Top10 두 표에서 분리해 워커 표 뒤 별도 `## 접근 요금제` 표(두 목록 unique 모델 × 보유 요금제, ☑/☐)로 표시, AA 등 소스 전량 SQLite 적재 후 같은 키 재조회 렌더(저장값만 사용).
 - 사용자 결정: Arena 수집 제외(스코어 입력이 아니어서 순위 변화 없음, sources 배지 5→4), "kimi-k2-7-code와 kimk-k3는 다른 계열로 봄"(원문 오기 그대로 기록, 코드 식별자는 `kimi-k3`) — Kimi 분리는 기존 동작과 같아 코드 변경 없음.
-- o2 별도 작업(혼합 단가 $3 상한·AA 미측정 근거 유지) 결과도 같은 워킹트리에 함께 있으며, 가격·근거 규칙 상세는 [top10-price-cap.md](insights/top10-price-cap.md)·[top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md)만 본다(중복 기록 없음).
+- o2 별도 작업(AA 미측정 근거 유지) 결과도 같은 워킹트리에 함께 있으며, 근거 규칙 상세는 [top10-unmeasured-evidence.md](insights/top10-unmeasured-evidence.md)만 본다(중복 기록 없음).
 - 검증: 단위 879/879, BDD 41/41, typecheck·build·validate-repo PASS. 실수집 DB 사본 렌더 `insights once --markdown` exit 0, 근거 산출은 레터 Top10과 일치 확인(근거: scratch/reports/yoroi-final-report.md). 버전·PR·발행은 0.9.0(미커밋) 예정, 사용자 승인 대기하며 dev 워킹트리에만 보관.
+- Arena 소스 완전 제거(2026-10-13 사용자 지시, o2): `InsightSource`·기본 schema/scope/rank 설정·검증 분기·`hf-rows` 파이프라인 삭제, 테스트 fixture는 날짜형 OpenRouter(`metadata.date`)로 교체, `arena-transport.md` 삭제. 과거 릴리스·조사 기록의 Arena 언급은 역사로 유지.
+- 레터 표시 변경(2026-10-13 사용자 지시, o2): 파레토 최적을 독립 `파레토` 열 `👍`로(구 `⭐ 순위`), 교집합 `↔` 제거, 접근 요금제 체크리스트 표(`letter-markdown-access.ts`) 삭제, AA 미측정 free 모델은 Free 두 역할 표 끝 `AA 미측정` 행으로 포함.
+## p54 승인 C 통합·p55 후속 (2026-10-14, 커밋 금지)
+- p54 완료(보고 scratch/reports/yoroi-worker-cognition-openrouter.md): 오케75/10/5/10+effort 일관, 워커30/20/10/40+AA API가격·tok/s+성능 하한.70(전체풀 정규화 후). 재분배(o=pW): w3(pR)코어 완료·리뷰 / w1(pS)배선·표시·기존테스트(top10-unified·rank·unmeasured는 w3 이관) / w2(pQ)통합검증·독립참조·docs / w4(pV)순위 교차대조 / o 최종 보고. `scratch/packets/p54-o-dispatch.md`. p55 완료(917/917, 보고 동일 파일): w3 SQLite 잠금 경합(코드 쪽) / w2 오케 가중치 80/15/2.5/2.5 분석·반영 / w1 가중치 테스트 후속 / w4 사용량 limit 표시 / o 결정·보고. `scratch/packets/p55-dispatch.md`. p56 완료(919/919): w4 limit 98% / w3 오케 가성비 I²/P·사용량 제거 코어·최종검증 / w2 가중치 90/0/2.5/7.5 분석·참조·docs / w1 표시·테스트. `scratch/packets/p56-dispatch.md`. p58 후속 통합 완료: 오케 P1 95/0/2.5/2.5·전 effort 변형 점수 최고 대표(동점 낮은 effort, medium 고정 취소), 독립 참조/계약 docs 정정, 두 GPT Sol 독립·effort successor 표시 보호. integration_audit=통합 검증·contract_audit=참조/docs·ranking_audit=순위/식별·root=리뷰/기록. 전체 unit931/931·BDD41/41·typecheck/build·validate 통과, 실입력 오케40/워커18 후보 독립 비교 불일치0. 6.1 Sol 워커 순위는 옵션 누락을 바로잡아14위로 정정. Arena 설계·p59 권고는 결정 대기, 커밋 없음. `scratch/packets/continuation-dispatch.md`. p60 실제 워커 재배정: w1=pR(Sonnet High) 판단종합, w2=p0(DeepSeek max) 독립판단/분리검증, w3=p11(Cat Jam max) 레터, w4=pV(MiMo Flash) 민감도. list/visible 재확인·전원idle, 상세 docs/insights/worker-dispatch.md. 사용자 요청으로 o→agy w12:pR(Opus5.5 Medium) 인계. w2/w3/w4 보고 도착, 종합 최종화·감사·기록은 새 o가 재분배. scratch/packets/yoroi-p60-agy-handoff.md. p61 완료: w3 종합 최종화(p60-w1-synthesis v2, Sol 분리 경고 해제)·w2 p60-w4 감사·w4 p60 w1/w2/w3 감사(미신고 top10-unified 테스트는 기존 변경 판정, successor 지정 3파일 25/25+tsc clean)·w4b 주 보고 append·tasks 갱신. p62 배정 원본은 docs/insights/coord-cli.md(w2 coord.py 구현, w3 규칙 문서, w4 독립 검증·리뷰).
+- p72-w1a: 묶음 6 문서 4개만 커밋 준비(architecture·development·tasks·opencode-v2-migration). 표시/V2 관련 fake 테스트 18/18·레포 검증 PASS, push 없음. 기존 회고 재사용으로 새 스킬 없음.

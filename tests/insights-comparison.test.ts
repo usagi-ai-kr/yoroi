@@ -5,35 +5,35 @@ import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { validateInsightRecord, validateInsightRows, type ValidatedInsightRecord } from '../src/insights/validation.js';
 import type { InsightRecord } from '../src/insights/record.js';
 
-const base: InsightRecord = { source: 'arena', modelId: 'synthetic', metric: 'rating', value: 100,
-  unit: 'score', category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10',
+const base: InsightRecord = { source: 'openrouter', modelId: 'synthetic', metric: 'rating', value: 100,
+  unit: 'score', category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' },
   sourceUrl: 'https://example.test/data', sourceName: 'Synthetic', license: null,
   attributionText: 'Synthetic', method: 'synthetic', schemaVersion: 'v1' };
 const measurement = (changes: Partial<InsightRecord> = {}): ValidatedInsightRecord => {
   const checked = validateInsightRecord({ ...base, ...changes });
   assert.ok(checked.ok); return checked.value;
 };
-const previous = measurement({ sourceAsOf: '2026-10-09' });
+const previous = measurement({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' } });
 
 test('up, down, unchanged and negative score baselines retain signed unit and percent differences', () => {
   for (const [value, delta, percent] of [[120, 20, 20], [80, -20, -20], [100, 0, 0]] as const) {
     assert.deepEqual(compareInsightPrevious(measurement({ value }), previous), { comparable: true,
       currentDate: '2026-10-10', previousDate: '2026-10-09', absoluteChange: delta, percentChange: percent });
   }
-  const negative = compareInsightPrevious(measurement({ value: -80 }), measurement({ sourceAsOf: '2026-10-09', value: -100 }));
+  const negative = compareInsightPrevious(measurement({ value: -80 }), measurement({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, value: -100 }));
   assert.ok(negative.comparable && negative.absoluteChange === 20 && negative.percentChange === 20);
 });
 
 test('zero denominators and overflowing arithmetic produce explicit n/a without NaN or Infinity', () => {
   for (const value of [0, 10]) {
-    const result = compareInsightPrevious(measurement({ value }), measurement({ sourceAsOf: '2026-10-09', value: 0 }));
+    const result = compareInsightPrevious(measurement({ value }), measurement({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, value: 0 }));
     assert.ok(result.comparable && result.absoluteChange === value && result.percentChange === null);
     assert.equal(result.percentUnavailable, 'n/a: 이전 값 0');
   }
   const overflow = compareInsightPrevious(measurement({ value: Number.MAX_VALUE }),
-    measurement({ sourceAsOf: '2026-10-09', value: -Number.MAX_VALUE }));
+    measurement({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, value: -Number.MAX_VALUE }));
   assert.deepEqual(overflow, { comparable: false, reason: 'n/a: 수치 범위 초과' });
-  const ratio = compareInsightPrevious(measurement({ value: 1 }), measurement({ sourceAsOf: '2026-10-09', value: Number.MIN_VALUE }));
+  const ratio = compareInsightPrevious(measurement({ value: 1 }), measurement({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, value: Number.MIN_VALUE }));
   assert.ok(ratio.comparable && ratio.percentChange === null && ratio.percentUnavailable === 'n/a: 수치 범위 초과');
 });
 
@@ -42,17 +42,17 @@ test('missing, same, nonadjacent and future dates are not compared or filled fro
   assert.deepEqual(compareInsightPrevious(measurement(), undefined, { hasEarlierHistory: true }),
     { comparable: false, reason: 'n/a: 전일 결측' });
   for (const date of ['2026-10-08', '2026-10-11']) assert.deepEqual(
-    compareInsightPrevious(measurement(), measurement({ sourceAsOf: date })), { comparable: false, reason: 'n/a: 전일 결측' });
+    compareInsightPrevious(measurement(), measurement({ sourceAsOf: date, metadata: { date: date } })), { comparable: false, reason: 'n/a: 전일 결측' });
   assert.deepEqual(compareInsightPrevious(measurement(), measurement()), { comparable: false, reason: 'n/a: 새 데이터 아님' });
-  assert.equal(compareInsightPrevious(measurement({ sourceAsOf: '2024-03-01' }),
-    measurement({ sourceAsOf: '2024-02-29' })).comparable, true);
+  assert.equal(compareInsightPrevious(measurement({ sourceAsOf: '2024-03-01', metadata: { date: '2024-03-01' } }),
+    measurement({ sourceAsOf: '2024-02-29', metadata: { date: '2024-02-29' } })).comparable, true);
 });
 
 test('all series identities must match; display aliases may change without changing identity', () => {
   for (const change of [{ schemaVersion: 'v2' }, { unit: 'tokens' }, { modelId: 'other' },
     { metric: 'rank' }, { category: 'Code' }, { method: 'other' },
-    { source: 'openrouter' as const, sourceAsOf: base.observedAt, metadata: { date: '2026-10-09' } }]) {
-    assert.deepEqual(compareInsightPrevious(measurement(), measurement({ sourceAsOf: '2026-10-09', ...change })),
+    { source: 'opencode-data' as const }]) {
+    assert.deepEqual(compareInsightPrevious(measurement(), measurement({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' }, ...change })),
       { comparable: false, reason: 'n/a: 비교 조건 불일치' });
   }
   assert.equal(compareInsightPrevious(measurement({ modelAlias: 'renamed' }), previous).comparable, true);
@@ -72,8 +72,8 @@ test('3-A and fallback dates always stay unknown; forged validated dates fail cl
 
 test('accepts S1 previous directly and leaves current/history values unchanged', () => {
   const store = new MemoryInsightHistory();
-  const key = { source: 'arena' as const, schemaVersion: 'v1', requestScope: 'text:public', publicationDate: '2026-10-11' };
-  store.saveDaily(key, validateInsightRows('arena', [{ ok: true, index: 0, records: [previous.record], warnings: [] }]));
+  const key = { source: 'openrouter' as const, schemaVersion: 'v1', requestScope: 'text:public', publicationDate: '2026-10-11' };
+  store.saveDaily(key, validateInsightRows('openrouter', [{ ok: true, index: 0, records: [previous.record], warnings: [] }]));
   const series = { ...key, modelId: base.modelId, metric: base.metric, unit: base.unit, category: base.category };
   const current = measurement({ value: 120 });
   const before = JSON.stringify(current);

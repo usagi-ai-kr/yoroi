@@ -75,24 +75,24 @@ test('fewer than ten candidates show all rows with below-zone fill; previous com
     { modelId: 'claude-haiku-5-5', value: 95, priceInput: 2, priceOutput: 4, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'claude-opus-5-5', value: 88, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_coding_index' },
     { modelId: 'gpt-6-1-sol', value: 82, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_coding_index' }];
-  const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }] });
+  const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }], cognitionRecords: [['claude-opus-5-5-max', 0.6], ['gpt-6-1-sol-high', 0.5], ['claude-haiku-5-5-max', 0.4]].map(([modelId, value]) => ({ modelId: String(modelId), metric: 'cognition_correct', value: Number(value) })) });
   assert.equal(lists.orchestrator.entries.length, 3); // 후보 3개라 사용 가능한 행 모두 표시
-  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // 전체 후보 풀 점수
-  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5', 'gpt-6-1-sol', 'claude-haiku-5-5']);
+  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // p64 70/0/15/15: 성능·가성비(AA 단일 default 공유) 반영, 순서 유지
+  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5']); // p54 워커 하한: 성능 Opus 1·GPT max(AA 0, Cog .5)·Haiku 0 → Opus만 ≥.70
   assert.ok(lists.orchestrator.entries.some(e => e.isPareto));
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.both, true);
-  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, true);
+  assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, false, 'worker floor removes Haiku from the worker list');
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.change, '진입');
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '유지'); // 종합 점수에서도 1위 유지
 });
-test('output tokens/s and OR usage contribute to the role composite score', () => {
+test('orchestrator weights performance 70, usage 5, speed 10 and value-for-money 15 (p70)', () => {
   const metric = 'artificial_analysis_intelligence_index', speed = 'median_output_tokens_per_second';
   const records = [{ modelId: 'claude-opus-5-5', value: 96, priceInput: 2, priceOutput: 2, metric },
     { modelId: 'gpt-6-1-sol', value: 90, priceInput: 1.5, priceOutput: 1.5, metric },
     { modelId: 'claude-opus-5-5', value: 50, metric: speed }, { modelId: 'gpt-6-1-sol', value: 80, metric: speed }];
-  assert.deepEqual(computeRoleTop10(records).orchestrator.entries.map(e => e.modelId), ['gpt-6-1-sol', 'claude-opus-5-5']);
-  const or = [{ modelId: 'claude-opus-5-5', value: 300, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 100, metric: 'total_tokens' }];
-  assert.deepEqual(computeRoleTop10(records, { openrouterRecords: or }).orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'gpt-6-1-sol']);
+  const scores = (rs: typeof records, opts = {}) => computeRoleTop10(rs, opts).orchestrator.entries.map(e => [e.modelId, e.scoreText]);
+  assert.deepEqual(scores(records), [['claude-opus-5-5', '70.0'], ['gpt-6-1-sol', '25.0']], '성능 Opus 1 / 속도 10+가성비 15 GPT 1 (p70 70/5/10/15)');
+  const or = [{ modelId: 'claude-opus-5-5', value: 100, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 300, metric: 'total_tokens' }]; assert.deepEqual(scores(records, { openrouterRecords: or }), [['claude-opus-5-5', '70.0'], ['gpt-6-1-sol', '30.0']], 'OpenRouter 사용량도 오케 점수에 반영된다(p70, 가중 5%)');
 });
 test('total_tokens records get 1..N usage ranks so the token value never becomes a rank', () => {
   const or = [{ modelId: 'claude-sonnet-5-5', value: 530462835686, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 264308530787, metric: 'total_tokens' }];

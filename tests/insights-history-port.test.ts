@@ -6,9 +6,9 @@ import { insightPublicationDate, shiftInsightDate, INSIGHT_HISTORY_RETENTION_DAY
 import { validateInsightRows, type InsightValidation } from '../src/insights/validation.js';
 import type { InsightRecord } from '../src/insights/record.js';
 
-const key: InsightDailyKey = { source: 'arena', publicationDate: '2026-10-11', requestScope: 'text:public', schemaVersion: 'v1' };
-const base: InsightRecord = { source: 'arena', modelId: 'synthetic', metric: 'rating', value: 10,
-  unit: 'score', category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10',
+const key: InsightDailyKey = { source: 'openrouter', publicationDate: '2026-10-11', requestScope: 'text:public', schemaVersion: 'v1' };
+const base: InsightRecord = { source: 'openrouter', modelId: 'synthetic', metric: 'rating', value: 10,
+  unit: 'score', category: 'Text', observedAt: '2026-10-11T00:00:00Z', sourceAsOf: '2026-10-10', metadata: { date: '2026-10-10' },
   sourceUrl: 'https://example.test/data', sourceName: 'Synthetic', license: null,
   attributionText: 'Synthetic', method: 'synthetic', schemaVersion: 'v1' };
 const series: InsightSeriesKey = { ...key, modelId: base.modelId, metric: base.metric, unit: base.unit, category: base.category };
@@ -27,7 +27,7 @@ test('KST publication boundary and 90-day policy are explicit', () => {
 
 test('daily success is reused; failure and incomplete refresh preserve it; failed sources retry', () => {
   const store = new MemoryInsightHistory();
-  const failed = validateInsightRows('arena', []);
+  const failed = validateInsightRows('openrouter', []);
   assert.equal(store.saveDaily(key, failed), false);
   assert.equal(store.getDaily(key), undefined);
   assert.equal(store.saveDaily(key, success()), true);
@@ -44,7 +44,7 @@ test('daily success is reused; failure and incomplete refresh preserve it; faile
 
 test('exact previous day and seven-day gaps never substitute the nearest historical value', () => {
   const store = new MemoryInsightHistory();
-  store.saveDaily(key, success({ sourceAsOf: '2026-10-08' }));
+  store.saveDaily(key, success({ sourceAsOf: '2026-10-08', metadata: { date: '2026-10-08' } }));
   store.saveDaily({ ...key, publicationDate: '2026-10-12' }, success());
   assert.equal(store.previous(series, '2026-10-10'), undefined);
   assert.equal(store.previous(series, '2026-10-11')?.record.value, 10);
@@ -65,7 +65,7 @@ test('unknown basis retains daily latest data without inventing dated history; i
   assert.equal(store.getDaily(cognition)?.records[0]?.comparisonDate, null);
   assert.ok(store.sevenDays({ ...series, source: 'cognition' }, '2026-10-11').every(day => !day.measurement));
   assert.equal(store.saveDaily(key, success({ schemaVersion: 'v2' })), false);
-  assert.equal(store.saveDaily(key, { ok: true, source: 'arena', records: [], rejectedRows: 0 }), false);
+  assert.equal(store.saveDaily(key, { ok: true, source: 'openrouter', records: [], rejectedRows: 0 }), false);
   assert.equal(store.saveDaily(key, success({ source: 'cognition' })), false);
 });
 
@@ -73,7 +73,7 @@ test('retention keeps exactly 90 publication days and callers cannot mutate stor
   const store = new MemoryInsightHistory();
   const result = success();
   store.saveDaily({ ...key, publicationDate: '2026-07-13' }, result);
-  store.saveDaily({ ...key, publicationDate: '2026-07-14' }, success({ sourceAsOf: '2026-10-09' }));
+  store.saveDaily({ ...key, publicationDate: '2026-07-14' }, success({ sourceAsOf: '2026-10-09', metadata: { date: '2026-10-09' } }));
   if (result.ok) (result.records[0]!.record as { value: number }).value = 999;
   assert.equal(store.getDaily({ ...key, publicationDate: '2026-07-13' })?.records[0]?.record.value, 10);
   const read = store.previous(series, '2026-10-11')!; (read.record as { value: number }).value = 999;

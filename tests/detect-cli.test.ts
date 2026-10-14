@@ -86,7 +86,7 @@ test('the real entry point loops, reports diagnostics on stderr, exits 0 on SIGT
   // The real entry point runs the real ps: mark a far-future plugin load so a running OpenCode on this machine is never stale.
   const zen = openZenLockStore({ YOROI_DATA_DIR: dir }); zen.markLoaded!({ scope: 'opencode-zen:free', observedAt: '2099-01-01T00:00:00.000Z' }); zen.close();
   const child = spawn(process.execPath, ['--import', 'tsx', 'src/main.ts', 'detect'], { stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, YOROI_DATA_DIR: dir, YOROI_PROVIDERS: 'codex', YOROI_CODEX_PATH: '/yoroi-test-missing-executable' } });
+    env: { ...process.env, YOROI_DATA_DIR: dir, YOROI_PROVIDERS: 'codex', YOROI_CODEX_PATH: '/yoroi-test-missing-executable', YOROI_OPENCODE_TARGET: 'v1' } });
   let stdout = '', stderr = '';
   child.stdout.on('data', c => { stdout += c; }); child.stderr.on('data', c => { stderr += c; });
   const closed = new Promise<number | null>(resolve => child.on('close', resolve));

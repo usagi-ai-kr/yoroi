@@ -1,0 +1,4 @@
+{
+  "orchestrator": { "performance": 0.7, "usage": 0.05, "speed": 0.1, "price": 0.15 },
+  "worker": { "performance": 0.3, "usage": 0.2, "speed": 0.1, "price": 0.4 }
+}

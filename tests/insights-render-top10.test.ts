@@ -14,8 +14,8 @@ const compact = () => renderTop10FromRecords({ publicationDate: '2026-10-12', fa
 test('composition-injected compact renderer is used by default and stays under the 3600-char budget', () => {
   const rendered = renderInsights(view, { compact });
   assert.equal(rendered.exitCode, 0);
-  assert.match(rendered.stdout, /## 🧭 오케스트레이터 Top10/);
-  assert.match(rendered.stdout, /## 🛠️ 워커 Top10/);
+  assert.match(rendered.stdout, /## 🧭 오케스트레이터·리뷰어 Top10/);
+  assert.match(rendered.stdout, /## 🛠️ 워커·메신저 Top10/);
   assert.ok(rendered.stdout.length <= 3600, `length=${rendered.stdout.length}`);
   assert.match(rendered.stdout, /^## 요약$/m);
   assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미상\)/); assert.match(rendered.stdout, /출처: OpenCode Data \(내부 참조 · 약관상 자동 추출 제한\) \(라이선스 미상\)/);
@@ -33,7 +33,7 @@ test('--full and the legacy boolean keep the detailed letter instead of the comp
   assert.match(renderInsights(view, {}).stdout, /\[AI 인사이트 레터\]/, 'no-injection fallback stays detailed');
 });
 test('a failed letter keeps the legacy failure contract in both modes', () => {
-  const failed: InsightLetterView = { ok: false, reason: '전체 소스 실패', failedSources: ['arena'] };
+  const failed: InsightLetterView = { ok: false, reason: '전체 소스 실패', failedSources: ['openrouter'] };
   for (const options of [{ compact }, { full: true }]) {
     const rendered = renderInsights(failed, options);
     assert.equal(rendered.exitCode, 1); assert.equal(rendered.stdout, '');
@@ -63,9 +63,11 @@ test('previous cohort maps track rank changes in both role lists', () => {
   const text = renderTop10FromRecords({ publicationDate: '2026-10-12',
     records: [{ modelId: 'gpt-6-1-sol', value: 90, metric: 'artificial_analysis_intelligence_index' },
       { modelId: 'claude-opus-5-5', value: 80, metric: 'artificial_analysis_coding_index' }],
+    cognitionRecords: [{ modelId: 'claude-opus-5-5', value: 0.8, metric: 'cognition_correct' }],
     previousRanks: [{ modelId: 'gpt-6-1-sol', rank: 1, metric: 'rank' },
       { modelId: 'claude-opus-5-5', rank: 2, metric: 'rank' }] });
-  assert.match(text, /gpt-6-1-sol .*➖/);
+  // 오케: GPT(AA 1)=50, Opus(Cog 1)=50 동점 → 모델명순 Opus 1위. 전일 GPT 1·Opus 2 → Opus ▲1, GPT ▼1.
+  assert.match(text, /gpt-6-1-sol .*▼1/);
   assert.match(text, /claude-opus-5-5 .*▲1/);
 });
 test('compact mode still reports failures diagnostics on stderr like the legacy contract', () => {

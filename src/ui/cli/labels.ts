@@ -87,13 +87,11 @@ function labelsFor(group: readonly Entry[], base: Base): string[] {
 export function windowLabels(provider: ProviderId, windows: readonly UsageWindow[]): string[] {
   const entries = windows.map((window) => classify(provider, window.id));
   const groups = new Map<Base, Entry[]>();
-  for (const entry of entries) {
-    if (!entry.base) continue;
-    groups.set(entry.base, [...(groups.get(entry.base) ?? []), entry]);
-  }
+  for (const entry of entries) if (entry.base) groups.set(entry.base, [...(groups.get(entry.base) ?? []), entry]);
   const labels = new Map<string, string>();
+  const multi = provider === "agy" && new Set(entries.filter((e) => e.base).map((e) => e.id.split(":")[0]!)).size > 1;
   for (const [base, group] of groups) {
-    const resolved = group.length > 1 ? labelsFor(group, base) : [base];
+    const resolved = group.length > 1 || multi ? labelsFor(group, base) : [base];
     group.forEach((entry, index) => labels.set(entry.id, resolved[index]!));
   }
   return windows.map((window, index) => labels.get(window.id) ?? entries[index]!.id);

@@ -51,6 +51,11 @@ o(`w12:p13`)는 분배·진척만 맡는다. 보고는 각 패킷 `report_path` 
 5. PR 본문에 경미 ① 정정 한 줄. PR CI 결과까지 보고하고 멈춘다. w4가 PR 리뷰, 머지는 o가 사용자 확인 후 지시.
 6. main CI 통과 확인(`gh workflow run ci.yml --ref main` 필요 시) → tag `v0.10.0`·Release → 전역 CLI 갱신(`global-cli-update` 스킬)·버전 일치 확인.
 
+## 2단계 결과 (o)
+
+- w2b: `f9251a8` 묶음 6 · `649221f` 묶음 5 · `5d616ec` 0.10.0·roadmap. 940/940, validate PASS.
+  범위 확대 인정: `tests/version.test.ts` 버전 고정 1줄(범프로 필연, w2 pane 사용자 승인). 기존 플레이크 usage-history 100ms 1회.
+
 ## 공통 금지
 
 모델·세션 변경, 실제 유료 API 호출, 시크릿·개인 사용량 원본 노출, 소유 밖 파일 수정, 파일당 100줄 초과.

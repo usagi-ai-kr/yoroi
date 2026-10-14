@@ -22,6 +22,13 @@
 - 검증 기준은 OpenRouter와 Cognition 2소스다(유효 metric 각 1,530건, Cognition 탈락 20행 부분 수집). 네 소스 E2E 완전 통과는 주장하지 않는다.
 - Arena·Artificial Analysis는 단일 요청 예산(`maxRequests=1`)에서 페이지 완전성 실패였다. 4소스 코드 지원은 유지하고 [#92](https://github.com/qus0in/yoroi/issues/92)(Arena)·[#93](https://github.com/qus0in/yoroi/issues/93)(AA)로 분리했다.
 - 완료 기준 5·6(Hermes 매일 실행·전달 검증, 운영 문서화)은 [#94](https://github.com/qus0in/yoroi/issues/94)로 분리하고 [#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93)과 함께 [0.5.1](https://github.com/qus0in/yoroi/milestone/11)에 배정했다(2026-10-11 사용자 결정).
+## 0.11.1 머지 및 발행 완료 (2026-10-14)
+
+- PR [#143](https://github.com/qus0in/yoroi/pull/143) 병합 커밋 `acab7dbbd37c4d614c0284d44563b865262c88fa`(main).
+- main CI [run 38549171252](https://github.com/qus0in/yoroi/actions/runs/38549171252) success.
+- [v0.11.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.11.1) 발행 완료 (tag `v0.11.1`, target `acab7dbb`).
+- 전역 CLI 0.11.1 동기화 완료 (`yoroi --version` 0.11.1 일치, `pnpm run update:global --check` exit 0).
+
 ## 0.5.1 머지 및 발행 완료 (2026-10-11)
 
 - PR [#98](https://github.com/qus0in/yoroi/pull/98) 병합 커밋 `2536baa69f88647a9ef75704bb4ee3729e248b11`(main).
@@ -81,20 +88,12 @@
 - 실수집 status는 `all_healthy`로 Cognition 부분 수집 경고가 해소됐다. #116·#117 close 및 0.8.3 milestone close 완료.
 - 0.8.4 milestone: [#121](https://github.com/qus0in/yoroi/issues/121) Cursor 접근 표기 단순화, 구현 go1 진행 중; dev → main PR 준비.
 
-## 0.8.4 발행 및 0.8.5 준비 (2026-10-13)
+## 0.8.4–0.10.0 발행 완료 (2026-10-13~14)
 
-- v0.8.4 발행 완료: PR #122 → main `73f4ad1`, PR/main CI [38336083878](https://github.com/qus0in/yoroi/actions/runs/38336083878) attempt 1 success, [v0.8.4 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.4), 전역 CLI 0.8.4.
-- #115 본문 갱신(2026-10-13 11:19:10 KST), #121·0.8.4 milestone close 완료.
-- 0.8.5 milestone: [#123](https://github.com/qus0in/yoroi/issues/123) 레터 정정 8건을 묶어 dev → main PR 준비.
-- 후속 상태 갱신 (2026-10-13): v0.8.5 발행 완료(PR #124 → main `240378b`, PR/main CI [38344750752](https://github.com/qus0in/yoroi/actions/runs/38344750752) attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.5), 전역 CLI 0.8.5); #115 본문 갱신(13:07:28 KST), #123·0.8.5 milestone close. 0.8.6 milestone: [#125](https://github.com/qus0in/yoroi/issues/125) 레터 발행을 Hermes 크론에서 yoroi 자체 PM2로 이관하고 `insights publish` 추가 — v0.8.6 발행 완료(PR #126 → main, PR/main CI success, [v0.8.6 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.6), 전역 CLI 0.8.6, #125 close). 0.9.0 범위: MiMo 구세대 세대 제외·접근 요금제 별도 표·SQLite 전량 적재 후 재조회·Arena 수집 제거·AA 미측정 근거 유지·역할 재정립 — 상태 dev 미커밋·PR 대기.
+- v0.8.4~v0.8.6, v0.9.0, v0.10.0 순차 발행 완료 (PR #122·124·126·128·130·139 → main, 전역 CLI 동기화 완료).
+- 0.9.0: MiMo 구세대 제거·요금제 별도 표·SQLite 전량 적재·Arena 수집 제거·역할 재정립.
+- 0.10.0: 점수 가중치 외부화·오케 사용량 차원·협업 분배 CLI(`coord`) 도입.
 
 ## 버전 이력 요약
 
-- **0.1.0**–**0.1.2** (2026-10-08): MVP, CLI 개선, .env 병합 로드 완료 및 발행.
-- **0.2.0** (2026-10-10): OpenCode Zen Free 락([#72](https://github.com/qus0in/yoroi/issues/72)–[#76](https://github.com/qus0in/yoroi/issues/76)), [v0.2.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.2.0) 발행 완료(2026-10-10T10:38:55Z).
-- **0.3.0** (2026-10-11): 60초 SQLite 캐시·이력([#71](https://github.com/qus0in/yoroi/issues/71)), watch 제거([#83](https://github.com/qus0in/yoroi/issues/83)). [v0.3.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.3.0) 발행 완료.
-- **0.3.1** (2026-10-11): Zen Free 로드 표시([#77](https://github.com/qus0in/yoroi/issues/77)), 전역 0.3.1 동기화, [v0.3.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.3.1) 발행 완료. 실관측은 [#88](https://github.com/qus0in/yoroi/issues/88)로 분리.
-- **0.4.0** (2026-10-11): 내장 10분 주기 감지기(#89) PR #91 머지 완료, 전역 0.4.0 동기화 완료. 외부 작업으로 [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0) 발행 완료 관측.
-- **0.5.0** (2026-10-11): 크롤러 2소스 검증(#70) PR #95 머지 완료, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행 완료, 전역 0.5.0 동기화 완료.
-- **0.5.1** (2026-10-11): Arena·AA top20(#92·#93), Zen 리셋/남은시간(#96), OpenCode 락 복구(#97) PR #98 머지 완료, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행 완료, 전역 0.5.1 동기화 완료.
-- **0.6.0** (2026-10-12 발행 완료): trend 24h·7d(#84), Top50 수집·Top10 압축 레터(#94, #99·#100), 크론 자동 발행, #77·#88 해제 실관측 반영.
+- 0.1.0–0.6.0 (2026-10-08~12): MVP, Zen Free, watch/cache, 레터, 발행 기록은 [release-history-pre040.md](release-history-pre040.md) 참조.

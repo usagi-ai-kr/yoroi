@@ -39,6 +39,12 @@ o는 분배만 맡는다. 결과: `scratch/reports/yoroi-p84-mimo-aa-observed.md
 - 새 이슈 발행 뒤 #142를 닫는다. `gh issue create --title "[letter] 2026-10-14 AI 인사이트 레터 (p85)" --body "$(yoroi insights once --markdown)" --label letter`
 - L 단계 전역 CLI 0.11.1로 렌더하고, #138 갱신 지시는 이 절차로 대체된다.
 
+## 회고 (2026-10-14)
+
+- **totalcost 필터 누락 해결**: 독립 리뷰(w2 cross-code)에서 AA total cost가 release scoring 입력과 candidate 경로에 연결되지 않은 누락 발견. 회귀 test(`insights-original-price-wiring.test.ts`) 추가로 해결. 테스트 950/950 통과.
+- **AA 최신 수집 실패**: 2026-10-14 AA API 접근 시 HTTP 429 (Rate limit exceeded). 다른 3소스(OpenRouter, Cognition, OpenCode Data)는 최신 수집 성공. 확정 관측 snapshot 사용.
+- **새 레터 발행**: 0.11.1 실제 출시 후 새 레터 이슈 발행 진행 중. `gh issue create --title "[letter] 2026-10-14 AI 인사이트 레터 (p85)" --body "$(yoroi insights once --markdown)" --label letter`
+
 ## 공통 금지
 
 main 직접 push, 실제 API 호출·`--refresh`, 모델명 조건, 모델·세션 변경, 시크릿 노출, 소유 밖 수정, 파일당 100줄 초과.

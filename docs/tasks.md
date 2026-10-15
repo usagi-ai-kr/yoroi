@@ -89,3 +89,9 @@
 - 0.13.2 발행 완료: `20b8ac2` xAI 재로그인 안내·`6630fa1` 발행 기록·`4cd9022` 위키 원본·`38bea94` grok-build-0.1 후보·`dc0624d`/`dbd0b13` AA 거절 진단. PR #155 머지(main `0034b85ee5c1525aef455e7aa5239e0dcff7a3df`)·main CI success(run `38702663565`)·tag `v0.13.2`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.2) 발행(2026-10-15T08:08:44Z)·전역 CLI 0.13.2·위키 게시 `4495d75`·#151 종료.
 - 협업 구성 표 최신화는 dev 후속 커밋 `aff156c`로 기록되며 PR #155의 main 병합에는 포함되지 않는다.
 - 0.12.0 회고(2026-10-15): 리뷰 통과분은 사용자 지시에 따라 요청 없이도 작업 단위별로 묶어 커밋한다(파일 지정 add·묶음 계획 선행·동시 착륙 파일 제외). 튜닝은 scratch 시뮬레이터로 기준선 줄 단위 일치와 이웃 안정성을 먼저 확인하고 사용자 확정값만 코드에 반영한다.
+
+## Reset (KST) 날짜 표기 후속 (2026-10-15, 완료)
+- 사용자 지시: pretty Reset 날짜는 `yy-MM-dd HH:mm`으로 표시하고 시각·남은 시간·zen 추정을 유지하며 hourly에는 영향 없음.
+- 완료: w1 코드·기대값(`render.ts` reset 연도 2자리), w4 문서 반영, w2 독립 리뷰·전역 갱신. 커밋은 리뷰 통과 단위로 묶는다.
+- 검증: 단위 1017/1017·typecheck·diff --check·validate PASS, 합성 pretty 2자리 연도·행 열폭 균일, 전역 `once --pretty --full` 1회에서 reset 연도 2자리 확인.
+- 운영 교훈: coord packet/audit가 샌드박스에서 멈추면 require_escalated 실행으로 해결됐다.

@@ -25,7 +25,7 @@ export function formatResetTime(iso?: string): string {
     hour: "2-digit", minute: "2-digit", hour12: false,
   }).formatToParts(date);
   const get = (type: string): string => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
+  return `${get("year").slice(-2)}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
 }
 
 export function formatUsage(window: UsageWindow): string {

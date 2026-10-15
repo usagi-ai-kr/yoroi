@@ -21,7 +21,7 @@ test("pretty default shows only xAI weekly n/a while full shows all n/a rows", (
   const clean = (full?: boolean) => stripVTControlCharacters(renderPretty(prettyInput(), undefined, { full }).join("\n"));
   const normal = clean();
   assert.match(normal, /│ xai\s+│ ok n\/a\s+│ w\s+│/);
-  assert.match(normal, /2026-10-22 09:00/);
+  assert.match(normal, /26-10-22 09:00/);
   assert.doesNotMatch(normal, /│ opencode-go │ ok n\/a/);
   const full = clean(true);
   assert.match(full, /│ xai\s+│ ok n\/a\s+│ w\s+│/);

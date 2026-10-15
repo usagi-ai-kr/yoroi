@@ -3,7 +3,7 @@ import { createSnapshot, type UsageSnapshot } from '../domain/usage.js';
 import type { HttpClient } from './http-client.js';
 import { NodeHttpClient } from './http-client.js';
 import { parseXaiBilling } from './xai-billing-parser.js';
-import { readXaiAuth } from './xai-auth.js';
+import { readXaiAuth, xaiAuthError } from './xai-auth.js';
 
 /** 비문서 엔드포인트(2026-10-15 사용자 채택, w1 실측 HTTP 200·스키마 확정). */
 export const XAI_BILLING_URL = 'https://cli-chat-proxy.grok.com/v1/billing?format=credits';
@@ -30,7 +30,7 @@ export class XaiBillingClient implements UsageSource {
       },
       timeoutMs: this.timeoutMs,
     }, signal);
-    if (response.status === 401 || response.status === 403) throw new SourceError('authentication');
+    if (response.status === 401 || response.status === 403) throw xaiAuthError();
     if (response.status === 429 || response.status >= 500) throw new SourceError('network');
     if (response.status !== 200) throw new SourceError('unavailable');
     let body: unknown;

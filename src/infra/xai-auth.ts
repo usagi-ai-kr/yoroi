@@ -11,10 +11,18 @@ export interface XaiAuth {
   readonly source: 'credential-db' | 'auth.json';
 }
 const EXPIRY_MARGIN_MS = 60_000;
+
+/** xAI 인증 실패(만료·자격 없음·401/403) 공통 오류: 기존 문구를 유지한 채 OpenCode 복구 안내만 덧붙인다(코드·분기 불변, 토큰·경로 없음). */
+export function xaiAuthError(): SourceError {
+  const error = new SourceError('authentication');
+  error.message = `${error.message}; use a grok model once in OpenCode or run opencode auth login to sign in again`;
+  return error;
+}
+
 const toMs = (epoch: number): number => (epoch > 1e11 ? Math.round(epoch) : Math.round(epoch * 1000));
 const finish = (token: string, epoch: number, source: XaiAuth['source'], now: number): XaiAuth => {
   const expiresAtMs = toMs(epoch);
-  if (!Number.isFinite(expiresAtMs) || expiresAtMs - EXPIRY_MARGIN_MS <= now) throw new SourceError('authentication');
+  if (!Number.isFinite(expiresAtMs) || expiresAtMs - EXPIRY_MARGIN_MS <= now) throw xaiAuthError();
   return { token, expiresAtMs, source };
 };
 
@@ -42,10 +50,10 @@ function fromCredentialDb(dbPath: string, now: number): XaiAuth | undefined {
 
 function fromAuthJson(authPath: string, now: number): XaiAuth {
   let parsed: unknown;
-  try { parsed = JSON.parse(readFileSync(authPath, 'utf8')); } catch { throw new SourceError('authentication'); }
+  try { parsed = JSON.parse(readFileSync(authPath, 'utf8')); } catch { throw xaiAuthError(); }
   const xai = (parsed as { xai?: { type?: unknown; access?: unknown; expires?: unknown } })?.xai;
   if (xai?.type !== 'oauth' || typeof xai.access !== 'string' || !xai.access || typeof xai.expires !== 'number')
-    throw new SourceError('authentication');
+    throw xaiAuthError();
   return finish(xai.access, xai.expires, 'auth.json', now);
 }
 

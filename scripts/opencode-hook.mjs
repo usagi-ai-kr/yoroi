@@ -35,8 +35,10 @@ async function main() {
   const entry = 'yoroi-zen-free.js';
   const helpers = async dir => (await exists(dir) ? await fs.readdir(dir) : [])
     .filter(name => name.endsWith('.js')).sort().map(name => `yoroi/${name}`);
-  const wanted = [entry, ...(target === 'v1' ? await helpers(path.join(source, 'yoroi')) : [])];
-  const expectedV1 = await helpers(fileURLToPath(new URL('../integrations/opencode/yoroi/', import.meta.url)));
+  const wanted = [entry, ...(await helpers(path.join(source, 'yoroi')))]; // v2도 yoroi/ 헬퍼를 함께 복사
+  const helpersAt = t => helpers(fileURLToPath(new URL(`${sources[t]}yoroi/`, import.meta.url)));
+  const expectedV1 = await helpersAt('v1');
+  const expectedV2 = await helpersAt('v2');
   const names = [...new Set([...wanted, ...(action === 'status' ? expectedV1 : []), ...await helpers(helperDir)])];
   const entries = [];
   for (const name of names) {
@@ -56,8 +58,13 @@ async function main() {
   }
   if (action === 'status') {
     const installed = entries.find(e => e.name === entry)?.version;
-    const complete = installed === 'v2' ? entries.every(e => !e.info || (e.name === entry && e.version === 'v2'))
-      : installed === 'v1' && entries.every(e => e.info && e.version === 'v1');
+    const present = entries.filter(e => e.info);
+    // 출처의 해당 target 헬퍼가 모두 설치돼 있고 설치된 관리 파일이 전부 같은 마커여야 complete.
+    // (v2는 entry+yoroi/signals.js 다중파일. 출처 삭제 시 헬퍼 집합이 비어 entry만으로 판정)
+    const has = (list, v) => list.every(n => present.some(e => e.name === n && e.version === v));
+    const complete = installed === 'v2'
+      ? has(expectedV2, 'v2') && present.every(e => e.version === 'v2')
+      : installed === 'v1' && has(expectedV1, 'v1') && present.every(e => e.version === 'v1');
     console.log(`${complete ? 'installed' : entries.some(e => e.info) ? 'partial' : 'absent'}${installed ? ` target=${installed}` : ''}`);
     return;
   }

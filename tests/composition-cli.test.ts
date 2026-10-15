@@ -7,7 +7,7 @@ import { compose } from '../src/composition-root.js';
 import { createSnapshot, defaultProviders, providers } from '../src/domain/usage.js';
 import type { SourceFactories } from '../src/composition/sources.js';
 
-test('composition runs all five fake adapters by default without YOROI_PROVIDERS set', async t => {
+test('composition runs all six fake adapters by default without YOROI_PROVIDERS set', async t => {
   const dataDir = mkdtempSync(join(tmpdir(), 'yoroi-composition-cli-'));
   t.after(() => rmSync(dataDir, { recursive: true, force: true }));
   const stdout: string[] = [], stderr: string[] = [];
@@ -17,7 +17,7 @@ test('composition runs all five fake adapters by default without YOROI_PROVIDERS
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) } });
   assert.equal(await cli.run(['once']), 0);
   for (const provider of defaultProviders) assert.ok(stdout.some(line => line.startsWith(provider + ':')));
-  assert.ok(!stdout.some(line => line.startsWith('xai:')), 'default path must not collect or print xai');
+  assert.ok(stdout.some(line => line.startsWith('xai:')), 'default path collects and prints xai after restore');
   assert.deepEqual(stderr, []);
 });
 test('composition rejects invalid provider selection with exit code 2 and preserves help', async () => {

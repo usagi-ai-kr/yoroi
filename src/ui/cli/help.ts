@@ -13,7 +13,7 @@ export const USAGE = [
   "  yoroi insights publish --dry-run",
   "  yoroi trend --since 7d",
   "",
-  "providers: defaults to all 5 (ollama-pro,opencode-go,codex,agy,claude)",
+  "providers: defaults to all 6 (ollama-pro,opencode-go,codex,agy,claude,xai)",
   "  select: YOROI_PROVIDERS=<comma-separated-list>",
 ].join("\n");
 

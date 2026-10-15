@@ -1,6 +1,6 @@
 export const providers = ['ollama-pro', 'opencode-go', 'codex', 'agy', 'claude', 'xai'] as const;
 export type ProviderId = typeof providers[number];
-export const defaultProviders = ['ollama-pro', 'opencode-go', 'codex', 'agy', 'claude'] as const;
+export const defaultProviders = ['ollama-pro', 'opencode-go', 'codex', 'agy', 'claude', 'xai'] as const;
 export type DefaultProviderId = typeof defaultProviders[number];
 export interface UsageWindow {
   readonly id: string;

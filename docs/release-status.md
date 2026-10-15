@@ -11,6 +11,10 @@
 - 사용자 결정(2026-10-15): D(xAI 구독 사용률) 없이 릴리스. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0, [milestone 24](https://github.com/qus0in/yoroi/milestone/24))로 분리하고 실행 확인 뒤 1.0.0으로 판올림한다.
 - 검증: 항목별 리뷰 approve·단위·BDD 통과(작업 트리 동시 변경으로 최종 수치는 릴리스 커밋에서 재확인). PR은 `Closes #119`로 #119를 종료했다. 버전 승격(`0.11.1` → `0.12.0`, 커밋 `f7eb602`)·커밋 7건 push·[PR #148](https://github.com/qus0in/yoroi/pull/148) 머지 완료(main `baae51b`, 2026-10-15T01:54:31Z)·main CI success(run `38668219318`)·tag `v0.12.0`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.12.0) 발행·전역 CLI 0.12.0 동기화·milestone 22 close.
 
+## 0.12.1 준비 (2026-10-15, 미발행·머지 대기)
+
+- 범위(patch, 불필요 기본 행 복원 bugfix): xai 기본 수집 제외(기본 5복원)·지원 목록 opt-in 유지(`YOROI_PROVIDERS=xai` 호환). 이전 운영 정리 `91c1d71` 동봉. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0) 유지.
+
 ## 0.4.0 머지 및 발행 상태 (2026-10-11)
 
 - PR #91 병합 커밋 `4744fbc8280eab5a02ce42f28ed79555f318ea91`(main).

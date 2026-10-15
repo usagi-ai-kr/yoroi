@@ -95,4 +95,5 @@
 - [PR #148](https://github.com/qus0in/yoroi/pull/148)(dev→main) 범위: Free publish 가드(#144)·AA partial fallback·xAI 기본 공급자(#132 → #119)·Cursor Plus(#119)·워커 규칙(.30/.20/.10/.40·존 .60·p75 상향·$5/M 상한)·yo 필터(under·n/a·optimal)·`--pretty --full`·zen Reset 추정.
 - 사용자 결정(2026-10-15): D 없이 릴리스. D는 #147(0.13.0·milestone 24)로 분리하고 실행 확인 뒤 1.0.0.
 - 완료: PR #148 머지(main `baae51b`)·main CI success(run `38668219318`)·tag `v0.12.0`·Release 발행·전역 CLI 0.12.0·milestone 22 close·#119 종료. PR 초안은 scratch/reports/yoroi-m012-release-update.md.
+- 0.12.1 준비(patch, 미발행·머지 대기): xai 기본 제외·기본 5복원, 명시 선택 opt-in 호환, 이전 운영 정리 `91c1d71` 동봉. D는 #147(0.13.0) 유지.
 - 0.12.0 회고(2026-10-15): 리뷰 통과분은 사용자 지시에 따라 요청 없이도 작업 단위별로 묶어 커밋한다(파일 지정 add·묶음 계획 선행·동시 착륙 파일 제외). 튜닝은 scratch 시뮬레이터로 기준선 줄 단위 일치와 이웃 안정성을 먼저 확인하고 사용자 확정값만 코드에 반영한다.

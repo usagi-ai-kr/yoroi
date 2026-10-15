@@ -9,16 +9,16 @@
 
 메신저는 코테츠다. 라벨·pane id는 세션마다 바뀌므로 배정 전에 다시 읽는다.
 
-| pane | 이름 | 현재 화면 모델 | 역할 |
+| pane | 라벨 | 현재 화면 모델 | 역할 |
 | --- | --- | --- | --- |
-| `w12:p13` | o | OpenCode Grok 4.7 xAI | 오케스트레이터 |
-| `w12:p12` | w1 | OpenCode | 워커 |
-| `w12:p0` | w2 | OpenCode | 워커 |
-| `w12:p11` | w3 | OpenCode | 워커 |
-| `w12:pV` | w4 | OpenCode | 워커 |
+| `w12:p13` | o-opus | Claude Opus 5.5 | 오케스트레이터 |
+| `w12:p12` | w1-claude | Claude Sonnet 5.5 | 워커(필요 시 리뷰) |
+| `w12:p14` | w2-codex | Codex GPT-6-Luna | 워커 |
+| `w12:pV` | w3-gemini | Antigravity Gemini 3.8 Flash | 워커 |
+| `w12:p16` | w4-opencode | OpenCode | 워커 |
 
 배정 전에 `coord status`로 모델·상태를 확인한다. 모델·세션 변경은 사용자 결정이다.
-패킷: `scratch/packets/`.
+리뷰어는 별도로 두지 않는다. 워커 4명을 상황에 맞게 쓰고, 리뷰가 필요하면 구현자가 아닌 Sonnet(w1-claude)이 맡는다. 에이전트가 뜨지 않은 빈 셸 탭이 따로 있을 수 있다(라벨 `y`).
 
 ## 메신저 역할
 
@@ -92,7 +92,7 @@ python3 .agents/skills/agent-coordination/scripts/coord.py watch w2 w3 \
 ## 배운 점 (기존 운영 기록)
 
 - 상태 문서 갱신에서 버전 줄·재번호·이동 이력이 누락됐다(2026-10-11·12). 머지 전 버전과 삭제 줄을 대조한다. watch_workers.sh의 LIMIT·BLOCKED는 패킷 문구나 순간 상태로 오탐할 수 있다. `agent get`과 visible 화면으로 확인하고, 반복 오탐 시 보고서 생성만 기다린다. 보고서 생성은 전체 작업 종료와 구분한다.
-- 작업 중 pane은 `herdr agent read --source visible`로 읽는다. 라벨 `o`·`w1`~`w4`는 w12(yoroi)와 w15(smallb) 양쪽에 있어 workspace_id(pane의 `:` 접두)를 먼저 확인하고 `--workspace <id>`로 지정한다.
+- 작업 중 pane은 `herdr agent read --source visible`로 읽는다. 라벨(`o-opus`·`w1-claude`·`w2-codex`·`w3-gemini`·`w4-opencode`)은 w12(yoroi)와 w15(smallb) 양쪽에 있어 workspace_id(pane의 `:` 접두)를 먼저 확인하고 `--workspace <id>`로 지정한다.
 - zsh의 `set -- $x`는 단어 분리가 안 돼 빈 전송이 된다. 전송 전 인자 분리·내용을 확인한다.
 - 2026-10-08 임의 종료·재시작·키 입력으로 모델이 바뀐 사고 이후 모델·세션은 사용자 결정으로 유지한다.
 - 근거 산출 스크립트가 렌더 경로 옵션(가격·previousRanks·excludeModelIds·toRankedRecords)을 빠뜨리면 레터와 결괏값이 어긋난다(2026-10-13, p9). 산출물은 레터 Top10 일치 여부를 먼저 대조한다.

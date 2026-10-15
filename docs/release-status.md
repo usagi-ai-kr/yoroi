@@ -36,13 +36,12 @@
 - [미완료·의도] `v0.13.3` tag와 Release는 없다(원격 태그·Release 목록 확인).
 - 범위: xAI 주간 기본 복원·누락 응답 parser 지원·`w` 표시·Reset `yy-MM-dd`.
 
-## 1.0.0 준비 (2026-10-15, 발행 전)
+## 1.0.0 발행 완료 (2026-10-15, PR #158 머지 → main `5111378cccf5f2436db0f1fae8c0715e76c94edb`)
 
-- [준비] `package.json` 1.0.0(커밋 `57de5b3` 기준, PR 전). 범위: main 병합 동작 + 버전 + 문서 정정. 신규 기능 없음.
-- [준비] 문서 정정 대상: roadmap·development·versioning·release-status·tasks, 신규 보관본 tasks-pre100·release-history-pre100.
-- [제외] 미커밋 워커 effort 3파일은 보존하고 1.0 커밋에서 뺀다. 정책 확정 뒤 1.1에서 xhigh 상한과 함께 검토한다.
-- [제외] `docs/orchestration.md` 타 주체 변경은 1.0 커밋에 넣지 않는다.
-- [계획·미완료] 독립 리뷰 → dev → main PR → 사용자 승인 뒤 머지 → main CI success → tag `v1.0.0`·Release → 전역 CLI 1.0.0 일치 → milestone 23 close.
+- 범위: main 0.13.3까지의 동작 + 버전 1.0.0 + 운영 문서 정정. 신규 기능 없음. 0.13.3은 별도 tag·Release 없이 포함.
+- [완료] PR #158 머지 `5111378cccf5f2436db0f1fae8c0715e76c94edb` · main CI [38744891994](https://github.com/qus0in/yoroi/actions/runs/38744891994) success · tag `v1.0.0` · [Release](https://github.com/qus0in/yoroi/releases/tag/v1.0.0) 발행(2026-10-15T13:50:05Z, 동일 SHA) · 전역 CLI 1.0.0(`update:global --check` exit 0) · [milestone 23](https://github.com/qus0in/yoroi/milestone/23) close.
+- 전역 최초 준비는 0.13.3이었다. 설치 시점에 이미 1.0.0 dirty(1.1 effort 혼입)가 있어 clean SHA 재설치 후 1.0.0만 확정했다.
+- [보존] 미커밋 워커 effort 3파일과 `docs/orchestration.md` 타 주체 변경은 1.0 커밋에서 뺐고 워킹트리에 유지한다. 1.1에서 xhigh 상한과 함께 검토한다.
 
 ## 버전 이력 요약
 

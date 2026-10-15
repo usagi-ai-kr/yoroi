@@ -46,9 +46,9 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
 
 ## 현재 운영 현황 (2026-10-15)
 
-- 버전: `package.json` 1.0.0 준비(커밋 `57de5b3` 기준, PR 전). 직전 발행은 `v0.13.2`다.
-- tag·Release: `v0.1.0`~`v0.13.2` 발행 완료. 0.13.3은 별도 tag·Release 없이 병합 내용을 1.0.0에 포함한다. `v1.0.0`은 발행 전이다.
-- milestone: `1.0.0`(23)은 open이며 발행 뒤 close한다. 0.x milestone은 모두 closed다(0.13.0 포함).
+- 버전: `package.json` 1.0.0. [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0) 발행(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`, publishedAt 2026-10-15T13:50:05Z).
+- tag·Release: `v0.1.0`~`v0.13.2`에 이어 `v1.0.0` 발행. 0.13.3은 별도 tag·Release 없이 1.0.0에 포함한다.
+- milestone: `1.0.0`(23) closed. 0.x milestone은 모두 closed다(0.13.0 포함).
 - 발행 순서와 기준은 위 §릴리스 순서를 따른다. 상세 기록은 [release-status.md](release-status.md)와 [roadmap.md](roadmap.md)에 있다.
 
 ## 이전 운영 현황 (2026-10-10, 이력)

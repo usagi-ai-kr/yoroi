@@ -8,6 +8,7 @@ import { OllamaSource } from '../infra/ollama-source.js';
 import { fileOllamaAuthorization } from '../infra/ollama-key.js';
 import { OpenCodeGoSource } from '../infra/opencode-go-source.js';
 import { AgySource } from '../infra/agy-source.js';
+import { XaiOpencodeSource } from '../infra/xai-opencode-source.js';
 import { ClaudeSource } from '../infra/claude-source.js';
 import { claudeAuthorization } from '../infra/claude-credentials.js';
 import type { HttpClient } from '../infra/http-client.js';
@@ -20,6 +21,7 @@ export function defaultFactories(ports: { http?: HttpClient; runner?: ProcessRun
   return {
     codex: settings => new CodexSource(runner, settings.executable, settings.timeoutMs),
     agy: settings => new AgySource(runner, settings.executable, settings.timeoutMs),
+    xai: settings => new XaiOpencodeSource(runner, settings.executable, settings.timeoutMs),
     claude: settings => {
       const authorize = claudeAuthorization(ports.platform ? { ...settings, platform: ports.platform } : settings, runner);
       return Object.assign(new ClaudeSource(client, authorize, settings.timeoutMs), { principal: authorize.principal });

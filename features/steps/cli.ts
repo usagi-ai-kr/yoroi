@@ -10,11 +10,11 @@ function succeedAll(): void {
   world.sources = allProviders.map((provider) => okSource(provider));
 }
 
-Given("all 5 fake providers succeed", () => {
+Given("all 6 fake providers succeed", () => {
   succeedAll();
 });
 
-Given("all 5 fake providers fail", () => {
+Given("all 6 fake providers fail", () => {
   resetWorld();
   world.sources = allProviders.map((provider) => failingSource(provider));
 });

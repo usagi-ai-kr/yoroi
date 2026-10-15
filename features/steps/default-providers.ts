@@ -11,7 +11,7 @@ Given("default configuration without YOROI_PROVIDERS", () => {
   world.configEnv = { YOROI_OPENCODE_GO_API_KEY: "dummy-key",
     YOROI_OLLAMA_PRO_SIGNING_KEY_PATH: "valid", YOROI_CLAUDE_OAUTH_TOKEN: "fake-claude-token" };
 });
-Given("all 5 providers succeed in composition", () => {});
+Given("all 6 providers succeed in composition", () => {});
 Given("default configuration without credentials", () => {
   world.reset();
   world.configEnv = { HOME: "" };
@@ -25,7 +25,7 @@ When("I run composed CLI {string}", async (cmd: string) => {
 });
 
 Then("the composed CLI exit code is {int}", (code: number) => assert.equal(world.exitCode, code));
-Then("composed stdout contains all 5 provider results", () => {
+Then("composed stdout contains all 6 provider results", () => {
   for (const provider of providers) assert.ok(world.stdout.some(line => line.startsWith(`${provider}: ok`)));
 });
 Then("composed stdout contains {string}", (text: string) => {

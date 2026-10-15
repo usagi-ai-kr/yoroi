@@ -49,7 +49,7 @@ test('lock contention bounds collection latency to a few hundred ms and omits fa
 
     // Verify worst-case latency: around 2x 100ms busy_timeout, well within 600ms
     assert.ok(elapsed < 600, `expected under 600ms, took ${elapsed}ms`);
-    assert.equal(results.length, 5);
+    assert.equal(results.length, providers.length);
 
     // 4 hits used cached snapshot from time `now`
     for (let i = 0; i < 4; i++) {
@@ -58,13 +58,14 @@ test('lock contention bounds collection latency to a few hundred ms and omits fa
       assert.equal(res.snapshot.observedAt, new Date(now).toISOString());
     }
 
-    // 1 miss used fresh collection from time `now + 100` despite failed cache/history writes
-    const miss = results[4]!;
-    assert.ok('snapshot' in miss);
-    assert.equal(miss.snapshot.observedAt, new Date(now + 100).toISOString());
-
-    // Verify failed write did not corrupt cache
-    assert.equal(cache.get(key(providers[4]!), now + 100), undefined);
+    // Every remaining provider missed: fresh collection from time `now + 100` despite failed cache/history writes
+    for (let i = 4; i < providers.length; i++) {
+      const miss = results[i]!;
+      assert.ok('snapshot' in miss);
+      assert.equal(miss.snapshot.observedAt, new Date(now + 100).toISOString());
+      // Verify failed write did not corrupt cache
+      assert.equal(cache.get(key(providers[i]!), now + 100), undefined);
+    }
   } finally {
     holder.exec('ROLLBACK');
     holder.close();

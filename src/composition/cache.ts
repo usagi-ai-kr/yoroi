@@ -17,7 +17,7 @@ export interface UsagePersistence {
   readonly history: UsageHistory;
   close(): void;
 }
-const CONTRACTS = { claude: 'v1', codex: 'v1', agy: 'v1', 'ollama-pro': 'v1', 'opencode-go': 'v1' } as const;
+const CONTRACTS = { claude: 'v1', codex: 'v1', agy: 'v1', 'ollama-pro': 'v1', 'opencode-go': 'v1', xai: 'v1' } as const;
 function accountHash(value: string | undefined, absent: string): string {
   return value === undefined ? absent : digest('cred', value);
 }
@@ -49,7 +49,9 @@ export function sourceIdentity(settings: ProviderSettings,
     settings.id === 'opencode-go' ? accountHash(settings.apiKey, 'api-unset') : '',
     env[`${prefix}_PROFILE`] ?? '',
     settings.id === 'codex' ? env.CODEX_HOME ?? '' : '',
-    settings.id === 'agy' ? env.AGY_CONFIG_DIR ?? '' : ''];
+    settings.id === 'agy' ? env.AGY_CONFIG_DIR ?? '' : '',
+    // Appended only for xai so other providers' scope digests stay unchanged.
+    ...(settings.id === 'xai' ? [env.XDG_DATA_HOME ?? ''] : [])];
   return { scope: createHash('sha256').update(JSON.stringify(material)).digest('hex').slice(0, 24),
     contractVersion: CONTRACTS[settings.id] };
 }

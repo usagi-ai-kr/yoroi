@@ -7,12 +7,14 @@ import { CodexSource } from "../../src/infra/codex-source.js";
 import { OllamaSource } from "../../src/infra/ollama-source.js";
 import { fileOllamaAuthorization } from "../../src/infra/ollama-key.js";
 import { OpenCodeGoSource } from "../../src/infra/opencode-go-source.js";
+import { XaiOpencodeSource } from "../../src/infra/xai-opencode-source.js";
 import { createClaudeSource, resetClaudeWire } from "./claude-readonly-world.js";
 
 const fixture = (name: string) => readFile(new URL(`../../tests/fixtures/${name}`, import.meta.url), "utf8");
 const codexBody = JSON.stringify(JSON.parse(await fixture("codex-rate-limits.json")));
 const agyBody = await fixture("agy-usage.txt");
 const opencodeBody = await fixture("opencode-go-usage.json");
+const xaiBody = await fixture("opencode-stats-xai.json");
 const ollamaBody = JSON.stringify({ limits: { session: { usage: 0.25 } } });
 const fakeHttp: HttpClient = { request: async request => {
   if (request.url.startsWith("https://ollama.com/api/usage")) return { status: 200, headers: {}, body: ollamaBody };
@@ -22,6 +24,7 @@ const fakeHttp: HttpClient = { request: async request => {
 const fakeProcess: ProcessRunner = { run: async request => {
   if (request.executable === "codex") return { stdout: codexBody, stderr: "", exitCode: 0 };
   if (request.executable === "agy") return { stdout: agyBody, stderr: "", exitCode: 0 };
+  if (request.executable === "opencode") return { stdout: xaiBody, stderr: "", exitCode: 0 };
   return { stdout: "", stderr: "", exitCode: 1 };
 } };
 
@@ -45,5 +48,6 @@ export function createFactories(): SourceFactories {
     codex: settings => new CodexSource(fakeProcess, settings.executable),
     agy: settings => new AgySource(fakeProcess, settings.executable),
     claude: settings => createClaudeSource(settings.oauthToken ?? ""),
+    xai: settings => new XaiOpencodeSource(fakeProcess, settings.executable),
   };
 }

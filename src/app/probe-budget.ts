@@ -4,7 +4,7 @@ import { parseRetryAfter } from '../domain/retry-after.js';
 const MINUTE = 60_000;
 export const DEFAULT_PROBE_INTERVALS: Readonly<Record<ProviderId, number>> = Object.freeze({
   claude: 30 * MINUTE, 'ollama-pro': 15 * MINUTE, 'opencode-go': 15 * MINUTE,
-  codex: 30 * MINUTE, agy: 30 * MINUTE,
+  codex: 30 * MINUTE, agy: 30 * MINUTE, xai: 30 * MINUTE,
 });
 /** Persist one state per provider and credential scope. No timers or credentials are held here. */
 export interface ProbeBudgetState {

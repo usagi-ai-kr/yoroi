@@ -9,6 +9,7 @@ import { ClaudeSource } from '../src/infra/claude-source.js';
 import { CodexSource } from '../src/infra/codex-source.js';
 import { OllamaSource } from '../src/infra/ollama-source.js';
 import { OpenCodeGoSource } from '../src/infra/opencode-go-source.js';
+import { XaiOpencodeSource } from '../src/infra/xai-opencode-source.js';
 
 test('composition instantiates enabled providers only and preserves configured order', () => {
   const calls: string[] = [];
@@ -26,12 +27,13 @@ test('an omitted custom factory yields unavailable without external calls', asyn
   assert.deepEqual(sources.map(source => source.provider), ['claude', 'codex']);
   await assert.rejects(sources[0]!.read(), { code: 'unavailable' });
 });
-test('the production registry constructs all five actual adapters without making requests', () => {
+test('the production registry constructs all six actual adapters without making requests', () => {
   const sources = createSources(loadConfig({}));
-  assert.equal(sources.length, 5);
+  assert.equal(sources.length, 6);
   assert.ok(sources[0] instanceof OllamaSource);
   assert.ok(sources[1] instanceof OpenCodeGoSource);
   assert.ok(sources[2] instanceof CodexSource);
   assert.ok(sources[3] instanceof AgySource);
   assert.ok(sources[4] instanceof ClaudeSource);
+  assert.ok(sources[5] instanceof XaiOpencodeSource);
 });

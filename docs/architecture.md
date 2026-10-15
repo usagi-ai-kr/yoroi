@@ -36,7 +36,7 @@
 - 숫자 metric(percent·used·limit·remaining)은 표시 계층에서만 소수점 둘째 자리까지 올림한다. 원본 값은 유지한다.
 - plain 출력의 window 줄에 `reset_in=6d18h`처럼 observedAt 기준 남은 시간을 붙인다. 1시간 미만은 `45m`, 지난 리셋은 `0m`이다.
 - pretty 출력 열 순서: `Provider`→`Status`→`Window`→`Usage`→`Reset (KST)`이며 Status 내용과 열 폭은 이전과 같다.
-- pretty 출력의 Reset (KST) 열은 시각 뒤에 `(6d 18h)`를 붙인다. 리셋 시각이 없으면 `-`다(opencode-zen-free는 서버 retryAt으로 `~YYYY-MM-DD HH:mm (남은시간|passed)` 추정 표기).
+- pretty 출력의 Reset (KST) 열은 시각 뒤에 `(6d 18h)`를 붙인다. 리셋 시각이 없으면 `-`다(opencode-zen-free는 서버 retryAt으로 `~yy-MM-dd HH:mm (남은시간|passed)` 추정 표기).
 - 예상 균등 사용량 비율(exp)은 기본 공급자당 1개(월간 우선, 없으면 주간)의 가장 긴 창에 표시한다. agy만 예외로 `g-w`·`c-w` 두 주간 창 모두에 표시하며, 계산식·시작점 검증 불가(resetAt·periodStart 누락 등) 시에는 같은 숨김 규칙을 따른다. 계산은 `(창 길이 - 남은 시간) / 창 길이 × 100`(주간 7일, 월간은 리셋 1개월 전 역산)이며 소수점 둘째 자리까지 올림한다. plain은 `expected=42.86`, pretty는 `Usage` 열 뒤에 `(exp 42.86%)`로 붙인다.
 - 창 행 정렬은 표시 단계에서만 한다: 등급 `m`→`w`→`5h`(접두어 표기도 `g-w`·`c-5h` 같은 등급)→등급 없는 내부 id 행은 맨 뒤. 같은 등급은 수집 순서를 유지한다.
 - 사용량 상태 표시(표시 전용, 수집·저장 불변): exp가 있는 행은 실제%와 exp를 원본값으로 비교해 판정한다. 실제%는 `percent` 필드를 우선하고 없으면 `used/limit`로 계산한다. 실제%가 98% 이상(한도까지 2%p 이내)이면 exp를 구하지 못해도 예상값과 무관하게 `limit`이다. 98% 미만에서 `|실제 - exp| ≤ 3%p`면 `optimal`(경계 포함), 차이가 `-3%p` 미만이면 `under`, `+3%p` 초과면 `over`, exp나 실제%를 구하지 못한 행은 `n/a`다. 표시 수치는 소수점 둘째 자리로 올리고 비교에는 원본값을 쓴다. 형식은 pretty가 Status 열에 `ok over`·`ok limit`처럼 `ok`를 유지한 채 부가 표기만 더하고(열 폭 불변), plain은 공급자 줄 `provider: ok observed=… windows=N`을 유지한 채 창 행의 라벨·단위 바로 뒤 첫 지표로 `usage_status=<상태>`를 붙인다.

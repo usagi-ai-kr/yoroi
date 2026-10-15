@@ -5,20 +5,20 @@
 - 분담·패킷·감사: [agent-coordination](../.agents/skills/agent-coordination/SKILL.md)
 - 중단·체크포인트·재개: [graceful-stop](../.agents/skills/graceful-stop/SKILL.md)
 
-## 현재 구성 (2026-10-14, list·visible 확인)
+## 현재 구성 (2026-10-15, coord status 실측)
 
 메신저는 코테츠다. 라벨·pane id는 세션마다 바뀌므로 배정 전에 다시 읽는다.
 
 | pane | 라벨 | 현재 화면 모델 | 역할 |
 | --- | --- | --- | --- |
 | `w12:p13` | o-opus | Claude Opus 5.5 | 오케스트레이터 |
-| `w12:p12` | w1-claude | Claude Sonnet 5.5 | 워커(필요 시 리뷰) |
-| `w12:p14` | w2-codex | Codex GPT-6-Luna | 워커 |
-| `w12:pV` | w3-gemini | Antigravity Gemini 3.8 Flash | 워커 |
-| `w12:p16` | w4-opencode | OpenCode | 워커 |
+| `w12:p12` | w1-claude | OpenCode Muse Spark 1.3 Contributor | 워커(필요 시 리뷰) |
+| `w12:p14` | w2-codex | OpenCode DeepSeek V4.1 Flash (Ollama Cloud) | 워커 |
+| `w12:pV` | w3-gemini | OpenCode LongCat 2.5 Preview Free | 워커 |
+| `w12:p16` | w4-opencode | Codex GPT-6-Luna | 워커 |
 
-배정 전에 `coord status`로 모델·상태를 확인한다. 모델·세션 변경은 사용자 결정이다.
-리뷰어는 별도로 두지 않는다. 워커 4명을 상황에 맞게 쓰고, 리뷰가 필요하면 구현자가 아닌 Sonnet(w1-claude)이 맡는다. 에이전트가 뜨지 않은 빈 셸 탭이 따로 있을 수 있다(라벨 `y`).
+라벨(`o-opus`·`w1-claude` 등)은 이름일 뿐 실제 모델은 위 표 기준이다. 배정 전에 `coord status`로 모델·상태를 확인한다. 모델·세션 변경은 사용자 결정이다.
+리뷰어는 별도로 두지 않는다. 워커 4명을 상황에 맞게 쓰고, 리뷰가 필요하면 구현자가 아닌 w1-claude가 맡는다. 에이전트가 뜨지 않은 빈 셸 탭이 따로 있을 수 있다(라벨 `y`).
 
 ## 메신저 역할
 

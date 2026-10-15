@@ -41,8 +41,7 @@ pnpm run check
 ## 설정과 공급자 상태
 
 - 설정은 `src/config/load-config.ts`에서 환경 변수로 읽고 composition root에서 해석한다.
-- `YOROI_PROVIDERS`: 기본 다섯 공급자 조회(`ollama-pro,opencode-go,codex,agy,claude`). xai는 명시 지정 시 조회.
-  쉼표로 명시하면 해당 공급자만 조회한다. 중복·미지원 ID는 설정 오류다.
+- `YOROI_PROVIDERS`: 기본 여섯 공급자 조회(`ollama-pro,opencode-go,codex,agy,claude,xai`). 쉼표로 명시하면 해당 공급자만 조회한다(0.12.1 `dc11e8c` 기본 제외 결정을 변경해 xai를 기본에 복원). 중복·미지원 ID는 설정 오류다.
 - `YOROI_DATA_DIR`: 로컬 SQLite 저장 디렉터리. 기본 `${XDG_DATA_HOME:-~/.local/share}/yoroi`이며 DB 파일은 `yoroi.db`다(디렉터리 0700·파일 0600, #72).
 - 공급자 인증/설치 누락은 공급자별 오류로 격리하고 다른 조회를 계속한다.
   전체 실패는 exit 1, 선택·timeout 등 잘못된 설정은 exit 2다.

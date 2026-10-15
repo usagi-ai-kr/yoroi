@@ -1,14 +1,17 @@
 import pc from "picocolors";
+import type { ProviderId } from "../../domain/usage.js";
 import type { UsageStatus } from "./pace.js";
 
-/** 기본 pretty 표는 limit·under·optimal·over 4상태만 표시하고 n/a 창은 숨긴다. */
+/** 기본 pretty 표는 4개 상태와 xAI weekly n/a를 표시한다. */
 const SHOWN_STATUSES: ReadonlySet<UsageStatus> = new Set<UsageStatus>(["limit", "under", "optimal", "over"]);
 let fullModeActive = false;
 export const setPrettyFullMode = (enabled: boolean): void => { fullModeActive = enabled; };
 export const isPrettyFullMode = (): boolean => fullModeActive;
 
-export const isShownStatus = (status: UsageStatus, full = false): boolean =>
-  full || fullModeActive || SHOWN_STATUSES.has(status);
+export const isShownStatus = (status: UsageStatus, full = false,
+  provider?: ProviderId, windowId?: string): boolean =>
+  full || fullModeActive || SHOWN_STATUSES.has(status) ||
+  (status === "n/a" && provider === "xai" && windowId === "weekly");
 
 /** 표에 행이 하나도 남지 않을 때(오류·zen-free 행 포함) 표 대신 내는 한 줄. */
 export const EMPTY_PRETTY_LINE = "표시할 항목 없음";

@@ -88,10 +88,10 @@ test('zenFreeRow returns resetAt, resetPassed, and timeLeft when locked with ret
 test('renderPretty shows estimated Reset (~KST) for zen-free, (passed) when past, - when missing', () => {
   const now = '2026-10-10T00:00:00.000Z';
   const fText = renderPretty([], { scope: 'z', state: 'locked', retryAt: '2026-10-10T03:05:00.000Z', updatedAt: now }).join('\n');
-  assert.match(fText, /opencode-zen-free.*~2026-10-10 12:05/);
+  assert.match(fText, /opencode-zen-free.*~26-10-10 12:05/);
 
   const pText = renderPretty([], { scope: 'z', state: 'locked', retryAt: '2026-10-09T23:59:00.000Z', updatedAt: now }).join('\n');
-  assert.match(pText, /~2026-10-10 08:59[\s\S]*\(passed\)/);
+  assert.match(pText, /~26-10-10 08:59[\s\S]*\(passed\)/);
 
   const noReset = renderPretty([], { scope: 'z', state: 'clear', updatedAt: now }, { full: true }).join('\n');
   assert.match(noReset, /opencode-zen-free\s*│\s*clear\s*│\s*-\s*│\s*-\s*│\s*-/);

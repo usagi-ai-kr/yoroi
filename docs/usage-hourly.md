@@ -18,6 +18,8 @@
   - 위험한 행을 위로 올리고, 같은 등급이면 퍼센트가 높은 순으로 정렬한다. 퍼센트는 오른쪽 정렬,
     리셋 열까지 폭을 맞춰 뒤에 붙는 마커가 같은 위치에 온다.
   - 5h 창은 상태와 무관하게 항상 표시하고, 그 5h 창이 위험하면 같은 공급자의 주간 행에 `⛔5h한도`를 붙인다.
+  - xAI `w` 창(내부 ID `weekly`)은 상태가 `n/a`여도 표시한다. 사용률이 없으면 `?`로 두고 `reset_in`은 그대로 표시한다.
+  - 이 예외는 xAI 주간 창에만 적용한다. 다른 공급자의 `n/a` 창은 기존처럼 숨긴다.
 - 환경변수: `YOROI_REPO`(레포 경로) `YOROI_CLI`(조회 명령, 기본 `yoroi once`) `YOROI_SKIP_UPDATE=1`(스냅샷 갱신 생략)
   `YOROI_CODE_FENCE=0`(코드 블록 감쌈 끄기) `TZ`.
 - 검증: `YOROI_SKIP_UPDATE=1 YOROI_CLI="cat <가짜입력>" bash scripts/usage-hourly-report.sh`로

@@ -58,6 +58,6 @@ test("renderPretty appends time left to the Reset (KST) column", () => {
     ]),
   };
   const output = renderPretty([result]).join("\n");
-  assert.ok(output.includes("2026-10-14 09:00 (6d 18h)"));
+  assert.ok(output.includes("26-10-14 09:00 (6d 18h)"));
   assert.ok(!output.includes("- ("));
 });

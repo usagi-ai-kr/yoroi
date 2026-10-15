@@ -25,7 +25,7 @@ export function formatResetTime(iso?: string): string {
     hour: "2-digit", minute: "2-digit", hour12: false,
   }).formatToParts(date);
   const get = (type: string): string => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
+  return `${get("year").slice(-2)}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
 }
 
 export function formatUsage(window: UsageWindow): string {
@@ -67,7 +67,7 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
       else {
         let shown = 0;
         visible.forEach((w, index) => {
-          if (!isShownStatus(statuses[index]!, isFull)) return; // --full이 아니면 n/a 행 생략
+          if (!isShownStatus(statuses[index]!, isFull, provider, w.id)) return; // --full이 아니면 예외 외 n/a 행 생략
           shown += 1;
           const left = formatTimeLeft(w.resetAt, observedAt);
           const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");

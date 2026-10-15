@@ -8,7 +8,7 @@ const observedAt = "2026-10-07T05:30:00.000Z";
 
 test("formatResetTime renders KST without guessing baseline", () => {
   assert.equal(formatResetTime(undefined), "-");
-  assert.equal(formatResetTime("2026-10-14T00:00:00Z"), "2026-10-14 09:00");
+  assert.equal(formatResetTime("2026-10-14T00:00:00Z"), "26-10-14 09:00");
 });
 
 test("formatUsage shows only existing metrics without unknown", () => {
@@ -34,7 +34,7 @@ test("renderPretty renders structured table with header, metrics, and ok status"
   assert.ok(tableText.includes("Reset (KST)"));
   assert.ok(tableText.includes("codex"));
   assert.ok(tableText.includes("2% (2/100 requests)"));
-  assert.ok(tableText.includes("2026-10-14 09:00"));
+  assert.ok(tableText.includes("26-10-14 09:00"));
   assert.ok(!tableText.includes("unknown"));
 });
 

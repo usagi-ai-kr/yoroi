@@ -27,14 +27,15 @@ test('an omitted custom factory yields unavailable without external calls', asyn
   assert.deepEqual(sources.map(source => source.provider), ['claude', 'codex']);
   await assert.rejects(sources[0]!.read(), { code: 'unavailable' });
 });
-test('the production registry constructs all five default adapters without making requests', () => {
+test('the production registry constructs all six default adapters without making requests', () => {
   const sources = createSources(loadConfig({}));
-  assert.equal(sources.length, 5);
+  assert.equal(sources.length, 6);
   assert.ok(sources[0] instanceof OllamaSource);
   assert.ok(sources[1] instanceof OpenCodeGoSource);
   assert.ok(sources[2] instanceof CodexSource);
   assert.ok(sources[3] instanceof AgySource);
   assert.ok(sources[4] instanceof ClaudeSource);
+  assert.ok(sources[5] instanceof XaiBillingSource);
   const xaiSources = createSources(loadConfig({ YOROI_PROVIDERS: 'xai' }));
   assert.equal(xaiSources.length, 1);
   assert.ok(xaiSources[0] instanceof XaiBillingSource);

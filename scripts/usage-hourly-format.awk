@@ -16,22 +16,29 @@ function rank(s, p) {
 
 /usage_status=/ {
   window = $2; if (window == "") window = "?"
+  windowId = (provider == "xai" && window == "w" ? "weekly" : window)
   status = $0
   sub(/.*usage_status=/, "", status); sub(/[ \t\r].*$/, "", status)
   pct = -1; rst = "?"
   for (i = 1; i <= NF; i++) {
-    if ($i ~ /^percent=/) { pct = $i; sub(/^percent=/, "", pct); pct += 0 }
+    if ($i ~ /^percent=/) {
+      pct = $i; sub(/^percent=/, "", pct)
+      if (pct ~ /^[0-9]+([.][0-9]+)?$/) pct += 0
+      else pct = -1
+    }
     if ($i ~ /^reset_in=/) { rst = $i; sub(/^reset_in=/, "", rst) }
   }
   # 5h 창이 위험하면 같은 공급자의 주간 행에 마커를 붙인다(5h->w, g-5h->g-w).
   is5h = (window ~ /5h$/)
   if (is5h && rank(status, pct) >= 2) { key = window; sub(/5h$/, "w", key); h5[provider SUBSEP key] = 1 }
-  # 5h 행은 상태와 무관하게 항상 보여준다. 다른 행은 상태가 알려졌거나 90% 이상일 때만 보여준다.
+  # 5h는 항상, 다른 창은 상태나 90% 기준으로 표시하며 xAI weekly n/a는 예외다.
   known = (status == "under" || status == "optimal" || status == "over" || status == "limit")
-  if (!is5h && !known && pct < 90) next
+  xaiWeeklyNA = (provider == "xai" && windowId == "weekly" && status == "n/a")
+  if (!is5h && !known && pct < 90 && !xaiWeeklyNA) next
 
   n++
-  prov[n] = provider; win[n] = window; pc[n] = (pct < 0 ? "?" : pct "%")
+  prov[n] = provider; win[n] = (provider == "xai" && windowId == "weekly" ? "w" : window)
+  pc[n] = (pct < 0 ? "?" : pct "%")
   rs[n] = rst; sv[n] = rank(status, pct); nt[n] = ""
   if (sv[n] == 3) { ic[n] = "🚨"; nt[n] = " 한도 도달" }
   else if (status == "over") ic[n] = "🔥"

@@ -56,6 +56,7 @@ function classify(provider: ProviderId, id: string): Entry {
   if (provider === "codex") return codex(id);
   if (provider === "agy") return agy(id);
   if (provider === "opencode-go") return OPENCODE[id] ? { id, base: OPENCODE[id] } : { id };
+  if (provider === "xai" && id === "weekly") return { id, base: "w" };
   return ollama(id);
 }
 

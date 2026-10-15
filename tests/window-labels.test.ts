@@ -12,6 +12,7 @@ test("labels the confirmed five-hour, weekly, and monthly ids per provider", () 
   assert.deepEqual(windowLabels("codex", [w("codex:primary:300m"), w("codex:secondary:10080m")]),
     ["5h", "w"]);
   assert.deepEqual(windowLabels("claude", [w("session:5h"), w("weekly:7d")]), ["5h", "w"]);
+  assert.deepEqual(windowLabels("xai", [w("weekly")]), ["w"]);
   assert.deepEqual(windowLabels("ollama-pro", [w("monthly"), w("credits:purchased")]),
     ["m", "credits:purchased"]);
 });

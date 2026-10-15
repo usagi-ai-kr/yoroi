@@ -24,9 +24,13 @@
 
 - 범위(patch, [versioning.md](versioning.md) 근거: 인사이트 레터 전일 AA 비교 오류 수정): `21918fe` 전일 AA 비교 조회 시 `includePartial: true` 전달로 complete=0(partial) 저장본도 비교 기준 랭크 산출에 허용(#146). 버전 승격 `0.13.0` → `0.13.1`·[PR #153](https://github.com/qus0in/yoroi/pull/153) 머지 `a1477d0`·main CI success(run `38693809267`)·tag `v0.13.1`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.1) 발행(2026-10-15T06:54:43Z)·전역 CLI 0.13.1. 레터 [#154](https://github.com/qus0in/yoroi/issues/154) 재발행(#146 종료)으로 후속 해소.
 
-## 0.13.2 준비 (2026-10-15, 미발행·머지 대기)
+## 0.13.2 발행 완료 (2026-10-15, PR #155 머지 → main `0034b85ee5c1525aef455e7aa5239e0dcff7a3df`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.2))
 
-- 범위(patch, [versioning.md](versioning.md) 근거: xAI 재로그인 안내·위키 원본 갱신·grok-build-0.1 후보·AA 거절 사유 진단 집계/저장): `20b8ac2` xAI 인증 오류 OpenCode 재로그인 안내·`6630fa1` 0.12.1~0.13.1 발행 기록·`4cd9022` 위키 원본 갱신([#151](https://github.com/qus0in/yoroi/issues/151) 원격 게시는 발행 후)·`38bea94` grok-build-0.1 SuperGrok 후보 추가·`dc0624d` AA 거절 사유 집계·`dbd0b13` AA 거절 진단 일일 저장본 보존. 버전 승격 `0.13.1` → `0.13.2`(`v0.13.2` tag 예정).
+- 범위(patch, [versioning.md](versioning.md) 근거: xAI 재로그인 안내·위키 원본 갱신·grok-build-0.1 후보·AA 거절 사유 진단 집계/저장): `20b8ac2` xAI 인증 오류 OpenCode 재로그인 안내·`6630fa1` 0.12.1~0.13.1 발행 기록·`4cd9022` 위키 원본 갱신·`38bea94` grok-build-0.1 SuperGrok 후보 추가·`dc0624d` AA 거절 사유 집계·`dbd0b13` AA 거절 진단 일일 저장본 보존. 버전 승격 `0.13.1` → `0.13.2`·PR #155 머지 `0034b85ee5c1525aef455e7aa5239e0dcff7a3df`·main CI success(run `38702663565`)·tag `v0.13.2`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.2) 발행(2026-10-15T08:08:44Z)·전역 CLI 0.13.2·위키 [#151](https://github.com/qus0in/yoroi/issues/151) 원격 게시 `4495d75`·이슈 종료.
+
+## 0.13.3 승격·발행 확인 중 (patch, 사용자 승인·PR #156)
+
+- 범위: xAI 주간 기본 복원·누락 응답 parser 지원·`w` 표시·Reset `yy-MM-dd`. 사용자는 승격·PR #156 머지·발행을 승인했다. 발행 전이며 merge SHA·CI·전역 0.13.3 설치를 완료 사실로 기록하지 않는다. 최종 상태는 [PR #156](https://github.com/qus0in/yoroi/pull/156)과 [v0.13.3 Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.3)에서 확인한다.
 
 ## 0.4.0·0.5.0 발행 완료 (2026-10-11)
 

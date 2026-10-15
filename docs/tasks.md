@@ -95,3 +95,6 @@
 - 완료: w1 코드·기대값(`render.ts` reset 연도 2자리), w4 문서 반영, w2 독립 리뷰·전역 갱신. 커밋은 리뷰 통과 단위로 묶는다.
 - 검증: 단위 1017/1017·typecheck·diff --check·validate PASS, 합성 pretty 2자리 연도·행 열폭 균일, 전역 `once --pretty --full` 1회에서 reset 연도 2자리 확인.
 - 운영 교훈: coord packet/audit가 샌드박스에서 멈추면 require_escalated 실행으로 해결됐다.
+
+## 0.13.3 patch (2026-10-15, 사용자 승인·PR #156)
+- xAI 주간 기본 복원·누락 응답 parser·`w` 라벨·Reset `yy-MM-dd`; 최종 상태는 [PR #156](https://github.com/qus0in/yoroi/pull/156)·[v0.13.3 Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.3)에서 확인하며 미검증 merge/CI/발행/설치는 선기록하지 않는다.

@@ -20,19 +20,20 @@
 - `304ca85`: 사용자 지시대로 xAI 주간 창을 `yo`·`yo2`·hourly 기본 흐름에 복원했다. 사용률 percent가 있으면 표시하고, 없으면 pretty는 `n/a`, hourly는 `?`로 표시한다.
 - `0a395a3`: 내부 window id `weekly`를 유지하며 xAI 표시 라벨을 `w`로 통일했다. 전역 실제 스모크는 세 경로의 xAI 주간 행을 확인했고, 설치본 `yo2`에서 `w`를 확인했다. `yo`와 hourly 라벨은 합성 회귀 검증을 통과했다.
 - `43648ac`: pretty Reset 날짜를 `yy-MM-dd HH:mm`으로 바꿨다. 시각·남은 시간·zen 추정을 유지하고 hourly는 영향이 없다. 전역 스냅샷에서 Reset 연도 2자리를 확인했다.
-- 전역 CLI와 저장소 버전은 모두 0.13.2이며 설치 dist와 현재 빌드가 일치한다. 새 tag·Release는 없고 최신은 `v0.13.2`다.
+- 전역 CLI 스냅샷은 0.13.2, `package.json` 버전은 승격 준비 중인 0.13.3이다. 최신 발행은 `v0.13.2`이며 새 tag·Release는 아직 없다.
 - 근거 보고서: `/tmp/yoroi-xai-global-apply-w2-report.json`, `/tmp/yoroi-xai-label-land-w2-report.json`, `/tmp/yoroi-reset-yy-apply-w2-report.json`. 개인 사용량 원문·토큰은 기록하지 않았다.
-- 현재 HEAD와 `origin/dev`는 `43648ac`로 일치한다. 작업 중 reflog에서 18:04 push 반영을 관찰했다(이 packet의 작업자는 push하지 않음). PR 생성·상태, 최종 리뷰·CI는 확인 대기다.
+- 0.13.3 patch는 xAI 주간 기본 복원·누락 응답 parser 지원·`w` 라벨·Reset `yy-MM-dd`다. 사용자는 승격·PR #156 머지·발행을 승인했다. [PR #156](https://github.com/qus0in/yoroi/pull/156)·[v0.13.3 Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.3)에서 최종 상태를 확인하며 merge SHA·CI·발행·전역 설치 완료는 선주장하지 않는다.
+- 현재 HEAD와 `origin/dev`는 `43648ac`로 일치한다. 작업 중 reflog에서 18:04 push 반영을 관찰했다(이 packet의 작업자는 push하지 않음). PR #156의 최종 상태·merge SHA·CI는 페이지에서 확인하며 결과는 확인 전 미기록이다.
 
 ## 남은 작업·대기
 
-1. 세 커밋 push는 반영됐다. PR 생성·상태와 최종 리뷰·CI를 확인하고, 머지·버전 결정은 승인 대기다. 새 tag·Release는 아직 없다.
-2. 2026-10-16 09:00 레터 실발행에서 이슈 생성, 전일 비교, AA rejection diagnostics 저장을 확인한다.
-3. #141은 이번 범위 밖이며 open 유지. #154는 레터 이슈이므로 이 인계에서 임의로 close하지 않는다.
+1. PR #156의 merge SHA·CI·발행·전역 0.13.3 설치 상태를 PR/Release 페이지에서 최종 확인한다. 새 tag·Release는 아직 기록하지 않는다.
+2. 레터 #157은 18:32 재발행했고 #154는 종료됐다. 최신 레터 로직은 전역 0.13.2 스냅샷에 포함돼 있다. 0.13.3은 산식 불변이므로 추가 재발행은 불필요하다. 10-16 관측 대기, AA partial 유지.
+3. #141은 open·이번 범위 밖이다.
 
 ## 운영 주의
 
-- 위임: PR 머지(리뷰 approve·head 일치·CI 전부 pass·MERGEABLE), tag·Release 자동. 버전 승격·새 milestone은 사용자 결정.
+- 위임: PR 머지(리뷰 approve·head 일치·CI 전부 pass·MERGEABLE), tag·Release 자동. 0.13.3 승격·PR #156 머지·발행은 사용자가 승인했으며, 최종 실증거 확인 전에는 완료로 기록하지 않는다. 이후 버전·새 milestone은 별도 사용자 결정.
 - 분배: 직렬 단계 중에도 idle 워커 전원에 준비 작업 병렬 배정(10-15 사용자 불평). 보고마다 워커별 담당 표.
 - w4는 Codex 샌드박스로 pnpm fetch 실패 → 설치·빌드·push는 OpenCode 워커(w1·w2)에.
 - PR CI의 SQLite `database is locked`는 docs/flaky-tests.md 계열 — 전체 job 재실행 1회 후 판단.

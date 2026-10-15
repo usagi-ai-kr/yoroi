@@ -9,7 +9,7 @@ import { ClaudeSource } from '../src/infra/claude-source.js';
 import { CodexSource } from '../src/infra/codex-source.js';
 import { OllamaSource } from '../src/infra/ollama-source.js';
 import { OpenCodeGoSource } from '../src/infra/opencode-go-source.js';
-import { XaiOpencodeSource } from '../src/infra/xai-opencode-source.js';
+import { XaiBillingSource } from '../src/infra/xai-billing-source.js';
 
 test('composition instantiates enabled providers only and preserves configured order', () => {
   const calls: string[] = [];
@@ -37,5 +37,5 @@ test('the production registry constructs all five default adapters without makin
   assert.ok(sources[4] instanceof ClaudeSource);
   const xaiSources = createSources(loadConfig({ YOROI_PROVIDERS: 'xai' }));
   assert.equal(xaiSources.length, 1);
-  assert.ok(xaiSources[0] instanceof XaiOpencodeSource);
+  assert.ok(xaiSources[0] instanceof XaiBillingSource);
 });

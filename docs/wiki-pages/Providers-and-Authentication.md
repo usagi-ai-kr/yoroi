@@ -7,10 +7,11 @@
 | OpenCode Go | 공식 Go usage API | `YOROI_OPENCODE_GO_API_KEY` |
 | AGY | `agy -p /usage` | AGY CLI가 관리하는 세션 인증 |
 | Claude | OAuth usage GET | 명시 OAuth 변수 또는 실행 계정의 기존 프로필 |
+| xAI | Grok CLI billing API (opt-in) | 로컬 OpenCode OAuth 자격 (`opencode.db` / `auth.json`) |
 
 ## 환경 변수와 프로필
 
-- `YOROI_PROVIDERS`: 선택할 공급자 ID 목록. 생략하면 다섯 개 모두 조회합니다.
+- `YOROI_PROVIDERS`: 선택할 공급자 ID 목록. 생략하면 기본 다섯 개(`ollama-pro,opencode-go,codex,agy,claude`)를 조회합니다. xAI는 기본에서 제외되며 `YOROI_PROVIDERS=xai`(또는 목록에 포함)로 명시 opt-in 시에만 조회합니다.
 - `YOROI_TIMEOUT_MS`: 전체 기본 timeout(기본 10000ms). `YOROI_<공급자>_TIMEOUT_MS`로 개별 조정합니다.
 - `YOROI_DEBUG=1`이면 읽은 `.env` 경로만 표시합니다.
 - `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로를 지정할 때 사용합니다.
@@ -31,6 +32,14 @@
 ## AGY 인증
 
 AGY 인증은 `agy -p /usage` 호출을 통해 CLI에 위임합니다. 1.3.1 도움말에 전용 login/auth 하위 명령은 없습니다. 세션이 없으면 대화형 `agy`를 실행해 로그인하고, 이어서 `yoroi once`로 확인합니다. Gemini API key 모드는 구독 사용량 세션과 별개입니다.
+
+## xAI 인증과 복구
+
+xAI(SuperGrok)는 Grok CLI billing API(`https://cli-chat-proxy.grok.com/v1/billing?format=credits`)를 통해 주간 사용률(`weekly percent`)과 리셋 시각을 조회합니다. 기존 로컬 `opencode stats` 집계 경로는 제거되었습니다.
+
+- 인증은 실행 계정의 OpenCode 로컬 OAuth 자격(`~/.local/share/opencode/opencode.db` 우선, `auth.json` 폴백)을 읽기 전용으로 참조합니다.
+- 토큰이 만료되었거나(만료 1분 여유) 자격이 없으면 `authentication` 오류가 발생합니다.
+- 복구 절차: OpenCode에서 grok 모델을 1회 호출하거나 터미널에서 `opencode auth login`을 실행해 OAuth 자격을 갱신한 뒤 `yoroi once`로 확인합니다.
 
 ## Reset 시각
 

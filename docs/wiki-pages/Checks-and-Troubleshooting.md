@@ -24,9 +24,10 @@ pnpm run check
 
 ## 인증 오류
 
-- Codex·OpenCode Go·Ollama·AGY·Claude는 서로 다른 인증 경로를 사용합니다. [공급자와 인증](Providers-and-Authentication)에서 필요한 변수명과 프로필을 확인합니다.
+- Codex·OpenCode Go·Ollama·AGY·Claude·xAI는 서로 다른 인증 경로를 사용합니다. [공급자와 인증](Providers-and-Authentication)에서 필요한 변수명과 프로필을 확인합니다.
 - Claude의 명시 토큰 변수가 셸, 서비스 환경, `.env` 중 어디에 남았는지 확인하세요. 빈 명시값은 저장 프로필로 fallback하지 않습니다.
 - Claude 재로그인은 사용자가 직접 같은 프로필에서 `claude auth login`을 실행합니다. AGY는 대화형 `agy`를 사용합니다. Yoroi는 로그인이나 refresh를 자동 실행하지 않습니다.
+- xAI 인증 실패는 OpenCode OAuth 자격 만료 또는 부재입니다. OpenCode에서 grok 모델을 1회 호출하거나 터미널에서 `opencode auth login`으로 갱신한 뒤 `yoroi once`로 확인합니다.
 - 오류 공유에는 `authentication`, `unavailable`, `timeout` 같은 정규화 코드만 사용하고 토큰·응답 본문은 제외합니다.
 
 ## CI와 HTTP 문제

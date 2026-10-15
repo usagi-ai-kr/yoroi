@@ -35,6 +35,13 @@ yoroi zen-free report --ok
 - `report --ok`는 잠금을 해제합니다. 재시도 시각이 지나도 상태를 자동 해제하지 않으며 `retry passed (unverified)`로 알려줍니다.
 - `status`는 읽기 전용입니다. 상태가 없으면 `unknown`을 반환하고 데이터베이스를 새로 만들지 않습니다.
 
+### OpenCode V2 플러그인과 자동 관리
+
+OpenCode V2 플러그인(`integrations/opencode-v2/`)은 세션 응답을 감시해 잠금과 해제를 자동 보고합니다.
+- **판정 범위**: V2 model 객체(id·providerID)와 `error.type` 기준 quota를 정규화하며, 429 판정을 opencode 제공자의 Free 모델(`-free` 접미사 및 `big-pickle`, `grok-code`)로 한정합니다. 일반 'Rate limit exceeded' 문구는 free 확인 세션에 한해 수용해 타 공급자 오탐을 방지합니다(`yoroi/signals.js`).
+- **성공 완료 후 해제**: HTTP 2xx 응답이 primary Free 모델 세션일 때 후보 등록 후 `ctx.session.wait()` 완료를 확인합니다. 마지막 assistant 메시지가 `time.completed` 숫자, `finish === 'stop'`, 모델 일치를 만족할 때만 `report --ok`를 세션당 1회 발행합니다(`yoroi/release.js`).
+- **플러그인 설치**: 갱신된 V2 플러그인을 적용하려면 `node scripts/opencode-hook.mjs install`을 실행합니다(`yoroi/` 하위 모듈 포함 설치 및 검증).
+
 저장소 오류나 `--json` 오류 계약은 [체크와 문제 해결](Checks-and-Troubleshooting)을 확인하세요.
 
 주기 감지(Zen 락 전이·사용량 이상)는 [Detect](Detect) 페이지를 참고하세요.

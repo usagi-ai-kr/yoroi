@@ -11,8 +11,8 @@
 - 호환 파괴는 major, 호환 기능 추가는 minor, 수정은 patch다.
 - minor 증가 시 patch=0, major 증가 시 minor·patch=0으로 초기화한다. minor는 정수이며
   `0.9.0` 다음은 `0.10.0`이다.
-- `0.x`는 초기 개발 단계다. 이 단계에서 파괴 변경은 minor로 올리고, major(=1.0.0)는
-  공개 계약 안정 선언에 쓴다. 변경 영향과 마이그레이션을 milestone·PR에 기록한다.
+- `0.x`는 초기 개발 단계였다. 1.0.0부터 호환 파괴는 major, 호환 추가는 minor, 수정은 patch다.
+  1.0.0은 공개 계약 안정 선언이다. 계약 목록은 릴리스 노트에 명시하고, 변경 영향과 마이그레이션은 milestone·PR에 기록한다.
 
 ## version.py 사용법
 
@@ -44,7 +44,14 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
   원인과 남은 작업을 보고한다.
 - milestone은 계획, tag는 검증된 커밋, Release는 발행 기록이다.
 
-## 현재 운영 현황 (2026-10-10)
+## 현재 운영 현황 (2026-10-15)
+
+- 버전: `package.json` 1.0.0 준비(작업 트리, 미커밋). 직전 발행은 `v0.13.2`다.
+- tag·Release: `v0.1.0`~`v0.13.2` 발행 완료. 0.13.3은 별도 tag·Release 없이 병합 내용을 1.0.0에 포함한다. `v1.0.0`은 발행 전이다.
+- milestone: `1.0.0`(23)은 open이며 발행 뒤 close한다. 0.x milestone은 모두 closed다(0.13.0 포함).
+- 발행 순서와 기준은 위 §릴리스 순서를 따른다. 상세 기록은 [release-status.md](release-status.md)와 [roadmap.md](roadmap.md)에 있다.
+
+## 이전 운영 현황 (2026-10-10, 이력)
 
 - 버전: `package.json` `0.3.0`(PR 준비, `0.2.0`에서 `--bump minor --apply`). 커밋·tag·Release는 아직 없다.
   0.3.0은 캐시·이력(`update:global`)과 `watch` 제거를 담은 minor이며, 아직 tag를 쓰지 않았다.

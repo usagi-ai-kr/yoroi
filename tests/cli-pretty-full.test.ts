@@ -40,23 +40,25 @@ test("parseArgs parses --full and --pretty --full correctly without global mutat
   assert.equal(p2.kind === "once" && p2.full && p2.pretty === undefined, true);
 });
 
+const stripAnsi = (s: string): string => s.replace(/\u001b\[[0-9;]*m/g, ""); // CI 러너는 색을 켜 단정 문자열에 ANSI 코드가 끼어든다
+
 test("renderPretty default shows under/na/optimal, hides over/limit and displays hidden summary", () => {
   setPrettyFullMode(false);
-  const text = renderPretty(sampleResults).join("\n");
+  const text = stripAnsi(renderPretty(sampleResults).join("\n"));
   assert.ok(!text.includes("ok over") && !text.includes("ok limit"), "over and limit are hidden");
   assert.ok(text.includes("e-w") && text.includes("ok n/a"), "n/a is displayed");
   assert.ok(text.includes("숨김 1개(over/limit)"), "provider with all hidden windows displays summary row");
 });
 
 test("renderPretty with full option displays all windows including over and limit", () => {
-  const text = renderPretty(sampleResults, undefined, { full: true }).join("\n");
+  const text = stripAnsi(renderPretty(sampleResults, undefined, { full: true }).join("\n"));
   assert.ok(text.includes("ok over") && text.includes("ok limit"), "over and limit visible in full mode");
   assert.ok(text.includes("e-w") && text.includes("ok n/a"), "n/a visible in full mode");
 });
 
 test("setPrettyFullMode toggles full mode globally", () => {
   setPrettyFullMode(true);
-  const text = renderPretty(sampleResults).join("\n");
+  const text = stripAnsi(renderPretty(sampleResults).join("\n"));
   assert.ok(text.includes("ok over") && text.includes("ok limit"));
   setPrettyFullMode(false);
 });

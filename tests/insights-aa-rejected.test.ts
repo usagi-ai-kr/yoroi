@@ -45,3 +45,56 @@ test('거절 행이 없으면 rejectedRows=0으로 기존 저장 판정이 유�
   assert.equal(validation.rejectedRows, 0);
   assert.equal(mergeAaPages(clean, { observedAt: AT }).rejectedRows, 0);
 });
+
+const rejectOf = (row: unknown) => {
+  const rows = parseAaPages([{ page: 1, payload: page(1, [model('ok', 90), row]) }], AT, {});
+  const rejected = rows.filter(r => !r.ok);
+  assert.equal(rejected.length, 1);
+  return rejected[0] as { readonly rejectCode?: unknown; readonly rejectFields?: unknown };
+};
+
+test('거절 사유는 코드·필드명으로 분류되고 원문 값은 싣지 않는다', () => {
+  assert.deepEqual([rejectOf(badRow).rejectCode, rejectOf(badRow).rejectFields], ['missing-id', ['slug']]);
+  const noCreator = { ...model('x', 10), model_creator: { id: 'c' } };
+  assert.deepEqual([rejectOf(noCreator).rejectCode, rejectOf(noCreator).rejectFields],
+    ['missing-creator', ['model_creator.name']]);
+  const badDate = { ...model('x', 10), release_date: 'yesterday' };
+  assert.deepEqual([rejectOf(badDate).rejectCode, rejectOf(badDate).rejectFields], ['bad-date', ['release_date']]);
+  const badGroup = { ...model('x', 10), pricing: 'nope' };
+  assert.deepEqual([rejectOf(badGroup).rejectCode, rejectOf(badGroup).rejectFields], ['bad-group', ['pricing']]);
+  const badNumber = { ...model('x', 10),
+    pricing: { price_1m_input_tokens: 'expensive', price_1m_output_tokens: 2 } };
+  assert.deepEqual([rejectOf(badNumber).rejectCode, rejectOf(badNumber).rejectFields],
+    ['bad-number', ['price_1m_input_tokens']]);
+  const dumped = JSON.stringify([rejectOf(badRow), rejectOf(noCreator), rejectOf(badDate),
+    rejectOf(badGroup), rejectOf(badNumber)]);
+  for (const secret of ['123', 'expensive', 'yesterday', '\"x\"']) assert.ok(!dumped.includes(secret));
+});
+
+test('거절 집계는 사유·필드별 건수만 노출하고 판정 수와 일치한다', () => {
+  const validation = validateInsightRows('artificial-analysis', parseAaPages(pages, AT, {}));
+  if (!validation.ok) assert.fail('ok expected');
+  assert.deepEqual([validation.rejectedReasons, validation.rejectedFields],
+    [{ 'missing-id': 2 }, { slug: 2 }]);
+  assert.equal(Object.values(validation.rejectedReasons ?? {}).reduce((a, b) => a + b, 0), validation.rejectedRows);
+  const dumped = JSON.stringify({ codes: validation.rejectedReasons, fields: validation.rejectedFields });
+  assert.ok(!dumped.includes('\"a\"') && !dumped.includes('\"b\"'));
+});
+
+test('no-measurement·원천 cost 필드 경로를 코드로 분류한다', () => {
+  const empty = { id: 'i', slug: 's', name: 'n', release_date: null, model_creator: { id: 'c', name: 'C' }, evaluations: {}, pricing: {}, performance: {} };
+  assert.deepEqual([rejectOf(empty).rejectCode, rejectOf(empty).rejectFields], ['no-measurement', []]);
+  const costNum = { ...model('x', 10), artificial_analysis_intelligence_index_cost: 7 };
+  assert.deepEqual([rejectOf(costNum).rejectCode, rejectOf(costNum).rejectFields], ['bad-number', ['artificial_analysis_intelligence_index_cost']]);
+});
+
+test('목록 밖 코드·필드는 other·제거되고 무거절 결과엔 필드가 없다', () => {
+  const evil = [{ ok: false as const, index: 9, reason: 'x', warnings: [], rejectCode: 'sentinel-evil', rejectFields: ['token', 'slug'] }];
+  const mixed = validateInsightRows('artificial-analysis', [...parseAaPages(pages, AT, {}).filter(r => r.ok), ...evil]);
+  if (!mixed.ok) assert.fail('ok expected');
+  assert.deepEqual([mixed.rejectedReasons, mixed.rejectedFields], [{ other: 1 }, { slug: 1 }]);
+  assert.ok(!JSON.stringify([mixed.rejectedReasons, mixed.rejectedFields]).includes('sentinel'));
+  const clean = validateInsightRows('artificial-analysis', parseAaPages([{ page: 1, payload: page(1, [model('a', 90)]) }], AT, {}));
+  if (!clean.ok) assert.fail('ok expected');
+  assert.ok(!('rejectedReasons' in clean) && !('rejectedFields' in clean));
+});

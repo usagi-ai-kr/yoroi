@@ -22,7 +22,15 @@ export interface InsightHistoryDay {
   readonly date: string;
   readonly measurement?: ValidatedInsightRecord;
 }
-export type InsightSuccess = Extract<InsightValidation, { readonly ok: true }>;
+/** 단계B: AA 거절 행의 bounded 집계(allowlist 이름·양의 정수 건수만, 원문 없음). 빈 집계는 생략한다. */
+export interface RejectionDiagnostics {
+  readonly reasons?: Readonly<Record<string, number>>;
+  readonly fields?: Readonly<Record<string, number>>;
+}
+export type InsightSuccess = Extract<InsightValidation, { readonly ok: true }> & {
+  /** 재검증 뒤 원본 result에서 부착한 표시용 진단(구 payload에는 없다). */
+  readonly rejectionDiagnostics?: RejectionDiagnostics;
+};
 export interface InsightHistoryPort {
   getDaily(key: InsightDailyKey): InsightSuccess | undefined;
   /** Validated successes only. Failure/empty/incomplete pages never overwrite success.

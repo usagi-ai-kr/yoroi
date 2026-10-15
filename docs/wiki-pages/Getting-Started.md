@@ -20,13 +20,14 @@ pnpm run dev once
 
 ## 공급자 선택
 
-기본값은 다섯 공급자 전체입니다. 일부만 조회하려면 `YOROI_PROVIDERS`에 쉼표로 ID를 지정합니다.
+기본값은 다섯 공급자 전체(`ollama-pro,opencode-go,codex,agy,claude`)입니다. xAI는 기본에서 제외되며 명시 opt-in해야 조회합니다. 일부만 조회하거나 xAI를 포함하려면 `YOROI_PROVIDERS`에 쉼표로 ID를 지정합니다.
 
 ```text
 ollama-pro,opencode-go,codex,agy,claude
+ollama-pro,opencode-go,codex,agy,claude,xai
 ```
 
-필요한 공급자 ID는 `ollama-pro`, `opencode-go`, `codex`, `agy`, `claude`입니다. 중복되거나 지원하지 않는 ID는 설정 오류입니다.
+지원 공급자 ID는 `ollama-pro`, `opencode-go`, `codex`, `agy`, `claude`, `xai`입니다. 중복되거나 지원하지 않는 ID는 설정 오류입니다.
 
 ## 전역 CLI 설치와 제거
 
@@ -37,7 +38,10 @@ pnpm run install:global
 yoroi --version
 yoroi --help
 yoroi once --pretty
+yoroi once --pretty --full
 ```
+
+전역 설치 후 `yo`(`yoroi once --pretty`), `yo2`(`yoroi once --pretty --full`) 별칭을 사용할 수 있습니다.
 
 전역 설치를 제거할 때는 다음 명령을 실행합니다. 설치 사본과 복사본 `.env`도 함께 삭제됩니다(실측).
 

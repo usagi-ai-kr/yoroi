@@ -14,6 +14,8 @@ export const MODEL_ALIAS_RULES: readonly ModelAliasRule[] = [
     checkedOn: '2026-10-13', sourceUrl: 'https://ollama.com/library/nemotron-3-ultra' },
   { from: 'gemini-3-1-pro', to: 'gemini-3-1-pro-preview', basis: 'Gemini API 정식판 ID 없이 preview뿐 · Antigravity 출시 2026-02-19 = AA 출시일',
     checkedOn: '2026-10-13', sourceUrl: 'https://ai.google.dev/gemini-api/docs/models' },
+  { from: 'grok-build-0-1', to: 'grok-build-0-1-06-16', basis: 'AA 별칭 Grok Build 0.1 0616',
+    checkedOn: '2026-10-15', sourceUrl: 'https://x.ai/news/grok-build-0-1' },
 ];
 
 /** A1(p28): AA modelAlias의 괄호부(예: "(High)")를 떼어 normalize한 보조 키 → AA canonical.

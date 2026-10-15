@@ -2,6 +2,7 @@
 
 - 원격이 없거나 외부 기록이 허가되지 않은 작업은 여기에 기록한다.
 - 0.4.0 이전 과거 상세 기록과 이전 운영 상태는 [tasks-pre040.md](tasks-pre040.md) 및 [tasks-archive.md](tasks-archive.md)에 보관한다.
+- 0.13.2 정리 과정의 과거 상세 이력은 [tasks-archive-2.md](tasks-archive-2.md)에 보관한다.
 - main에 직접 push하지 않는다. 모든 변경은 dev → main PR로 병합한다.
 
 ## 현재 상태 (2026-10-14)
@@ -56,20 +57,10 @@
 - 0.8.3: [#116](https://github.com/qus0in/yoroi/issues/116) Antigravity 요금제 추가, `plan-catalog.ts` 구현 go1 진행 중; dev → main PR 준비 범위.
 - 0.8.3 범위 확장: [#117](https://github.com/qus0in/yoroi/issues/117) Top10 10행 채움·Free 티어 섹션·표시 안내/이모지·Cursor 요금제·Cognition 1.1·AA FrontierCode 대비·Grok/Kimi 롤백을 추가한다.
 
-## 0.8.3 발행 및 0.8.4 준비 (2026-10-13)
+## 0.8.3–0.8.5 발행 및 0.8.6 준비 (2026-10-13)
 
-- v0.8.3 발행: PR #120 → main `81b264c`, PR CI 1회 성공, main CI 38332564117 attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.3), 전역 CLI 0.8.3.
-- 실수집 status `all_healthy`로 Cognition 부분 수집 경고 해소; #116·#117 close 및 0.8.3 milestone close.
-- 0.8.4: [#121](https://github.com/qus0in/yoroi/issues/121) Cursor 접근 표기 단순화, 구현 go1 진행 중; dev → main PR 준비.
-- v0.8.4 발행: PR #122 → main `73f4ad1`, PR/main CI 38336083878 attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.4), 전역 CLI 0.8.4.
-- #115 본문 갱신(2026-10-13 11:19:10 KST), #121·0.8.4 milestone close 완료.
-- 0.8.5 준비: [#123](https://github.com/qus0in/yoroi/issues/123) 레터 정정 8건, dev → main PR.
-
-## 0.8.5 발행 및 0.8.6 준비 (2026-10-13)
-
-- v0.8.5 발행 완료: PR #124 → main `240378b`, PR/main CI [38344750752](https://github.com/qus0in/yoroi/actions/runs/38344750752) attempt 1 success, [Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.5), 전역 CLI 0.8.5.
-- #115 본문 갱신(2026-10-13 13:07:28 KST), #123·0.8.5 milestone close 완료.
-- 0.8.6 범위: [#125](https://github.com/qus0in/yoroi/issues/125) 레터 발행을 Hermes 크론에서 yoroi 자체 PM2로 이관하고 `insights publish` 명령 추가; dev → main PR 준비.
+- v0.8.3(PR #120)·v0.8.4(PR #122)·v0.8.5(PR #124) 발행 완료 및 전역 CLI 동기화. #116·#117·#121·#123 close.
+- 0.8.6 범위: [#125](https://github.com/qus0in/yoroi/issues/125) 레터 발행 PM2 이관·`insights publish` 명령 추가.
 
 ## o2 모델 교체·AA 미측정 근거 유지 (2026-10-13)
 
@@ -92,7 +83,8 @@
 - [PR #148](https://github.com/qus0in/yoroi/pull/148)(dev→main) 범위: Free publish 가드(#144)·AA partial fallback·xAI 기본 공급자(#132 → #119)·Cursor Plus(#119)·워커 규칙(.30/.20/.10/.40·존 .60·p75 상향·$5/M 상한)·yo 필터(under·n/a·optimal)·`--pretty --full`·zen Reset 추정.
 - 사용자 결정(2026-10-15): D 없이 릴리스. D는 #147(0.13.0·milestone 24)로 분리하고 실행 확인 뒤 1.0.0.
 - 완료: PR #148 머지(main `baae51b`)·main CI success(run `38668219318`)·tag `v0.12.0`·Release 발행·전역 CLI 0.12.0·milestone 22 close·#119 종료. PR 초안은 scratch/reports/yoroi-m012-release-update.md.
-- 0.12.1 준비(patch, 미발행·머지 대기): xai 기본 제외·기본 5복원, yo 기본(limit·under·optimal·over 표시·n/a 숨김)·yo2/plain 전체 표시 유지, 명시 선택 opt-in 호환, 이전 운영 정리 `91c1d71` 동봉. D는 #147(0.13.0) 유지.
-- 0.13.0 준비(minor, 미발행·머지 대기): `34e6eb5` xAI billing 주간 수집·`b8ef7b1`/`d30f6ee` Zen V2 판정/해제, PR #150 머지(`ec8c4f4`)·버전 승격 0.13.0(`v0.13.0` tag 예정)·tag·Release·milestone close 미수행. #147(웹 풀 일치 비교 남아) open 유지, 위키 #151 별도.
-- 0.13.1 준비(patch, 미발행·머지 대기): `21918fe` 전일 AA 비교에 부분 수집(complete=0) 저장본 허용으로 '전일 AA 자료 없음' 오경보 해소(#146), 레터 재발행 예정.
+- 0.12.1 발행 완료: PR #149 머지(main `dd589e5`)·tag `v0.12.1`·Release 발행·전역 CLI 0.12.1. xai 기본 제외·기본 5복원, yo 기본 4상태 표시·n/a 숨김·yo2/plain 전체 표시 유지.
+- 0.13.0 발행 완료: `34e6eb5` xAI billing·`b8ef7b1`/`d30f6ee` Zen V2 판정/해제, PR #150·#152 머지(main `e9ce512`)·main CI·tag `v0.13.0`·Release 발행·전역 CLI·Zen V2 재설치·#147 종료·milestone 0.13.0 close. 위키 #151 별도.
+- 0.13.1 발행 완료: `21918fe` 전일 partial 허용, PR #153 머지(main `a1477d0`)·main CI·tag `v0.13.1`·Release 발행·전역 CLI 0.13.1. 레터 #154 재발행(#146 종료)으로 후속 해소.
+- 0.13.2 준비(patch, 미발행·머지 대기): `20b8ac2` xAI 재로그인 안내·`6630fa1` 발행 기록·`4cd9022` 위키 원본([#151](https://github.com/qus0in/yoroi/issues/151) 원격 게시는 발행 후)·`38bea94` grok-build-0.1 SuperGrok 후보·`dc0624d`/`dbd0b13` AA 거절 진단 집계/저장.
 - 0.12.0 회고(2026-10-15): 리뷰 통과분은 사용자 지시에 따라 요청 없이도 작업 단위별로 묶어 커밋한다(파일 지정 add·묶음 계획 선행·동시 착륙 파일 제외). 튜닝은 scratch 시뮬레이터로 기준선 줄 단위 일치와 이웃 안정성을 먼저 확인하고 사용자 확정값만 코드에 반영한다.

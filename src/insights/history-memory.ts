@@ -4,6 +4,7 @@ import { isIsoDate, isText } from './parse-utils.js';
 import { isInsightSource } from './types.js';
 import type { InsightRecord } from './record.js';
 import { validateInsightRows, type InsightValidation, type ValidatedInsightRecord } from './validation.js';
+import { buildRejectionDiagnostics } from './rejection-diagnostics.js';
 
 const copy = <T>(value: T): T => structuredClone(value);
 const RECORD_FIELDS = ['source', 'modelId', 'modelAlias', 'metric', 'value', 'unit', 'metadata', 'category',
@@ -28,17 +29,20 @@ export class MemoryInsightHistory implements InsightHistoryPort {
   saveDaily(key: InsightDailyKey, result: InsightValidation,
     options: { readonly refresh?: boolean; readonly complete?: boolean } = {}): boolean {
     const id = dailyId(key);
-    if (!result.ok || options.complete === false || (this.daily.has(id) && !options.refresh)) return false;
+    const partial = result.rejectedRows > 0; // 행 일부 거절 partial만 SQLite처럼 daily에 허용한다
+    if (!result.ok || (options.complete === false && !partial) || (this.daily.has(id) && !options.refresh)) return false;
     if (result.source !== key.source || result.records.some(value => value.record.schemaVersion !== key.schemaVersion)) return false;
     // Revalidate at the persistence boundary: callers cannot forge comparison dates or empty success.
     const checked = validateInsightRows(key.source, [{ ok: true, index: 0,
       records: result.records.map(value => value.record), warnings: [] }]);
     if (!checked.ok) return false;
+    const diagnostics = buildRejectionDiagnostics(result);
     const success: InsightSuccess = copy({ ...checked, rejectedRows: result.rejectedRows,
+      ...(diagnostics !== undefined && { rejectionDiagnostics: diagnostics }),
       records: checked.records.map(value => ({ ...value, record: Object.fromEntries(
         Object.entries(value.record).filter(([field]) => RECORD_FIELDS.includes(field))) as unknown as InsightRecord })) });
     this.daily.set(id, { date: key.publicationDate, result: success });
-    for (const measurement of success.records) {
+    for (const measurement of partial ? [] : success.records) {
       if (measurement.comparisonDate === null) continue;
       const { modelId, metric, unit, category } = measurement.record;
       const series = seriesId({ ...key, modelId, metric, unit, category });

@@ -35,7 +35,7 @@ test('(B) 검증된 별칭 2건과 "대상 id가 정확히 있으면 무시" 규
   assert.equal(resolveModelId('mistral-large-4-0', new Map(), universe), 'mistral-large-4');
   assert.equal(resolveModelId('muse-spark-1-3-contributor', new Map(), new Set(['muse-spark-1-3-contributor'])),
     'muse-spark-1-3-contributor'); // GA·정확 id가 생기면 별칭 자동 무시
-  assert.ok(MODEL_ALIAS_RULES.every(r => r.checkedOn === '2026-10-13' && r.basis.length > 0));
+  assert.ok(MODEL_ALIAS_RULES.every(r => ['2026-10-13', '2026-10-15'].includes(r.checkedOn) && r.basis.length > 0));
 });
 
 test('p29b URL 검증 3건: to는 정규화 키와 일치하고 GA가 생기면 무시된다', () => {

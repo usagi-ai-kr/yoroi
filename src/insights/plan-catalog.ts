@@ -1,3 +1,5 @@
+import { SUPERGROK_PLAN } from './plan-catalog-xai.js';
+
 /** 사용자 보유 요금제 → 사용 가능 모델 매핑. 미확인 모델은 넣지 않는다.
  *  모델별 sourceUrl·checkedOn·verified 기록. modelId는 AA 정규화 이름(소문자·점→하이픈) 기준이다.
  *  Antigravity: 2026-10-13 사용자 결정("gemini 3.8 flash는 antigravity에 들어있는 셈") + 공식 모델 페이지
@@ -91,4 +93,5 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
   { planId: 'cursor', planName: 'Cursor Plus', price: '$8/month', sharedPoolPeriod: 'week', models: [
     ...['Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6', 'Grok 4.5|grok-4-5']
       .map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), checkedOn: CHECKED_ON_CURSOR, billing: 'pool' as const }))] },
+  SUPERGROK_PLAN,
 ];

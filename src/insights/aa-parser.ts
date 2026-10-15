@@ -1,24 +1,16 @@
 import type { InsightRecord } from './record.js';
 import { isObject, isText, isIsoDate, isIsoTimestamp, isFiniteNumber, unknownFields,
   type ParseRowResult } from './parse-utils.js';
+import { aaMetricFields, classifyAaReject, type AaRejectCode } from './aa-reject-reasons.js';
 
 const sourceUrl = 'https://artificialanalysis.ai/data-api/docs';
-const indices = ['intelligence', 'coding', 'agentic', 'finance_and_accounting',
-  'strategy_and_ops', 'legal', 'healthcare_and_medical', 'engineering', 'economics']
-  .map(name => `artificial_analysis_${name}_index`);
-const fields = {
-  evaluations: indices.map(name => [name, 'score']),
-  pricing: ['input', 'output', 'cache_hit', 'cache_write'].map(name => [`price_1m_${name}_tokens`, 'USD/1M tokens']),
-  performance: [['median_output_tokens_per_second', 'tokens/s'],
-    ...['time_to_first_token', 'time_to_first_answer_token', 'end_to_end_response_time']
-      .map(name => [`median_${name}_seconds`, 'seconds'])],
-} as const;
+const fields = aaMetricFields;
 export class AaParseError extends Error {
   constructor(readonly code: 'invalid-row' | 'invalid-response') { super(`Artificial Analysis ${code}`); }
 }
 /** FrontierCode는 AA가 예고한 보조 지표(가칭). 이름에 frontiercode가 든 필드만 골라 같은 metric으로 적재한다. */
 export const FRONTIERCODE_METRIC = 'frontiercode_score';
-export type AaRowResult = ParseRowResult;
+export type AaRowResult = ParseRowResult & { readonly rejectCode?: AaRejectCode; readonly rejectFields?: readonly string[] };
 function fail(): never { throw new AaParseError('invalid-row'); }
 /** Free-shape V2 metrics only; Pro additions are ignored with warnings.
  * No documented source-update timestamp: sourceAsOf explicitly falls back to observedAt. */
@@ -92,6 +84,6 @@ export function parseAaResponse(payload: unknown, observedAt: string): readonly 
       }
       if (!records.length) fail();
       return { ok: true, index, records, warnings };
-    } catch { return { ok: false, index, reason: 'Artificial Analysis invalid-row', warnings }; }
+    } catch { const detail = classifyAaReject(row); return { ok: false, index, reason: 'Artificial Analysis invalid-row', warnings, rejectCode: detail.code, rejectFields: detail.fields }; }
   });
 }

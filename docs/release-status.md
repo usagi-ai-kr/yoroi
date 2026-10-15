@@ -11,17 +11,17 @@
 - 사용자 결정(2026-10-15): D(xAI 구독 사용률) 없이 릴리스. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0, [milestone 24](https://github.com/qus0in/yoroi/milestone/24))로 분리하고 실행 확인 뒤 1.0.0으로 판올림한다.
 - 검증: 항목별 리뷰 approve·단위·BDD 통과(작업 트리 동시 변경으로 최종 수치는 릴리스 커밋에서 재확인). PR은 `Closes #119`로 #119를 종료했다. 버전 승격(`0.11.1` → `0.12.0`, 커밋 `f7eb602`)·커밋 7건 push·[PR #148](https://github.com/qus0in/yoroi/pull/148) 머지 완료(main `baae51b`, 2026-10-15T01:54:31Z)·main CI success(run `38668219318`)·tag `v0.12.0`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.12.0) 발행·전역 CLI 0.12.0 동기화·milestone 22 close.
 
-## 0.12.1 준비 (2026-10-15, 미발행·머지 대기)
+## 0.12.1 발행 완료 (2026-10-15, PR #149 머지 → main `dd589e5`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.12.1))
 
 - 범위(patch, 불필요 기본 행 복원 bugfix): xai 기본 수집 제외(기본 5복원)·yo 기본(limit·under·optimal·over 표시·n/a 숨김)·yo2(`--pretty --full`)/plain 전체 표시 유지·지원 목록 opt-in 유지(`YOROI_PROVIDERS=xai` 호환). 이전 운영 정리 `91c1d71` 동봉. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0) 유지.
 
-## 0.13.0 준비 (2026-10-15, 미발행·머지 대기)
+## 0.13.0 발행 완료 (2026-10-15, PR #150·#152 머지 → main `e9ce512`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.0))
 
-- 범위(minor, [versioning.md](versioning.md) 근거: xAI 구독 주간 billing 수집·Zen Free V2 판정/해제): `34e6eb5` xAI billing 주간 사용량·`b8ef7b1`/`d30f6ee` Zen V2 free 판정 분리·성공 해제. [PR #150](https://github.com/qus0in/yoroi/pull/150) 머지 `ec8c4f4`로 main 반영, 버전 승격 `0.12.1` → `0.13.0`(`v0.13.0` tag 예정) — tag·Release·milestone close·전역 CLI는 미수행. [#147](https://github.com/qus0in/yoroi/issues/147)(웹 풀 일치 비교 남아) open 유지·별도 해소, [#151](https://github.com/qus0in/yoroi/issues/151) 위키 최신화는 별도.
+- 범위(minor, [versioning.md](versioning.md) 근거: xAI 구독 주간 billing 수집·Zen Free V2 판정/해제): `34e6eb5` xAI billing 주간 사용량·`b8ef7b1`/`d30f6ee` Zen V2 free 판정 분리·성공 해제. [PR #150](https://github.com/qus0in/yoroi/pull/150) 머지 `ec8c4f4`·[PR #152](https://github.com/qus0in/yoroi/pull/152) 머지 `e9ce512`로 main 반영, 버전 승격 `0.12.1` → `0.13.0`·main CI success(run `38692181120`)·tag `v0.13.0`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.0) 발행(2026-10-15T06:33:49Z)·전역 CLI 갱신·Zen V2 플러그인 재설치·[#147](https://github.com/qus0in/yoroi/issues/147) 일치 확인 후 종료·milestone 0.13.0 close. [#151](https://github.com/qus0in/yoroi/issues/151) 위키 최신화는 별도.
 
-## 0.13.1 준비 (2026-10-15, 미발행·머지 대기)
+## 0.13.1 발행 완료 (2026-10-15, PR #153 머지 → main `a1477d0`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.1))
 
-- 범위(patch, [versioning.md](versioning.md) 근거: 인사이트 레터 전일 AA 비교 오류 수정): `21918fe` 전일 AA 비교 조회 시 `includePartial: true` 전달로 complete=0(partial) 저장본도 비교 기준 랭크 산출에 허용(#146). 레터 재발행 예정. 버전 승격 `0.13.0` → `0.13.1`(`v0.13.1` tag 예정).
+- 범위(patch, [versioning.md](versioning.md) 근거: 인사이트 레터 전일 AA 비교 오류 수정): `21918fe` 전일 AA 비교 조회 시 `includePartial: true` 전달로 complete=0(partial) 저장본도 비교 기준 랭크 산출에 허용(#146). 버전 승격 `0.13.0` → `0.13.1`·[PR #153](https://github.com/qus0in/yoroi/pull/153) 머지 `a1477d0`·main CI success(run `38693809267`)·tag `v0.13.1`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.1) 발행(2026-10-15T06:54:43Z)·전역 CLI 0.13.1. 레터 [#154](https://github.com/qus0in/yoroi/issues/154) 재발행(#146 종료)으로 후속 해소.
 
 ## 0.4.0·0.5.0 발행 완료 (2026-10-11)
 

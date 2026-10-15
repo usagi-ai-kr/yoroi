@@ -15,6 +15,10 @@
 
 - 범위(patch, 불필요 기본 행 복원 bugfix): xai 기본 수집 제외(기본 5복원)·yo 기본(limit·under·optimal·over 표시·n/a 숨김)·yo2(`--pretty --full`)/plain 전체 표시 유지·지원 목록 opt-in 유지(`YOROI_PROVIDERS=xai` 호환). 이전 운영 정리 `91c1d71` 동봉. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0) 유지.
 
+## 0.13.0 준비 (2026-10-15, 미발행·머지 대기)
+
+- 범위(minor, [versioning.md](versioning.md) 근거: xAI 구독 주간 billing 수집·Zen Free V2 판정/해제): `34e6eb5` xAI billing 주간 사용량·`b8ef7b1`/`d30f6ee` Zen V2 free 판정 분리·성공 해제. [PR #150](https://github.com/qus0in/yoroi/pull/150) 머지 `ec8c4f4`로 main 반영, 버전 승격 `0.12.1` → `0.13.0`(`v0.13.0` tag 예정) — tag·Release·milestone close·전역 CLI는 미수행. [#147](https://github.com/qus0in/yoroi/issues/147)(웹 풀 일치 비교 남아) open 유지·별도 해소, [#151](https://github.com/qus0in/yoroi/issues/151) 위키 최신화는 별도.
+
 ## 0.4.0 머지 및 발행 상태 (2026-10-11)
 
 - PR #91 병합 커밋 `4744fbc8280eab5a02ce42f28ed79555f318ea91`(main).

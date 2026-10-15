@@ -96,4 +96,5 @@
 - 사용자 결정(2026-10-15): D 없이 릴리스. D는 #147(0.13.0·milestone 24)로 분리하고 실행 확인 뒤 1.0.0.
 - 완료: PR #148 머지(main `baae51b`)·main CI success(run `38668219318`)·tag `v0.12.0`·Release 발행·전역 CLI 0.12.0·milestone 22 close·#119 종료. PR 초안은 scratch/reports/yoroi-m012-release-update.md.
 - 0.12.1 준비(patch, 미발행·머지 대기): xai 기본 제외·기본 5복원, yo 기본(limit·under·optimal·over 표시·n/a 숨김)·yo2/plain 전체 표시 유지, 명시 선택 opt-in 호환, 이전 운영 정리 `91c1d71` 동봉. D는 #147(0.13.0) 유지.
+- 0.13.0 준비(minor, 미발행·머지 대기): `34e6eb5` xAI billing 주간 수집·`b8ef7b1`/`d30f6ee` Zen V2 판정/해제, PR #150 머지(`ec8c4f4`)·버전 승격 0.13.0(`v0.13.0` tag 예정)·tag·Release·milestone close 미수행. #147(웹 풀 일치 비교 남아) open 유지, 위키 #151 별도.
 - 0.12.0 회고(2026-10-15): 리뷰 통과분은 사용자 지시에 따라 요청 없이도 작업 단위별로 묶어 커밋한다(파일 지정 add·묶음 계획 선행·동시 착륙 파일 제외). 튜닝은 scratch 시뮬레이터로 기준선 줄 단위 일치와 이웃 안정성을 먼저 확인하고 사용자 확정값만 코드에 반영한다.

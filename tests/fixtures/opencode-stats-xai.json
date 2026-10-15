@@ -1,0 +1,15 @@
+{
+  "range": { "from": 1700000000000, "to": 1700604800000 },
+  "sessions": 3, "steps": 40, "prompts": 6, "activeDays": 2, "streak": 1, "subagents": 0, "cost": 1.25,
+  "tokens": { "input": 5000, "output": 900, "reasoning": 400, "cache": { "read": 20000, "write": 100 } },
+  "models": [
+    { "model": { "id": "synthetic-a", "providerID": "xai", "variant": "default" }, "steps": 10, "cost": 0.5,
+      "tokens": { "input": 1000, "output": 200, "reasoning": 300, "cache": { "read": 9000, "write": 0 } } },
+    { "model": { "id": "synthetic-b", "providerID": "xai", "variant": "fast" }, "steps": 5, "cost": 0.25,
+      "tokens": { "input": 500, "output": 100, "reasoning": 0, "cache": { "read": 1000, "write": 0 } } },
+    { "model": { "id": "synthetic-c", "providerID": "other-provider", "variant": "default" }, "steps": 25, "cost": 0.5,
+      "tokens": { "input": 3500, "output": 600, "reasoning": 100, "cache": { "read": 10000, "write": 100 } } }
+  ],
+  "activity": [{ "date": "2023-11-14", "steps": 40 }],
+  "tools": { "mode": "summary", "totals": { "calls": 7, "failed": 0, "succeeded": 7, "unfinished": 0 }, "usage": [] }
+}

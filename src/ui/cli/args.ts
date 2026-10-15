@@ -6,7 +6,7 @@ import { parseTrend, type TrendParsedArgs } from "./trend-args.js";
 export type ParsedArgs =
   | { readonly kind: "help"; readonly subcommand?: Subcommand }
   | { readonly kind: "version" }
-  | { readonly kind: "once"; readonly pretty?: boolean; readonly refresh?: boolean }
+  | { readonly kind: "once"; readonly pretty?: boolean; readonly full?: boolean; readonly refresh?: boolean }
   | ZenFreeParsedArgs
   | Exclude<DetectParsedArgs, { kind: "help" | "error" }>
   | Exclude<InsightsParsedArgs, { kind: "help" | "error" }>
@@ -16,12 +16,14 @@ function parseOnce(args: readonly string[]): ParsedArgs {
   if (args.includes("--help") || args.includes("-h")) return { kind: "help", subcommand: "once" };
   const seen = new Set<string>();
   for (const arg of args) {
-    if (!["--pretty", "--refresh"].includes(arg) || seen.has(arg)) {
+    if (!["--pretty", "--full", "--refresh"].includes(arg) || seen.has(arg)) {
       return { kind: "error", message: `unexpected argument: ${arg}` };
     }
     seen.add(arg);
   }
+  const full = seen.has("--full");
   return { kind: "once", ...(seen.has("--pretty") && { pretty: true }),
+    ...(full && { full: true }),
     ...(seen.has("--refresh") && { refresh: true }) };
 }
 export function parseArgs(argv: readonly string[]): ParsedArgs {

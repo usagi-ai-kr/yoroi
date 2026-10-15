@@ -32,7 +32,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): R
   const settings = selected.map(value => {
     const id = value as ProviderId;
     const prefix = `YOROI_${id.toUpperCase().replaceAll('-', '_')}`;
-    const executable = env[`${prefix}_PATH`] ?? id;
+    const executable = env[`${prefix}_PATH`] ?? (id === 'xai' ? 'opencode' : id);
     if (!executable.trim()) throw new Error('Invalid CLI executable path');
     const setting: ProviderSettings = {
       id, executable, timeoutMs: positive(env[`${prefix}_TIMEOUT_MS`], timeoutMs, 'provider timeout'),

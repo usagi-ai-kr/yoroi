@@ -13,7 +13,11 @@ function formatElapsedMinutes(minutes: number): string {
   return `${m}m`;
 }
 
-export function zenFreeRow(state?: ZenLockState | null, now: Date = new Date()): { status: string; detail: string } {
+export interface ZenFreeRow {
+  status: string; detail: string; resetAt?: string; resetPassed?: boolean; timeLeft?: string | undefined;
+}
+
+export function zenFreeRow(state?: ZenLockState | null, now: Date = new Date()): ZenFreeRow {
   if (!state) return { status: 'unknown', detail: 'no local status' };
   const hasRetry = state.state === 'locked' && state.retryAt !== undefined && Number.isFinite(Date.parse(state.retryAt));
   const retryPassed = hasRetry && Date.parse(state.retryAt!) < now.getTime();
@@ -27,7 +31,10 @@ export function zenFreeRow(state?: ZenLockState | null, now: Date = new Date()):
     state.state === 'locked' && state.retryAt && `retry=${safeText(state.retryAt, 40)}`,
     timeLeft && `retry_in=${timeLeft.replace(/\s+/g, '')}`,
     retryPassed && 'retry passed (unverified)'].filter(Boolean);
-  return { status: state.state, detail: parts.join(' ') || '-' };
+  return {
+    status: state.state, detail: parts.join(' ') || '-',
+    ...(hasRetry && { resetAt: state.retryAt, resetPassed: retryPassed, timeLeft }),
+  };
 }
 
 export interface ZenFreeJsonStatus {

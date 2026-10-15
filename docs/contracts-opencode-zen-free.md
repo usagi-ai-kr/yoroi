@@ -42,7 +42,7 @@
 - CLI는 무료 오류 body 표식을 재시도 안내 `Free usage exceeded, subscribe to Go`로 바꿀 수 있다. `retrying in 11h`만 기다리면 감지를 놓칠 수 있다.
 - 재시도 시간은 `error.data.responseHeaders["retry-after"]`의 유효한 초/HTTP 날짜 또는 `retry-after-ms`에서 추출 가능하다. 없는 값·잘못된 값은 **미확인**으로 둔다.
 - 문구 호환 파서는 `retrying in` 뒤의 숫자와 `h/m/s`를 엄격히 해석한다(합성 `11h` → 39600초). 실제 해당 문구 추출은 **관측됨(2026-10-12, zen-free-observations.md)**(retry_at=관측+30분; 문구/헤더 경로는 미구분).
-- `status.next`는 다음 CLI 재시도 시각(Unix ms)이며 한도 해제 시각을 보장하지 않는다. 헤더·문구 시간도 관측된 대기 정보로만 저장하고 자동 해제 근거로 쓰지 않는다.
+- `status.next`는 다음 재시도 시각이며 해제를 보장하지 않는다. 서버 retryAt은 2026-10-15 사용자 지시로 pretty Reset 열에 `~KST` 추정 표기하되 관측 불일치(잠금 유지)가 있어 자동 해제 근거로 쓰지 않는다.
 근거: [서버 오류 응답](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/console/app/src/routes/zen/util/handler.ts#L505), [재시도 정책](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/retry.ts), [상태 스키마](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/schema/src/session-status-event.ts).
 
 ## 정상 응답 완료와 1회 해제

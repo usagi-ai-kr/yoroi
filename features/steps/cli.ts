@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { stripVTControlCharacters } from "node:util";
 import { Given, Then, When } from "@cucumber/cucumber";
 import type { SourceErrorCode } from "../../src/app/usage-source.js";
 import {
@@ -10,11 +11,11 @@ function succeedAll(): void {
   world.sources = allProviders.map((provider) => okSource(provider));
 }
 
-Given("all 5 fake providers succeed", () => {
+Given("all 6 fake providers succeed", () => {
   succeedAll();
 });
 
-Given("all 5 fake providers fail", () => {
+Given("all 6 fake providers fail", () => {
   resetWorld();
   world.sources = allProviders.map((provider) => failingSource(provider));
 });
@@ -48,7 +49,8 @@ Then("the CLI exit code is {int}", (expected: number) => {
 });
 
 Then("the CLI stdout contains {string}", (text: string) => {
-  assert.ok(world.stdout.join("\n").includes(text), `missing "${text}" in:\n${world.stdout.join("\n")}`);
+  const stdout = stripVTControlCharacters(world.stdout.join("\n"));
+  assert.ok(stdout.includes(text), `missing "${text}" in:\n${stdout}`);
 });
 
 Then("the CLI stderr contains {string}", (text: string) => {

@@ -30,11 +30,11 @@ export function createCli(deps: CliDependencies): CliProgram {
     return 2;
   };
   const print = (results: readonly UsageResult[], pretty: boolean,
-    zenFree?: import("../../app/zen-lock-port.js").ZenLockState | null): void => {
-    const lines = pretty ? renderPretty(results, zenFree) : renderResults(results, zenFree);
+    zenFree?: import("../../app/zen-lock-port.js").ZenLockState | null, full?: boolean): void => {
+    const lines = pretty ? renderPretty(results, zenFree, Boolean(full)) : renderResults(results, zenFree);
     for (const line of lines) env.stdout(line);
   };
-  const runOnce = async (pretty: boolean): Promise<number> => {
+  const runOnce = async (pretty: boolean, full?: boolean): Promise<number> => {
     const controller = new AbortController();
     const unsubscribe = deps.subscribeSignals(() => controller.abort());
     try {
@@ -46,7 +46,7 @@ export function createCli(deps: CliDependencies): CliProgram {
       let zenFree;
       try { zenFree = deps.zenLockStore ? getZenLock(deps.zenLockStore) ?? null : undefined; }
       catch { zenFree = undefined; }
-      print(results, pretty, zenFree);
+      print(results, pretty, zenFree, full);
       return results.length > 0 && results.every((result) => "error" in result) ? 1 : 0;
     } finally {
       unsubscribe();
@@ -80,8 +80,8 @@ export function createCli(deps: CliDependencies): CliProgram {
         env.stdout(`yoroi ${deps.version}`);
         return 0;
       }
-      if (parsed.kind === "detect") return fail("detect must be started through the composition root");
-      if (parsed.kind === "insights") return fail("insights must be started through the composition root");
+      if (parsed.kind === "detect" || parsed.kind === "insights" || parsed.kind === "trend")
+        return fail(`${parsed.kind} must be started through the composition root`);
       if (parsed.kind === "zen-free") {
         try { return runZenFree(parsed); }
         catch { env.stderr("zen-free storage error\n"); return 1; }
@@ -89,7 +89,7 @@ export function createCli(deps: CliDependencies): CliProgram {
       if (deps.sources.length === 0) return fail("no providers configured");
       const pretty = Boolean(parsed.pretty);
       try {
-        return await runOnce(pretty);
+        return await runOnce(pretty, Boolean(parsed.full));
       } catch (error) {
         env.stderr(`yoroi: ${error instanceof Error ? error.message : String(error)}`);
         return 2;

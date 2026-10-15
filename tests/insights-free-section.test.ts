@@ -27,8 +27,8 @@ test('the free section renders one merged table with notes limited to Zen/Go Fre
   const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
   assert.ok(rows.length >= 3 && rows.some(line => /^\| [^|]+ \| ✓ [\d.]+ \| /.test(line)), '오케 통과 행은 ✓ 스코어를 쓴다');
   assert.ok(rows.every(line => /^\| [^|]+ \| (✓ [\d.]+|✗|-) \| (✓ [\d.]+|✗|-) \| (-|[\d.]+) \| .+ \| .+ \|$/.test(line)), section);
-  assert.ok(rows.some(line => /^\| step-5 \| ✓ [\d.]+ \| ✓ 37\.5 \| 90\.0 \| /.test(line)),
-    'p78 2a+p85: step-5는 워커 intel 90으로 통과하고 AA 지수는 메인 표 indexText(90.0)');
+  assert.ok(rows.some(line => /^\| step-5 \| ✓ [\d.]+ \| ✓ 30\.0 \| 90\.0 \| /.test(line)),
+    '사용자 확정 30/20/10/40: step-5 워커 100×(0.3×1+0.4×0)=30.0 통과(intel 90, 가격 차원 0), AA 지수는 메인 표 indexText(90.0)');
   assert.ok(rows.filter(line => /^\| [^|]+ \| - \| - \| /.test(line)).every(line => line.includes('근거 없음')), '두 역할 -는 근거 없음 행에만');
   assert.ok(rows.some(line => /\| 90\.0 \|/.test(line)) && rows.some(line => /\| 80\.0 \|/.test(line)));
   assert.ok(section.includes('OpenCode Go Free'), 'Go Free path keeps the plain plan label');

@@ -3,7 +3,7 @@ import { INSIGHTS_HELP } from "./insights-help.js";
 export type Subcommand = "once" | "zen-free" | "detect" | "insights" | "trend";
 
 export const USAGE = [
-  "usage: yoroi <once|zen-free|detect|insights|trend> [--pretty] [--help] [--version]",
+  "usage: yoroi <once|zen-free|detect|insights|trend> [--pretty] [--full] [--help] [--version]",
   "",
   "examples:",
   "  yoroi once --pretty",
@@ -18,18 +18,20 @@ export const USAGE = [
 ].join("\n");
 
 export const ONCE_HELP = [
-  "usage: yoroi once [--pretty] [--refresh] [--help]",
+  "usage: yoroi once [--pretty] [--full] [--refresh] [--help]",
   "",
   "collects usage snapshots once from configured providers.",
   "",
   "options:",
   "  --pretty       render visual card layout",
+  "  --full         show all windows in pretty layout, including over and limit",
   "  --refresh      bypass cached usage and collect fresh snapshots",
   "  -h, --help     show help for once subcommand",
   "",
   "examples:",
   "  yoroi once",
   "  yoroi once --pretty",
+  "  yoroi once --pretty --full",
 ].join("\n");
 
 export const ZEN_FREE_HELP = [

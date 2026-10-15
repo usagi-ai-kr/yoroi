@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { CliEnvironment } from '../ui/cli/bootstrap.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import { insightPublicationDate } from '../insights/history-port.js';
+import { freeSectionProblem } from '../insights/letter-free-guard.js';
 
 const REPO = 'qus0in/yoroi', TIMEOUT_MS = 30_000;
 type Issue = { readonly number: number; readonly title: string };
@@ -36,6 +37,7 @@ function kst(now: number) {
     time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` };
 }
 const fail = (env: CliEnvironment, message: string): number => { env.stderr(`insights publish: ${message}\n`); return 1; };
+const isRenderedLetter = (body: string): boolean => body.startsWith('# ') && body.includes('\n## ');
 
 export async function publishInsightsLetter(options: PublishLetterOptions, env: CliEnvironment): Promise<number> {
   const now = (options.clock ?? Date.now)(), k = kst(now), notBefore = options.notBefore ?? '09:00';
@@ -49,6 +51,8 @@ export async function publishInsightsLetter(options: PublishLetterOptions, env: 
   let body: string | undefined;
   try { body = await options.render(); } catch { return fail(env, 'collection or rendering failed'); }
   if (!body?.trim()) return fail(env, 'collection or rendering failed');
+  const freeProblem = isRenderedLetter(body) ? freeSectionProblem(body) : undefined;
+  if (freeProblem) return fail(env, `free section invalid: ${freeProblem}`);
   if (options.dryRun) {
     const open = await listIssues(options.runner, bin, 'open', undefined, options.signal);
     if (!open) return fail(env, 'open letter query failed');

@@ -20,6 +20,14 @@ export const ROLE_SOURCES: Readonly<Record<OptimalZoneRole, Readonly<Record<Scor
 /** 가격 근거가 모두 없을 때의 가격 차원값(최저 관측가 1 다음). 풀 전체에 관측 가격이 없으면 0. 워커에만 적용. */
 export const PRICE_MISSING_VALUE = 0.99;
 export const PRICE_MISSING: Readonly<Record<OptimalZoneRole, number | undefined>> = { orchestrator: undefined, worker: PRICE_MISSING_VALUE };
+/** User-confirmed worker price rules: score-only held-plan uplift at p75, AA mixed USD/M cap. */
+export const WORKER_HELD_PRICE_QUANTILE = 0.75;
+export const WORKER_MIXED_PRICE_CAP_USD_PER_M = 5;
+/** 패키지 설치본에서 config/held-plans.json이 빠질 때 쓸 사용자 확정 보유 플랜 ID. */
+export const WORKER_HELD_PLAN_IDS_DEFAULT = [
+  'chatgpt-plus', 'claude-pro', 'google-ai-pro', 'ollama-cloud-pro',
+  'opencode-go-plus', 'zen-free', 'antigravity', 'cursor'
+] as const;
 /** 워커는 전체 후보 풀에서 표준화한 성능이 이 값 미만이면(결측 포함) 후보·보충에서 제외한다. 재정규화하지 않는다.
  *  p85: 표준화 하한은 폐지하고 원값 하한(WORKER_INTEL_FLOOR)을 쓴다. 상수는 이전 규칙 기록으로 둔다. */
 export const WORKER_PERFORMANCE_FLOOR = 0.7;

@@ -8,7 +8,7 @@ test('metric guard accepts only used/remaining/limit/percent', () => {
   for (const other of ['usd', '', 1, undefined, null, {}]) assert.equal(isUsageMetricType(other), false);
 });
 test('provider guard accepts only known providers', () => {
-  for (const id of ['ollama-pro', 'opencode-go', 'codex', 'agy', 'claude']) assert.equal(isProviderId(id), true);
+  for (const id of ['ollama-pro', 'opencode-go', 'codex', 'agy', 'claude', 'xai']) assert.equal(isProviderId(id), true);
   for (const other of ['unknown', '', 1, undefined, null]) assert.equal(isProviderId(other), false);
 });
 test('window guard checks identity and finite non-negative metrics', () => {

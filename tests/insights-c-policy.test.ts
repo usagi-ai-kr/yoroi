@@ -6,7 +6,7 @@ import { WORKER_BONUS_CAP } from '../src/insights/letter-top10-score-weights.js'
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
-/** p54 C 워커 AA best 소스 + p75 오케 가성비 제거(0.82/0.06/0.12) + p85 워커 AA 3지표 산식(37.5/12.5/50·가산 cap 5·원값 하한 33). 오케 effort 규칙은 insights-orchestrator-effort.test.ts. */
+/** p54 C 워커 AA best 소스 + p75 오케 가성비 제거(0.82/0.06/0.12) + p85 워커 AA 산식, 2026-10-15 사용자 확정 갱신(성능 .30·사용량 .20·속도 .10·가격 .40·가산 cap 5·원값 하한 33·존 .60). 오케 effort 규칙은 insights-orchestrator-effort.test.ts. */
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
 const CPT = 'intelligence_index_cost_per_task', TOTAL = 'intelligence_index_total_cost';
 const catalogOf = (ids: readonly string[]): readonly PlanCatalogEntry[] => [{ planId: 'c-test', planName: 'C Test',
@@ -18,7 +18,7 @@ const near = (actual: number | undefined, expected: number) => assert.ok(actual 
 
 test('role weights, per-role sources, worker floor and bonus cap are exported constants', () => {
   assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.82, usage: 0.06, speed: 0.12 },
-    worker: { performance: 0.375, usage: 0, speed: 0.125, price: 0.5 } });
+    worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } });
   assert.deepEqual([ROLE_SOURCES.worker.speed, ROLE_SOURCES.worker.price, ROLE_SOURCES.worker.usage, ROLE_SOURCES.orchestrator.speed, ROLE_SOURCES.orchestrator.price,
     ROLE_SOURCES.orchestrator.usage], [['aa'], ['aa'], ['openrouter', 'opencode'], ['aa', 'cognition'], [], ['openrouter', 'opencode']]);
   assert.deepEqual([ROLE_DIMENSIONS.orchestrator, ROLE_DIMENSIONS.worker.map(d => DIMENSION_LABELS[d]).at(-1)], [['performance', 'usage', 'speed'], '가격']);
@@ -54,14 +54,14 @@ test('worker p85: intel performance, raw floor 33, price mean(cpt,total), capped
   // w-weak(intel 20 < 33)와 w-nointel(intel 없음)은 후보에서 제외된다. 오케에는 하한이 없어 w-weak이 남는다.
   assert.deepEqual(w.map(x => x.modelId).sort(), ['w-a', 'w-b']);
   assert.ok(lists.orchestrator.entries.some(x => x.modelId === 'w-weak'), '원값 하한은 워커 전용이다');
-  // w-a: 성능 1·가격 mean(0,1)=0.5 → 37.5+25, 속도 (200-100)/(500-100)=0.25 → +3.1, 가산 5×mean(1,1)=5 → 70.6.
+  // w-a: 성능 1·사용량 1·가격 mean(0,1)=0.5 → 30+20+20, 속도 (200-100)/(500-100)=0.25 → +2.5, 가산 5×mean(1,1)=5 → 77.5.
   // 탈락한 w-weak의 tok/s 500이 척도에 남는다(하한은 표준화 뒤에 적용한다).
-  assert.deepEqual([at('w-a').scoreText, at('w-a').scoreComponents?.bonus], ['70.6', 5]);
+  assert.deepEqual([at('w-a').scoreText, at('w-a').scoreComponents?.bonus], ['77.5', 5]);
   assert.deepEqual([at('w-a').scoreComponents?.cost, at('w-a').scoreComponents?.dimensionSources?.price], [0.5, 'aa']);
   // w-b: cpt만 있어 가격이 cpt 표준화값 그대로다. 가산 입력은 사용량 0 하나뿐이라 bonus 0이다.
-  // 성능 풀에 w-weak 20이 있어 w-b 성능은 0.5 → 68.8로 컷(70.6×0.75=53.0)을 넘는다.
-  assert.deepEqual([at('w-b').scoreText, at('w-b').scoreComponents?.cost, at('w-b').scoreComponents?.bonus], ['68.8', 1, 0]);
-  assert.equal(at('w-b').belowZone, undefined, 'w-b 68.8 ≥ 최고 70.6×0.75 → 존 통과');
+  // 성능 풀에 w-weak 20이 있어 w-b 성능은 0.5 → 55.0으로 컷(77.5×0.60=46.5)을 넘는다.
+  assert.deepEqual([at('w-b').scoreText, at('w-b').scoreComponents?.cost, at('w-b').scoreComponents?.bonus], ['55.0', 1, 0]);
+  assert.equal(at('w-b').belowZone, undefined, 'w-b 55.0 ≥ 최고 77.5×0.60 → 존 통과');
 });
 
 test('orchestrator has no price dimension: price never moves the score or the cost component, usage counts lightly (p75)', () => {

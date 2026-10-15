@@ -4,18 +4,15 @@ import { normalizeModelName, type Top10Options, type Top10RecordInput } from './
 import { best, collect, hasEvidence, orchestratorVariants, pickEffortValues, type Raw } from './letter-top10-score-raw.js';
 import { OPTIMAL_ZONE_THRESHOLDS, type OptimalZoneRole, type ScoredGroup } from './letter-top10-worker.js';
 import { MODEL_SUCCESSORS } from './model-successors.js';
-import { ORCHESTRATOR_EFFORT_ORDER, PERFORMANCE_FLOOR, PRICE_MISSING, ROLE_DIMENSION_WEIGHTS, ROLE_SOURCES, SCORE_DIMENSIONS, WORKER_INTEL_FLOOR,
-  type ScoreDimension, type ScoreSource } from './letter-top10-score-policy.js';
+import { ORCHESTRATOR_EFFORT_ORDER, PERFORMANCE_FLOOR, PRICE_MISSING, ROLE_DIMENSION_WEIGHTS, ROLE_SOURCES, SCORE_DIMENSIONS, WORKER_INTEL_FLOOR, type ScoreDimension, type ScoreSource } from './letter-top10-score-policy.js';
 import { WORKER_BONUS_CAP } from './letter-top10-score-weights.js';
+import { applyMixedPriceCap, upliftHeldPlanPriceDimensions } from './letter-top10-worker-price.js';
 export * from './letter-top10-score-policy.js';
 export { ROLE_AA_METRIC } from './letter-top10-score-raw.js';
-
-/** p54 C: 역할별 가중치로 합산한다(결측 차원 0, 재분배 없음). 각 소스는 후보 풀 전체에서 min-max 표준화한다.
- *  p75: 오케 가성비 제거(0.82/0.06/0.12). p85(워커만): 기본 100×(0.375·성능+0.125·속도+0.5·가격)+가산(최대 WORKER_BONUS_CAP점).
- *  성능=AA intel(원값 하한 33, 없으면 제외), 속도=AA tok/s, 가격=cpt·total log 역방향 min-max 평균(단독·혼합단가 대체+`*`).
- *  가산=cap×mean(Cog correct 표준화·사용량 max, 있는 것만). effort는 현행 base 대표 선택을 유지한다. */
+/** p54 C: 역할별 가중합·후보 풀 min-max. p75 오케 0.82/0.06/0.12; p85 워커 기본 0.375/0.125/0.5+가산.
+ * 워커 성능=AA intel(원값 하한 33), 속도=AA tok/s, 가격=cpt·total의 역방향 min-max 평균(대체+`*`); 가산=Cog·사용량 평균×cap. effort 대표 선택은 유지. */
 const safeLog = (c: number): number => Math.log10(c + 0.01);
-/** 차원별 소스·방향(low=낮을수록 좋음)·log 변환. 단위가 다른 원값은 섞지 않고 소스마다 따로 표준화한다. */
+/** 차원별 소스·방향(low=낮을수록 좋음)·log 변환. 단위가 다른 원값은 소스마다 따로 표준화한다. */
 const PARTS: readonly { dim: ScoreDimension; src: ScoreSource; key: keyof Raw; low?: boolean; log?: (v: number) => number; role?: OptimalZoneRole }[] = [
   { dim: 'performance', src: 'aa', key: 'aaPerf' }, { dim: 'performance', src: 'cognition', key: 'cogCorrect' },
   { dim: 'usage', src: 'openrouter', key: 'or', log: Math.log10 }, { dim: 'usage', src: 'opencode', key: 'ocd', log: Math.log10 },
@@ -26,7 +23,6 @@ const minMax = (values: readonly (number | undefined)[], low = false): (number |
   const known = values.filter((v): v is number => v !== undefined), min = Math.min(...known), max = Math.max(...known);
   return values.map(v => v === undefined ? undefined : max === min ? 1 : low ? (max - v) / (max - min) : (v - min) / (max - min));
 };
-
 /** 역할별 전체 후보(Top10 컷 전): 임계 통과 먼저·미달 보충은 스코어순·동점은 모델명. 파레토는 실제 단가 대비 스코어. */
 export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[], role: OptimalZoneRole, opts?: Top10Options): ScoredGroup[] {
   const collected = collect(pool, role), has = (b: string) => { const r = collected.get(b); return !!r && hasEvidence(r); };
@@ -50,6 +46,7 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
   const pricePart = (key: 'aaCpt' | 'aaTotal' | 'aaPrice') => PARTS.find(p => p.dim === 'price' && p.key === key && (key !== 'aaPrice' || p.role === 'worker'))!;
   const stdPrice = (key: 'aaCpt' | 'aaTotal' | 'aaPrice') => role === 'worker' ? stdOf(rows.map(x => x.r), pricePart(key)) : []; // p85 cpt·total·혼합 단가(대체재)
   const [stdCpt, stdTotal, stdBlend] = [stdPrice('aaCpt'), stdPrice('aaTotal'), stdPrice('aaPrice')];
+  const baseWorkerPrices = rows.map((_, i) => { const values = [stdCpt[i], stdTotal[i]].filter((v): v is number => v !== undefined); return values.length ? values.reduce((a, v) => a + v, 0) / values.length : stdBlend[i] ?? (anyPrice ? PRICE_MISSING[role] : undefined); });
   const scored = rows.map(({ r, base, effort }, i) => {
     const sources: Record<string, number> = {}, dims: Partial<Record<ScoreDimension, number>> = {}, from: Record<string, string> = {};
     genericParts.forEach((p, j) => { const v = std[j]![i]; if (v === undefined) return; sources[`${p.dim}:${p.src}`] = v;
@@ -61,9 +58,10 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
       const priced: [string, number][] = [];
       if (stdCpt[i] !== undefined) priced.push(['price:cpt', stdCpt[i] as number]);
       if (stdTotal[i] !== undefined) priced.push(['price:total', stdTotal[i] as number]);
-      if (priced.length) { for (const [key, value] of priced) sources[key] = value;
-        dims.price = priced.reduce((sum, [, value]) => sum + value, 0) / priced.length; from.price = 'aa';
-      } else if (stdBlend[i] !== undefined) { sources['price:blended'] = dims.price = stdBlend[i] as number; from.price = 'aa'; priceFallback = true; }
+      if (priced.length) { for (const [key, value] of priced) sources[key] = value; from.price = 'aa'; }
+      else if (stdBlend[i] !== undefined) { sources['price:blended'] = stdBlend[i] as number; from.price = 'aa'; priceFallback = true; }
+      if (baseWorkerPrices[i] !== undefined) { dims.price = baseWorkerPrices[i]!;
+        if (!priced.length && stdBlend[i] === undefined) { sources['price:missing'] = PRICE_MISSING.worker!; from.price = 'missing'; } }
       const bonusInputs = [sources['performance:cognition'], dims.usage].filter((v): v is number => v !== undefined);
       if (bonusInputs.length) bonus = WORKER_BONUS_CAP * bonusInputs.reduce((sum, v) => sum + v, 0) / bonusInputs.length;
     }
@@ -86,15 +84,17 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
     ? s.intel !== undefined && s.intel >= WORKER_INTEL_FLOOR
     : floor === undefined || (s.dims.performance ?? 0) >= floor);
   const kept = new Map(filterCandidates(items.map(s => s.variant), opts?.priceOverrides, opts?.nowUtc).map(v => [v.baseModelId, v]));
-  const live = items.flatMap(s => kept.has(s.variant.baseModelId) ? [{ ...s, variant: kept.get(s.variant.baseModelId)! }] : []);
+  const liveBase = items.flatMap(s => kept.has(s.variant.baseModelId) ? [{ ...s, variant: kept.get(s.variant.baseModelId)! }] : []);
+  const uplifted = role === 'worker' ? upliftHeldPlanPriceDimensions(liveBase.map(s => s.variant.baseModelId), liveBase.map(s => s.dims.price)) : [];
+  const live = role === 'worker' ? liveBase.map((s, i) => { const p = uplifted[i]; return p === undefined ? s : { ...s, score: s.score + 100 * (ROLE_DIMENSION_WEIGHTS.worker.price ?? 0) * (p - (s.dims.price ?? 0)), dims: { ...s.dims, price: p } }; }) : liveBase;
   const cutoff = Math.max(0, ...live.map(s => s.score)) * OPTIMAL_ZONE_THRESHOLDS[role];
   const costOf = (s: typeof live[number]) => s.variant.effectiveCost ?? s.variant.blendedCost;
-  return live.map(s => {
+  return applyMixedPriceCap(role, live.map(s => {
     const c = costOf(s), dominated = live.some(o => o !== s && c !== undefined && costOf(o) !== undefined && costOf(o)! <= c && o.score >= s.score && (costOf(o)! < c || o.score > s.score));
     const group: ModelGroup = { baseModelId: s.variant.baseModelId, repVariant: s.variant, variants: [s.variant], isPareto: c !== undefined && !dominated };
     return { group, indexRank: 0, costEffRank: 0, score: s.score, belowZone: s.score < cutoff,
       components: { index: s.dims.performance ?? 0, cost: s.dims.price ?? 0, usage: s.dims.usage ?? 0, speed: s.dims.speed ?? 0,
         sources: s.sources, dimensionSources: s.from, ...(s.bonus !== undefined && { bonus: s.bonus }),
         ...(s.priceFallback === true && { priceFallback: true }) } };
-  }).sort((a, b) => Number(a.belowZone) - Number(b.belowZone) || b.score - a.score || a.group.baseModelId.localeCompare(b.group.baseModelId));
+  }), live.map(s => s.variant.blendedCost)).sort((a, b) => Number(a.belowZone) - Number(b.belowZone) || b.score - a.score || a.group.baseModelId.localeCompare(b.group.baseModelId));
 }

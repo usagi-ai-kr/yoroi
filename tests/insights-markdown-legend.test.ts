@@ -43,13 +43,13 @@ test('the guide section lists every marker with one meaning', () => {
   assert.ok(LEGEND_LINES.some(l => l.includes('OR/OCD(오케 6%·워커는 가산)')));
 });
 
-test('dimension cells: orchestrator 성능/사용량/속도, worker 성능/속도/가격 (p85: worker usage is a bonus input)', () => {
+test('dimension cells: orchestrator 성능/사용량/속도, worker 성능/사용량/속도/가격 (사용자 확정: 워커 사용량 실가중)', () => {
   const sc = { index: 0.9, cost: 0.8, usage: 0.7, speed: 0.6, dimensionSources: { performance: 'aa', usage: 'openrouter', speed: 'aa', price: 'aa' } };
   const e = { ...lists.orchestrator.entries[0]!, scoreComponents: sc };
   assert.equal(dimensionsText(e, 'orchestrator'), '90/70/60');
-  assert.equal(dimensionsText(e, 'worker'), '90/60/80');
+  assert.equal(dimensionsText(e, 'worker'), '90/70/60/80');
   const fb = { ...e, scoreComponents: { ...sc, priceFallback: true } };
-  assert.equal(dimensionsText(fb, 'worker'), '90/60/80*', '혼합 단가 대체는 가격 칸에 *');
+  assert.equal(dimensionsText(fb, 'worker'), '90/70/60/80*', '혼합 단가 대체는 가격 칸에 *');
   assert.equal(dimensionsText(fb, 'orchestrator'), '90/70/60', '오케는 * 없음');
 });
 
@@ -64,11 +64,11 @@ test('markdown worker table adds a 가산 column and * marker; orchestrator tabl
   const sc = { index: 0.9, cost: 0.8, usage: 0, speed: 0.6, dimensionSources: { performance: 'aa', speed: 'aa', price: 'aa' }, bonus: 3.74, priceFallback: true };
   const custom: RoleLists = { ...lists, worker: { entries: [{ ...lists.worker.entries[0]!, scoreComponents: sc }], exits: [] } };
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists: custom, failedSources: [] });
-  assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |'));
+  assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |'));
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도 | AA 지수 | 혼합 단가 | 변동 |'));
-  assert.ok(md.includes('| work-a | high | 99.0 | 90/60/80* | +3.7 | 72.0 | $1.50 | ▼3 |'), md);
+  assert.ok(md.includes('| work-a | high | 99.0 | 90/-/60/80* | +3.7 | 72.0 | $1.50 | ▼3 |'), md);
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists: custom });
-  assert.ok(compact.includes('· 90/60/80* 가산 +3.7 · $1.50 ·'), compact);
+  assert.ok(compact.includes('· 90/-/60/80* 가산 +3.7 · $1.50 ·'), compact);
 });
 
 test('both renderers place the guide under the two tables, outside the details block', () => {

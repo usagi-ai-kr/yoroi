@@ -41,7 +41,7 @@ pnpm run check
 ## 설정과 공급자 상태
 
 - 설정은 `src/config/load-config.ts`에서 환경 변수로 읽고 composition root에서 해석한다.
-- `YOROI_PROVIDERS`: 기본 다섯 공급자 모두 조회(`ollama-pro,opencode-go,codex,agy,claude`).
+- `YOROI_PROVIDERS`: 기본 여섯 공급자 모두 조회(`ollama-pro,opencode-go,codex,agy,claude,xai`).
   쉼표로 명시하면 해당 공급자만 조회한다. 중복·미지원 ID는 설정 오류다.
 - `YOROI_DATA_DIR`: 로컬 SQLite 저장 디렉터리. 기본 `${XDG_DATA_HOME:-~/.local/share}/yoroi`이며 DB 파일은 `yoroi.db`다(디렉터리 0700·파일 0600, #72).
 - 공급자 인증/설치 누락은 공급자별 오류로 격리하고 다른 조회를 계속한다.
@@ -57,6 +57,9 @@ pnpm run check
 - OpenCode Go는 `YOROI_OPENCODE_GO_API_KEY`가 필요하다.
 - Ollama는 기본 `$HOME/.ollama/id_ed25519`를 사용한다.
   `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`로 서명 키 경로를 변경한다. Bearer 토큰과 다르다.
+- xAI(SuperGrok)는 자격·네트워크 없이 로컬 `opencode stats --json --models --cost --days 7`의 `xai` 행만 합산한다.
+  실행 파일은 기본 `opencode`(`YOROI_XAI_PATH`, `YOROI_XAI_TIMEOUT_MS`). 소비량(`used`)만 보고하며 한도·잔여는 없고,
+  `xai` 행이 없으면 사용 0이다. 토큰 갱신·`auth.json` 접근은 하지 않는다.
 - credential은 로그·오류·fixture에 출력하지 않는다. 개인 사용량 원본은 저장하지 않는다.
 - HTTP 응답은 1MiB까지 읽으며 초과 시 본문 스트림을 취소하고 unavailable로 정규화한다.
 
@@ -67,6 +70,7 @@ pnpm run check
 | OpenCode Go | 공식 Go usage API | 실제 조회 성공·3개 창 파싱 | [계약](contracts-opencode.md) |
 | AGY | `agy -p /usage` | 구현·실제 CLI 구조 확인 | [계약](contracts-agy.md) |
 | Claude | OAuth usage GET (내부 경로) | CLI 실행 제거·읽기 전용 경계 검증 | [계약](contracts-claude.md) |
+| xAI | `opencode stats --json` 로컬 집계 | fake 테스트·실제 출력 형식 확인(소비량만) | [파서](../src/infra/xai-opencode-stats-parser.ts) |
 
 - 계층·의존 규칙은 [architecture.md](architecture.md), 이슈별 결과는 [issue-status.md](issue-status.md).
 - 웹 UI·DB/히스토리 저장·알림은 이번 CLI 범위 밖이다.

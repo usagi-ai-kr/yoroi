@@ -24,8 +24,8 @@ test("renderPretty renders structured table with header, metrics, and ok status"
   const result: UsageResult = {
     provider: "codex",
     snapshot: createSnapshot("codex", observedAt, [
-      { id: "weekly", unit: "requests", used: 3, remaining: 7, limit: 10,
-        percent: 30, resetAt: "2026-10-14T00:00:00Z" },
+      { id: "weekly", unit: "requests", used: 2, remaining: 98, limit: 100,
+        percent: 2, resetAt: "2026-10-14T00:00:00Z" },
     ]),
   };
   const lines = renderPretty([result]);
@@ -33,7 +33,7 @@ test("renderPretty renders structured table with header, metrics, and ok status"
   assert.ok(tableText.includes("Provider"));
   assert.ok(tableText.includes("Reset (KST)"));
   assert.ok(tableText.includes("codex"));
-  assert.ok(tableText.includes("30% (3/10 requests)"));
+  assert.ok(tableText.includes("2% (2/100 requests)"));
   assert.ok(tableText.includes("2026-10-14 09:00"));
   assert.ok(!tableText.includes("unknown"));
 });
@@ -50,7 +50,7 @@ test("renderPretty handles empty windows, partial failures, and long names clean
   const longName: UsageResult = {
     provider: "agy",
     snapshot: createSnapshot("agy", observedAt, [
-      { id: "very-long-window-identifier-exceeding-col-width", unit: "tokens", percent: 99 },
+      { id: "very-long-window-identifier-exceeding-col-width", unit: "tokens", percent: 50 },
     ]),
   };
 
@@ -61,6 +61,6 @@ test("renderPretty handles empty windows, partial failures, and long names clean
   assert.ok(output.includes("[timeout]"));
   assert.ok(output.includes("query timed out"));
   assert.ok(output.includes("agy"));
-  assert.ok(output.includes("99%"));
+  assert.ok(output.includes("50%"));
   assert.ok(!output.includes("unknown"));
 });

@@ -3,9 +3,10 @@ import test from 'node:test';
 import { loadConfig } from '../src/config/load-config.js';
 import { providers } from '../src/domain/usage.js';
 
-test('configuration defaults to all 5 providers with executable/timeout overrides', () => {
+test('configuration defaults to all 6 providers with executable/timeout overrides', () => {
   const config = loadConfig({ YOROI_CODEX_PATH: '/custom/codex', YOROI_CODEX_TIMEOUT_MS: '5000' });
   assert.deepEqual(config.providers.map(p => p.id), [...providers]);
+  assert.equal(config.providers.length, 6);
   const codex = config.providers.find(p => p.id === 'codex');
   assert.deepEqual(codex, { id: 'codex', executable: '/custom/codex', timeoutMs: 5000 });
 });

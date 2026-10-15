@@ -1,4 +1,4 @@
-export const providers = ['ollama-pro', 'opencode-go', 'codex', 'agy', 'claude'] as const;
+export const providers = ['ollama-pro', 'opencode-go', 'codex', 'agy', 'claude', 'xai'] as const;
 export type ProviderId = typeof providers[number];
 export interface UsageWindow {
   readonly id: string;

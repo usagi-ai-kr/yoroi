@@ -10,7 +10,7 @@ test('plan catalog entries all carry an https sourceUrl, checkedOn and a verifie
   assert.ok(plansForModel('gemini-3-8-flash').includes('Antigravity'));
   for (const plan of PLAN_CATALOG) for (const model of plan.models) {
     assert.match(model.sourceUrl, /^https:\/\//, `${plan.planId}:${model.modelId}`);
-    assert.ok(model.checkedOn === '2026-10-12' || model.checkedOn === '2026-10-13', `${model.modelId} checkedOn`);
+    assert.ok(['2026-10-12', '2026-10-13', '2026-10-14'].includes(model.checkedOn), `${model.modelId} checkedOn`);
     assert.equal(typeof model.verified, 'boolean');
   }
 });
@@ -44,7 +44,7 @@ test('plansForModel resolves the Go console docs models to OpenCode Go Plus', ()
 test('each plan keeps its expected model count and no duplicate modelId', () => {
   const counts: Record<string, number> = {
     'chatgpt-plus': 8, 'claude-pro': 3, 'google-ai-pro': 2,
-    'ollama-cloud-pro': 18, 'opencode-go-plus': 30, 'antigravity': 9, 'cursor': 4,
+    'ollama-cloud-pro': 18, 'opencode-go-plus': 30, 'antigravity': 9, 'cursor': 3,
   };
   assert.deepEqual(Object.fromEntries(PLAN_CATALOG.map(p => [p.planId, p.models.length])), counts);
   for (const plan of PLAN_CATALOG) {

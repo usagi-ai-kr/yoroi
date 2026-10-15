@@ -1,6 +1,7 @@
 import type { InsightRecord, InsightSource } from './record.js';
 import { isIsoDate, isIsoTimestamp, isObject, isText, type ParseRowResult } from './parse-utils.js';
 import { isInsightSource, isNormalizedBenchmarkRecord } from './types.js';
+import { countAaRejects, sanitizeAaReject } from './aa-reject-reasons.js';
 
 export interface ValidatedInsightRecord {
   readonly record: InsightRecord;
@@ -12,7 +13,8 @@ export type RecordValidation = { readonly ok: true; readonly value: ValidatedIns
   { readonly ok: false; readonly reason: 'unknown-source' | 'invalid-record' | 'invalid-date' };
 export type InsightValidation =
   { readonly ok: true; readonly source: InsightSource; readonly records: readonly ValidatedInsightRecord[];
-    readonly rejectedRows: number } |
+    readonly rejectedRows: number; readonly rejectedReasons?: Readonly<Record<string, number>>;
+    readonly rejectedFields?: Readonly<Record<string, number>> } |
   { readonly ok: false; readonly reason: 'unknown-source' | 'empty-result' | 'all-rows-failed' |
     'no-valid-measurements'; readonly rejectedRows: number };
 
@@ -63,14 +65,28 @@ export function validateInsightRows(source: unknown, rows: readonly ParseRowResu
   if (rows.every(row => !row.ok)) return { ok: false, reason: 'all-rows-failed', rejectedRows: rows.length };
   const records: ValidatedInsightRecord[] = [];
   let rejectedRows = 0;
+  const rejects: Array<{ readonly code: string; readonly fields: ReadonlyArray<string> }> = [];
+  const wantDiagnostics = source === 'artificial-analysis';
   for (const row of rows) {
-    if (!row.ok) { rejectedRows++; continue; }
+    if (!row.ok) {
+      rejectedRows++;
+      if (!wantDiagnostics) continue;
+      const extra = row as { readonly rejectCode?: unknown; readonly rejectFields?: unknown };
+      rejects.push(sanitizeAaReject({ code: extra.rejectCode, fields: extra.rejectFields }));
+      continue;
+    }
     const validated = row.records.map(validateInsightRecord);
-    if (validated.some(result => !result.ok || result.value.record.source !== source)) {
-      rejectedRows++; continue;
+    const failed = validated.find(result => !result.ok || result.value.record.source !== source);
+    if (failed) {
+      rejectedRows++;
+      if (wantDiagnostics) rejects.push(sanitizeAaReject({
+        code: `validation:${failed.ok ? 'source-mismatch' : failed.reason}`, fields: [] }));
+      continue;
     }
     for (const result of validated) if (result.ok) records.push(result.value);
   }
-  return records.length ? { ok: true, source, records, rejectedRows }
+  const counts = countAaRejects(rejects);
+  return records.length ? { ok: true, source, records, rejectedRows,
+    ...(rejectedRows > 0 && wantDiagnostics ? { rejectedReasons: counts.codes, rejectedFields: counts.fields } : {}) }
     : { ok: false, reason: 'no-valid-measurements', rejectedRows };
 }

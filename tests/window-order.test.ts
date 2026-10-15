@@ -45,7 +45,7 @@ test("plain and pretty both render the ranked order", () => {
   const plain = renderResults([result]);
 
   assert.deepEqual(plain.slice(1, 4).map((line) => line.trim().split(" ")[1]), ["m", "w", "5h"]);
-  const text = renderPretty([result]).join("\n");
+  const text = renderPretty([result], undefined, { full: true }).join("\n");
   assert.ok(text.indexOf(" m ") < text.indexOf(" w "));
   assert.ok(text.indexOf(" w ") < text.indexOf(" 5h "));
 });

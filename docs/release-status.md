@@ -4,12 +4,16 @@
 - main 병합은 dev → main PR로만 진행한다(직접 push 금지).
 - PR 머지 뒤 원격 CI 통과를 확인하고, 버전 갱신 시 `global-cli-update` 스킬과 [docs/global-install.md](global-install.md) 절차로 전역 CLI를 갱신하고 버전 일치를 확인한다.
 
-## 0.12.0 준비 (2026-10-15, PR #148 OPEN·머지 승인 대기)
+## 0.12.0 발행 완료 (2026-10-15, PR #148 머지 → main `baae51b`·milestone 22 close)
 
 - 범위(milestone 22): Free 섹션 publish 가드(#144 원인 대응)·AA partial 저장본 fallback·xAI opencode stats 기본 공급자(#132 흡수)·Cursor Plus 카탈로그(#119)·
   워커 규칙(.30/.20/.10/.40·존 .60·보유 플랜 p75 상향·혼합 단가 $5/M 상한)·yo 필터(under·n/a·optimal, 숨김 provider 행 유지)·`--pretty --full`·zen Reset 추정 표시.
 - 사용자 결정(2026-10-15): D(xAI 구독 사용률) 없이 릴리스. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0, [milestone 24](https://github.com/qus0in/yoroi/milestone/24))로 분리하고 실행 확인 뒤 1.0.0으로 판올림한다.
-- 검증: 항목별 리뷰 approve·단위·BDD 통과(작업 트리 동시 변경으로 최종 수치는 릴리스 커밋에서 재확인). PR은 `Closes #119`로 #119를 종료한다. 버전 승격(`0.11.1` → `0.12.0`, 커밋 `f7eb602`)·커밋 7건 push·[PR #148](https://github.com/qus0in/yoroi/pull/148) 생성은 완료했다. 머지 승인 뒤 main CI → tag `v0.12.0`·Release → 전역 CLI 갱신을 수행한다.
+- 검증: 항목별 리뷰 approve·단위·BDD 통과(작업 트리 동시 변경으로 최종 수치는 릴리스 커밋에서 재확인). PR은 `Closes #119`로 #119를 종료했다. 버전 승격(`0.11.1` → `0.12.0`, 커밋 `f7eb602`)·커밋 7건 push·[PR #148](https://github.com/qus0in/yoroi/pull/148) 머지 완료(main `baae51b`, 2026-10-15T01:54:31Z)·main CI success(run `38668219318`)·tag `v0.12.0`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.12.0) 발행·전역 CLI 0.12.0 동기화·milestone 22 close.
+
+## 0.12.1 준비 (2026-10-15, 미발행·머지 대기)
+
+- 범위(patch, 불필요 기본 행 복원 bugfix): xai 기본 수집 제외(기본 5복원)·yo 기본(limit·under·optimal·over 표시·n/a 숨김)·yo2(`--pretty --full`)/plain 전체 표시 유지·지원 목록 opt-in 유지(`YOROI_PROVIDERS=xai` 호환). 이전 운영 정리 `91c1d71` 동봉. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0) 유지.
 
 ## 0.4.0 머지 및 발행 상태 (2026-10-11)
 

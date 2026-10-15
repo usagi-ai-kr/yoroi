@@ -21,7 +21,9 @@ const fakeHttp: HttpClient = { request: async request => {
   if (request.url === "https://opencode.ai/zen/go/v1/usage") return { status: 200, headers: {}, body: opencodeBody };
   return { status: 404, headers: {}, body: "" };
 } };
+export const executedProcesses: string[] = [];
 const fakeProcess: ProcessRunner = { run: async request => {
+  executedProcesses.push(request.executable);
   if (request.executable === "codex") return { stdout: codexBody, stderr: "", exitCode: 0 };
   if (request.executable === "agy") return { stdout: agyBody, stderr: "", exitCode: 0 };
   if (request.executable === "opencode") return { stdout: xaiBody, stderr: "", exitCode: 0 };
@@ -34,6 +36,7 @@ export class DefaultProvidersWorld {
   exitCode = 0;
   reset(): void {
     resetClaudeWire();
+    executedProcesses.length = 0;
     this.configEnv = {};
     this.stdout = [];
     this.exitCode = 0;

@@ -1,4 +1,4 @@
-import { providers, type ProviderId } from '../domain/usage.js';
+import { defaultProviders, providers, type ProviderId } from '../domain/usage.js';
 
 export interface ProviderSettings {
   readonly id: ProviderId;
@@ -23,7 +23,7 @@ function positive(value: string | undefined, fallback: number, name: string, max
 export function loadConfig(env: Readonly<Record<string, string | undefined>>): RuntimeConfig {
   const selected = env.YOROI_PROVIDERS !== undefined
     ? env.YOROI_PROVIDERS.split(',').map(value => value.trim())
-    : [...providers];
+    : [...defaultProviders];
   if (selected.length === 0 || new Set(selected).size !== selected.length ||
     selected.some(id => !providers.includes(id as ProviderId))) {
     throw new Error('Invalid provider selection');

@@ -41,7 +41,7 @@ pnpm run check
 ## 설정과 공급자 상태
 
 - 설정은 `src/config/load-config.ts`에서 환경 변수로 읽고 composition root에서 해석한다.
-- `YOROI_PROVIDERS`: 기본 여섯 공급자 모두 조회(`ollama-pro,opencode-go,codex,agy,claude,xai`).
+- `YOROI_PROVIDERS`: 기본 다섯 공급자 조회(`ollama-pro,opencode-go,codex,agy,claude`). xai는 명시 지정 시 조회.
   쉼표로 명시하면 해당 공급자만 조회한다. 중복·미지원 ID는 설정 오류다.
 - `YOROI_DATA_DIR`: 로컬 SQLite 저장 디렉터리. 기본 `${XDG_DATA_HOME:-~/.local/share}/yoroi`이며 DB 파일은 `yoroi.db`다(디렉터리 0700·파일 0600, #72).
 - 공급자 인증/설치 누락은 공급자별 오류로 격리하고 다른 조회를 계속한다.
@@ -57,7 +57,7 @@ pnpm run check
 - OpenCode Go는 `YOROI_OPENCODE_GO_API_KEY`가 필요하다.
 - Ollama는 기본 `$HOME/.ollama/id_ed25519`를 사용한다.
   `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`로 서명 키 경로를 변경한다. Bearer 토큰과 다르다.
-- xAI(SuperGrok)는 자격·네트워크 없이 로컬 `opencode stats --json --models --cost --days 7`의 `xai` 행만 합산한다.
+- xAI(SuperGrok)는 `YOROI_PROVIDERS=xai` 명시 시 로컬 `opencode stats --json --models --cost --days 7`의 `xai` 행을 합산한다(기본 제외).
   실행 파일은 기본 `opencode`(`YOROI_XAI_PATH`, `YOROI_XAI_TIMEOUT_MS`). 소비량(`used`)만 보고하며 한도·잔여는 없고,
   `xai` 행이 없으면 사용 0이다. 토큰 갱신·`auth.json` 접근은 하지 않는다.
 - credential은 로그·오류·fixture에 출력하지 않는다. 개인 사용량 원본은 저장하지 않는다.
@@ -96,4 +96,5 @@ bash .agents/skills/skill-authoring/scripts/validate.sh .agents/skills/github-wo
 ## 파일 크기 예외
 
 - 줄 수 검사 제외: 잠금 파일(`package-lock.json`·`pnpm-lock.yaml`·`yarn.lock`·`uv.lock`·`poetry.lock`·`Cargo.lock`·`Gemfile.lock`·`go.sum`), Gradle wrapper(`gradlew`·`gradlew.bat`), 바이너리.
+- 사용자 지정 외부 파일(`~/.zshrc`, 기존 173줄 보존·yo2 별칭 1줄만 수정)은 100줄 제한 예외로 둔다(2026-10-15).
 - 예외 추가 시 이 문서와 검증 스크립트를 함께 갱신한다.

@@ -9,10 +9,10 @@ import { EMPTY_PRETTY_LINE, prettyColWidths } from "../src/ui/cli/render-pretty-
 import { visibleWindows } from "../src/ui/cli/display.js";
 import { usageStatus } from "../src/ui/cli/pace.js";
 
-/** 기본 pretty 표는 under·n/a·optimal 창만 남기고 over·limit는 생략한다. 픽스처는 opencode-go, 관측 시각 고정. */
+/** 기본 pretty 표는 limit·under·optimal·over 창만 남기고 n/a는 생략한다. 픽스처는 opencode-go, 관측 시각 고정. */
 const observedAt = "2026-10-07T05:30:00.000Z";
 const weekly = (percent: number): UsageWindow => ({ id: "weekly", unit: "percent", percent, resetAt: "2026-10-08T00:00:00.000Z" });
-const monthly = (percent: number, resetAt: string): UsageWindow => ({ id: "monthly", unit: "percent", percent, resetAt });
+const monthly = (percent: number, resetAt?: string): UsageWindow => ({ id: "monthly", unit: "percent", percent, ...(resetAt && { resetAt }) });
 const rolling = (percent: number, resetAt?: string): UsageWindow => ({ id: "rolling", unit: "percent", percent, ...(resetAt && { resetAt }) });
 const OVER = monthly(70, "2026-11-07T00:00:00.000Z");
 const LIMIT = rolling(99, "2026-10-07T09:00:00.000Z");
@@ -26,38 +26,39 @@ const labelled = (windows: UsageWindow[]): Record<string, string> => {
   return Object.fromEntries(visible.map((w, i) => [labels[i]!, usageStatus("opencode-go", w, visible, observedAt)]));
 };
 
-test("over and limit rows are removed while under, n/a, optimal stay", () => {
+test("n/a rows are removed while under, optimal, over, limit stay", () => {
   const windows = [weekly(3), rolling(40)];
   assert.deepEqual(labelled(windows), { w: "under", "5h": "n/a" });
   assert.deepEqual(labelled([OVER]), { m: "over" });
   const out = text(renderPretty([result("opencode-go", windows), result("opencode-go", [OVER])]));
   assert.match(out, /│ opencode-go │ ok under\s*│ w\s*│/);
-  assert.match(out, /│ opencode-go │ ok n\/a\s*│ 5h\s*│/);
-  assert.ok(!out.includes("ok over") && !out.includes(" m "), out);
+  assert.match(out, /│ opencode-go │ ok over\s*│ m\s*│/);
+  assert.ok(!out.includes("ok n/a") && !out.includes(" 5h "), out);
   assert.deepEqual(labelled([weekly(89)]), { w: "optimal" });
   const optOut = text(renderPretty([result("opencode-go", [weekly(89)])]));
   assert.match(optOut, /│ opencode-go │ ok optimal\s*│ w\s*│/);
 });
 
-test("under, n/a, optimal rows are kept while over and limit are omitted", () => {
+test("limit, under, optimal, over rows are kept while n/a is omitted", () => {
   const first = [weekly(3), LIMIT];
   assert.deepEqual(labelled(first), { w: "under", "5h": "limit" });
   assert.deepEqual(labelled([OVER]), { m: "over" });
-  const out = text(renderPretty([result("opencode-go", first), result("opencode-go", [OVER])]));
+  const out = text(renderPretty([result("opencode-go", first), result("opencode-go", [OVER, rolling(40)])]));
   assert.match(out, /ok under\s*│ w\s*│/);
-  assert.ok(!out.includes("ok over"), "over is hidden");
-  assert.ok(!out.includes("ok limit"), "limit is hidden");
+  assert.match(out, /ok limit\s*│ 5h\s*│/);
+  assert.match(out, /ok over\s*│ m\s*│/);
+  assert.ok(!out.includes("ok n/a"), "n/a is hidden");
 });
 
 test("when all windows of a provider are hidden a summary row remains", () => {
-  const out = text(renderPretty([result("opencode-go", [OVER, LIMIT])]));
-  assert.match(out, /opencode-go\s*│ ok\s*│ -\s*│ 숨김 2개\(over\/limit\)\s*│ -/);
+  const out = text(renderPretty([result("opencode-go", [monthly(40), rolling(50)])]));
+  assert.match(out, /opencode-go\s*│ ok\s*│ -\s*│ 숨김 2개\(n\/a\)\s*│ -/);
   assert.deepEqual(renderPretty([]), [EMPTY_PRETTY_LINE]);
 });
 
-test("a provider with all windows hidden displays 숨김 n개(over/limit) row while others stay", () => {
-  const out = text(renderPretty([result("codex", [OVER]), result("opencode-go", [weekly(3)])]));
-  assert.match(out, /codex\s*│ ok\s*│ -\s*│ 숨김 1개\(over\/limit\)\s*│ -/);
+test("a provider with all windows hidden displays 숨김 n개(n/a) row while others stay", () => {
+  const out = text(renderPretty([result("codex", [rolling(40)]), result("opencode-go", [weekly(3)])]));
+  assert.match(out, /codex\s*│ ok\s*│ -\s*│ 숨김 1개\(n\/a\)\s*│ -/);
   assert.match(out, /│ opencode-go │ ok under\s*│ w\s*│/);
 });
 

@@ -14,12 +14,12 @@ Feature: CLI once --pretty --full 옵션
     And the CLI stdout contains "--full"
     And the CLI stdout contains "yoroi once --pretty --full"
 
-  Scenario: once --pretty 기본은 limit를 숨기고 --full은 limit를 표시한다
-    Given provider "codex" reports window "weekly" with percent=99
+  Scenario: once --pretty 기본은 n/a를 숨기고 --full은 n/a를 표시한다
+    Given provider "codex" reports window "weekly" with used=3 limit=10
     When I run "once --pretty"
     Then the CLI exit code is 0
-    And the CLI stdout does not contain "ok limit"
-    And the CLI stdout contains "숨김 1개(over/limit)"
+    And the CLI stdout does not contain "ok n/a"
+    And the CLI stdout contains "숨김 1개(n/a)"
     When I run "once --pretty --full"
     Then the CLI exit code is 0
-    And the CLI stdout contains "ok limit"
+    And the CLI stdout contains "ok n/a"

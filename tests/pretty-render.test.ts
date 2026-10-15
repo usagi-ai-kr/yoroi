@@ -50,7 +50,7 @@ test("renderPretty handles empty windows, partial failures, and long names clean
   const longName: UsageResult = {
     provider: "agy",
     snapshot: createSnapshot("agy", observedAt, [
-      { id: "very-long-window-identifier-exceeding-col-width", unit: "tokens", percent: 50 },
+      { id: "weekly:very-long-window-identifier-exceeding-col-width", unit: "tokens", percent: 50, resetAt: "2026-10-14T00:00:00Z" },
     ]),
   };
 

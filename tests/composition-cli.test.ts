@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { compose } from '../src/composition-root.js';
-import { createSnapshot, providers } from '../src/domain/usage.js';
+import { createSnapshot, defaultProviders, providers } from '../src/domain/usage.js';
 import type { SourceFactories } from '../src/composition/sources.js';
 
 test('composition runs all five fake adapters by default without YOROI_PROVIDERS set', async t => {
@@ -16,7 +16,8 @@ test('composition runs all five fake adapters by default without YOROI_PROVIDERS
   const cli = compose({ dataDir, configEnv: {}, factories,
     output: { stdout: line => stdout.push(line), stderr: line => stderr.push(line) } });
   assert.equal(await cli.run(['once']), 0);
-  for (const provider of providers) assert.ok(stdout.some(line => line.startsWith(provider + ':')));
+  for (const provider of defaultProviders) assert.ok(stdout.some(line => line.startsWith(provider + ':')));
+  assert.ok(!stdout.some(line => line.startsWith('xai:')), 'default path must not collect or print xai');
   assert.deepEqual(stderr, []);
 });
 test('composition rejects invalid provider selection with exit code 2 and preserves help', async () => {

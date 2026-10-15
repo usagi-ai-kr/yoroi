@@ -1,4 +1,4 @@
-Feature: 6개 공급자 CLI once 수용 시나리오
+Feature: 명시 주입 fake 6개 공급자 CLI once 수용 시나리오
 
   Scenario: 모든 공급자가 성공하면 once는 6개 결과를 출력한다
     Given all 6 fake providers succeed

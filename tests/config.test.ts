@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { loadConfig } from '../src/config/load-config.js';
-import { providers } from '../src/domain/usage.js';
+import { defaultProviders, providers } from '../src/domain/usage.js';
 
-test('configuration defaults to all 6 providers with executable/timeout overrides', () => {
+test('configuration defaults to all 5 providers with executable/timeout overrides', () => {
   const config = loadConfig({ YOROI_CODEX_PATH: '/custom/codex', YOROI_CODEX_TIMEOUT_MS: '5000' });
-  assert.deepEqual(config.providers.map(p => p.id), [...providers]);
-  assert.equal(config.providers.length, 6);
+  assert.deepEqual(config.providers.map(p => p.id), [...defaultProviders]);
+  assert.equal(config.providers.length, 5);
   const codex = config.providers.find(p => p.id === 'codex');
   assert.deepEqual(codex, { id: 'codex', executable: '/custom/codex', timeoutMs: 5000 });
+  const xaiConfig = loadConfig({ YOROI_PROVIDERS: 'xai' });
+  assert.deepEqual(xaiConfig.providers.map(p => p.id), ['xai']);
 });
 test('configuration enables explicit providers and rejects invalid settings', () => {
   const config = loadConfig({ YOROI_PROVIDERS: 'claude,ollama-pro',

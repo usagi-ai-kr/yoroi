@@ -70,11 +70,11 @@ test('no xai row means no usage: used 0 windows without an invented limit', asyn
   }
 });
 
-test('xai is a default provider wired to opencode, with PATH and timeout overrides', async () => {
+test('xai is excluded from defaults and wired only via explicit YOROI_PROVIDERS=xai', async () => {
+  assert.ok(!loadConfig({}).providers.some(p => p.id === 'xai'), 'default must exclude xai');
+  assert.equal(loadConfig({ YOROI_PROVIDERS: 'xai' }).providers[0]?.executable, 'opencode');
   const seen: ProcessRequest[] = [];
   const fake: ProcessRunner = { run: async request => { seen.push(request); return { stdout: fixture, stderr: '', exitCode: 0 }; } };
-  assert.ok(loadConfig({}).providers.some(p => p.id === 'xai'));
-  assert.equal(loadConfig({}).providers.find(p => p.id === 'xai')?.executable, 'opencode');
   const config = loadConfig({ YOROI_PROVIDERS: 'xai', YOROI_XAI_PATH: '/custom/opencode', YOROI_XAI_TIMEOUT_MS: '4000' });
   const [source] = createSources(config, defaultFactories({ runner: fake }));
   assert.equal(source?.provider, 'xai');

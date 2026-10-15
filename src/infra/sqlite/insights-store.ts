@@ -2,6 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { INSIGHT_HISTORY_RETENTION_DAYS, shiftInsightDate, type InsightDailyKey,
   type InsightHistoryPort } from '../../insights/history-port.js';
 import { validateInsightRows, type InsightValidation } from '../../insights/validation.js';
+import { buildRejectionDiagnostics } from '../../insights/rejection-diagnostics.js';
 import type { InsightRecord } from '../../insights/record.js';
 import { resolveDbPath } from './data-dir.js';
 import { openDatabase } from './database.js';
@@ -36,8 +37,10 @@ export class SqliteInsightHistory extends SqliteInsightHistoryReader implements 
     const checked = validateInsightRows(key.source, [{ ok: true, index: 0,
       records: result.records.map(value => value.record), warnings: [] }]);
     if (!checked.ok) return false;
+    const diagnostics = buildRejectionDiagnostics(result);
     const success = { ...checked, rejectedRows: result.rejectedRows,
-      records: checked.records.map(value => ({ ...value, record: pickRecord(value.record) })) };
+      records: checked.records.map(value => ({ ...value, record: pickRecord(value.record) })),
+      ...(diagnostics !== undefined && { rejectionDiagnostics: diagnostics }) };
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const existing = this.db.prepare(`SELECT complete FROM insight_daily WHERE source = ? AND publication_date = ?

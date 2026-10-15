@@ -63,5 +63,5 @@
 
 - 승인 A: 레터 갱신. 승인 B: 지금까지 작업의 1.0.x 커밋·push·PR·머지·발행 마무리.
 - 1.0.0 기발행이므로 1.0.1 patch. 기존 [PR #159](https://github.com/qus0in/yoroi/pull/159)에 1.0.0 기록 문서와 Grok 예외를 묶는다.
-- 레터 경로: 발행된 1.0.1 clean SHA로 검증한 뒤 게시. 이 준비 단계는 편집만이며 커밋·push·PR 편집·머지·tag·Release·전역·레터 게시는 다음 단계다.
+- 레터 재현: 발행 1.0.1 SHA `c7c403ee` 별도 clean repo + 10-15/14 공개 snapshot + Free 가드 `opencode models` 1회(12 free/2 plans). [#160](https://github.com/qus0in/yoroi/issues/160) GET 4.6 high 69.7 ▽9 · #157 close. 발행본을 bare preview와 동일하다고 단정하지 않는다.
 - 제외 보존: score.ts·four-source-score·effort 테스트·orchestration·takeover. scratch 공개 JSON은 커밋하지 않는다.

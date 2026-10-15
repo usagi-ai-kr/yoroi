@@ -38,7 +38,7 @@
 
 ## 1.0.0 준비 (2026-10-15, 발행 전)
 
-- [준비] `package.json` 1.0.0(작업 트리, 미커밋). 범위: main 병합 동작 + 버전 + 문서 정정. 신규 기능 없음.
+- [준비] `package.json` 1.0.0(커밋 `57de5b3` 기준, PR 전). 범위: main 병합 동작 + 버전 + 문서 정정. 신규 기능 없음.
 - [준비] 문서 정정 대상: roadmap·development·versioning·release-status·tasks, 신규 보관본 tasks-pre100·release-history-pre100.
 - [제외] 미커밋 워커 effort 3파일은 보존하고 1.0 커밋에서 뺀다. 정책 확정 뒤 1.1에서 xhigh 상한과 함께 검토한다.
 - [제외] `docs/orchestration.md` 타 주체 변경은 1.0 커밋에 넣지 않는다.

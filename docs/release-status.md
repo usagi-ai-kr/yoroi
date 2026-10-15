@@ -23,6 +23,10 @@
 
 - 범위(patch, [versioning.md](versioning.md) 근거: 인사이트 레터 전일 AA 비교 오류 수정): `21918fe` 전일 AA 비교 조회 시 `includePartial: true` 전달로 complete=0(partial) 저장본도 비교 기준 랭크 산출에 허용(#146). 버전 승격 `0.13.0` → `0.13.1`·[PR #153](https://github.com/qus0in/yoroi/pull/153) 머지 `a1477d0`·main CI success(run `38693809267`)·tag `v0.13.1`·[Release](https://github.com/qus0in/yoroi/releases/tag/v0.13.1) 발행(2026-10-15T06:54:43Z)·전역 CLI 0.13.1. 레터 [#154](https://github.com/qus0in/yoroi/issues/154) 재발행(#146 종료)으로 후속 해소.
 
+## 0.13.2 준비 (2026-10-15, 미발행·머지 대기)
+
+- 범위(patch, [versioning.md](versioning.md) 근거: xAI 재로그인 안내·위키 원본 갱신·grok-build-0.1 후보·AA 거절 사유 진단 집계/저장): `20b8ac2` xAI 인증 오류 OpenCode 재로그인 안내·`6630fa1` 0.12.1~0.13.1 발행 기록·`4cd9022` 위키 원본 갱신([#151](https://github.com/qus0in/yoroi/issues/151) 원격 게시는 발행 후)·`38bea94` grok-build-0.1 SuperGrok 후보 추가·`dc0624d` AA 거절 사유 집계·`dbd0b13` AA 거절 진단 일일 저장본 보존. 버전 승격 `0.13.1` → `0.13.2`(`v0.13.2` tag 예정).
+
 ## 0.4.0·0.5.0 발행 완료 (2026-10-11)
 
 - v0.4.0: PR #91 병합(main `4744fbc`), CI success, 전역 CLI 0.4.0, Release 발행, detect 스모크 및 milestone 10 close.
@@ -37,13 +41,7 @@
 
 ## 0.5.1 머지 및 발행 완료 (2026-10-11)
 
-- PR [#98](https://github.com/qus0in/yoroi/pull/98) 병합 커밋 `2536baa69f88647a9ef75704bb4ee3729e248b11`(main).
-- main CI [run 38141050373](https://github.com/qus0in/yoroi/actions/runs/38141050373) success.
-- [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행 완료 (tag `v0.5.1`).
-- 전역 CLI 0.5.1 동기화 완료 (`yoroi --version` 0.5.1 일치).
-- OpenCode 플러그인 재설치 installed 완료 (운영 반영은 사용자 OpenCode 재시작 대기).
-- [#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93)·[#96](https://github.com/qus0in/yoroi/issues/96)·[#97](https://github.com/qus0in/yoroi/issues/97) close 및 [Milestone 0.5.1](https://github.com/qus0in/yoroi/milestone/11) close 완료.
-- 0.6.0 착수: [#94](https://github.com/qus0in/yoroi/issues/94) 레터 이슈 발행, [#84](https://github.com/qus0in/yoroi/issues/84) trend 착수.
+- PR [#98](https://github.com/qus0in/yoroi/pull/98) 병합(main `2536baa`), CI success, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1), 전역 CLI 0.5.1, #92·#93·#96·#97 및 milestone close 완료.
 
 ## 0.6.0 머지 및 발행 완료 (2026-10-12)
 

@@ -13,10 +13,12 @@ export const ROLE_WEIGHT_DIMENSIONS: Readonly<Record<ScoreWeightRole, readonly S
   orchestrator: ['performance', 'usage', 'speed'], worker: SCORE_WEIGHT_DIMENSIONS };
 export type ScoreWeights = Readonly<Record<ScoreWeightRole, Readonly<Partial<Record<ScoreWeightDimension, number>>>>>;
 export const SCORE_WEIGHTS_PATH = resolve(packageRootFrom(import.meta.url), 'config/score-weights.json');
-/** 저장소 기본값. 사용자가 파일로 바꾸기 전까지 이 숫자를 코드에서 바꾸지 않는다. */
+/** 저장소 기본값. 사용자가 파일로 바꾸기 전까지 이 숫자를 코드에서 바꾸지 않는다.
+ *  2026-10-15 사용자 확정: 워커 성능/사용량/속도/가격 .30/.20/.10/.40(존 임계 .60, priceMissing .99 유지 —
+ *  시뮬레이션 근거 scratch/reports/yoroi-worker-tune-cap2.md·yoroi-worker-tune-final-review.md). */
 export const SCORE_WEIGHTS_DEFAULTS: ScoreWeights = {
   orchestrator: { performance: 0.82, usage: 0.06, speed: 0.12 },
-  worker: { performance: 0.375, usage: 0, speed: 0.125, price: 0.5 } };
+  worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } };
 /** p85: 워커 가산 상한(점). 기본 점수에 더하는 가산(bonus) 최대값이다. */
 export const WORKER_BONUS_CAP_DEFAULT = 5;
 

@@ -6,11 +6,10 @@ import * as scoreModule from '../src/insights/letter-top10-score.js';
 import { PRICE_MISSING, ROLE_WEIGHTS, referenceDimensions, type DimRow } from './helpers/dimension-reference.js';
 
 const IQ = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
-const COG = 'cognition_correct', COST = 'cognition_cost', DUR = 'cognition_duration_min', OR = 'total_tokens', OC = 'opencode_data_tokens';
-type Role = 'orchestrator' | 'worker';
+const COG = 'cognition_correct', COST = 'cognition_cost', DUR = 'cognition_duration_min', OR = 'total_tokens', OC = 'opencode_data_tokens'; type Role = 'orchestrator' | 'worker';
 const row = (modelId: string, metric: string, value: number, price?: [number, number]): DimRow => ({ modelId, metric, value, ...(price && { priceInput: price[0], priceOutput: price[1] }) });
 const entry = (modelId: string) => ({ modelId, displayName: modelId, sourceUrl: 'https://example.test', checkedOn: '2026-10-13', verified: true });
-const plan = (planId: string, ids: readonly string[], tier?: 'free'): PlanCatalogEntry => ({ planId, planName: planId, ...(tier && { tier }), models: ids.map(entry) });
+const plan = (planId: string, ids: readonly string[], tier?: 'free'): PlanCatalogEntry => ({ planId, planName: planId, models: ids.map(entry), ...(tier && { tier }) });
 /** p75: 오케 가성비 제거(82/6/12). 참조 구현은 price 칸이 있어 오케는 0으로 넘긴다. */
 const ROLE_W = { orchestrator: { performance: .82, usage: .06, speed: .12, price: 0 }, worker: ROLE_WEIGHTS.worker } as const;
 const EVIDENCE = new Set([COG, COST, DUR, OR, OC]);
@@ -54,9 +53,9 @@ test('오케 I=0·가격결측·Free 접근만 근거·pool 전체 무가격 모
   assert.equal(byId.get('freeonly')!.scoreComponents?.sources?.['price:missing'],undefined);
   const none=run([row('a',IQ,50),row('b',COST,0)],['a','b']); assert.deepEqual(none.list.entries.map(e=>[e.modelId,e.scoreComponents!.cost]),[['a',0],['b',0]],'Cog USD/task도 오케 가격 근거가 아니다');
 });
-test('역할별 가중치는 p85(오케 82/6/12·워커 37.5/0/12.5/50+가산)이며 워커 가격은 cpt·total 평균이다', () => {
+test('역할별 가중치는 사용자 확정(오케 82/6/12·워커 30/20/10/40+가산)이며 워커 가격은 cpt·total 평균이다', () => {
   assert.deepEqual(scoreModule.ROLE_DIMENSION_WEIGHTS,{orchestrator:{performance:.82,usage:.06,speed:.12},worker:ROLE_WEIGHTS.worker});
-  assert.deepEqual(ROLE_WEIGHTS.worker,{performance:.375,usage:0,speed:.125,price:.5});
+  assert.deepEqual(ROLE_WEIGHTS.worker,{performance:.30,usage:.20,speed:.10,price:.40});
   const rows=[row('wa',IQ,70),row('wa',CODE,80,[1,5]),row('wb',IQ,60),row('wb',CODE,80,[.1,.4]),row('wc',IQ,50),row('wc',CODE,80),row('wc',COST,0),row('wc',DUR,1),row('wa',TPS,100),row('wc',OR,1e8)];
   const { byId,refBy }=run(rows,['wa','wb','wc'],[],'worker'); assert.equal(byId.get('wc')!.scoreComponents!.cost,PRICE_MISSING);
   assert.equal(byId.get('wc')!.scoreComponents!.usage,1); assert.equal(byId.get('wc')!.scoreComponents?.sources?.['price:cognition'],undefined);
@@ -81,10 +80,12 @@ test('독립 참조 구현과 의사난수 10모델 풀에서 두 역할의 순�
     if (rnd() < 0.5) rows.push(row(`${id}-${eff}`, COG, rnd())); const ce = () => ['', '-high', '-low'][Math.floor(rnd() * 3)]; if (rnd() < 0.4) rows.push(row(id + ce(), COST, rnd() * 3)); if (rnd() < 0.3) rows.push(row(id + ce(), DUR, 1 + rnd() * 60));
     if (rnd() < 0.6) rows.push(row(id, OR, 10 ** (6 + rnd() * 6))); if (rnd() < 0.4) rows.push(row(id, OC, 10 ** (3 + rnd() * 5))); }
   for (const role of ['orchestrator', 'worker'] as Role[]) {
-    const { list, ref } = run(rows, names, ['modela', 'modelc'], role), cut = Math.max(0, ...ref.map(r => r.score)) * (role === 'worker' ? 0.75 : 0.85); // ref는 워커 성능 하한 통과자만 담는다
-    const want = [...ref.filter(r => r.score >= cut), ...ref.filter(r => r.score < cut)].slice(0, 10);
+    const cap = (id: string) => rows.some(r => (r.modelId === id || r.modelId.startsWith(`${id}-`)) && Number.isFinite(r.priceInput) && Number.isFinite(r.priceOutput) && (3 * r.priceInput! + r.priceOutput!) / 4 > 5); // $5/M 상한: 알려진 AA 혼합 단가 초과는 존과 무관하게 ▽(미상 허용)
+    const { list, ref } = run(rows, names, ['modela', 'modelc'], role), cut = Math.max(0, ...ref.map(r => r.score)) * (role === 'worker' ? 0.60 : 0.85); // ref는 워커 성능 하한 통과자만 담는다
+    const below = (r: { score: number; modelId: string }) => r.score < cut || (role === 'worker' && cap(r.modelId));
+    const want = [...ref.filter(r => !below(r)), ...ref.filter(r => below(r))].slice(0, 10);
     assert.deepEqual(list.entries.map(e => e.modelId), want.map(r => r.modelId), `${role} 순위`);
-    list.entries.forEach((e, k) => { near(score(e), want[k]!.score, `${role} ${e.modelId}`); assert.equal(e.repEffort, want[k]!.effort, `${role} ${e.modelId} effort`); assert.equal(Boolean(e.belowZone), want[k]!.score < cut); });
+    list.entries.forEach((e, k) => { near(score(e), want[k]!.score, `${role} ${e.modelId}`); assert.equal(e.repEffort, want[k]!.effort, `${role} ${e.modelId} effort`); assert.equal(Boolean(e.belowZone), below(want[k]!), `${role} ${e.modelId} zone`); });
   }
 });
 test('워커 하한 33 경계는 포함한다: 33은 남고 32는 빠진다(p85)', () => {

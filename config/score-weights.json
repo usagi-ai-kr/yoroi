@@ -1,5 +1,5 @@
 {
   "orchestrator": { "performance": 0.82, "usage": 0.06, "speed": 0.12 },
-  "worker": { "performance": 0.375, "usage": 0, "speed": 0.125, "price": 0.5 },
+  "worker": { "performance": 0.30, "usage": 0.20, "speed": 0.10, "price": 0.40 },
   "workerBonusCap": 5
 }

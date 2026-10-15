@@ -1,6 +1,6 @@
 import type { ModelGroup } from './letter-top10-group.js';
 /** 최적 존 임계와 역할별 단일 종합 점수 가중치. usage는 OpenRouter 사용량 우선, 미측정이면 OpenCode Data 토큰 보조(2026-10-13 사용자 지시). */
-export const OPTIMAL_ZONE_THRESHOLDS = { orchestrator: 0.85, worker: 0.75 } as const;
+export const OPTIMAL_ZONE_THRESHOLDS = { orchestrator: 0.85, worker: 0.60 } as const;
 /** Legacy heuristic weights; release uses ROLE_DIMENSION_WEIGHTS/SCORE_WEIGHTS instead. */
 export const ROLE_SCORE_WEIGHTS: Readonly<Record<OptimalZoneRole, { index: number; cost: number; usage: number; speed: number }>> = {
   orchestrator: { index: 0.40, cost: 0.40, usage: 0.15, speed: 0.05 },

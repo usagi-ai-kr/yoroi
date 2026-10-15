@@ -19,11 +19,11 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   const data: Top10LetterInput = { publicationDate: '2026-10-12', lists: fakeLists('unified', true), failedSources: ['cognition'] };
   const rendered = renderTop10Letter(data);
   assert.ok(rendered.includes('[AI 인사이트 데일리: 2026-10-12 KST (내부 전용)]'));
-  assert.ok(rendered.includes('두 목록 Top10: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/75%(워커·메신저) 통과 모델, 보유 요금제 접근 가능만'));
+  assert.ok(rendered.includes('두 목록 Top10: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커·메신저) 통과 모델, 보유 요금제 접근 가능만'));
   assert.ok(rendered.includes('정렬: 스코어 내림차순(동점 시 모델명)'));
   assert.ok(rendered.includes('스코어 = 100 × Σ(가중치 × 차원값)'));
   assert.ok(rendered.includes('오케·리뷰어 성능 82%·사용량 6%·속도 12% / 워커'));
-  assert.ok(rendered.includes('워커·메신저 성능 37.5%·속도 12.5%·가격 50%'));
+  assert.ok(rendered.includes('워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%'));
   assert.ok(rendered.includes('워커 intel ≥33(결측 제외); 오케 E=전 변형 풀 표준화·P1 최고점'));
   assert.ok(rendered.includes('속도: 오케 AA·Cog, 워커 AA') && rendered.includes('워커 가격 = cost_per_task·total_cost log 역방향 min-max 평균(없으면 혼합 단가 `*`); 가산 = 5×평균(Cog 정답률·사용량, 있는 것만)'));
   assert.ok(!rendered.includes('오케 가성비') && !rendered.includes('I²/P') && !rendered.includes('성능·가성비 고려'), 'p75: 오케 가성비 문구 없음');
@@ -34,7 +34,7 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)'));
   assert.ok(rendered.includes('- 선두: 오케스트레이터·리뷰어 unified-model-1 (스코어 90.0) · 워커·메신저 unified-model-1 (스코어 90.0)'));
   assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/40/50 · $2.00/1M · 접근 ChatGPT Plus'));
-  assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
+  assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(rendered.includes('3. unified-model-3 · effort high · 스코어 84.0 · 100/40/50 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(!rendered.includes('가성비 1위 · 접근'));
   for (const t of ['➖', '👍']) assert.ok(rendered.includes(t), t);

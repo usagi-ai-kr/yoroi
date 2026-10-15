@@ -39,15 +39,15 @@ const group = (id: string, value: number, cost?: number, orTokens?: number): Mod
     ...(orTokens !== undefined && { openrouterTokens: orTokens }) }])[0]!;
 };
 const ids = (groups: readonly ModelGroup[]) => groups.map(g => g.baseModelId);
-test('the 85%/75% threshold is inclusive exactly at the boundary and excludes below', () => {
+test('the 85%/60% threshold is inclusive exactly at the boundary and excludes below', () => {
   const groups = [group('max', 100, 100), group('at85', 85, 100), group('below85', 84.9, 100),
-    group('at75', 75, 100), group('below75', 74.9, 100)];
+    group('at60', 60, 100), group('below60', 59.9, 100)];
   assert.equal(OPTIMAL_ZONE_THRESHOLDS.orchestrator, 0.85);
-  assert.equal(OPTIMAL_ZONE_THRESHOLDS.worker, 0.75);
+  assert.equal(OPTIMAL_ZONE_THRESHOLDS.worker, 0.60);
   const orch = ids(selectOptimalZone(groups, 'orchestrator').map(s => s.group));
   assert.deepEqual(orch, ['max', 'at85']);
   const work = ids(selectOptimalZone(groups, 'worker').map(s => s.group));
-  assert.deepEqual(work, ['max', 'at85', 'below85', 'at75']);
+  assert.deepEqual(work, ['max', 'at85', 'below85', 'at60']);
 });
 test('inside the zone the normalized composite score ranks the low-cost mid-index model first', () => {
   const groups = [group('max', 100, 100), group('mid', 90, 1), group('low', 86, 10)];
@@ -78,7 +78,7 @@ test('fewer than ten candidates show all rows with below-zone fill; previous com
   const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }], cognitionRecords: [['claude-opus-5-5-max', 0.6], ['gpt-6-1-sol-high', 0.5], ['claude-haiku-5-5-max', 0.4]].map(([modelId, value]) => ({ modelId: String(modelId), metric: 'cognition_correct', value: Number(value) })) });
   assert.equal(lists.orchestrator.entries.length, 3); // 후보 3개라 사용 가능한 행 모두 표시
   assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // p75 82/6/12: 성능만 반영(Opus 1·Haiku .91·GPT .5), 순서 유지
-  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5', 'gpt-6-1-sol', 'claude-haiku-5-5']); // p85 원값 하한 33: intel 96·85·95 모두 통과
+  assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // 사용자 확정 워커 30/20/10/40: Opus 65.0 > Haiku 57.3 > Sol 42.5(보유 플랜 p75 상향, cut=65.0×0.60=39.0)
   assert.ok(lists.orchestrator.entries.some(e => e.isPareto));
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.both, true);
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.both, true, 'intel 95로 워커에도 남는다');

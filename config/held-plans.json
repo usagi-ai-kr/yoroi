@@ -1,0 +1,13 @@
+{
+  "_comment": "User-confirmed held PLAN_CATALOG plan IDs from the tuning simulation; only verified catalog models are matched. zen-free is retained although it currently has no PLAN_CATALOG entry. This is not credential data.",
+  "heldPlanIds": [
+    "chatgpt-plus",
+    "claude-pro",
+    "google-ai-pro",
+    "ollama-cloud-pro",
+    "opencode-go-plus",
+    "zen-free",
+    "antigravity",
+    "cursor"
+  ]
+}

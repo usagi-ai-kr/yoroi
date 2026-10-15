@@ -1,7 +1,8 @@
 import { effortForModel, splitBaseAndEffort } from '../../src/insights/letter-top10-group.js';
 import { normalizeModelName } from '../../src/insights/model-id.js';
 
-/** p85 독립 참조(core/policy 비참조). 워커: 성능 AA intel(원값 하한 33)·속도 AA tok/s·가격=cpt·total 평균(단독·혼합단가 대체)+가산 cap5. 오케 종전 유지. */
+/** p85 독립 참조(core/policy 비참조). 워커: 성능 AA intel(원값 하한 33)·속도 AA tok/s·가격=cpt·total 평균(단독·혼합단가 대체)+가산 cap5.
+ *  2026-10-15 사용자 확정: 워커 가중치 성능 .30·사용량 .20·속도 .10·가격 .40(존 임계 .60·상향 p75·상한 $5/M은 zone·참조 계약 테스트에서 다룬다). 오케 종전 유지. */
 export interface DimRow { readonly modelId: string; readonly modelAlias?: string; readonly metric?: string; readonly value?: number; readonly priceInput?: number; readonly priceOutput?: number }
 export const DIMS = ['performance', 'usage', 'speed', 'price'] as const;
 export type Dim = typeof DIMS[number];
@@ -12,7 +13,7 @@ export const PRICE_MISSING = 0.99, WORKER_FLOOR = 0.70;
 export const WORKER_INTEL_RAW_FLOOR = 33, WORKER_BONUS_CAP = 5;
 export const EQUAL_WEIGHTS: Weights = { performance: 0.25, usage: 0.25, speed: 0.25, price: 0.25 };
 export const ROLE_WEIGHTS: Readonly<Record<Role, Weights>> = {
-  orchestrator: { performance: 0.70, usage: 0.05, speed: 0.10, price: 0.15 }, worker: { performance: 0.375, usage: 0, speed: 0.125, price: 0.5 } };
+  orchestrator: { performance: 0.70, usage: 0.05, speed: 0.10, price: 0.15 }, worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } };
 export const SOURCES = ['aaPerf', 'cogCorrect', 'or', 'ocd', 'aaSpeed', 'cogDuration', 'aaPrice', 'cogCost', 'aaCpt', 'aaTotal'] as const;
 export type Src = typeof SOURCES[number];
 export const DIM_OF: Readonly<Record<Src, Dim>> = { aaPerf: 'performance', cogCorrect: 'performance', or: 'usage', ocd: 'usage', aaSpeed: 'speed', cogDuration: 'speed', aaPrice: 'price', cogCost: 'price', aaCpt: 'price', aaTotal: 'price' };

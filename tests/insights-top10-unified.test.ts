@@ -28,8 +28,8 @@ test('one candidate pool feeds both lists: intersection appears twice, excluded/
   const { orchestrator, worker } = computeRoleTop10(RECORDS, W);
   assert.deepEqual(orchestrator.entries.map(e => [e.modelId, e.scoreText]), [['claude-opus-5-5', '82.0'], ['gpt-6-1-sol', '82.0'], ['claude-haiku-5-5', '0.0']],
     'p75 82/6/12·변형 평가: 가성비가 없어 단가는 점수에 쓰지 않는다 → Opus·GPT 성능 1(동점은 모델명), Haiku 성능 0');
-  assert.deepEqual(worker.entries.map(e => [e.modelId, e.scoreText]), [['gpt-6-1-sol', '58.0'], ['claude-haiku-5-5', '50.0'], ['claude-opus-5-5', '41.7']],
-    'p85 워커 37.5/12.5/50+가산 — intel 기반 성능, Cog는 가산으로만 들어간다');
+  assert.deepEqual(worker.entries.map(e => [e.modelId, e.scoreText]), [['claude-opus-5-5', '67.9'], ['gpt-6-1-sol', '53.7'], ['claude-haiku-5-5', '40.0']],
+    '사용자 확정 워커 30/20/10/40+가산·p75 상향·.60 존 — 가격 차원 풀 [0, .6848, 1]의 p75=.8424로 보유 모델 상향: opus 100×(0.3×1+0.4×.8424)+4.2=67.9, gpt 100×(0.3×.5+0.4×.8424)+5=53.7, haiku 100×(0.4×1)=40.0');
   assert.deepEqual(worker.entries.map(e => e.both), [true, true, true], 'intersection models are marked in both lists');
   assert.deepEqual(orchestrator.entries.map(e => e.both), [true, true, true], 'Haiku도 intel이 있어 워커에 남는다');
   assert.ok(!orchestrator.entries.some(e => e.modelId === 'unlisted-mega-model'), '보유 요금제 미접근');
@@ -39,7 +39,7 @@ test('one candidate pool feeds both lists: intersection appears twice, excluded/
   assert.equal(orchestrator.entries[0]!.rank, 1);
   assert.equal(orchestrator.entries[0]!.indexText, '90.0');
   assert.match(orchestrator.entries[0]!.scoreText ?? '', /^\d+\.\d$/); assert.ok(orchestrator.entries[0]!.scoreComponents);
-  assert.equal(worker.entries[0]!.indexText, '88.0');
+  assert.equal(worker.entries[0]!.indexText, '90.0');
 });
 test('missing OpenRouter rank never renders total tokens as a rank', () => {
   const openrouterRecords = [{ modelId: 'claude-opus-5-5', metric: 'total_tokens', value: 264308530787 }];
@@ -61,7 +61,7 @@ test('a newer accessible model on another metric removes older GPT grades from t
 test('a model below the worker cutoff fills an available row; a solo candidate passes its own zone', () => {
   const lists = computeRoleTop10(RECORDS, W);
   assert.ok(lists.orchestrator.entries.some(e => e.modelId === 'claude-haiku-5-5'));
-  assert.deepEqual(lists.worker.entries.map(e => [e.modelId, e.belowZone]), [['gpt-6-1-sol', undefined], ['claude-haiku-5-5', undefined], ['claude-opus-5-5', true]], 'opus 41.7 < 최고 58.0×.75 fills; Haiku도 intel이 있어 남는다');
+  assert.deepEqual(lists.worker.entries.map(e => [e.modelId, e.belowZone]), [['claude-opus-5-5', undefined], ['gpt-6-1-sol', undefined], ['claude-haiku-5-5', true]], 'haiku 40.0 < 최고 67.9×.60=40.7 → ▽ 보충 행; Haiku도 intel이 있어 남는다');
   const solo = computeRoleTop10([row('claude-haiku-5-5', CODE, 40, [0.8, 4])], { cognitionRecords: cog([['claude-haiku-5-5-max', 0.3]]) });
   assert.deepEqual(solo.worker.entries.map(e => [e.modelId, e.belowZone]), [], 'intel 없으면 워커 후보 자체가 없다(p85)');
   assert.equal(solo.orchestrator.entries[0]!.indexText, '-');
@@ -79,7 +79,7 @@ test('previous comparison and exits are recomputed per list with the same policy
   assert.deepEqual(shrunken.orchestrator.exits.map(x => [x.modelId, x.previousRank]), [['claude-haiku-5-5', 3]]);
   assert.deepEqual(shrunken.worker.exits.map(x => x.modelId), ['claude-haiku-5-5'], 'shrunken 코호트에서 haiku가 빠지면 이탈로 잡힌다');
   assert.deepEqual([...previousRanks(RECORDS).orchestrator], [['claude-opus-5-5', 1], ['gpt-6-1-sol', 2], ['claude-haiku-5-5', 3]], 'AA만: 오케 성능 95% 우선');
-  assert.deepEqual([...previousRanks(RECORDS, W).worker], [['gpt-6-1-sol', 1], ['claude-haiku-5-5', 2], ['claude-opus-5-5', 3]]);
+  assert.deepEqual([...previousRanks(RECORDS, W).worker], [['claude-opus-5-5', 1], ['gpt-6-1-sol', 2], ['claude-haiku-5-5', 3]], '워커 30/20/10/40·p75 상향 순서');
 });
 
 test('successor rows keep the predecessor-index lower bound in both lists', () => {

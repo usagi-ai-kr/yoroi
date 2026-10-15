@@ -4,6 +4,7 @@
 // 판정 로직은 yoroi/signals.js로 분리(설치기와 함께 복사) — 진입점은 import로 결합만 한다.
 import { execFile } from 'node:child_process';
 import { freeScope, shouldRecord } from './yoroi/signals.js';
+import { createRelease } from './yoroi/release.js';
 
 /** [미문서] 훅 이름·payload 필드 접근을 이 어댑터 한 곳에 모은다 — 실측 후 여기만 교체. */
 const ADAPTER = Object.freeze({
@@ -58,6 +59,7 @@ export function createPlugin({ report = defaultReport, now = Date.now } = {}) {
     id: 'yoroi-zen-free',
     setup(ctx) {
       void report(['--loaded', '--marker', 'v2']);
+      const release = createRelease({ report, ctx }); // 성공 해제 경로(후보A): wait→context 확인 후 --ok 1회
       const registrations = [];
       const hook = (name, handler) => { registrations.push(ctx?.session?.hook?.(name, handler)); };
       hook(ADAPTER.hooks.context, event => { const id = ADAPTER.sessionId(event), model = ADAPTER.model(event);
@@ -71,7 +73,7 @@ export function createPlugin({ report = defaultReport, now = Date.now } = {}) {
       });
       hook(ADAPTER.hooks.httpResponse, event => {
         const response = ADAPTER.response(event);
-        if (response?.status !== 429) return;
+        if (response?.status !== 429) { release.onResponse(event); return; } // 2xx·primary·free 세션만 후보(해제 경로)
         const id = ADAPTER.sessionId(event);
         const model = id ? sessions.get(id) : undefined;
         if (!freeScope(model)) return; // 미등록·유료·타 공급자 세션의 429는 무기록(리뷰 (a))

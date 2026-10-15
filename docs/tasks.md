@@ -4,18 +4,9 @@
 - 0.4.0 이전 과거 상세 기록과 이전 운영 상태는 [tasks-pre040.md](tasks-pre040.md) 및 [tasks-archive.md](tasks-archive.md)에 보관한다.
 - main에 직접 push하지 않는다. 모든 변경은 dev → main PR로 병합한다.
 
-## 현재 상태 (2026-10-12)
+## 현재 상태 (2026-10-14)
 
-- 0.8.0: PR #109 머지(`a54af3e`), main CI 38232400154 success, [v0.8.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.0) 발행, 전역 CLI 0.8.0 태그 worktree 설치 완료.
-- 0.8.0의 통합 Top10(#108)은 사용자 의도 오해로 [#111](https://github.com/qus0in/yoroi/issues/111)에서 오케스트레이터/워커 Top10 별도 유지(이중 자격 모델은 양쪽 표시)로 정정 중이다.
-- [#110](https://github.com/qus0in/yoroi/issues/110) 레터는 통합 형식으로 발행됐으므로 0.8.1 준비에서 #111 정정 + #110 갱신본 재발행을 묶어 dev → main PR 예정(package.json 0.8.1).
-- #111 범위: 오케스트레이터·워커 Top10 별도 유지, 교집합은 `↔`; GPT 6.x 세대가 있으면 지표 무관 전체 접근 모델 기준으로 GPT 5.6 luna·terra·sol 제외.
-- Kimi K3 참고 한도(2026-10-12): OpenCode Go Plus 440회/5h 추정([opencode.ai/go](https://opencode.ai/go)); Ollama Cloud Pro 크레딧 $60/월·토큰 차감·동시 3([ollama.com/pricing](https://ollama.com/pricing)).
-- #107 재현 실패 기록: SQLite WAL 동시 오픈 테스트 400라운드, 실패 0회. 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
-- 0.4.0: #89 실환경 스모크 2026-10-11 19:17:56 KST 1회 exit 0 성공, zen:plugin-stale 1건 관측(#77 근거로 계속 관측), #89 및 0.4.0 milestone close 완료.
-- 0.5.0: PR #95 머지(e34f217), main CI 38132032129 success, [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행, 전역 CLI 0.5.0 갱신, #70 close, 0.5.0 milestone close 완료.
-- 0.5.1: PR #98 머지(2536baa), main CI 38141050373 success, [v0.5.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.1) 발행, 전역 CLI 0.5.1 동기화, OpenCode 플러그인 재설치 installed(재시작 대기), #92·#93·#96·#97 close, 0.5.1 milestone close 완료.
-- 0.6.0: [#84](https://github.com/qus0in/yoroi/issues/84) trend(24h·7d 병행) 구현 완료. Top50 수집·Top10 압축 레터(`--full` 상세 유지). [#94](https://github.com/qus0in/yoroi/issues/94) 첫 수동 발행 [#99](https://github.com/qus0in/yoroi/issues/99), 크론 첫 자동 발행 [#100](https://github.com/qus0in/yoroi/issues/100), Top10 갱신본([#100](https://github.com/qus0in/yoroi/issues/100) 댓글 2026-10-12 10:31 KST) 반영 완료. 크론 `yoroi-letter-daily`·`yoroi-weekly-report` 가동. [#77](https://github.com/qus0in/yoroi/issues/77)·[#88](https://github.com/qus0in/yoroi/issues/88) 해제 실관측(2026-10-12 00:22Z) 확인.
+- 0.4.0~0.11.1 발행 완료(PR #91·95·98·101·106·109·112·114·120·122·124·126·128·130·139·143 → main, 전역 CLI 동기화, 이슈·milestone close). 상세 발행 기록은 [release-status.md](release-status.md)에 둔다.
 
 - PR #101 머지(`ae7cd83`), main CI [38203425496](https://github.com/qus0in/yoroi/actions/runs/38203425496): attempt1은 `tests/cli-process.test.ts` 3000ms flaky 실패, attempt2 success. [v0.6.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.6.0) 발행 완료.
 - 전역 CLI 0.6.0은 `v0.6.0` 태그 worktree에서 설치했다. #84·#77·#88 및 0.3.1 milestone close 완료. 0.6.0 milestone은 #94 크론 관측 대기로 open 유지.
@@ -98,3 +89,10 @@
 ## p54 승인 C 통합·p55 후속 (2026-10-14, 커밋 금지)
 - p54 완료(보고 scratch/reports/yoroi-worker-cognition-openrouter.md): 오케75/10/5/10+effort 일관, 워커30/20/10/40+AA API가격·tok/s+성능 하한.70(전체풀 정규화 후). 재분배(o=pW): w3(pR)코어 완료·리뷰 / w1(pS)배선·표시·기존테스트(top10-unified·rank·unmeasured는 w3 이관) / w2(pQ)통합검증·독립참조·docs / w4(pV)순위 교차대조 / o 최종 보고. `scratch/packets/p54-o-dispatch.md`. p55 완료(917/917, 보고 동일 파일): w3 SQLite 잠금 경합(코드 쪽) / w2 오케 가중치 80/15/2.5/2.5 분석·반영 / w1 가중치 테스트 후속 / w4 사용량 limit 표시 / o 결정·보고. `scratch/packets/p55-dispatch.md`. p56 완료(919/919): w4 limit 98% / w3 오케 가성비 I²/P·사용량 제거 코어·최종검증 / w2 가중치 90/0/2.5/7.5 분석·참조·docs / w1 표시·테스트. `scratch/packets/p56-dispatch.md`. p58 후속 통합 완료: 오케 P1 95/0/2.5/2.5·전 effort 변형 점수 최고 대표(동점 낮은 effort, medium 고정 취소), 독립 참조/계약 docs 정정, 두 GPT Sol 독립·effort successor 표시 보호. integration_audit=통합 검증·contract_audit=참조/docs·ranking_audit=순위/식별·root=리뷰/기록. 전체 unit931/931·BDD41/41·typecheck/build·validate 통과, 실입력 오케40/워커18 후보 독립 비교 불일치0. 6.1 Sol 워커 순위는 옵션 누락을 바로잡아14위로 정정. Arena 설계·p59 권고는 결정 대기, 커밋 없음. `scratch/packets/continuation-dispatch.md`. p60 실제 워커 재배정: w1=pR(Sonnet High) 판단종합, w2=p0(DeepSeek max) 독립판단/분리검증, w3=p11(Cat Jam max) 레터, w4=pV(MiMo Flash) 민감도. list/visible 재확인·전원idle, 상세 docs/insights/worker-dispatch.md. 사용자 요청으로 o→agy w12:pR(Opus5.5 Medium) 인계. w2/w3/w4 보고 도착, 종합 최종화·감사·기록은 새 o가 재분배. scratch/packets/yoroi-p60-agy-handoff.md. p61 완료: w3 종합 최종화(p60-w1-synthesis v2, Sol 분리 경고 해제)·w2 p60-w4 감사·w4 p60 w1/w2/w3 감사(미신고 top10-unified 테스트는 기존 변경 판정, successor 지정 3파일 25/25+tsc clean)·w4b 주 보고 append·tasks 갱신. p62 배정 원본은 docs/insights/coord-cli.md(w2 coord.py 구현, w3 규칙 문서, w4 독립 검증·리뷰).
 - p72-w1a: 묶음 6 문서 4개만 커밋 준비(architecture·development·tasks·opencode-v2-migration). 표시/V2 관련 fake 테스트 18/18·레포 검증 PASS, push 없음. 기존 회고 재사용으로 새 스킬 없음.
+
+## 0.12.0 준비 (2026-10-15)
+
+- dev 미커밋 범위: Free publish 가드(#144)·AA partial fallback·xAI 기본 공급자(#132 → #119)·Cursor Plus(#119)·워커 규칙(.30/.20/.10/.40·존 .60·p75 상향·$5/M 상한)·yo 필터(under·n/a·optimal)·`--pretty --full`·zen Reset 추정.
+- 사용자 결정(2026-10-15): D 없이 릴리스. D는 #147(0.13.0·milestone 24)로 분리하고 실행 확인 뒤 1.0.0.
+- 남은 항목: 커밋 묶음 계획과 PR 초안은 scratch/reports/yoroi-m012-release-update.md. 버전 승격·PR은 사용자 요청 시 릴리스 절차로 수행.
+- 0.12.0 회고(2026-10-15): 리뷰 통과분은 사용자 지시에 따라 요청 없이도 작업 단위별로 묶어 커밋한다(파일 지정 add·묶음 계획 선행·동시 착륙 파일 제외). 튜닝은 scratch 시뮬레이터로 기준선 줄 단위 일치와 이웃 안정성을 먼저 확인하고 사용자 확정값만 코드에 반영한다.

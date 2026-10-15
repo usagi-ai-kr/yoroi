@@ -4,6 +4,13 @@
 - main 병합은 dev → main PR로만 진행한다(직접 push 금지).
 - PR 머지 뒤 원격 CI 통과를 확인하고, 버전 갱신 시 `global-cli-update` 스킬과 [docs/global-install.md](global-install.md) 절차로 전역 CLI를 갱신하고 버전 일치를 확인한다.
 
+## 0.12.0 준비 (2026-10-15, dev 미커밋·릴리스 직전)
+
+- 범위(milestone 22): Free 섹션 publish 가드(#144 원인 대응)·AA partial 저장본 fallback·xAI opencode stats 기본 공급자(#132 흡수)·Cursor Plus 카탈로그(#119)·
+  워커 규칙(.30/.20/.10/.40·존 .60·보유 플랜 p75 상향·혼합 단가 $5/M 상한)·yo 필터(under·n/a·optimal, 숨김 provider 행 유지)·`--pretty --full`·zen Reset 추정 표시.
+- 사용자 결정(2026-10-15): D(xAI 구독 사용률) 없이 릴리스. D는 [#147](https://github.com/qus0in/yoroi/issues/147)(0.13.0, [milestone 24](https://github.com/qus0in/yoroi/milestone/24))로 분리하고 실행 확인 뒤 1.0.0으로 판올림한다.
+- 검증: 항목별 리뷰 approve·단위·BDD 통과(작업 트리 동시 변경으로 최종 수치는 릴리스 커밋에서 재확인). PR은 `Closes #119`로 #119를 종료한다. 버전 승격·커밋·PR은 릴리스 절차에서 수행.
+
 ## 0.4.0 머지 및 발행 상태 (2026-10-11)
 
 - PR #91 병합 커밋 `4744fbc8280eab5a02ce42f28ed79555f318ea91`(main).
@@ -69,24 +76,10 @@
 - #107 SQLite WAL 동시 오픈 재현 실패 기록: 400라운드에서 실패 0회.
 - 참고 순위 토큰값 퇴행 수정은 zen 진행 중.
 
-## 0.8.1 발행 및 0.8.2 준비 (2026-10-13)
+## 0.8.1–0.8.3 발행 및 0.8.4 준비 (2026-10-13)
 
-- v0.8.1 발행 완료: PR #112 → main `57b379d`, main CI [38247171932](https://github.com/qus0in/yoroi/actions/runs/38247171932) attempt 2 success, [v0.8.1 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.1), 전역 CLI 0.8.1.
-- 0.8.2 milestone: [#113](https://github.com/qus0in/yoroi/issues/113) 레터 종합 스코어 정렬 및 사용자 피드백 4건, 재오픈한 [#107](https://github.com/qus0in/yoroi/issues/107) SQLite WAL 첫 열기 재시도 수정.
-- 0.8.2는 위 두 이슈를 묶어 dev → main PR 준비 중이다.
-
-## 0.8.2 발행 및 0.8.3 준비 (2026-10-13)
-
-- v0.8.2 발행 완료: PR #114 → main `e631228`, PR/push CI 1회 성공, main CI [38324791859](https://github.com/qus0in/yoroi/actions/runs/38324791859) attempt 1 success, [v0.8.2 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.2).
-- 전역 CLI 0.8.2는 `v0.8.2` 태그 worktree에서 설치했다. #113·#107 close 및 0.8.2 milestone close 완료.
-- 0.8.3 milestone: [#116](https://github.com/qus0in/yoroi/issues/116) Antigravity 요금제 추가. `plan-catalog.ts` 구현은 go1 진행 중이며, 0.8.3 dev → main PR을 준비한다.
-- 0.8.3 범위 확장: [#117](https://github.com/qus0in/yoroi/issues/117) Top10 10행 채움·Free 티어 섹션·표시 안내/이모지·Cursor 요금제·Cognition 1.1·AA FrontierCode 대비·Grok/Kimi 롤백을 추가한다.
-
-## 0.8.3 발행 및 0.8.4 준비 (2026-10-13)
-
-- v0.8.3 발행 완료: PR #120 → main `81b264c`, PR CI 1회 성공, main CI [38332564117](https://github.com/qus0in/yoroi/actions/runs/38332564117) attempt 1 success, [v0.8.3 Release](https://github.com/qus0in/yoroi/releases/tag/v0.8.3), 전역 CLI 0.8.3.
-- 실수집 status는 `all_healthy`로 Cognition 부분 수집 경고가 해소됐다. #116·#117 close 및 0.8.3 milestone close 완료.
-- 0.8.4 milestone: [#121](https://github.com/qus0in/yoroi/issues/121) Cursor 접근 표기 단순화, 구현 go1 진행 중; dev → main PR 준비.
+- v0.8.1(PR #112 → main `57b379d`, CI attempt 2)·v0.8.2(PR #114 → `e631228`)·v0.8.3(PR #120 → `81b264c`) 발행 완료, 전역 CLI 동기화. #113·#107·#116·#117 close 및 0.8.2·0.8.3 milestone close.
+- 상세 근거·CI run 번호는 git log와 [tasks.md](tasks.md) 기록으로 대체한다(중복 정리).
 
 ## 0.8.4–0.10.0 발행 완료 (2026-10-13~14)
 

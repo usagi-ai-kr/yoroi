@@ -29,6 +29,13 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 - [완료] PR #158 머지 `5111378cccf5f2436db0f1fae8c0715e76c94edb`, main CI [38744891994](https://github.com/qus0in/yoroi/actions/runs/38744891994) success, tag `v1.0.0`·Release, 전역 CLI 1.0.0(`update:global --check` exit 0), milestone 23 close.
 - [보존] 미커밋 워커 effort 3파일(`src/insights/letter-top10-score.ts`, `docs/insights/four-source-score.md`, `tests/insights-worker-effort-source.test.ts`)과 `docs/orchestration.md` 타 주체 변경은 1.0 커밋에 넣지 않았고 워킹트리에 유지한다.
 
+## 1.0.1 준비 (patch, 발행 전)
+
+- 근거: 1.0.0 기발행 뒤 Grok 4.6/4.7 세대 예외를 1.0.0 기록 문서와 같은 [PR #159](https://github.com/qus0in/yoroi/pull/159)(dev→main)에 묶는다. 신규 기능·새 milestone 없음.
+- [준비] `package.json` 1.0.1. 범위: 1.0.0 기록 문서 + Grok filter 예외·회귀·정책·비교 문서.
+- [계획] 독립 리뷰 → 경로 지정 커밋·dev push → PR #159 갱신 → 사용자 머지 승인 → main CI → tag `v1.0.1`·Release → 전역 CLI 1.0.1. 레터는 발행된 1.0.1 clean SHA 검증 후 게시.
+- [제외] 1.1 effort 3파일·orchestration·takeover는 보존한다.
+
 ## 1.1.0 후속 (이월, 1.0 제외)
 
 - [이월] 접근 가능 effort 상한(xhigh) 반영: 사용자 실측으로 `muse-spark-1-3`은 max가 없고 xhigh까지만 쓸 수 있다. 현재 추천 effort는 AA 측정 변형에서 오고, 접근 필터는 모델 단위 verified만 본다(`letter-top10-candidates.ts:51-55`).

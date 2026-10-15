@@ -43,6 +43,12 @@
 - 전역 최초 준비는 0.13.3이었다. 설치 시점에 이미 1.0.0 dirty(1.1 effort 혼입)가 있어 clean SHA 재설치 후 1.0.0만 확정했다.
 - [보존] 미커밋 워커 effort 3파일과 `docs/orchestration.md` 타 주체 변경은 1.0 커밋에서 뺐고 워킹트리에 유지한다. 1.1에서 xhigh 상한과 함께 검토한다.
 
+## 1.0.1 준비 (2026-10-15, patch, 발행 전)
+
+- 범위: Grok 4.6/4.7 세대 예외(4.5 제외·Sol 독립 유지) + 1.0.0 기록 문서. 신규 기능·새 milestone 없음.
+- [준비] `package.json` 1.0.1. 기존 [PR #159](https://github.com/qus0in/yoroi/pull/159)에 묶어 제출할 계획. 커밋·push·머지·tag·Release·전역·레터는 이 단계 밖.
+- [제외] 1.1 effort 3파일·orchestration·takeover 보존. 레터는 1.0.1 clean SHA 검증 후 게시.
+
 ## 버전 이력 요약
 
 - 0.1.0–0.6.0 (2026-10-08~12): MVP, Zen Free, watch/cache, 레터, 발행 기록은 [release-history-pre040.md](release-history-pre040.md) 참조.

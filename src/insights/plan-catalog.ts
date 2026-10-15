@@ -1,6 +1,5 @@
-/** 사용자 보유 6개 요금제 → 사용 가능 모델 매핑. 근거는 공식 pricing/플랜 페이지 1회 조회(2026-10-12)이며,
- *  항목마다 sourceUrl·checkedOn·verified를 가진다. 페이지에서 확인되지 않은 모델은 넣지 않는다(보고서 '미확인').
- *  modelId는 AA 정규화 이름(소문자·점→하이픈) 기준이다.
+/** 사용자 보유 요금제 → 사용 가능 모델 매핑. 미확인 모델은 넣지 않는다.
+ *  모델별 sourceUrl·checkedOn·verified 기록. modelId는 AA 정규화 이름(소문자·점→하이픈) 기준이다.
  *  Antigravity: 2026-10-13 사용자 결정("gemini 3.8 flash는 antigravity에 들어있는 셈") + 공식 모델 페이지
  *  (https://antigravity.google/docs/models) 확인으로 추가. 수치 한도는 페이지에 없어(주간/5h 잔여 %만) 미표기. */
 export interface UsageLimit {
@@ -34,11 +33,13 @@ export interface PlanCatalogEntry {
   readonly planName: string;
   readonly models: readonly PlanModelEntry[];
   readonly usagePolicy?: PlanUsagePolicy;
+  readonly price?: string;
+  readonly sharedPoolPeriod?: string;
   /** 무료 전용 플랜(OpenCode Zen Free·Antigravity Free 등). 미설정은 유료 플랜으로 본다. */
   readonly tier?: 'paid' | 'free';
 }
 
-const CHECKED_ON = '2026-10-12', CHECKED_ON_DOCS = '2026-10-13';
+const CHECKED_ON = '2026-10-12', CHECKED_ON_DOCS = '2026-10-13', CHECKED_ON_CURSOR = '2026-10-14';
 const OPENAI = 'https://openai.com/chatgpt/pricing/';
 const ANTHROPIC = 'https://www.anthropic.com/pricing';
 const GOOGLE = 'https://one.google.com/about/google-ai-plans/';
@@ -86,7 +87,8 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     'Claude Opus 5.5 (thinking)|claude-opus-5-5', 'Claude Sonnet 4.6 (thinking)|claude-sonnet-4-6',
     'Claude Opus 4.6 (thinking)|claude-opus-4-6', 'GPT-OSS-120b|gpt-oss-120b']
     .map(s => mDocs(s.split('|')[1]!, s.split('|')[0]!, ANTIGRAVITY)) },
-  { planId: 'cursor', planName: 'Cursor', models: [
-    ...['Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6', 'Grok 4.5|grok-4-5', 'Composer 2.5|composer-2-5']
-      .map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), billing: 'pool' as const }))] },
+  // Higher tiers: Premium $30/4x, Super $100/15x, Ultra $200/50x.
+  { planId: 'cursor', planName: 'Cursor Plus', price: '$8/month', sharedPoolPeriod: 'week', models: [
+    ...['Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6', 'Grok 4.5|grok-4-5']
+      .map(s => ({ ...mDocs(s.split('|')[1]!, s.split('|')[0]!, CURSOR), checkedOn: CHECKED_ON_CURSOR, billing: 'pool' as const }))] },
 ];

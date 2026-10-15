@@ -1,6 +1,7 @@
 # 릴리스 상태와 발행 기록
 
 - 0.4.0 이전 상세 발행 기록(v0.1.0 ~ v0.3.1) 및 과거 인증 검증 사실은 [release-history-pre040.md](release-history-pre040.md)에 보관한다.
+- 0.13.2 정리 과정의 과거 상세 발행 기록은 [tasks-archive-2.md](tasks-archive-2.md)에 보관한다.
 - main 병합은 dev → main PR로만 진행한다(직접 push 금지).
 - PR 머지 뒤 원격 CI 통과를 확인하고, 버전 갱신 시 `global-cli-update` 스킬과 [docs/global-install.md](global-install.md) 절차로 전역 CLI를 갱신하고 버전 일치를 확인한다.
 

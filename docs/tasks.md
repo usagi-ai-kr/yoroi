@@ -2,6 +2,7 @@
 
 - 원격이 없거나 외부 기록이 허가되지 않은 작업은 여기에 기록한다.
 - 0.4.0 이전 과거 상세 기록과 이전 운영 상태는 [tasks-pre040.md](tasks-pre040.md) 및 [tasks-archive.md](tasks-archive.md)에 보관한다.
+- 0.13.2 정리 과정의 과거 상세 이력은 [tasks-archive-2.md](tasks-archive-2.md)에 보관한다.
 - main에 직접 push하지 않는다. 모든 변경은 dev → main PR로 병합한다.
 
 ## 현재 상태 (2026-10-14)

@@ -67,7 +67,7 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
       else {
         let shown = 0;
         visible.forEach((w, index) => {
-          if (!isShownStatus(statuses[index]!, isFull)) return; // --full이 아니면 over·limit 행 생략
+          if (!isShownStatus(statuses[index]!, isFull)) return; // --full이 아니면 n/a 행 생략
           shown += 1;
           const left = formatTimeLeft(w.resetAt, observedAt);
           const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
@@ -77,7 +77,7 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
             formatUsage(w) + expectedSuffix(provider, w, visible, observedAt) +
               (deltaSuffix ? `\n(${deltaSuffix})` : ""), reset]);
         });
-        if (shown === 0) table.push([provider, okText, "-", `숨김 ${visible.length}개(over/limit)`, "-"]);
+        if (shown === 0) table.push([provider, okText, "-", `숨김 ${visible.length}개(n/a)`, "-"]);
       }
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);

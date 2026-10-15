@@ -1,8 +1,8 @@
 import pc from "picocolors";
 import type { UsageStatus } from "./pace.js";
 
-/** 기본 pretty 표는 under·n/a·optimal 창만 표시하고 over·limit는 숨긴다. */
-const SHOWN_STATUSES: ReadonlySet<UsageStatus> = new Set<UsageStatus>(["under", "n/a", "optimal"]);
+/** 기본 pretty 표는 limit·under·optimal·over 4상태만 표시하고 n/a 창은 숨긴다. */
+const SHOWN_STATUSES: ReadonlySet<UsageStatus> = new Set<UsageStatus>(["limit", "under", "optimal", "over"]);
 let fullModeActive = false;
 export const setPrettyFullMode = (enabled: boolean): void => { fullModeActive = enabled; };
 export const isPrettyFullMode = (): boolean => fullModeActive;

@@ -24,7 +24,7 @@ export const ONCE_HELP = [
   "",
   "options:",
   "  --pretty       render visual card layout",
-  "  --full         show all windows in pretty layout, including over and limit",
+  "  --full         show all windows in pretty layout, including n/a",
   "  --refresh      bypass cached usage and collect fresh snapshots",
   "  -h, --help     show help for once subcommand",
   "",

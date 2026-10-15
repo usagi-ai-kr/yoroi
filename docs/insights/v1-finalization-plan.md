@@ -69,24 +69,19 @@
 
 - w1 문서 7개 갱신 완료, 각 100줄 이하. 과거 기록은 신규 이력 문서 2개로 이동·링크 보존.
 - 버전 원본과 xAI 기본 포함 설명을 정정하고 D 완료·1.0 준비·1.1 이월을 구분했다.
-- 0.13.3 병합·CI·전역 설치 완료와 미발행 사실을 분리했다. 1.0 발행은 아직 계획이다.
+- 0.13.3 병합·CI·전역 설치 완료와 미발행 사실을 분리했다(당시 1.0 발행은 계획).
 - w1 validate-repo PASS(627 files, 7 skills), diff 검사·상대 링크·이동 기록 보존 검사 PASS.
 - w2 독립 문서 리뷰 패킷: `/tmp/yoroi-v1-doc-review-w2-packet.json`.
 
-## 최종 제출·발행 순서
+## 최종 제출·발행 (완료)
 
-- 문서 7개 독립 리뷰 및 package.json 버전 변경 독립 리뷰 APPROVE. 격리 검증도 PASS.
-- 1.0 제출: package.json, 운영 문서 5개, 신규 이력 문서 2개, 링크에 필요한 본 계획 문서.
-- 링크 리뷰 승인: 본 계획을 포함한 9파일이 제출 대상이다. 인수 기록·effort 3파일·orchestration.md는 제외한다.
-- 경로를 명시해 커밋해야 한다. 전체 파일 자동 스테이징은 제외 범위를 침범한다.
-- 커밋·push 요청 → dev/main PR CI → 사용자 머지 승인 → main CI → tag·Release·전역 갱신.
-- 준비 완료 후 사용자 후속 요청으로 커밋·push·PR 단계를 진행한다. 외부 발행 사실은 선기록하지 않는다.
+- 문서 7개·package.json 독립 리뷰 APPROVE, 격리 검증 PASS.
+- 제출 9파일(본 계획 포함). 인수 기록·effort 3파일·orchestration.md는 제외. 경로 지정 커밋(자동 스테이징 금지).
+- [완료] PR #158 머지 `5111378cccf5f2436db0f1fae8c0715e76c94edb` → main CI [38744891994](https://github.com/qus0in/yoroi/actions/runs/38744891994) success → [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0) publishedAt 2026-10-15T13:50:05Z, tag 동일 SHA → 전역 CLI 1.0.0 `--check` exit 0 → milestone 23 closed.
 
-## 실행 분배 (사용자 후속 요청)
+## 실행 분배 (완료)
 
-- 사용자 지시: 해당 순서에 따라 워커에게 나눠 진행.
-- w1: 확정 9파일만 커밋·dev push. 제외된 사용자 변경을 그대로 보존한다.
-- w2: PR 본문·릴리스 노트 준비 후, w1 보고 수신 시 원격 diff 독립 확인·PR·CI 담당.
-- w1 패킷 `/tmp/yoroi-v1-land-w1-packet.json`, 보고 `/tmp/yoroi-v1-land-w1-report.json`.
-- w2 패킷 `/tmp/yoroi-v1-pr-prep-w2-packet.json`, 보고 `/tmp/yoroi-v1-pr-prep-w2-report.json`.
-- PR 머지는 구체적인 PR·head·CI 결과를 제시한 뒤 사용자 승인을 받는다.
+- w1 확정 9파일 커밋·dev push: `/tmp/yoroi-v1-land-w1-packet.json`. 제외 변경 보존.
+- w2 PR 본문·노트·원격 diff·PR·CI: `/tmp/yoroi-v1-pr-prep-w2-packet.json`. 머지는 사용자 승인 후.
+- 전역: 최초 준비 0.13.3 → 설치 시 이미 1.0.0 dirty(effort 혼입) → clean SHA 재설치. 최종 1.0.0만 확정.
+- 1.1 xhigh·effort 이월. 미커밋 5파일 보존.

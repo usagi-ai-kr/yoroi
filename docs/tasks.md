@@ -8,16 +8,16 @@
 
 ## 현재 상태 (2026-10-15)
 
-- [완료] 0.13.3 병합: PR #156 → main `21405b0`, main CI 38716576120 success, 전역 CLI 0.13.3.
-- [결정] 별도 0.13.3 tag·Release 생략. 병합 내용은 1.0.0에 포함한다.
-- [완료] D(xAI 구독 사용률) #147 closed. 1.0.0 판올림 선행 조건 충족.
-- [준비] `package.json` 1.0.0(커밋 `57de5b3` 기준, PR 전). 문서 정정 완료, 리뷰 통과.
-- [보존] 미커밋 워커 effort 3파일과 `docs/orchestration.md`는 1.0 커밋에서 뺀다.
+- [완료] 1.0.0 발행: PR #158 머지 `5111378cccf5f2436db0f1fae8c0715e76c94edb`, main CI [38744891994](https://github.com/qus0in/yoroi/actions/runs/38744891994) success, [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0) publishedAt 2026-10-15T13:50:05Z, tag 동일 SHA, 전역 CLI 1.0.0(`--check` exit 0), milestone 23 closed.
+- [완료] 0.13.3 병합: PR #156 → main `21405b0`. 별도 tag·Release 생략, 내용은 1.0.0에 포함.
+- [완료] D(xAI 구독 사용률) #147 closed.
+- [보존] 미커밋 5파일(effort 3·orchestration.md·takeover 기록)은 1.0 커밋에서 뺐고 워킹트리에 유지한다.
+- [준비] 1.0.1 patch: `package.json` 1.0.1. 1.0.0 기록 + Grok 예외를 [PR #159](https://github.com/qus0in/yoroi/pull/159)에 묶을 계획(발행 전).
 
 ## 남은 작업
 
-- [계획] 1.0.0: 독립 리뷰 → dev → main PR → 사용자 승인 뒤 머지 → main CI → tag `v1.0.0`·Release → 전역 CLI 1.0.0 일치 → milestone 23 close.
-- [이월] 1.1.0: 접근 effort 상한(xhigh), 워커 effort 정책 확정, 레터 재발행 판단([roadmap.md](roadmap.md) "1.1.0 후속").
+- [계획] 1.0.1: 독립 리뷰 → 경로 지정 커밋·dev push → PR #159 갱신 → 머지 승인 → main CI → tag·Release → 전역 1.0.1 → 레터는 그 clean SHA 검증 후 게시.
+- [이월] 1.1.0: 접근 effort 상한(xhigh), 워커 effort 정책 확정([roadmap.md](roadmap.md) "1.1.0 후속").
 - [hold] [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지(2026-10-10 사용자 결정).
 - [미착수] PR #86 후속: 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 노출하지 않는다(기록 시점 2026-10-14).
 - [확인] [#157](https://github.com/qus0in/yoroi/issues/157) 레터: open, 내일 확인 대상. 범위 밖으로 유지한다.

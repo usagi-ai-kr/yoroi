@@ -52,3 +52,6 @@ pnpm run update:global
 - 롤백: `pnpm remove -g yoroi` 후 `pnpm run install:global`로 재설치.
 - `.env` 사본: 레포 `.env` 변경 시 `install:global` 재실행이 필요하며, `update:global`도 같은 경로를 재사용한다.
 - origin 미연결 시 `update:global`은 원격 버전 비교 불가 경고를 출력하고 로컬 버전만 확인한다.
+- 버전 문자열이 같아도 dirty 워킹트리의 1.1 effort가 전역 dist에 섞일 수 있다. 갱신은 검증된 clean SHA 트리에서 한다(1.0.0: `5111378cccf5f2436db0f1fae8c0715e76c94edb`).
+- `pnpm add -g` 교체 후 기존 전역 `.env`가 사라질 수 있다. archive에 `.env`가 없어 `copyEnv`가 noop인 것만으로 보존을 단정하지 않는다.
+- 설치 전 기존 전역 `.env`를 값·경로 출력 없이 0600 private 임시사본으로 보호하고, 설치 후 설치물 `.env` 부재와 백업 존재가 동시에 확인될 때만 원자 복원한 뒤 임시사본을 삭제한다.

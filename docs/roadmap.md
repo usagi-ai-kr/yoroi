@@ -19,17 +19,22 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 
 ## 현재 상태 (2026-10-15)
 
-- 버전: `package.json` 1.0.0 준비(커밋 `57de5b3` 기준, PR 전). 직전 발행은 `v0.13.2`다.
-- [완료] 0.13.3 병합: PR #156 → main `21405b0`, main CI [38716576120](https://github.com/qus0in/yoroi/actions/runs/38716576120) success, 전역 CLI 0.13.3 설치.
-- [결정] 별도 0.13.3 tag·Release는 생략한다. 병합 내용은 1.0.0에 포함한다.
-- [완료] D(xAI 구독 사용률) [#147](https://github.com/qus0in/yoroi/issues/147)은 closed(0.13.0 milestone, 일치 확인 후 종료)다. 1.0.0 판올림의 선행 조건을 충족한다.
+- 버전: `package.json` 1.0.0. [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0) 발행(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`, publishedAt 2026-10-15T13:50:05Z).
+- [완료] 0.13.3 병합: PR #156 → main `21405b0`, main CI [38716576120](https://github.com/qus0in/yoroi/actions/runs/38716576120) success. 별도 0.13.3 tag·Release는 생략하고 1.0.0에 포함한다.
+- [완료] D(xAI 구독 사용률) [#147](https://github.com/qus0in/yoroi/issues/147)은 closed(0.13.0 milestone, 일치 확인 후 종료)다.
 
-## 1.0.0 준비 ([1.0.0 milestone](https://github.com/qus0in/yoroi/milestone/23), 발행 전)
+## 1.0.0 발행 완료 ([1.0.0 milestone](https://github.com/qus0in/yoroi/milestone/23) closed)
 
-- 범위: main에 병합된 0.13.3까지의 동작 + 버전 1.0.0 + 현재 운영 문서 정정. 신규 기능은 없다([v1-finalization-plan.md](insights/v1-finalization-plan.md)).
-- [준비] `package.json` 1.0.0과 문서 정정은 커밋 `57de5b3`에 있다. PR 전이다.
-- [계획] 독립 리뷰 → dev → main PR → 사용자 승인 뒤 머지 → main CI success → tag `v1.0.0`·Release → 전역 CLI 1.0.0 일치 → milestone 23 close.
-- [제외] 미커밋 워커 effort 3파일(`src/insights/letter-top10-score.ts`, `docs/insights/four-source-score.md`, `tests/insights-worker-effort-source.test.ts`)과 `docs/orchestration.md` 타 주체 변경은 1.0 커밋에 넣지 않는다.
+- 범위: main에 병합된 0.13.3까지의 동작 + 버전 1.0.0 + 운영 문서 정정. 신규 기능은 없다([v1-finalization-plan.md](insights/v1-finalization-plan.md)).
+- [완료] PR #158 머지 `5111378cccf5f2436db0f1fae8c0715e76c94edb`, main CI [38744891994](https://github.com/qus0in/yoroi/actions/runs/38744891994) success, tag `v1.0.0`·Release, 전역 CLI 1.0.0(`update:global --check` exit 0), milestone 23 close.
+- [보존] 미커밋 워커 effort 3파일(`src/insights/letter-top10-score.ts`, `docs/insights/four-source-score.md`, `tests/insights-worker-effort-source.test.ts`)과 `docs/orchestration.md` 타 주체 변경은 1.0 커밋에 넣지 않았고 워킹트리에 유지한다.
+
+## 1.0.1 준비 (patch, 발행 전)
+
+- 근거: 1.0.0 기발행 뒤 Grok 4.6/4.7 세대 예외를 1.0.0 기록 문서와 같은 [PR #159](https://github.com/qus0in/yoroi/pull/159)(dev→main)에 묶는다. 신규 기능·새 milestone 없음.
+- [준비] `package.json` 1.0.1. 범위: 1.0.0 기록 문서 + Grok filter 예외·회귀·정책·비교 문서.
+- [계획] 독립 리뷰 → 경로 지정 커밋·dev push → PR #159 갱신 → 사용자 머지 승인 → main CI → tag `v1.0.1`·Release → 전역 CLI 1.0.1. 레터는 발행된 1.0.1 clean SHA 검증 후 게시.
+- [제외] 1.1 effort 3파일·orchestration·takeover는 보존한다.
 
 ## 1.1.0 후속 (이월, 1.0 제외)
 

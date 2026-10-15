@@ -10,9 +10,7 @@ export function isExcludedModel(modelId: string): boolean {
   return EXCLUDED_PATTERNS.some(pattern => id.includes(pattern));
 }
 
-/** 연속된 숫자 토큰(중간 포함)을 버전으로 파싱한다(예 claude-opus-5-5 → claude-opus [5,5],
- * gpt-6-1-sol → gpt-sol [6,1], gemini-3-8-flash → gemini-flash [3,8]).
- * 숫자 토큰이 없거나 family가 비면 null → 제외하지 않는다(오판 방지). */
+/** 연속 숫자 토큰을 버전으로 파싱(예 claude-opus-5-5 → claude-opus [5,5]). family 비면 null. */
 export function parseFamilyVersion(baseModelId: string): { family: string; version: readonly number[] } | null {
   const tokens = baseModelId.trim().toLowerCase().split('-');
   const start = tokens.findIndex(token => /^\d+$/.test(token));
@@ -46,35 +44,36 @@ export function vendorLine(family: string): string {
 }
 
 const modelKey = (id: string): string => normalizeModelName(id);
-/** 사용량 초과 시 별도로 선택하는 두 Sol 모델은 버전 교체 대상으로 보지 않는다(2026-10-14 사용자 결정). */
-export const separateGptSolModels = (a: string, b: string): boolean =>
-  new Set([normalizeModelName(a), normalizeModelName(b)]).size === 2 &&
-  ['gpt-6-sol', 'gpt-6-1-sol'].every(id => id === normalizeModelName(a) || id === normalizeModelName(b));
+/** 독립 유지 쌍: GPT 6/6.1 Sol(2026-10-14), Grok 4.6/4.7(2026-10-15). 서로만 세대·후속 제외를 건너뛴다. */
+const SEPARATE_PAIRS = [['gpt-6-sol', 'gpt-6-1-sol'], ['grok-4-6', 'grok-4-7']] as const;
+export const separateGptSolModels = (a: string, b: string): boolean => {
+  const ids = [normalizeModelName(a), normalizeModelName(b)];
+  return new Set(ids).size === 2 && SEPARATE_PAIRS.some(pair => pair.every(id => ids.includes(id)));
+};
 const isGptGrade = (family: string): boolean => {
   const parts = family.split('-');
   return parts[0] === 'gpt' && (GRADE_TOKENS as readonly string[]).includes(parts.at(-1)!);
 };
-/** 같은 family는 전체 버전, GPT 등급끼리는 메이저, 등록된 기본형→등급은 전체 버전을 비교한다. */
-function supersedes(newer: NonNullable<ReturnType<typeof parseFamilyVersion>>,
-  older: NonNullable<ReturnType<typeof parseFamilyVersion>>): boolean {
-  if (newer.family === older.family) {
-    if (newer.family === 'gpt-sol' && separateGptSolModels(
-      `gpt-${newer.version.join('-')}-sol`, `gpt-${older.version.join('-')}-sol`)) return false;
-    return compareVersions(newer.version, older.version) > 0;
+type Parsed = { id: string; pv: NonNullable<ReturnType<typeof parseFamilyVersion>> };
+/** 같은 family는 전체 버전, GPT 등급끼리는 메이저, 등록된 기본형→등급은 전체 버전. */
+function supersedes(newer: Parsed, older: Parsed): boolean {
+  if (newer.pv.family === older.pv.family) {
+    if (separateGptSolModels(newer.id, older.id)) return false;
+    return compareVersions(newer.pv.version, older.pv.version) > 0;
   }
-  if (isGptGrade(newer.family) && isGptGrade(older.family) && vendorLine(newer.family) === vendorLine(older.family) &&
-    (newer.version[0] ?? 0) > (older.version[0] ?? 0)) return true;
-  if (isGptGrade(older.family)) return false;
-  const grades = BASE_MODEL_GRADES[older.family];
-  const parts = newer.family.split('-');
+  if (isGptGrade(newer.pv.family) && isGptGrade(older.pv.family) && vendorLine(newer.pv.family) === vendorLine(older.pv.family) &&
+    (newer.pv.version[0] ?? 0) > (older.pv.version[0] ?? 0)) return true;
+  if (isGptGrade(older.pv.family)) return false;
+  const grades = BASE_MODEL_GRADES[older.pv.family];
+  const parts = newer.pv.family.split('-');
   return grades?.includes(parts.at(-1)!) === true &&
-    parts.slice(0, -1).join('-') === older.family && compareVersions(newer.version, older.version) > 0;
+    parts.slice(0, -1).join('-') === older.pv.family && compareVersions(newer.pv.version, older.pv.version) > 0;
 }
 /** 전체 접근 가능 AA 모델 집합에서 같은 등급은 전체 버전, GPT 교차 등급은 메이저 세대를 비교한다. */
 export function olderGenerationModelIds(modelIds: readonly string[]): ReadonlySet<string> {
   const parsed = modelIds.map(id => ({ id: modelKey(id), pv: parseFamilyVersion(modelKey(id)) }));
-  return new Set(parsed.filter(x => { const pv = x.pv;
-    return pv !== null && parsed.some(y => y.pv !== null && supersedes(y.pv, pv)); }).map(x => x.id));
+  const ok = parsed.filter((x): x is Parsed => x.pv !== null);
+  return new Set(ok.filter(x => ok.some(y => supersedes(y, x))).map(x => x.id));
 }
 
 /** 같은 family의 낮은 버전 및 더 낮은 GPT 메이저를 제외한다. 파싱 불가·동일 세대는 유지한다. */
@@ -83,7 +82,7 @@ export function dropOlderVersions(variants: readonly ModelVariant[]): ModelVaria
   return variants.filter(v => !older.has(modelKey(v.baseModelId)));
 }
 
-/** 후보 파이프라인 1단계: 제외 계열 → 최신 버전만 → off-peak 단가 적용(실행 시각이 off-peak일 때만, 표기 플래그 포함). */
+/** 후보 파이프라인 1단계: 제외 계열 → 최신 버전만 → off-peak 단가(실행 시각이 off-peak일 때만). */
 export function filterCandidates(variants: readonly ModelVariant[],
   overrides: Readonly<Record<string, OffPeakRate>> = OFF_PEAK_RATES,
   nowUtc?: string): ModelVariant[] {

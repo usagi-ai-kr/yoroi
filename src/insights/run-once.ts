@@ -8,7 +8,7 @@ import { runSource, type SourceRun } from './run-source-stored.js';
 import type { ModelPrices } from './letter-top10-price.js';
 import { withSuccessors } from './letter-top10-candidates.js';
 import { buildAaTop10Inputs, buildPreviousRanks, previousOpenCodeDataTop10Records } from './letter-top10-history.js';
-import { getDailyWithLegacyFallback } from './legacy-scopes.js';
+import { getDailyWithLegacyFallback, LEGACY_REQUEST_SCOPES } from './legacy-scopes.js';
 import { buildCognitionTop10Records, buildPreviousCognitionTop10Records } from './cognition-top10.js';
 import type { InsightSourcePort } from './source-port.js';
 export interface InsightRunDeps {
@@ -57,10 +57,13 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
     return run && run.report.status !== 'failed' && run.report.partial !== true && (run.report.rejectedRows ?? 0) === 0; };
   const aa = withSuccessors(success('artificial-analysis')?.records ?? []);
   const first = aa[0]?.record, records = buildAaTop10Inputs(aa);
-  let previous: InsightSuccess | undefined;  try { previous = first && getDailyWithLegacyFallback(deps.history, { source: 'artificial-analysis',
-    publicationDate: shiftInsightDate(publicationDate, -1),
-    requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'],
-    schemaVersion: first.schemaVersion }) || undefined; } catch { previous = undefined; }
+  let previous: InsightSuccess | undefined;  try {
+    const k = { source: 'artificial-analysis' as const, publicationDate: shiftInsightDate(publicationDate, -1),
+      requestScope: deps.requestScopes?.['artificial-analysis'] ?? DEFAULT_REQUEST_SCOPES['artificial-analysis'], schemaVersion: first!.schemaVersion };
+    const h = deps.history as { getDaily(key: typeof k, o?: { readonly includePartial?: boolean }): InsightSuccess | undefined };
+    previous = (first && (h.getDaily(k, { includePartial: true }) ??
+      LEGACY_REQUEST_SCOPES['artificial-analysis']?.map(s => h.getDaily({ ...k, requestScope: s }, { includePartial: true })).find(Boolean) ??
+      getDailyWithLegacyFallback(deps.history, k))) || undefined; } catch { previous = undefined; }
   const orRecords = intact('openrouter') ? (success('openrouter')?.records ?? []) : [];
   const latest = orRecords.map(v => v.comparisonDate).filter((date): date is string => date !== null).sort().at(-1) ?? null;
   const openrouterRecords = orRecords.filter(v => v.record.metric === 'total_tokens' && v.comparisonDate === latest && !isAggregateRow(v)).map(v => top10Row(v, 'total_tokens'));

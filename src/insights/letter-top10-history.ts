@@ -32,7 +32,9 @@ export function buildAaTop10Inputs(records: readonly ValidatedInsightRecord[]): 
 }
 export function previousTop10SourceRows(history: InsightHistoryPort, source: ValidatedInsightRecord['record']['source'],
   publicationDate: string, requestScope: string, schemaVersion: string): readonly ValidatedInsightRecord[] {
-  try { return getDailyWithLegacyFallback(history, { source, publicationDate: shiftInsightDate(publicationDate, -1), requestScope, schemaVersion })?.records ?? []; }
+  const k = { source, publicationDate: shiftInsightDate(publicationDate, -1), requestScope, schemaVersion };
+  const h = history as { getDaily(key: typeof k, o?: { readonly includePartial?: boolean }): InsightSuccess | undefined };
+  try { return (h.getDaily(k, { includePartial: true }) ?? getDailyWithLegacyFallback(history, k))?.records ?? []; }
   catch { return []; }
 }
 export function previousOpenCodeDataTop10Records(history: InsightHistoryPort, publicationDate: string,

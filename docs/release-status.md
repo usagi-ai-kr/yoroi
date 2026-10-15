@@ -19,24 +19,15 @@
 
 - 범위(minor, [versioning.md](versioning.md) 근거: xAI 구독 주간 billing 수집·Zen Free V2 판정/해제): `34e6eb5` xAI billing 주간 사용량·`b8ef7b1`/`d30f6ee` Zen V2 free 판정 분리·성공 해제. [PR #150](https://github.com/qus0in/yoroi/pull/150) 머지 `ec8c4f4`로 main 반영, 버전 승격 `0.12.1` → `0.13.0`(`v0.13.0` tag 예정) — tag·Release·milestone close·전역 CLI는 미수행. [#147](https://github.com/qus0in/yoroi/issues/147)(웹 풀 일치 비교 남아) open 유지·별도 해소, [#151](https://github.com/qus0in/yoroi/issues/151) 위키 최신화는 별도.
 
-## 0.4.0 머지 및 발행 상태 (2026-10-11)
+## 0.13.1 준비 (2026-10-15, 미발행·머지 대기)
 
-- PR #91 병합 커밋 `4744fbc8280eab5a02ce42f28ed79555f318ea91`(main).
-- main CI [run 38125929202](https://github.com/qus0in/yoroi/actions/runs/38125929202) success.
-- 전역 CLI 동기화: `global 0.3.1 → 0.4.0` 갱신 완료 (`node scripts/update-global.mjs --check` exit 0, `yoroi --version` 0.4.0).
-- **v0.4.0 Release 관측 및 유지**: 별도 작업에서 [v0.4.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.4.0)가 2026-10-11T08:53:27Z(17:53 KST) qus0in 계정으로 발행되었음이 확인됨(tag target: `4744fbc8280eab5a02ce42f28ed79555f318ea91`, git ls-remote 검증). 사용자 지시에 따라 v0.4.0 재발행이나 기존 tag/Release 변경을 금지한다.
-- **실환경 detect 스모크 완료 및 0.4.0 마감**: 실환경 `yoroi detect` 스모크 1회(2026-10-11 19:17:56 KST, exit 0) 수행 완료, `zen:plugin-stale` 1건 관측([#77](https://github.com/qus0in/yoroi/issues/77) 근거 유지). [#89](https://github.com/qus0in/yoroi/issues/89) 및 Milestone 10(0.4.0) close 완료.
+- 범위(patch, [versioning.md](versioning.md) 근거: 인사이트 레터 전일 AA 비교 오류 수정): `21918fe` 전일 AA 비교 조회 시 `includePartial: true` 전달로 complete=0(partial) 저장본도 비교 기준 랭크 산출에 허용(#146). 레터 재발행 예정. 버전 승격 `0.13.0` → `0.13.1`(`v0.13.1` tag 예정).
 
-## 0.5.0 머지 및 발행 완료 (2026-10-11)
+## 0.4.0·0.5.0 발행 완료 (2026-10-11)
 
-- PR [#95](https://github.com/qus0in/yoroi/pull/95) 병합 커밋 `e34f2178ad33b3a72661858a74e0d9b4db0c3d9a`(main).
-- main CI [run 38132032129](https://github.com/qus0in/yoroi/actions/runs/38132032129) success.
-- [v0.5.0 Release](https://github.com/qus0in/yoroi/releases/tag/v0.5.0) 발행 완료 (target `e34f2178ad33b3a72661858a74e0d9b4db0c3d9a`).
-- 전역 CLI 0.5.0 동기화 완료.
-- [#70](https://github.com/qus0in/yoroi/issues/70) close 및 Milestone 0.5.0 close 완료.
-- 검증 기준은 OpenRouter와 Cognition 2소스다(유효 metric 각 1,530건, Cognition 탈락 20행 부분 수집). 네 소스 E2E 완전 통과는 주장하지 않는다.
-- Arena·Artificial Analysis는 단일 요청 예산(`maxRequests=1`)에서 페이지 완전성 실패였다. 4소스 코드 지원은 유지하고 [#92](https://github.com/qus0in/yoroi/issues/92)(Arena)·[#93](https://github.com/qus0in/yoroi/issues/93)(AA)로 분리했다.
-- 완료 기준 5·6(Hermes 매일 실행·전달 검증, 운영 문서화)은 [#94](https://github.com/qus0in/yoroi/issues/94)로 분리하고 [#92](https://github.com/qus0in/yoroi/issues/92)·[#93](https://github.com/qus0in/yoroi/issues/93)과 함께 [0.5.1](https://github.com/qus0in/yoroi/milestone/11)에 배정했다(2026-10-11 사용자 결정).
+- v0.4.0: PR #91 병합(main `4744fbc`), CI success, 전역 CLI 0.4.0, Release 발행, detect 스모크 및 milestone 10 close.
+- v0.5.0: PR #95 병합(main `e34f217`), CI success, 전역 CLI 0.5.0, Release 발행, milestone 0.5.0 close.
+
 ## 0.11.1 머지 및 발행 완료 (2026-10-14)
 
 - PR [#143](https://github.com/qus0in/yoroi/pull/143) 병합 커밋 `acab7dbbd37c4d614c0284d44563b865262c88fa`(main).

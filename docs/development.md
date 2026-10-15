@@ -1,7 +1,7 @@
 # 개발과 검증
 
 Yoroi는 AI 사용량 모니터링 CLI다. Node 24.13.1·pnpm 12.10.1을 고정한다. TypeScript strict/NodeNext ESM을 사용하며 단위·통합은 node:test, BDD는 Cucumber다.
-버전 원본은 `package.json`의 `0.5.0`이며 [0.5.0 milestone](https://github.com/qus0in/yoroi/milestone/7)(#70)과 연결한다. tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
+버전 원본은 `package.json`이다. 현재 버전은 `package.json`을, tag·Release 발행 기록은 [release-status.md](release-status.md)를 따른다.
 
 ## 앱 실행과 검증
 
@@ -56,7 +56,7 @@ pnpm run check
 - OpenCode Go는 `YOROI_OPENCODE_GO_API_KEY`가 필요하다.
 - Ollama는 기본 `$HOME/.ollama/id_ed25519`를 사용한다.
   `YOROI_OLLAMA_PRO_SIGNING_KEY_PATH`로 서명 키 경로를 변경한다. Bearer 토큰과 다르다.
-- xAI(SuperGrok)는 `YOROI_PROVIDERS=xai` 명시 시 로컬 OAuth 자격으로 billing API를 조회한다(기본 제외).
+- xAI(SuperGrok)는 기본 공급자에 포함된다(0.13.3에서 복원). 로컬 OAuth 자격으로 billing API를 조회하며, `YOROI_PROVIDERS`를 명시하고 xai를 빼면 제외된다.
   주간 사용률(`weekly` percent)과 리셋 시각을 보고하며 토큰 갱신은 하지 않는다.
 - credential은 로그·오류·fixture에 출력하지 않는다. 개인 사용량 원본은 저장하지 않는다.
 - HTTP 응답은 1MiB까지 읽으며 초과 시 본문 스트림을 취소하고 unavailable로 정규화한다.

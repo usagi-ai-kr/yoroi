@@ -21,7 +21,7 @@ function setup(sources: readonly UsageSource[]) {
   return { cli, stdout, stderr };
 }
 
-test("once prints all 5 providers with observedAt in stable order and succeeds", async () => {
+test("once prints all 6 providers with observedAt in stable order and succeeds", async () => {
   const { cli, stdout } = setup(providers.map(ok));
   assert.equal(await cli.run(["once"]), 0);
   assert.deepEqual(stdout, providers.map((provider) =>

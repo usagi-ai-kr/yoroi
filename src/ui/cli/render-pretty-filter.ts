@@ -1,9 +1,14 @@
 import pc from "picocolors";
 import type { UsageStatus } from "./pace.js";
 
-/** p83: pretty 표에서 생략하는 상태. 조치가 필요한 under·over·limit만 남긴다. */
-const HIDDEN_STATUSES: ReadonlySet<UsageStatus> = new Set<UsageStatus>(["n/a", "optimal"]);
-export const isShownStatus = (status: UsageStatus): boolean => !HIDDEN_STATUSES.has(status);
+/** 기본 pretty 표는 under·n/a·optimal 창만 표시하고 over·limit는 숨긴다. */
+const SHOWN_STATUSES: ReadonlySet<UsageStatus> = new Set<UsageStatus>(["under", "n/a", "optimal"]);
+let fullModeActive = false;
+export const setPrettyFullMode = (enabled: boolean): void => { fullModeActive = enabled; };
+export const isPrettyFullMode = (): boolean => fullModeActive;
+
+export const isShownStatus = (status: UsageStatus, full = false): boolean =>
+  full || fullModeActive || SHOWN_STATUSES.has(status);
 
 /** 표에 행이 하나도 남지 않을 때(오류·zen-free 행 포함) 표 대신 내는 한 줄. */
 export const EMPTY_PRETTY_LINE = "표시할 항목 없음";

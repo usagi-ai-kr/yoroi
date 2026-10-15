@@ -26,7 +26,7 @@ test("ollama-pro plain shows only the monthly window labeled m and hides the res
 });
 
 test("ollama-pro pretty renders only the monthly row while keeping the table intact", () => {
-  const lines = renderPretty([legacy]);
+  const lines = renderPretty([legacy], undefined, { full: true });
   const text = lines.join("\n");
 
   assert.ok(text.includes(" m "));
@@ -50,7 +50,7 @@ test("current ollama schema hides activity and purchased credits rows but keeps 
     { id: "activity:7d:output_tokens", unit: "tokens", used: 30 },
   ]) };
   const lines = renderResults([result]);
-  const pretty = renderPretty([result]).join("\n");
+  const pretty = renderPretty([result], undefined, { full: true }).join("\n");
 
   assert.equal(lines[0], `ollama-pro: ok observed=${observedAt} windows=1`);
   assert.ok(lines.some((line) => line.startsWith("  - m [USD] ")));

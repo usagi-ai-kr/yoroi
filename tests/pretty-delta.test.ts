@@ -8,7 +8,7 @@ import type { UsageDelta } from "../src/domain/usage-delta-types.js";
 
 const observedAt = "2026-10-07T05:30:00.000Z";
 const snapshot = createSnapshot("codex", observedAt, [
-  { id: "weekly", unit: "tokens", used: 1200, limit: 5000, percent: 24, resetAt: "2026-10-14T00:00:00Z" },
+  { id: "weekly", unit: "tokens", used: 100, limit: 5000, percent: 2, resetAt: "2026-10-14T00:00:00Z" },
 ]);
 const NBSP = "\u00A0";
 const base = { status: "delta" as const, observedAt,

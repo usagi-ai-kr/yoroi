@@ -53,7 +53,7 @@ test("renderPretty appends time left to the Reset (KST) column", () => {
   const result: UsageResult = {
     provider: "codex",
     snapshot: createSnapshot("codex", observedAt, [
-      { id: "weekly", unit: "requests", percent: 30, resetAt: "2026-10-14T00:00:00Z" },
+      { id: "weekly", unit: "requests", percent: 2, resetAt: "2026-10-14T00:00:00Z" },
       { id: "daily", unit: "requests", percent: 5 },
     ]),
   };

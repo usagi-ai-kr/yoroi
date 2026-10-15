@@ -10,10 +10,9 @@ import type { ZenLockState } from "../../app/zen-lock-port.js";
 import { zenFreeRow } from "./zen-free.js";
 import { resultMeta } from "../../app/usage-result-meta.js";
 import { formatDelta, formatCacheHit } from "./delta-format.js";
-import { EMPTY_PRETTY_LINE, formatStatus, isShownStatus, prettyColWidths } from "./render-pretty-filter.js";
+import { EMPTY_PRETTY_LINE, formatStatus, isShownStatus, isPrettyFullMode, prettyColWidths } from "./render-pretty-filter.js";
 
 export { formatStatus };
-
 export { renderResult, renderResults } from "./display.js";
 
 export function formatResetTime(iso?: string): string {
@@ -44,7 +43,9 @@ export function formatUsage(window: UsageWindow): string {
   return "-";
 }
 
-export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockState | null): string[] {
+export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockState | null,
+  options?: boolean | { full?: boolean | undefined }): string[] {
+  const isFull = typeof options === "boolean" ? options : Boolean(options?.full ?? isPrettyFullMode());
   const useColor = Boolean(pc.isColorSupported && process.env.FORCE_COLOR !== "0");
   const colors = pc.createColors(useColor);
   const head = ["Provider", "Status", "Window", "Usage", "Reset (KST)"];
@@ -63,17 +64,21 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
       const statuses = visible.map((w) => usageStatus(provider, w, visible, observedAt));
       if (visible.length === 0) table.push([provider, okText, "(none)",
         hidden > 0 ? `${hidden} hidden` : "-", "-"]);
-      else visible.forEach((w, index) => {
-        if (!isShownStatus(statuses[index]!)) return; // p83: n/a·optimal 행 생략(전부 생략되면 공급자 블록도 없음)
-        const left = formatTimeLeft(w.resetAt, observedAt);
-        const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
-        const status = formatStatus(useColor, statuses[index]!);
-        const delta = deltas?.[w.id];
-        const deltaSuffix = delta ? formatDelta(delta, w.unit) : undefined;
-        table.push([provider, status, labels[index]!,
-          formatUsage(w) + expectedSuffix(provider, w, visible, observedAt) +
-            (deltaSuffix ? `\n(${deltaSuffix})` : ""), reset]);
-      });
+      else {
+        let shown = 0;
+        visible.forEach((w, index) => {
+          if (!isShownStatus(statuses[index]!, isFull)) return; // --full이 아니면 over·limit 행 생략
+          shown += 1;
+          const left = formatTimeLeft(w.resetAt, observedAt);
+          const reset = formatResetTime(w.resetAt) + (left ? ` (${left})` : "");
+          const delta = deltas?.[w.id];
+          const deltaSuffix = delta ? formatDelta(delta, w.unit) : undefined;
+          table.push([provider, formatStatus(useColor, statuses[index]!), labels[index]!,
+            formatUsage(w) + expectedSuffix(provider, w, visible, observedAt) +
+              (deltaSuffix ? `\n(${deltaSuffix})` : ""), reset]);
+        });
+        if (shown === 0) table.push([provider, okText, "-", `숨김 ${visible.length}개(over/limit)`, "-"]);
+      }
     } else {
       const err = colors.red(`[${r.error.code}] ${r.error.message}`);
       table.push([r.provider, err, "-", "-", "-"]);
@@ -81,7 +86,9 @@ export function renderPretty(results: readonly UsageResult[], zenFree?: ZenLockS
   }
   if (zenFree !== undefined) {
     const zen = zenFreeRow(zenFree);
-    table.push(["opencode-zen-free", zen.status, "-", zen.detail, "-"]);
+    const suffix = zen.resetPassed ? "(passed)" : zen.timeLeft ? `(${zen.timeLeft})` : "";
+    const reset = zen.resetAt ? `~${formatResetTime(zen.resetAt)}${suffix ? ` ${suffix}` : ""}` : "-";
+    table.push(["opencode-zen-free", zen.status, "-", zen.detail, reset]);
   }
   const cache = results.flatMap(r => {
     const meta = resultMeta(r)?.cache;

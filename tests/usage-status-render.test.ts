@@ -39,18 +39,18 @@ test("missing expected or actual ratio stays n/a", () => {
 });
 
 test("pretty Status column shows ok plus the status inside 22 columns", () => {
-  const result = plain(win({ id: "weekly", percent: 95, resetAt }));
+  const result = plain(win({ id: "weekly", percent: 3, resetAt }));
   const lines = renderPretty([result]);
   const text = stripVTControlCharacters(lines.join("\n"));
 
-  assert.match(text, /│ opencode-go │ ok over\s*│ w\s*│/);
+  assert.match(text, /│ opencode-go │ ok under\s*│ w\s*│/);
   const widths = lines.map((line) => stripVTControlCharacters(line).length);
   assert.equal(new Set(widths).size, 1);
   assert.equal(stripVTControlCharacters(lines[1]!).split("│")[2]!.trim().length <= 22, true);
 });
 
 test("pretty header puts Status right after Provider", () => {
-  const lines = renderPretty([plain(win({ id: "weekly", percent: 95, resetAt }))]);
+  const lines = renderPretty([plain(win({ id: "weekly", percent: 3, resetAt }))]);
   const cells = stripVTControlCharacters(lines[1]!).split("│").map((cell) => cell.trim());
 
   assert.equal(cells[1], "Provider");
@@ -71,7 +71,7 @@ test("formatStatus colors each status and keeps the ok prefix", () => {
 
 test("limit renders as red ok limit in pretty and usage_status=limit in plain", () => {
   const weekly = win({ id: "weekly", percent: 99, resetAt });
-  const lines = renderPretty([plain(weekly)]);
+  const lines = renderPretty([plain(weekly)], undefined, { full: true });
   const text = stripVTControlCharacters(lines.join("\n"));
 
   assert.equal(statusOf(weekly), "limit");

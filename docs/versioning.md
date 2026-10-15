@@ -46,8 +46,8 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
 
 ## 현재 운영 현황 (2026-10-15)
 
-- 버전: `package.json` 1.0.1 준비(`--bump patch --apply`). [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0)은 발행됨(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`, publishedAt 2026-10-15T13:50:05Z). `v1.0.1`은 발행 전이다.
-- tag·Release: `v0.1.0`~`v0.13.2`에 이어 `v1.0.0` 발행. 0.13.3은 별도 tag·Release 없이 1.0.0에 포함한다.
+- 버전: `package.json` 1.0.1. [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0)은 발행됨(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`, publishedAt 2026-10-15T13:50:05Z). [Release v1.0.1](https://github.com/qus0in/yoroi/releases/tag/v1.0.1) 발행(target `c7c403eec32e5cc73a98f3a2852df3fd75833e4e`, publishedAt 2026-10-15T14:47:25Z).
+- tag·Release: `v0.1.0`~`v0.13.2`에 이어 `v1.0.0`·`v1.0.1` 발행. 0.13.3은 별도 tag·Release 없이 1.0.0에 포함한다.
 - milestone: `1.0.0`(23) closed. 1.0.1은 새 milestone을 만들지 않는다. 0.x는 모두 closed다.
 - 발행 순서와 기준은 위 §릴리스 순서를 따른다. 상세 기록은 [release-status.md](release-status.md)와 [roadmap.md](roadmap.md)에 있다.
 

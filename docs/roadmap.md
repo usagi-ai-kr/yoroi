@@ -19,7 +19,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 
 ## 현재 상태 (2026-10-15)
 
-- 버전: `package.json` 1.0.0. [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0) 발행(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`, publishedAt 2026-10-15T13:50:05Z).
+- 버전: `package.json` 1.0.1. [Release v1.0.1](https://github.com/qus0in/yoroi/releases/tag/v1.0.1) 발행(target `c7c403eec32e5cc73a98f3a2852df3fd75833e4e`). 직전 [v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0)(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`).
 - [완료] 0.13.3 병합: PR #156 → main `21405b0`, main CI [38716576120](https://github.com/qus0in/yoroi/actions/runs/38716576120) success. 별도 0.13.3 tag·Release는 생략하고 1.0.0에 포함한다.
 - [완료] D(xAI 구독 사용률) [#147](https://github.com/qus0in/yoroi/issues/147)은 closed(0.13.0 milestone, 일치 확인 후 종료)다.
 
@@ -29,11 +29,11 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 - [완료] PR #158 머지 `5111378cccf5f2436db0f1fae8c0715e76c94edb`, main CI [38744891994](https://github.com/qus0in/yoroi/actions/runs/38744891994) success, tag `v1.0.0`·Release, 전역 CLI 1.0.0(`update:global --check` exit 0), milestone 23 close.
 - [보존] 미커밋 워커 effort 3파일(`src/insights/letter-top10-score.ts`, `docs/insights/four-source-score.md`, `tests/insights-worker-effort-source.test.ts`)과 `docs/orchestration.md` 타 주체 변경은 1.0 커밋에 넣지 않았고 워킹트리에 유지한다.
 
-## 1.0.1 준비 (patch, 발행 전)
+## 1.0.1 발행 완료 (patch, 2026-10-15)
 
-- 근거: 1.0.0 기발행 뒤 Grok 4.6/4.7 세대 예외를 1.0.0 기록 문서와 같은 [PR #159](https://github.com/qus0in/yoroi/pull/159)(dev→main)에 묶는다. 신규 기능·새 milestone 없음.
-- [준비] `package.json` 1.0.1. 범위: 1.0.0 기록 문서 + Grok filter 예외·회귀·정책·비교 문서.
-- [계획] 독립 리뷰 → 경로 지정 커밋·dev push → PR #159 갱신 → 사용자 머지 승인 → main CI → tag `v1.0.1`·Release → 전역 CLI 1.0.1. 레터는 발행된 1.0.1 clean SHA 검증 후 게시.
+- 근거: 1.0.0 기발행 뒤 Grok 4.6/4.7 세대 예외를 1.0.0 기록 문서와 [PR #159](https://github.com/qus0in/yoroi/pull/159)(dev→main)에 묶었다. 신규 기능·새 milestone 없음.
+- [완료] PR #159 머지 `c7c403eec32e5cc73a98f3a2852df3fd75833e4e`, main CI [38753176387](https://github.com/qus0in/yoroi/actions/runs/38753176387)(attempt 1 lease flaky 실패·attempt 2 success), tag `v1.0.1`·[Release](https://github.com/qus0in/yoroi/releases/tag/v1.0.1)(publishedAt 2026-10-15T14:47:25Z, 동일 SHA), 전역 CLI 1.0.1(`--check` exit 0, clean 재설치).
+- [완료] 레터 갱신: [#160](https://github.com/qus0in/yoroi/issues/160)(Grok 4.6, 4.6행 GET 확인) 발행 후 #157 댓글·close. #157과 차이 원인 미확정 유지.
 - [제외] 1.1 effort 3파일·orchestration·takeover는 보존한다.
 
 ## 1.1.0 후속 (이월, 1.0 제외)

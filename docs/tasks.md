@@ -12,15 +12,15 @@
 - [완료] 0.13.3 병합: PR #156 → main `21405b0`. 별도 tag·Release 생략, 내용은 1.0.0에 포함.
 - [완료] D(xAI 구독 사용률) #147 closed.
 - [보존] 미커밋 5파일(effort 3·orchestration.md·takeover 기록)은 1.0 커밋에서 뺐고 워킹트리에 유지한다.
-- [준비] 1.0.1 patch: `package.json` 1.0.1. 1.0.0 기록 + Grok 예외를 [PR #159](https://github.com/qus0in/yoroi/pull/159)에 묶을 계획(발행 전).
+- [완료] 1.0.1 patch: PR #159 머지 `c7c403ee`, main CI attempt 2 success, tag `v1.0.1`·Release(동일 SHA), 전역 1.0.1, 레터 [#160](https://github.com/qus0in/yoroi/issues/160) 발행 후 #157 close.
 
 ## 남은 작업
 
-- [계획] 1.0.1: 독립 리뷰 → 경로 지정 커밋·dev push → PR #159 갱신 → 머지 승인 → main CI → tag·Release → 전역 1.0.1 → 레터는 그 clean SHA 검증 후 게시.
+- [완료] 1.0.1: tag·Release·전역 1.0.1, 레터 #160 발행·#157 close.
 - [이월] 1.1.0: 접근 effort 상한(xhigh), 워커 effort 정책 확정([roadmap.md](roadmap.md) "1.1.0 후속").
 - [hold] [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지(2026-10-10 사용자 결정).
 - [미착수] PR #86 후속: 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 노출하지 않는다(기록 시점 2026-10-14).
-- [확인] [#157](https://github.com/qus0in/yoroi/issues/157) 레터: open, 내일 확인 대상. 범위 밖으로 유지한다.
+- [#157](https://github.com/qus0in/yoroi/issues/157) 레터는 #160 후속 게시 뒤 closed. 차이 원인 미확정.
 
 ## 0.12.0 준비 (2026-10-15)
 

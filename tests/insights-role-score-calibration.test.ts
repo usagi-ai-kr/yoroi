@@ -11,7 +11,8 @@ const RECORDS: readonly Top10RecordInput[] = [
   row('claude-opus-5-5', INTEL, 90, [1.5, 7]), row('claude-opus-5-5', CODE, 70, [1.5, 7]),
   row('gpt-6-1-sol', INTEL, 88, [1.1, 4.4]), row('gpt-6-1-sol', CODE, 80, [1.1, 4.4]),
   row('claude-haiku-5-5', INTEL, 86, [0.8, 4]), row('claude-haiku-5-5', CODE, 40, [0.8, 4]),
-];
+  row('gemini-3-1-pro', INTEL, 84, [1, 1]), row('gemini-3-1-pro', CODE, 60, [1, 1]),
+]; // 1.2.1: haiku는 오케 밴(워커 유지)이라 오케 모집단 n=3(sol·opus·gemini)으로 중앙 50 검증
 const cog = (pairs: readonly (readonly [string, number])[]) =>
   pairs.map(([modelId, value]) => ({ modelId, metric: 'cognition_correct', value }));
 const W = { cognitionRecords: cog([['gpt-6-1-sol-high', 0.6], ['claude-opus-5-5-max', 0.55], ['claude-haiku-5-5-max', 0.3]]) };

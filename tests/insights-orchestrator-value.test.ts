@@ -21,10 +21,10 @@ test('valueForMoney is linear I/(P+.01): no square, guards for missing and non-p
 
 test('display calibration: raw preserved, scoreText is normal-rank (n=1→50, n=2→56.7/43.3)', () => {
   const one = computeRoleTop10([{ modelId: 'solo', metric: 'artificial_analysis_intelligence_index', value: 80, priceInput: 1, priceOutput: 1 }], { catalog: catalogOf(['solo']) }).orchestrator.entries[0]!;
-  assert.deepEqual([one.rawScore?.toFixed(1), one.scoreText], ['85.0', '50.0'], 'n=1 → 표시 50, raw 유지');
+  assert.deepEqual([one.rawScore?.toFixed(1), one.scoreText], ['90.0', '50.0'], 'n=1 → 표시 50, raw 유지(성능 75 + 가성비 15)');
   const two = computeRoleTop10([{ modelId: 'hi', metric: 'artificial_analysis_intelligence_index', value: 90, priceInput: 1, priceOutput: 1 }, { modelId: 'lo', metric: 'artificial_analysis_intelligence_index', value: 50, priceInput: 1, priceOutput: 1 }], { catalog: catalogOf(['hi', 'lo']) }).orchestrator.entries;
   const by = (id: string) => two.find((e) => e.modelId === id)!;
-  assert.deepEqual([by('hi').rawScore?.toFixed(1), by('hi').scoreText, by('lo').rawScore?.toFixed(1), by('lo').scoreText], ['85.0', '56.7', '0.0', '43.3'], 'n=2 → 표시 56.7/43.3(정규 분위), raw 유지');
+  assert.deepEqual([by('hi').rawScore?.toFixed(1), by('hi').scoreText, by('lo').rawScore?.toFixed(1), by('lo').scoreText], ['90.0', '56.7', '0.0', '43.3'], 'n=2 → 표시 56.7/43.3(정규 분위), raw 유지');
 });
 
 test('orchestrator value follows the representative effort variant (p58 linkage)', () => {
@@ -35,9 +35,9 @@ test('orchestrator value follows the representative effort variant (p58 linkage)
   const lists = computeRoleTop10(records, { catalog: catalogOf(['m', 'n']) });
   const at = (id: string) => lists.orchestrator.entries.find(x => x.modelId === id)!;
   // 변형별 가성비(log10): m-low 0, n 0.585, m-high 1. m 대표는 high.
-  assert.deepEqual([at('m').repEffort, at('m').rawScore?.toFixed(1)], ['high', '85.0']);
+  assert.deepEqual([at('m').repEffort, at('m').rawScore?.toFixed(1)], ['high', '90.0']);
   near(at('n').scoreComponents?.cost, 0.585);
-  assert.equal(at('n').rawScore?.toFixed(1), '43.8');
+  assert.equal(at('n').rawScore?.toFixed(1), '46.3');
 });
 
 test('cognition USD/task joins by reverse max: cheaper task wins the dimension', () => {

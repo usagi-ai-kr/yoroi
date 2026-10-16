@@ -27,20 +27,25 @@ test('loadLetterModelLists: 없으면 기본값·누락 키는 기본값·파싱
   assert.deepEqual(merged.allowOlder, ['x-1']);
   assert.deepEqual(merged.excludePatterns, DEFAULT_LETTER_MODEL_LISTS.excludePatterns);
   assert.deepEqual(merged.ban, DEFAULT_LETTER_MODEL_LISTS.ban);
+  writeFileSync(file, JSON.stringify({ ban: { worker: ['step-5'] } }));
+  assert.deepEqual(loadLetterModelLists(file).ban,
+    { common: [], orchestrator: DEFAULT_LETTER_MODEL_LISTS.ban.orchestrator, worker: ['step-5'] });
   writeFileSync(file, '{oops');
   assert.throws(() => loadLetterModelLists(file));
 });
 
 test('banSetFor: 정규화된 공통 ∪ 역할만 돌려준다', () => {
+  assert.deepEqual([...banSetFor(DEFAULT_LETTER_MODEL_LISTS, 'orchestrator')].sort(), ['claude-haiku-5-5', 'gpt-6-luna']);
   const lists = listsWith({ ban: { common: ['LongCat-2.5'], orchestrator: ['grok-4-6'], worker: ['step-5'] } });
   assert.deepEqual([...banSetFor(lists, 'orchestrator')].sort(), ['grok-4-6', 'longcat-2-5']);
   assert.deepEqual([...banSetFor(lists, 'worker')].sort(), ['longcat-2-5', 'step-5']);
 });
 
-test('allowOlder: grok-4-6·gpt-6-sol 유지, 미등재 하위버전 배제, 목록 제거 시 배제', () => {
+test('allowOlder: gpt-6-sol만 기본 유지, grok-4-6은 자동 배제, 목록 제거 시 배제', () => {
+  assert.deepEqual(DEFAULT_LETTER_MODEL_LISTS.allowOlder, ['gpt-6-sol']);
   const ids = ['grok-4-7', 'grok-4-6', 'grok-4-5', 'gpt-6-1-sol', 'gpt-6-sol'];
   const def = olderGenerationModelIds(ids);
-  assert.deepEqual([...def].sort(), ['grok-4-5']);
+  assert.deepEqual([...def].sort(), ['grok-4-5', 'grok-4-6']);
   const none = olderGenerationModelIds(ids, []);
   assert.ok(none.has('grok-4-6') && none.has('gpt-6-sol') && !none.has('grok-4-7') && !none.has('gpt-6-1-sol'));
   const onlyGrok = olderGenerationModelIds(ids, ['grok-4-6']);

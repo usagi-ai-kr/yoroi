@@ -66,3 +66,10 @@
 | w3 | 구현·config 기본 파일·global-install 문서 | `src/insights/letter-model-lists.ts`, `config/letter-model-lists.json`, `docs/global-install.md` |
 | w1 | 테스트(경로 우선순위·XDG·env·파싱 실패 경고·common 하위호환) → w3 리뷰 | `tests/letter-model-lists-path.test.ts` |
 | w2 | 잡무: milestone `1.1.1` 생성, 추적 이슈 1건 생성(milestone 연결), roadmap 1.1.1 한 줄 | `docs/roadmap.md` |
+
+## 1.2.1 목록 기본값 (2026-10-16 사용자 확정, [추적 이슈 #182](https://github.com/qus0in/yoroi/issues/182)·[milestone 1.2.1](https://github.com/qus0in/yoroi/milestone/28))
+
+- `allowOlder`: `["gpt-6-sol"]` (`grok-4-6` 제거 → `grok-4-7`만 남고 `grok-4-6`은 하위버전 자동 배제).
+- `ban.orchestrator`: `["gpt-6-luna", "claude-haiku-5-5"]` (`common: []`, `worker: []` — 워커 목록 유지).
+- `loadLetterModelLists`에서 `ban` 하위 키 생략 시 빈 배열이 아니라 기본값(`DEFAULT_LETTER_MODEL_LISTS.ban`)의 해당 배열 사본을 쓴다.
+- 분담: w3 설정·기본값·테스트 / w2 잡무(본 절 문서·milestone·이슈·roadmap). 근거 [letter-121-spec.md](letter-121-spec.md).

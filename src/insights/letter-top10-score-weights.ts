@@ -17,9 +17,9 @@ export const SCORE_WEIGHTS_PATH = resolve(packageRootFrom(import.meta.url), 'con
 /** 저장소 기본값. 사용자가 파일로 바꾸기 전까지 이 숫자를 코드에서 바꾸지 않는다.
  *  2026-10-15 사용자 확정: 워커 성능/사용량/속도/가격 .30/.20/.10/.40(존 임계 .60, priceMissing .99 유지 —
  *  시뮬레이션 근거 scratch/reports/yoroi-worker-tune-cap2.md·yoroi-worker-tune-final-review.md).
- *  R(1.0.2): 오케 성능/사용량/속도/가격 .70/.05/.10/.15(가성비 복구, p70). */
+ *  R(1.2.1): 오케 성능/사용량/속도/가격 .75/0/.10/.15. */
 export const SCORE_WEIGHTS_DEFAULTS: ScoreWeights = {
-  orchestrator: { performance: 0.70, usage: 0.05, speed: 0.10, price: 0.15 },
+  orchestrator: { performance: 0.75, usage: 0, speed: 0.10, price: 0.15 },
   worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } };
 /** p85: 워커 가산 상한(점). 기본 점수에 더하는 가산(bonus) 최대값이다. */
 export const WORKER_BONUS_CAP_DEFAULT = 5;

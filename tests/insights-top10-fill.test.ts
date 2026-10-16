@@ -10,6 +10,7 @@ const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analy
 const row = (modelId: string, metric: string, value: number): Top10RecordInput => ({ modelId, metric, value });
 const catalogFor = (ids: readonly string[]): readonly PlanCatalogEntry[] => [{ planId: 'free-test', planName: 'Free Test',
   models: ids.map(modelId => ({ modelId, displayName: modelId, sourceUrl: 'https://example.test', checkedOn: '2026-10-13', verified: true })) }];
+const OPEN = { allowOlder: ['gpt-6-sol'], excludePatterns: ['fable', 'astra'], ban: { common: [], orchestrator: [], worker: [] } }; // 1.2.1 기본 밴(luna·haiku 오케) 밖 시나리오용
 
 test('orchestrator fills below-zone rows while the worker performance floor removes unqualified candidates', () => {
   const ids = ['fixture-alpha', 'fixture-bravo', 'fixture-charlie', 'fixture-delta', 'fixture-echo', 'fixture-foxtrot', 'fixture-golf', 'fixture-hotel'];
@@ -18,11 +19,11 @@ test('orchestrator fills below-zone rows while the worker performance floor remo
   records.push(row('gpt-6-luna', INTEL, 38.1), row('claude-haiku-5-5', CODE, 39));
   const cognitionRecords = [...ids.map((id, i) => ({ modelId: `${id}-high`, metric: COG, value: 0.9 - 0.005 * i })),
     { modelId: 'gpt-6-luna-max', metric: COG, value: 0.2 }, { modelId: 'claude-haiku-5-5-max', metric: COG, value: 0.3 }];
-  const lists = computeRoleTop10(records, { catalog, cognitionRecords });
+  const lists = computeRoleTop10(records, { catalog, cognitionRecords, letterModelLists: OPEN });
   assert.equal(lists.orchestrator.entries.length, 10);
   assert.equal(lists.orchestrator.entries.slice(0, 8).some(e => e.belowZone), false);
   assert.deepEqual(lists.orchestrator.entries.slice(8).map(e => [e.modelId, e.rawScore?.toFixed(1), e.belowZone]), [
-    ['claude-haiku-5-5', '10.0', true], ['gpt-6-luna', '0.0', true],
+    ['claude-haiku-5-5', '10.7', true], ['gpt-6-luna', '0.0', true],
   ]);
   assert.ok(lists.orchestrator.entries.every(e => e.plans.includes('Free Test')));
   // p85: 원값 하한 33 — luna(intel 38.1)는 통과하지만 표준화 성능은 풀 최저라 0.0▽, haiku(intel 없음)는 제외된다.
@@ -35,12 +36,12 @@ test('orchestrator fills below-zone rows while the worker performance floor remo
   const haiku = lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!;
   assert.deepEqual([gpt.rank, gpt.indexText, gpt.indexMissing, gpt.belowZone, gpt.rawScore?.toFixed(1)], [10, '38.1', undefined, true, '0.0']);
   assert.deepEqual([haiku.rank, haiku.indexText, haiku.indexMissing, Math.round((haiku.scoreComponents?.sources?.['performance:cognition'] ?? 0) * 1e6), haiku.rawScore?.toFixed(1)],
-    [9, '-', true, Math.round((1 / 7) * 1e6), '10.0']);
-  const paid = computeRoleTop10(records, { catalog, cognitionRecords, excludeModelIds: new Set(['gpt-6-luna']) });
+    [9, '-', true, Math.round((1 / 7) * 1e6), '10.7']);
+  const paid = computeRoleTop10(records, { catalog, cognitionRecords, excludeModelIds: new Set(['gpt-6-luna']), letterModelLists: OPEN });
   assert.ok(!paid.orchestrator.entries.some(e => e.modelId === 'gpt-6-luna'));
 });
 
-test('any dimension qualifies a model (price-only included); orchestrator weighs performance 70% with linear value (R)', () => {
+test('any dimension qualifies a model (price-only included); orchestrator weighs performance 75% with linear value (R)', () => {
   const ids = ['index-peak', 'fallback-near', 'fallback-cheap', 'missing-free', 'missing-paid'];
   const catalog = catalogFor(ids), records: Top10RecordInput[] = [
     row('index-peak', INTEL, 100),
@@ -50,8 +51,8 @@ test('any dimension qualifies a model (price-only included); orchestrator weighs
     { ...row('missing-paid', CODE, 80), priceInput: 1, priceOutput: 1 },
   ];
   const entries = computeRoleTop10(records, { catalog }).orchestrator.entries;
-  // R: 성능 70% + 가성비 15%. 성능 min-max(40~100): peak 70.0, near 51.3. cheap은 $0 → 가성비 max → 15.0.
-  assert.deepEqual(entries.map(e => [e.modelId, e.rawScore?.toFixed(1), e.belowZone]), [['index-peak', '70.0', undefined], ['fallback-near', '51.3', true],
+  // R 1.2.1: 성능 75% + 가성비 15%. 성능 min-max(40~100): peak 75.0, near 55.0. cheap은 $0 → 가성비 max → 15.0.
+  assert.deepEqual(entries.map(e => [e.modelId, e.rawScore?.toFixed(1), e.belowZone]), [['index-peak', '75.0', undefined], ['fallback-near', '55.0', true],
     ['fallback-cheap', '15.0', true], ['missing-free', '0.0', true], ['missing-paid', '0.0', true]]);
   assert.equal(entries[0]!.scoreComponents?.sources?.['price:missing'], undefined);
 });
@@ -73,8 +74,8 @@ test('fill order follows the score and the representative effort is the highest-
     row('gpt-6-luna-high', 'intelligence_index_cost_per_task', 10),
     row('gpt-6-luna-max', 'intelligence_index_cost_per_task', 100),
   );
-  const catalog = catalogFor(ids), all = computeRoleTop10(records, { catalog }).orchestrator.entries;
-  const entries = computeRoleTop10(records, { catalog, excludeModelIds: new Set(['step-5']) }).orchestrator.entries;
+  const catalog = catalogFor(ids), all = computeRoleTop10(records, { catalog, letterModelLists: OPEN }).orchestrator.entries;
+  const entries = computeRoleTop10(records, { catalog, excludeModelIds: new Set(['step-5']), letterModelLists: OPEN }).orchestrator.entries;
   assert.ok(!entries.some(e => e.modelId === 'step-5'));
   const fills = entries.filter(e => e.belowZone);
   assert.deepEqual(fills.map(e => e.modelId), ['claude-haiku-5-5', 'glm-5-3-flash', 'gemini-3-8-flash', 'gpt-6-luna']);

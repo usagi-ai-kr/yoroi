@@ -1,7 +1,7 @@
 import type { ModelGroup, ModelVariant } from './letter-top10-group.js';
 import { filterCandidates } from './letter-top10-filter.js';
 import { normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { best, collect, hasEvidence, orchestratorVariants, pickEffortValues, type Raw } from './letter-top10-score-raw.js';
+import { best, collect, hasEvidence, orchestratorVariants, pickEffortValues, workerCognitionSpeed, type Raw } from './letter-top10-score-raw.js';
 import { OPTIMAL_ZONE_THRESHOLDS, type OptimalZoneRole, type ScoredGroup } from './letter-top10-worker.js';
 import { MODEL_SUCCESSORS } from './model-successors.js';
 import { ORCHESTRATOR_EFFORT_ORDER, PERFORMANCE_FLOOR, PRICE_MISSING, ROLE_DIMENSION_WEIGHTS, ROLE_SOURCES, SCORE_DIMENSIONS, WORKER_INTEL_FLOOR, type ScoreDimension, type ScoreSource } from './letter-top10-score-policy.js';
@@ -9,9 +9,8 @@ import { WORKER_BONUS_CAP } from './letter-top10-score-weights.js';
 import { applyMixedPriceCap, upliftHeldPlanPriceDimensions } from './letter-top10-worker-price.js';
 export * from './letter-top10-score-policy.js';
 export { ROLE_AA_METRIC } from './letter-top10-score-raw.js';
-/** p54 C: 역할별 가중합·후보 풀 min-max. R(1.0.2) 오케 0.70/0.05/0.10/0.15(가성비 복구); p85 워커 기본 0.375/0.125/0.5+가산, 성능=AA intel·속도=AA tok/s·가격=cpt·total 역방향 평균. */
+/** 역할별 가중합·후보 풀 min-max. R(1.2.1) 오케 0.75/0/0.10/0.15; 워커 속도는 AA 우선, 결측이면 오케 Cog 시간. */
 const safeLog = (c: number): number => Math.log10(c + 0.01);
-/** 차원별 소스·방향(low=낮을수록 좋음)·log 변환. 단위가 다른 원값은 소스마다 따로 표준화한다. */
 const PARTS: readonly { dim: ScoreDimension; src: ScoreSource; key: keyof Raw; low?: boolean; log?: (v: number) => number; role?: OptimalZoneRole }[] = [
   { dim: 'performance', src: 'aa', key: 'aaPerf' }, { dim: 'performance', src: 'cognition', key: 'cogCorrect' },
   { dim: 'usage', src: 'openrouter', key: 'or', log: Math.log10 }, { dim: 'usage', src: 'opencode', key: 'ocd', log: Math.log10 },
@@ -27,7 +26,6 @@ const minMax = (values: readonly (number | undefined)[], low = false): (number |
 export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[], role: OptimalZoneRole, opts?: Top10Options): ScoredGroup[] {
   const collected = collect(pool, role), has = (b: string) => { const r = collected.get(b); return !!r && hasEvidence(r); };
   const superseded = new Set(MODEL_SUCCESSORS.filter(m => has(normalizeModelName(m.successor))).map(m => normalizeModelName(m.predecessor)));
-  // p85 워커: cpt·total만 있는 모델도 후보. 오케는 기존 정의 유지.
   const evidenced = ([base, r]: [string, Raw]) => hasEvidence(r) && !superseded.has(base) ||
     (role === 'worker' && !superseded.has(base) && (!!r.aaCptE?.size || !!r.aaTotalE?.size));
   const raws = [...collected].filter(evidenced).map(([, r]) => r);
@@ -41,6 +39,7 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
     : [(() => { const a = perfAa![i], c = perfCog![i];
       const m = a === undefined && c === undefined ? undefined : c !== undefined && (a === undefined || c > a) ? r.cogEffort : r.aaEffort;
       const chosen = best(m)?.[0] ?? 'default', effort = r.aaEffort?.has(chosen) ? chosen : best(r.aaEffort)?.[0] ?? chosen; pickEffortValues(r, effort, role); return { r, base: bases[i]!, effort }; })()]);
+  const workerCogSpeed = role === 'worker' ? workerCognitionSpeed(raws, rows.map(x => x.effort)) : [];
   const genericParts = role === 'worker' ? parts.filter(p => p.dim !== 'price') : parts;
   const std = genericParts.map(p => stdOf(rows.map(x => x.r), p)), anyPrice = rows.some(x => parts.some(p => p.dim === 'price' && x.r[p.key] !== undefined));
   const pricePart = (key: 'aaCpt' | 'aaTotal' | 'aaPrice') => PARTS.find(p => p.dim === 'price' && p.key === key && (key !== 'aaPrice' || p.role === 'worker'))!;
@@ -52,6 +51,7 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
     genericParts.forEach((p, j) => { const v = std[j]![i]; if (v === undefined) return; sources[`${p.dim}:${p.src}`] = v;
       if (role === 'worker' && p.dim === 'performance' && p.src === 'cognition') return; // p85 워커 성능=AA intel만, Cog는 가산 입력
       if (dims[p.dim] === undefined || v > dims[p.dim]!) { dims[p.dim] = v; from[p.dim] = p.src; } });
+    if (role === 'worker' && dims.speed === undefined && workerCogSpeed[i] !== undefined) { dims.speed = workerCogSpeed[i]!; sources['speed:cognition'] = dims.speed; from.speed = 'cognition'; }
     // p85 워커 가격 = cpt·total 표준화값의 평균(단독·혼합 단가 대체+`*`). 가산 = cap×mean(Cog·사용량, 있는 것만).
     let bonus: number | undefined, priceFallback = false;
     if (role === 'worker') {

@@ -6,7 +6,7 @@ import { WORKER_BONUS_CAP } from '../src/insights/letter-top10-score-weights.js'
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
-/** p54 C 워커 AA best 소스 + R(1.0.2) 오케 가성비 복구(0.70/0.05/0.10/0.15, 선형 I/(P+.01)) + p85 워커 AA 산식, 2026-10-15 사용자 확정 갱신(성능 .30·사용량 .20·속도 .10·가격 .40·가산 cap 5·원값 하한 33·존 .60). 오케 effort 규칙은 insights-orchestrator-effort.test.ts. */
+/** R(1.2.1) 오케 0.75/0/0.10/0.15, 워커 .30/.20/.10/.40+가산. */
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
 const CPT = 'intelligence_index_cost_per_task', TOTAL = 'intelligence_index_total_cost';
 const catalogOf = (ids: readonly string[]): readonly PlanCatalogEntry[] => [{ planId: 'c-test', planName: 'C Test',
@@ -17,7 +17,7 @@ const cog = (modelId: string, metric: string, value: number): Top10RecordInput =
 const near = (actual: number | undefined, expected: number) => assert.ok(actual !== undefined && Math.abs(actual - expected) < 1e-3, `${actual} ≈ ${expected}`);
 
 test('role weights, per-role sources, worker floor and bonus cap are exported constants', () => {
-  assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.70, usage: 0.05, speed: 0.10, price: 0.15 },
+  assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.75, usage: 0, speed: 0.10, price: 0.15 },
     worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } });
   assert.deepEqual([ROLE_SOURCES.worker.speed, ROLE_SOURCES.worker.price, ROLE_SOURCES.worker.usage, ROLE_SOURCES.orchestrator.speed, ROLE_SOURCES.orchestrator.price,
     ROLE_SOURCES.orchestrator.usage], [['aa'], ['aa'], ['openrouter', 'opencode'], ['aa', 'cognition'], ['aa', 'cognition'], ['openrouter', 'opencode']]);
@@ -68,12 +68,22 @@ test('orchestrator price dimension moves the score: same intel, cheaper wins via
   const records = [aa('o-cheap', INTEL, 80, 1), aa('o-dear', INTEL, 80, 9)];
   const run = (rs: Top10RecordInput[]) => computeRoleTop10(rs, { catalog: catalogOf(['o-cheap', 'o-dear']) }).orchestrator.entries;
   const at = (id: string) => run(records).find(x => x.modelId === id)!, c = (id: string) => at(id).scoreComponents!;
-  // orchValue cheap=80/1.01, dear=80/9.01 → log10 min-max 1 vs 0. 성능 둘 다 1, 사용량·속도 근거 없음.
-  // cheap: 70×1 + 15×1 = 85.0, dear: 70×1 + 15×0 = 70.0. 차원 원천은 aa다.
-  assert.deepEqual([at('o-cheap').rawScore?.toFixed(1), at('o-dear').rawScore?.toFixed(1)], ['85.0', '70.0']);
+  // orchValue cheap=80/1.01, dear=80/9.01 → log10 min-max 1 vs 0. usage는 0 가중치.
+  // cheap: 75×1 + 15×1 = 90.0, dear: 75×1 + 15×0 = 75.0.
+  assert.deepEqual([at('o-cheap').rawScore?.toFixed(1), at('o-dear').rawScore?.toFixed(1)], ['90.0', '75.0']);
   assert.deepEqual([c('o-cheap').cost, c('o-cheap').dimensionSources?.price], [1, 'aa']);
   assert.deepEqual([c('o-dear').cost, c('o-dear').dimensionSources?.price], [0, 'aa']);
   const dearer = run(records.map(r => ({ ...r, priceInput: 99, priceOutput: 99 })));
-  assert.deepEqual(dearer.map(e => [e.modelId, e.rawScore?.toFixed(1)]), [['o-cheap', '85.0'], ['o-dear', '85.0']], '둘 다 99면 가성비 동점 1 → 순위·점수 동일');
+  assert.deepEqual(dearer.map(e => [e.modelId, e.rawScore?.toFixed(1)]), [['o-cheap', '90.0'], ['o-dear', '90.0']], '둘 다 99면 가성비 동점 1 → 순위·점수 동일');
   assert.equal(at('o-cheap').blendedCostText, '$1.00/1M', '단가는 표시·파레토용으로 남는다');
+});
+
+test('speed falls back between role definitions while preserving AA priority', () => {
+  const oo = computeRoleTop10([aa('oa-high', INTEL, 70), aa('oa-low', TPS, 100), aa('ob-high', INTEL, 80), aa('ob-high', TPS, 200)], { catalog: catalogOf(['oa', 'ob']) }).orchestrator.entries.find(e => e.modelId === 'oa')!;
+  assert.ok(oo.scoreComponents?.sources?.['speed:aa'] !== undefined);
+  const ww = computeRoleTop10([aa('wa', INTEL, 60), aa('wb', INTEL, 70), aa('wc', INTEL, 80), aa('wc', TPS, 300)], { catalog: catalogOf(['wa', 'wb', 'wc']), cognitionRecords: [cog('wa', 'cognition_duration_min', 40), cog('wb', 'cognition_duration_min', 20)] }).worker.entries;
+  const a = ww.find(e => e.modelId === 'wa')!, b = ww.find(e => e.modelId === 'wb')!, c = ww.find(e => e.modelId === 'wc')!;
+  assert.deepEqual([a.scoreComponents?.sources?.['speed:cognition'], a.scoreComponents?.dimensionSources?.speed], [0, 'cognition']);
+  assert.deepEqual([b.scoreComponents?.sources?.['speed:cognition'], b.scoreComponents?.dimensionSources?.speed], [1, 'cognition']);
+  assert.deepEqual([c.scoreComponents?.sources?.['speed:aa'], c.scoreComponents?.sources?.['speed:cognition'], c.scoreComponents?.dimensionSources?.speed], [1, undefined, 'aa']);
 });

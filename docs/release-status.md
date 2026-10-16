@@ -58,6 +58,11 @@
 - [후속] **1.0.3 준비**: 워커 effort 라벨-지표 소스 불일치(AA Max 지표에 Cog high 라벨) 최소 수정 후보 — [release-103-effort-fix-candidate.md](insights/release-103-effort-fix-candidate.md). tag `v1.0.3`·Release·레터는 별도 승인 흐름.
 - [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban·[#164](https://github.com/qus0in/yoroi/issues/164) warn — 버전·milestone 미지정, 구현은 warn만 후보 포함.
 
+## 1.2.1 발행 준비 (2026-10-16, milestone 28, [#182](https://github.com/qus0in/yoroi/issues/182))
+
+- 범위(patch): 오케스트레이터 사용량 차원 제외(`0.75/0/0.10/0.15`, `성능/속도/가성비` 3열) · `ban.orchestrator`에 `gpt-6-luna`·`claude-haiku-5-5` 추가 · `allowOlder`에서 `grok-4-6` 제외(`grok-4-7` 단일화) · 오케↔워커 역할 간 속도 결측 대체([letter-121-spec.md](insights/letter-121-spec.md)).
+- [검증] unit 1087/1087·BDD 45/45·typecheck·validate PASS, w2 교차 리뷰 차단 0.
+
 ## 1.2.0 발행 완료 (2026-10-16, PR #179 → main `d8bed39c88f42e93e821a90c4df09d90729a239b` = tag `v1.2.0`, milestone 27, [#178](https://github.com/qus0in/yoroi/issues/178))
 
 - 범위(minor): 인사이트 레터 마크다운을 본문 Top7(오케·워커 각 7행) + 순서 고정 댓글 3개(① 오케 Top15+퇴장 ② 워커 Top15+퇴장 ③ Free 티어)로 분리(`TOP_N=15`, `LetterParts`·`joinLetterParts`, Free 가드 댓글 3 적용, 댓글 실패 시 close 금지). 명세: [letter-format-1.2.md](insights/letter-format-1.2.md).

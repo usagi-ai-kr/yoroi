@@ -44,10 +44,10 @@ export const ROLE_DIMENSION_LABELS: Readonly<Record<OptimalZoneRole, Readonly<Re
   orchestrator: { ...DIMENSION_LABELS, price: '가성비' }, worker: DIMENSION_LABELS };
 /** 가중치 퍼센트(소수 1자리, 예: 0.05 → 5). config(ROLE_DIMENSION_WEIGHTS)가 단일 원본이다. */
 export const weightPct = (role: OptimalZoneRole, d: ScoreDimension): number => Number(((ROLE_DIMENSION_WEIGHTS[role][d] ?? 0) * 100).toFixed(1));
-/** 스코어 산출 공식 문구(p75: 오케 성능/사용량/속도, p85: 워커 성능/속도/가격+가산, 역할별 가중치). 상수는 letter-top10-score.ts에서 읽는다. */
+/** 산출 차원은 오케 성능/속도/가성비, 워커 성능/속도/가격이며 사용량은 워커 가산 전용이다. */
 const weightsText = (role: OptimalZoneRole): string =>
   displayDimensions(role).map(d => `${ROLE_DIMENSION_LABELS[role][d]} ${weightPct(role, d)}%`).join('·');
-/** compact 가중치 표기: 표시 차원 순서의 퍼센트만(예: 70/5/10/15%). 숫자는 config에서 생성한다. */
+/** compact 가중치 표기: 표시 차원의 퍼센트만(숫자는 config에서 생성). */
 const weightShares = (role: OptimalZoneRole): string => `${displayDimensions(role).map(d => weightPct(role, d)).join('/')}%`;
 /** compact 차원 이름(표 순서): 가성비·가격은 역할별 라벨을 함께 적는다. */
 const compactDimensionNames = (): string => displayDimensions('orchestrator')
@@ -55,7 +55,7 @@ const compactDimensionNames = (): string => displayDimensions('orchestrator')
 export const SCORE_FORMULA_LINES: readonly string[] = [
   `- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점(재분배 없음), 동점 모델명`,
   `- 가중치: 오케·리뷰어 ${weightsText('orchestrator')} / 워커·메신저 ${weightsText('worker')}`,
-  '- 성능: 오케 AA Int·Cog, 워커 AA Int; 사용량: OR/OCD log10(워커는 가산); 속도: 오케 AA·Cog, 워커 AA',
+  '- 성능: 오케 AA Int·Cog, 워커 AA Int; 사용량: OR/OCD는 워커 가산 전용; 속도: 오케 AA·Cog, 워커 AA 우선·오케 Cog 대체',
   '- 가성비: 오케 max(AA I/(P+.01)·USD/1M 정방향, Cog USD/task 역방향) 소스별 log min-max, 결측 0',
   `- 워커 가격 = cost_per_task·total_cost log 역방향 min-max 평균(없으면 혼합 단가 \`*\`); 가산 = ${WORKER_BONUS_CAP}×평균(Cog 정답률·사용량, 있는 것만)`,
   `- 워커 intel ≥${WORKER_INTEL_FLOOR}(결측 제외); 오케 E=전 변형 풀 표준화·P1 최고점(성능·가성비 고려, 동점 낮은 effort); AA 지수도 E값`,
@@ -65,7 +65,7 @@ export const SCORE_FORMULA_LINES: readonly string[] = [
 export const COMPACT_FORMULA_LINES: readonly string[] = [
   '- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점·동점 모델명',
   `- 가중치(${compactDimensionNames()}): 오케 ${weightShares('orchestrator')}, 워커 ${weightShares('worker')}`,
-  '- 출처: 성능·속도 오케 AA·Cog/워커 AA, 사용량 OR·OCD',
+  '- 출처: 성능 오케 AA·Cog/워커 AA, 속도 오케 AA·Cog/워커 AA 우선·Cog 대체, 사용량 워커 가산(OR·OCD)',
   `- 워커 가격 cpt·total 평균(혼합단가 *), 가산 ${WORKER_BONUS_CAP}×평균`,
   '- 오케 전변형 P1(동점 낮은 effort)',
   '- off-peak·파레토, score 원 API',

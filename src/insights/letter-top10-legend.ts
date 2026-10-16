@@ -1,8 +1,8 @@
 import { OPTIMAL_ZONE_THRESHOLDS } from './letter-top10-worker.js';
-import { DIMENSION_LABELS, PRICE_MISSING_VALUE, ROLE_SOURCES, WORKER_INTEL_FLOOR } from './letter-top10-score.js';
+import { PRICE_MISSING_VALUE, ROLE_SOURCES, WORKER_INTEL_FLOOR } from './letter-top10-score.js';
 import type { ScoreDimension } from './letter-top10-score.js';
 import { WORKER_BONUS_CAP } from './letter-top10-score-weights.js';
-import { displayDimensions } from './letter-markdown-format.js';
+import { displayDimensions, ROLE_DIMENSION_LABELS } from './letter-markdown-format.js';
 import { SECTION_HEADINGS, type RoleChange, type RoleEntry, type RoleList } from './letter-top10-unified.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 
@@ -22,13 +22,13 @@ const SOURCE_LABELS = { aa: 'AA', cognition: 'Cog', openrouter: 'OR', opencode: 
 const sourceText = (role: OptimalZoneRole, dimension: ScoreDimension): string =>
   ROLE_SOURCES[role][dimension].map(source => SOURCE_LABELS[source]).join('·') || '—';
 export const dimensionsLabel = (role: OptimalZoneRole): string =>
-  displayDimensions(role).map(d => DIMENSION_LABELS[d]).join('/');
-/** 역할별 차원 표준화 값(0~100, 결측 '-'). 오케 `92/77/100`(성능/사용량/속도), 워커 `92/77/100`(성능/속도/가격). 가격이 혼합 단가 대체면 `100*`. */
+  displayDimensions(role).map(d => ROLE_DIMENSION_LABELS[role][d]).join('/');
+/** 역할별 차원 표준화 값(0~100, 결측 '-'). 오케 `92/77/100/88`(성능/사용량/속도/가성비), 워커 `92/77/100`(성능/속도/가격). 가격이 혼합 단가 대체면 `100*`. */
 export const dimensionsText = (e: RoleEntry, role: OptimalZoneRole): string => {
   const c = e.scoreComponents, from = c?.dimensionSources;
   if (!c || !from) return '-';
   const value = { performance: c.index, usage: c.usage, speed: c.speed, price: c.cost };
-  return displayDimensions(role).map(d => from[d] === undefined ? '-' : `${Math.round(value[d] * 100)}${d === 'price' && c.priceFallback ? '*' : ''}`).join('/');
+  return displayDimensions(role).map(d => from[d] === undefined ? '-' : `${Math.round(value[d] * 100)}${d === 'price' && role === 'worker' && c.priceFallback ? '*' : ''}`).join('/');
 };
 /** 워커 가산(점): 마크다운은 `가산` 열, 압축 렌더는 행 끝 접미. 없거나 오케면 '-'/''. */
 export const bonusText = (e: RoleEntry, role: OptimalZoneRole): string =>
@@ -42,11 +42,12 @@ export const LEGEND_LINES: readonly string[] = [
   LEGEND_HEADING,
   '- 👍 파레토 최적(파레토 열): 더 싸고 더 좋은 모델이 없는 상태(단가 대비 스코어 경계선)',
   '- ▲N / ▼N 전일 대비 순위 상승/하락, ➖ 유지, 🆕 신규 진입(전일 Top10 밖), 🌱 첫 집계(전일 기록 없음), 🚪 이탈',
-  `- ▽ 하한 보충: 임계(스코어 최고의 ${OPTIMAL_ZONE_THRESHOLDS.orchestrator * 100}%/${OPTIMAL_ZONE_THRESHOLDS.worker * 100}%) 미달이어도 후보를 스코어 순으로 보충; 워커는 AA intel ≥${WORKER_INTEL_FLOOR}만`,
-  `- 0~100 차원: 오케 성능/사용량/속도, 워커 성능/속도/가격; 워커 intel<${WORKER_INTEL_FLOOR}·결측 제외`,
-  `- 사용량: OR/OCD(오케 6%·워커는 가산); 속도: 오케 ${sourceText('orchestrator', 'speed')}, 워커 ${sourceText('worker', 'speed')}; '-'=근거 없음`,
-  `- 워커 \`*\`=가격을 혼합 단가로 대체, ${Math.round(PRICE_MISSING_VALUE * 100)}=근거 없음; +N=가산(최대 ${WORKER_BONUS_CAP}점); AA 지수 '-'는 미측정; off-peak는 표시·파레토 단가`,
-  '- ⚠️ 한도·주의(추정 한도, 실측 제한 등), 🔒 접근 제한(지역·조건), 🆓 무료(🆓 Free 티어 섹션 표시)',
+  `- ▽ 하한 보충: 임계(원점수 최고의 ${OPTIMAL_ZONE_THRESHOLDS.orchestrator * 100}%/${OPTIMAL_ZONE_THRESHOLDS.worker * 100}%) 미달이어도 후보를 스코어 순으로 보충; 워커는 AA intel ≥${WORKER_INTEL_FLOOR}만 · 표시 점수=역할별 정규순위 50중심(근사), 임계·차원·순위=원점수`,
+  `- 0~100 차원: 오케 성능/사용량/속도/가성비, 워커 성능/속도/가격; 워커 intel<${WORKER_INTEL_FLOOR}·결측 제외`,
+  `- 사용량: OR/OCD(오케 5%·워커는 가산); 속도: 오케 ${sourceText('orchestrator', 'speed')}, 워커 ${sourceText('worker', 'speed')}; '-'=근거 없음`,
+  `- 가성비: 오케 ${sourceText('orchestrator', 'price')} max 소스별 log min-max(AA I/(P+.01) 정방향·Cog USD/task 역방향), 결측 0`,
+  `- 워커 \`*\`=가격을 혼합 단가로 대체, ${Math.round(PRICE_MISSING_VALUE * 100)}=근거 없음; +N=가산(최대 ${WORKER_BONUS_CAP}점); AA 지수 '-'는 미측정`,
+  '- ⚠️ 한도·주의, 🔒 접근 제한(지역·조건), 🆓 무료(🆓 Free 티어 섹션 표시)',
 ];
 export function changeNote(label: string, list: RoleList): string {
   const items = list.entries;

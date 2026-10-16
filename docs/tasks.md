@@ -13,10 +13,11 @@
 - [완료] D(xAI 구독 사용률) #147 closed.
 - [보존] 미커밋 5파일(effort 3·orchestration.md·takeover 기록)은 1.0 커밋에서 뺐고 워킹트리에 유지한다.
 - [완료] 1.0.1 patch: PR #159 머지 `c7c403ee`, main CI attempt 2 success, tag `v1.0.1`·Release(동일 SHA), 전역 1.0.1, 레터 [#160](https://github.com/qus0in/yoroi/issues/160) 발행 후 #157 close.
+- [준비] 1.0.2 R 선형 가성비 + 정규 순위 표시 보정(2026-10-16, 미발행·커밋/PR 전): 오케 70/5/10/15 `I/(P+0.01)` + 역할별 전체 적격 대표 모집단 midrank→Φ⁻¹→50+10z 표시. clean check 1027/BDD 45/632·build PASS·final review PASS, clean 후보(50 allowlist)·base main `698898767`. **표시 보정 통합 검증 pending**(수학 모듈 8/8만). worker raw hunk·orchestration 제외 1.1 이월. 레터 미발행 → PR에 `Closes #160` 금지. 신규 milestone 없음. 이슈 163/164 등록만.
 
 ## 남은 작업
 
-- [완료] 1.0.1: tag·Release·전역 1.0.1, 레터 #160 발행·#157 close.
+- [준비] 1.0.2: PR 본문·dev ff 동기화·clean staging 절차 준비만 완료, git index/branch/commit/push/PR·레터발행 승인 대기. stale 별도 stage index(`/tmp/yoroi-r-stage-index`)는 정규 보정 반영 후 재구성 필요.
 - [이월] 1.1.0: 접근 effort 상한(xhigh), 워커 effort 정책 확정([roadmap.md](roadmap.md) "1.1.0 후속").
 - [hold] [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지(2026-10-10 사용자 결정).
 - [미착수] PR #86 후속: 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 노출하지 않는다(기록 시점 2026-10-14).

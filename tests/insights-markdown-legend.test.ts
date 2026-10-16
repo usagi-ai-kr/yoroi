@@ -35,22 +35,22 @@ test('changeNote uses 🌱 for the first cohort and 🚪 for exits', () => {
 
 test('the guide section lists every marker with one meaning', () => {
   assert.equal(LEGEND_LINES[0], LEGEND_HEADING);
-  assert.equal(LEGEND_LINES.length, 8);
+  assert.equal(LEGEND_LINES.length, 9);
   for (const text of ['👍 파레토 최적(파레토 열)', '▲N / ▼N', '➖ 유지', '🆕 신규 진입', '🌱 첫 집계', '🚪 이탈',
-    '▽ 하한 보충', '0~100 차원: 오케 성능/사용량/속도, 워커 성능/속도/가격',
-    '속도: 오케 AA·Cog, 워커 AA',
+    '▽ 하한 보충', '0~100 차원: 오케 성능/사용량/속도/가성비, 워커 성능/속도/가격',
+    '속도: 오케 AA·Cog, 워커 AA', '- 가성비: 오케',
     '워커 intel<33·결측 제외', '워커는 AA intel ≥33만', '`*`=가격을 혼합 단가로 대체, 99=근거 없음', '+N=가산(최대 5점)', '⚠️ 한도·주의', '🔒 접근 제한', '🆓 무료']) assert.ok(LEGEND_LINES.some(l => l.includes(text)), text);
-  assert.ok(LEGEND_LINES.some(l => l.includes('OR/OCD(오케 6%·워커는 가산)')));
+  assert.ok(LEGEND_LINES.some(l => l.includes('OR/OCD(오케 5%·워커는 가산)')));
 });
 
-test('dimension cells: orchestrator 성능/사용량/속도, worker 성능/사용량/속도/가격 (사용자 확정: 워커 사용량 실가중)', () => {
+test('dimension cells: orchestrator 성능/사용량/속도/가성비, worker 성능/사용량/속도/가격 (R 가성비 복구)', () => {
   const sc = { index: 0.9, cost: 0.8, usage: 0.7, speed: 0.6, dimensionSources: { performance: 'aa', usage: 'openrouter', speed: 'aa', price: 'aa' } };
   const e = { ...lists.orchestrator.entries[0]!, scoreComponents: sc };
-  assert.equal(dimensionsText(e, 'orchestrator'), '90/70/60');
+  assert.equal(dimensionsText(e, 'orchestrator'), '90/70/60/80');
   assert.equal(dimensionsText(e, 'worker'), '90/70/60/80');
   const fb = { ...e, scoreComponents: { ...sc, priceFallback: true } };
   assert.equal(dimensionsText(fb, 'worker'), '90/70/60/80*', '혼합 단가 대체는 가격 칸에 *');
-  assert.equal(dimensionsText(fb, 'orchestrator'), '90/70/60', '오케는 * 없음');
+  assert.equal(dimensionsText(fb, 'orchestrator'), '90/70/60/80', '오케는 * 없음(*는 워커 전용)');
 });
 
 test('worker bonus shows +N.N points only for the worker and only when present', () => {
@@ -65,7 +65,7 @@ test('markdown worker table adds a 가산 column and * marker; orchestrator tabl
   const custom: RoleLists = { ...lists, worker: { entries: [{ ...lists.worker.entries[0]!, scoreComponents: sc }], exits: [] } };
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists: custom, failedSources: [] });
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |'));
-  assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도 | AA 지수 | 혼합 단가 | 변동 |'));
+  assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가성비 | AA 지수 | 혼합 단가 | 변동 |'));
   assert.ok(md.includes('| work-a | high | 99.0 | 90/-/60/80* | +3.7 | 72.0 | $1.50 | ▼3 |'), md);
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists: custom });
   assert.ok(compact.includes('· 90/-/60/80* 가산 +3.7 · $1.50 ·'), compact);

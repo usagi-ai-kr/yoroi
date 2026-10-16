@@ -46,7 +46,7 @@ export function renderTop10Markdown(data: {
   ].join('\n');
 
   const formulas = [
-    `- 자격: ${ZONE_TEXT} · 오케 3차원 중 하나 이상 근거(검증 Free 경로 포함)·워커 AA intel 원값 하한 통과 · 보유 요금제 접근 모델만`,
+    `- 자격: ${ZONE_TEXT} · 네 차원 중 하나 이상 근거(검증 Free 경로 포함)·워커 AA intel 원값 하한 통과 · 보유 요금제 접근 모델만`,
     '- 혼합 단가=(3×입력+출력)/4 USD/1M',
     ...SCORE_FORMULA_LINES,
     `- ${EXCLUSION_NOTE}`,

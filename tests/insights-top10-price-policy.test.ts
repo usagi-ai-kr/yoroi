@@ -32,8 +32,8 @@ test('previous ranks use the same composite-score and fill policy', () => {
     { modelId: 'claude-haiku-5-5', value: 60, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
   ];
   const ranks = previousRanks(records).orchestrator;
-  assert.deepEqual([ranks.get('claude-opus-5-5'), ranks.get('gpt-6-1-sol'), ranks.get('claude-haiku-5-5')], [1, 2, 3]);
-  // p75 82/6/12: 가성비가 없어 성능이 높은 Opus가 1위, 단가 차이는 순위에 영향이 없다.
+  assert.deepEqual([ranks.get('claude-opus-5-5'), ranks.get('gpt-6-1-sol'), ranks.get('claude-haiku-5-5')], [2, 1, 3]);
+  // R 70/5/10/15: 성능은 Opus가 1위지만 가성비(sol 94.06 vs opus 49.75 → 1 vs 0)가 뒤집어 sol 76.3 > opus 70.0이다.
 });
 
 test('kimi-k3 at its official blended price remains eligible and Top10 fills normally', () => {

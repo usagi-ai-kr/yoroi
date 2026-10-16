@@ -9,8 +9,7 @@ import { WORKER_BONUS_CAP } from './letter-top10-score-weights.js';
 import { applyMixedPriceCap, upliftHeldPlanPriceDimensions } from './letter-top10-worker-price.js';
 export * from './letter-top10-score-policy.js';
 export { ROLE_AA_METRIC } from './letter-top10-score-raw.js';
-/** p54 C: 역할별 가중합·후보 풀 min-max. p75 오케 0.82/0.06/0.12; p85 워커 기본 0.375/0.125/0.5+가산.
- * 워커 성능=AA intel(원값 하한 33), 속도=AA tok/s, 가격=cpt·total의 역방향 min-max 평균(대체+`*`); 가산=Cog·사용량 평균×cap. effort 대표 선택은 유지. */
+/** p54 C: 역할별 가중합·후보 풀 min-max. R(1.0.2) 오케 0.70/0.05/0.10/0.15(가성비 복구); p85 워커 기본 0.375/0.125/0.5+가산, 성능=AA intel·속도=AA tok/s·가격=cpt·total 역방향 평균. */
 const safeLog = (c: number): number => Math.log10(c + 0.01);
 /** 차원별 소스·방향(low=낮을수록 좋음)·log 변환. 단위가 다른 원값은 소스마다 따로 표준화한다. */
 const PARTS: readonly { dim: ScoreDimension; src: ScoreSource; key: keyof Raw; low?: boolean; log?: (v: number) => number; role?: OptimalZoneRole }[] = [
@@ -18,7 +17,8 @@ const PARTS: readonly { dim: ScoreDimension; src: ScoreSource; key: keyof Raw; l
   { dim: 'usage', src: 'openrouter', key: 'or', log: Math.log10 }, { dim: 'usage', src: 'opencode', key: 'ocd', log: Math.log10 },
   { dim: 'speed', src: 'aa', key: 'aaSpeed' }, { dim: 'speed', src: 'cognition', key: 'cogDuration', low: true },
   { dim: 'price', src: 'aa', key: 'aaPrice', low: true, log: safeLog, role: 'worker' }, { dim: 'price', src: 'cognition', key: 'cogCost', low: true, log: safeLog, role: 'worker' },
-  { dim: 'price', src: 'aa', key: 'aaCpt', low: true, log: safeLog, role: 'worker' }, { dim: 'price', src: 'aa', key: 'aaTotal', low: true, log: safeLog, role: 'worker' }]; // p75 오케 가격 없음·p85 워커 cpt·total(아래 평균)
+  { dim: 'price', src: 'aa', key: 'aaCpt', low: true, log: safeLog, role: 'worker' }, { dim: 'price', src: 'aa', key: 'aaTotal', low: true, log: safeLog, role: 'worker' },
+  { dim: 'price', src: 'aa', key: 'orchValue', log: Math.log10, role: 'orchestrator' }, { dim: 'price', src: 'cognition', key: 'cogCost', low: true, log: safeLog, role: 'orchestrator' }]; // R 오케 가성비: AA log10(I/(P+.01)) 정방향·Cog USD/task 역방향, 차원 max
 const minMax = (values: readonly (number | undefined)[], low = false): (number | undefined)[] => {
   const known = values.filter((v): v is number => v !== undefined), min = Math.min(...known), max = Math.max(...known);
   return values.map(v => v === undefined ? undefined : max === min ? 1 : low ? (max - v) / (max - min) : (v - min) / (max - min));
@@ -65,7 +65,7 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
       const bonusInputs = [sources['performance:cognition'], dims.usage].filter((v): v is number => v !== undefined);
       if (bonusInputs.length) bonus = WORKER_BONUS_CAP * bonusInputs.reduce((sum, v) => sum + v, 0) / bonusInputs.length;
     }
-    const missing = PRICE_MISSING[role]; // 가격 결측 보정은 'price:missing'으로만(워커 .99, 오케 가격 차원 없음)
+    const missing = PRICE_MISSING[role]; // 가격 결측 보정은 'price:missing'으로만(워커 .99, 오케 가성비 결측은 0·보정 없음)
     if (dims.price === undefined && anyPrice && missing !== undefined) { sources['price:missing'] = dims.price = missing; from.price = 'missing'; }
     const score = 100 * SCORE_DIMENSIONS.reduce((sum, d) => sum + (w[d] ?? 0) * (dims[d] ?? 0), 0) + (bonus ?? 0),
       aa = role === 'orchestrator' ? r.aaPerf : r.aaEffort?.get(effort) ?? best(r.aaEffort)?.[1];

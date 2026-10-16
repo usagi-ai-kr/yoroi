@@ -11,8 +11,10 @@
 | `github-workflow` | 계획·진척·보고, 이슈·PR·라벨·레포 운영 |
 | `semver-milestones` | 목표·milestone·버전 계획, 릴리스 준비 |
 | `agent-coordination` | 오케스트레이터 분담, 토큰 절약·파일 소유권·작업 패킷 위임 및 감사 |
+| `coordination-rules` | 협업 규칙·역할 경계·완료 판정 사전 확인 및 준수 |
 | `graceful-stop` | 작업 중단 요청, worker 일괄 중지, 재개 금지 체크포인트·재개 판단 |
 | `global-cli-update` | 전역 CLI 버전 동기화, 갱신·검증 절차, 버전 불일치 확인 |
+| `harness-improvement` | 하네스(스킬·규칙·스크립트·문서) 장애 진단, 최소 재발방지 개선 및 회고 |
 
 ```bash
 python3 scripts/validate-repo.py

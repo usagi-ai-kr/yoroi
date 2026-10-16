@@ -1,6 +1,6 @@
 # 에이전트 작업 규칙
 
-- 이 문서는 사용자가 규칙 변경을 요청했을 때만 수정한다.
+- 이 문서는 사용자가 규칙 변경을 요청했을 때만 수정한다. 단, 하네스 문제 해결을 위한 규칙 개선은 사용자의 상시 요청 및 승인 범위 내에서 수행한다.
 - README.md는 사용자가 수정을 요청했을 때만 변경한다.
 - 직접 작성하는 코드·문서·설정은 파일당 100줄 이하로 유지한다.
   생성 파일·의존성 잠금 파일·바이너리는 제외하며 예외는 docs/development.md에 기록한다.
@@ -36,6 +36,7 @@
 - 작업 후 회고한다. 반복할 가치가 있는 절차는 .agents/skills/에,
   레포 전용 결정·검증 결과·트러블슈팅은 docs/에 기록한다. 새로운 배움이 없으면 중복 기록하지 않는다.
 - 스킬은 다른 레포에서도 재사용할 수 있도록 작성하고 레포 값은 docs/에서 확인한다.
+- 하네스(스킬·규칙·스크립트·문서 전반)에서 대기·완료판정·협업·검증 등 관측된 문제가 발생하면 별도 지시 없이 `harness-improvement` 스킬로 즉시 진단하고 최소 재발방지 개선을 적용한다. 메타 작업 무한 루프는 금지한다.
 - 연결된 레포의 변경도 작업 흐름에 포함하되 변경 주체·근거·검증 여부를 구분한다.
 - 시크릿·토큰·개인 사용량 원본은 커밋하거나 이슈·로그에 노출하지 않는다.
 - 완료 전 `python3 scripts/validate-repo.py`와 변경에 맞는 검증을 실행한다.
@@ -49,6 +50,7 @@
 - 목표·버전 관리: [docs/roadmap.md](docs/roadmap.md), `semver-milestones` 스킬
 - 로컬 작업 기록: [docs/tasks.md](docs/tasks.md)
 - 협업 분담·중단: [docs/orchestration.md](docs/orchestration.md), `agent-coordination`·`graceful-stop` 스킬
+- 하네스 개선: [docs/insights/harness-improvement-policy.md](docs/insights/harness-improvement-policy.md), `harness-improvement` 스킬
 
 스킬 원본은 `.agents/skills/`다. 작업에 맞는 아래 파일을 읽고 적용한다.
 
@@ -59,3 +61,4 @@
 - [graceful-stop](.agents/skills/graceful-stop/SKILL.md)
 - [global-cli-update](.agents/skills/global-cli-update/SKILL.md)
 - [coordination-rules](.agents/skills/coordination-rules/SKILL.md)
+- [harness-improvement](.agents/skills/harness-improvement/SKILL.md)

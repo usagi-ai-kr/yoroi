@@ -4,6 +4,7 @@ import json, re, subprocess, time
 from datetime import datetime, timezone
 from pathlib import Path
 import coord_workspace as W
+import coord_completion as C
 SEND_LOG = Path("scratch/coord-send.log"); HINTS = re.compile(r"ctrl\+|esc |for shortcuts|shift\+")
 class HerdrError(Exception): pass
 def run(herdr, args):
@@ -91,10 +92,7 @@ def cmd_watch(herdr, pane_in, args):
     reports = reports or [last_report(workspace, label) for (workspace, _), label in zip(resolved, labels)]
     reports = [report for report in reports if report]
     if len(reports) != len(labels): print("ERROR: 보고 경로 생략 시 각 라벨의 마지막 send 기록이 필요합니다"); return 2
-    missing = [pane for pane in panes if pane not in {agent.get("pane_id") for agent in agent_list(herdr)}]
+    agents = agent_list(herdr)
+    missing = [pane for pane in panes if pane not in {agent.get("pane_id") for agent in agents}]
     if missing: print(f"ERROR: 로스터 갱신 필요 — {' '.join(missing)} 없음"); return 2
-    script = str(Path(__file__).resolve().parent / "watch_workers.sh")
-    command = ["bash", script, "--reports", *reports, "--panes", *panes, "--herdr", herdr]
-    for option in ("--interval", "--max-polls", "--tail", "--limit-pattern"):
-        if option in options: command += [option, options[option]]
-    return subprocess.run(command).returncode
+    return C.run_watch(agent_list, herdr, panes, reports, options)

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Improvement"
+  short_description: "하네스·협업·검증 흐름 진단 및 최소 재발방지 개선"
+  default_prompt: "하네스(스킬, 규칙, 스크립트, 문서)에서 관측된 문제를 진단하고 최소 재발방지 개선을 적용해줘."

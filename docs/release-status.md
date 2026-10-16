@@ -58,6 +58,14 @@
 - [후속] **1.0.3 준비**: 워커 effort 라벨-지표 소스 불일치(AA Max 지표에 Cog high 라벨) 최소 수정 후보 — [release-103-effort-fix-candidate.md](insights/release-103-effort-fix-candidate.md). tag `v1.0.3`·Release·레터는 별도 승인 흐름.
 - [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban·[#164](https://github.com/qus0in/yoroi/issues/164) warn — 버전·milestone 미지정, 구현은 warn만 후보 포함.
 
+## 1.0.3 발행 완료 (2026-10-16, PR #170 머지 → main `ea381c61b794390c43ac85cc2b515f0022c1af2a` = tag `v1.0.3`)
+
+- 범위(patch): 워커 effort 표기·AA 측정 소스 정합 1줄 + 신규 3케이스 + 버전 1.0.3 + 문서 8. max cap 없음.
+- [완료] dev 커밋 `aba39d9` → PR #170 머지 → main CI success(run `38861070165`) · tag `v1.0.3` · [Release](https://github.com/qus0in/yoroi/releases/tag/v1.0.3)(publishedAt 2026-10-16T06:31:13Z, 동일 SHA, Latest) · 전역 CLI 1.0.3(`--check` exit 0, clean archive) · 레터 [#171](https://github.com/qus0in/yoroi/issues/171) 발행(DeepSeek worker `max` 59.3·Argon 6위) 후 #162·#165 close.
+- [종료] #164·#167(PR #169 Closes) · #165(레터 후 직접) · #162(후속 레터 후). #163·#168·#141·#29 open 유지.
+- [보존] 워킹트리 원본 dirty 유지(main 반영분과 별개): score 1.1 hunk 전체·four-source·orchestration·takeover·worker-effort-source 테스트.
+- [검증] 하네스 latest: full unit 1068·8 skills, 상시 skill 자동 적용, exit 4/5/6·300초. 제품 1.0.3·레터 #171 완료와 정합.
+
 ## 버전 이력 요약
 
 - 0.1.0–0.6.0 (2026-10-08~12): MVP, Zen Free, watch/cache, 레터, 발행 기록은 [release-history-pre040.md](release-history-pre040.md) 참조.

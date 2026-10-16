@@ -18,8 +18,11 @@ Feature: yoroi insights letter CLI
     When I run insights once --markdown with a synthetic dated source
     Then the insights exit code is 0
     And the insights stdout contains "# AI 인사이트 데일리: 2026-10-09 KST"
-    And the insights stdout contains "## 🧭 오케스트레이터·리뷰어 Top10"
-    And the insights stdout contains "## 🛠️ 워커·메신저 Top10"
+    And the insights stdout contains "## 🧭 오케스트레이터·리뷰어 Top7"
+    And the insights stdout contains "## 🛠️ 워커·메신저 Top7"
+    And the insights stdout contains "<!-- yoroi:comment 1 -->"
+    And the insights stdout contains "## 🧭 오케스트레이터·리뷰어 Top15"
+    And the insights stdout contains "## 🛠️ 워커·메신저 Top15"
     And the insights stderr is empty
 
   Scenario: the same KST day reuses the stored success without another fetch

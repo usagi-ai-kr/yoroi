@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { renderTop10MarkdownFromRecords } from '../src/insights/letter-markdown.js';
+import { joinLetterParts, renderLetterPartsFromRecords, renderTop10MarkdownFromRecords } from '../src/insights/letter-markdown.js';
 import { renderTop10FromRecords } from '../src/insights/letter-top10-render.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
@@ -20,8 +20,8 @@ const RECORDS = [
   { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 },
   { modelId: 'claude-sonnet-5-5', value: 88, metric: INTEL, priceInput: 1, priceOutput: 5 }];
 test('the free section renders one merged table with notes limited to Zen/Go Free', () => {
-  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG });
-  const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
+  const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG });
+  const section = parts.comments[2];
   assert.ok(!section.includes('### 오케스트레이터') && !section.includes('### 워커'), '한 표로 합쳐 소제목을 두지 않는다');
   assert.ok(section.includes('| 모델 | 오케 | 워커 | AA 지수 | Free 경로 | 비고 |'));
   const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
@@ -41,16 +41,16 @@ test('ranked free models outside the old top-5 cut still get rows (p78 2a)', () 
   const models = ['alpha-zen', 'bravo-zen', 'charlie-zen', 'delta-zen', 'echo-zen', 'foxtrot-zen', 'golf-zen', 'hotel-zen'].map(id => freeEntry(id));
   const catalog: readonly PlanCatalogEntry[] = [{ planId: 'opencode-zen-free', planName: 'OpenCode Zen Free', tier: 'free', models }];
   const records = models.map((m, i) => ({ modelId: m.modelId, value: 90 - i * 5, metric: INTEL, priceInput: 1, priceOutput: 1 }));
-  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records, freeCatalog: catalog });
-  const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
+  const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records, freeCatalog: catalog });
+  const section = parts.comments[2];
   const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
   assert.equal(rows.length, models.length, '상위 limit 밖 랭크 모델도 모두 행이 된다');
   assert.ok(rows.some(line => line.includes('| hotel-zen |')), '목록 최하위 모델도 행으로 남는다');
 });
 test('an absent freeCatalog yields the single collection-failure line', () => {
   for (const empty of [undefined, [] as readonly PlanCatalogEntry[]]) {
-    const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: RECORDS, ...(empty && { freeCatalog: empty }) });
-    const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
+    const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records: RECORDS, ...(empty && { freeCatalog: empty }) });
+    const section = parts.comments[2];
     assert.ok(section.includes('Free 목록 수집 실패(opencode models)'));
     assert.ok(!section.includes('### 오케스트레이터'));
     const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: RECORDS });
@@ -77,8 +77,8 @@ const STAR_RECORDS = [
 const STAR_COGNITION = [{ modelId: 'mimo-v2-5', value: 0.7, metric: 'cognition_correct' },
   { modelId: 'ling-3-0-flash-fin', value: 0.6, metric: 'cognition_correct' }];
 test('free pareto marks only score-undominated rows; dominated rows carry no mark', () => {
-  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: STAR_RECORDS, cognitionRecords: STAR_COGNITION, freeCatalog: FREE_CATALOG });
-  const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
+  const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records: STAR_RECORDS, cognitionRecords: STAR_COGNITION, freeCatalog: FREE_CATALOG });
+  const section = parts.comments[2];
   const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
   const marked = rows.filter(line => line.includes('👍 파레토'));
   assert.ok(marked.length > 0, section);
@@ -88,8 +88,8 @@ test('free pareto marks only score-undominated rows; dominated rows carry no mar
 test('a verified Free path alone is access evidence, not price evidence; unmeasured rows keep - cells', () => {
   const sparse = [{ modelId: 'step-5', value: 43.7, metric: INTEL, priceInput: 0, priceOutput: 0 },
     { modelId: 'ling-3-0-flash-fin', value: 60, metric: CODE, priceInput: 0, priceOutput: 0 }];
-  const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
-  const section = md.slice(md.indexOf('## 🆓 Free 티어'), md.indexOf('## 📖'));
+  const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
+  const section = parts.comments[2], md = joinLetterParts(parts);
   for (const id of ['big-pickle', 'mimo-v2-5']) {
     assert.ok(section.includes(`| ${id} | ✗ | ✗ | - | OpenCode Zen Free | `),
       `${id}: Free 접근 근거만으로는 두 영역 다 통과하지 못한다(✗)`);

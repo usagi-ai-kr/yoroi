@@ -1,7 +1,7 @@
 import { opencodeTarget } from '../config/load-config.js';
 import { runInsights } from './insights.js';
 import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
-import { renderTop10MarkdownFromRecords } from '../insights/letter-markdown.js';
+import { joinLetterParts, renderLetterPartsFromRecords } from '../insights/letter-markdown.js';
 import { publishInsightsLetter } from './insights-publish.js';
 import { NodeProcessRunner } from '../infra/process-runner.js';
 import type { ProcessRunner } from '../infra/process-port.js';
@@ -49,11 +49,11 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
           ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
           ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
           signal: controller.signal });
-        if (outcome.exitCode !== 0) return undefined;
+        if (outcome.exitCode !== 0) throw new Error('insights run failed');
         const top10 = outcome.top10 ?? { records: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
         const warnings = (top10 as { warnings?: readonly string[] }).warnings;
         const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
-        return renderTop10MarkdownFromRecords({ publicationDate: outcome.publicationDate, ...top10,
+        return renderLetterPartsFromRecords({ publicationDate: outcome.publicationDate, ...top10,
           ...(warnings?.length && { notes: warnings }), ...(partialSources.length && { partialSources }) });
       } }, ctx.env).finally(() => { unsubscribe(); controller.abort(); });
   }
@@ -73,7 +73,7 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
       const top10Payload = { publicationDate: outcome.publicationDate, ...top10, ...(warnings && warnings.length ? { notes: warnings } : {}),
         ...(partialSources.length ? { partialSources } : {}) };
       return { letter, storage: outcome.storage, compact: renderTop10FromRecords(top10Payload),
-        markdown: renderTop10MarkdownFromRecords(top10Payload) };
+        markdown: joinLetterParts(renderLetterPartsFromRecords(top10Payload)) };
     },
   };
   return runInsightsCommand(parsed, deps, ctx.env);

@@ -9,7 +9,7 @@ import { normalRankScores } from './letter-score-normal.js';
 import { PLAN_CATALOG } from './plan-catalog.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 
-export const TOP_N = 10;
+export const TOP_N = 15;
 export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = {
   orchestrator: '## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)',
   worker: '## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)' };

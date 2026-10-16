@@ -5,12 +5,15 @@ import type { CliEnvironment } from '../ui/cli/bootstrap.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import { insightPublicationDate } from '../insights/history-port.js';
 import { freeSectionProblem } from '../insights/letter-free-guard.js';
+import type { LetterParts } from '../insights/letter-markdown.js';
 
 const REPO = 'qus0in/yoroi', TIMEOUT_MS = 30_000;
 type Issue = { readonly number: number; readonly title: string };
 export interface PublishLetterOptions {
   readonly dryRun?: boolean; readonly notBefore?: string; readonly clock?: () => number;
-  readonly runner: ProcessRunner; readonly ghBin?: string; readonly signal?: AbortSignal; readonly render: () => Promise<string | undefined>;
+  readonly runner: ProcessRunner; readonly ghBin?: string; readonly signal?: AbortSignal;
+  /** 본문+댓글 3개(w3 렌더 계약): 댓글 [오케 Top15, 워커 Top15, Free]. */
+  readonly render: () => Promise<LetterParts>;
 }
 async function gh(runner: ProcessRunner, bin: string, args: readonly string[], signal?: AbortSignal) {
   try { const out = await runner.run({ executable: bin, args, timeoutMs: TIMEOUT_MS }, signal); return out.exitCode === 0 ? out.stdout : undefined; }
@@ -48,25 +51,39 @@ export async function publishInsightsLetter(options: PublishLetterOptions, env: 
   if (!duplicates) return fail(env, 'duplicate check failed');
   const existing = duplicates.find(issue => issue.title === title);
   if (existing) { env.stdout(`skip: already published #${existing.number}\n`); return 0; }
-  let body: string | undefined;
-  try { body = await options.render(); } catch { return fail(env, 'collection or rendering failed'); }
-  if (!body?.trim()) return fail(env, 'collection or rendering failed');
-  const freeProblem = isRenderedLetter(body) ? freeSectionProblem(body) : undefined;
+  let parts: LetterParts;
+  try { parts = await options.render(); } catch { return fail(env, 'collection or rendering failed'); }
+  const body = parts?.body, comments = parts?.comments;
+  if (!body?.trim() || !Array.isArray(comments) || comments.length !== 3 || comments.some(comment => !comment?.trim())) {
+    return fail(env, 'collection or rendering failed');
+  }
+  // Free 가드는 댓글 3(Free 섹션)에 적용한다.
+  const freeProblem = isRenderedLetter(body) ? freeSectionProblem(comments[2]!) : undefined;
   if (freeProblem) return fail(env, `free section invalid: ${freeProblem}`);
   if (options.dryRun) {
     const open = await listIssues(options.runner, bin, 'open', undefined, options.signal);
     if (!open) return fail(env, 'open letter query failed');
-    env.stdout(`dry-run: title="${title}" duplicate=no close=${open.map(x => `#${x.number}`).join(',') || 'none'}\n`);
+    env.stdout(`dry-run: title="${title}" duplicate=no close=${open.map(x => `#${x.number}`).join(',') || 'none'} comments=3\n`);
     return 0;
   }
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-letter-publish-')), bodyFile = join(dir, 'body.md');
   try {
     writeFileSync(bodyFile, body, { encoding: 'utf8', mode: 0o600 });
+    const commentFiles = comments.map((comment, index) => {
+      const file = join(dir, `comment-${index + 1}.md`);
+      writeFileSync(file, comment!, { encoding: 'utf8', mode: 0o600 });
+      return file;
+    });
     const created = await gh(options.runner, bin, ['issue', 'create', '--repo', REPO, '--title', title,
       '--label', 'letter', '--body-file', bodyFile], options.signal);
     const match = created?.match(/https:\/\/github\.com\/qus0in\/yoroi\/issues\/(\d+)/);
     if (!match) return fail(env, 'issue creation failed');
     const number = Number(match[1]), url = `https://github.com/${REPO}/issues/${number}`;
+    for (let index = 0; index < commentFiles.length; index++) {
+      const posted = await gh(options.runner, bin, ['issue', 'comment', String(number), '--repo', REPO,
+        '--body-file', commentFiles[index]!], options.signal);
+      if (posted === undefined) return fail(env, `comment ${index + 1} failed (issue #${number} left open)`);
+    }
     const open = await listIssues(options.runner, bin, 'open', undefined, options.signal);
     let failed = !open;
     for (const issue of open ?? []) if (issue.number !== number) {

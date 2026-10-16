@@ -50,11 +50,10 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
 
   for (const emoji of ['🧭', '🛠️', '👍', '🆕', '🌱', '➖', '🚪']) assert.ok(md.includes(emoji), emoji);
 
-  assert.ok(md.includes('## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)'));
-  assert.ok(md.includes('## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)'));
+  for (const h of ['## 🧭 오케스트레이터·리뷰어 Top', '## 🛠️ 워커·메신저 Top']) for (const n of ['7 ', '15 ']) assert.ok(md.includes(h + n), h + n);
   const orchHeader = '| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가성비 | AA 지수 | 혼합 단가 | 변동 |';
   const workerHeader = '| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |';
-  assert.equal(md.split(orchHeader).length - 1, 1); assert.equal(md.split(workerHeader).length - 1, 1);
+  assert.equal(md.split(orchHeader).length - 1, 2); assert.equal(md.split(workerHeader).length - 1, 2);
   assert.ok(md.includes('| --- | --- | --- | --- | --- | --- | --- | --- |'));
   assert.ok(md.includes('| 1 | 👍 | provider/orch-model | high | 78.4 | - | 85.5 | $1.50 | 🌱 |'));
   assert.ok(md.includes('| 2 |  | provider/orch-up | default | 71.2 | - | 80.0 | $0.50 | ▲2 |'));

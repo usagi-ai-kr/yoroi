@@ -1,7 +1,7 @@
 import type { ProviderId, UsageWindow } from "../../domain/usage.js";
 import { sortByRank } from "./order.js";
 
-type Base = "5h" | "w" | "m";
+type Base = "5h" | "w" | "m" | "5h-a" | "w-a";
 
 interface Entry { readonly id: string; readonly base?: Base; readonly stages?: readonly string[] }
 
@@ -35,9 +35,10 @@ function codex(id: string): Entry {
 function agy(id: string): Entry {
   const match = /^([^:]+):(.+)$/.exec(id);
   if (!match) return { id };
-  const slug = match[2]!;
-  const base = slug.includes("five-hour") ? "5h" : slug.includes("weekly") ? "w" : undefined;
-  return base ? { id, base, stages: [word(match[1]!)[0]!, word(match[1]!)] } : { id };
+  const prefix = match[1]!, slug = match[2]!;
+  // argon은 gemini-models와 g-w 충돌을 피하려고 w-a(·5h-a)로 분리해 g-w-a와 기존 g-w 원본ID 폴백을 지킨다.
+  const base = slug.includes("five-hour") ? (prefix.includes("argon") ? "5h-a" : "5h") : slug.includes("weekly") ? (prefix.includes("argon") ? "w-a" : "w") : undefined;
+  return base ? { id, base, stages: [word(prefix)[0]!, word(prefix)] } : { id };
 }
 
 function claude(id: string): Entry {

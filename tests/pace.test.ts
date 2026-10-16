@@ -28,8 +28,10 @@ test("computes actual from used/limit when percent is absent", () => {
   assert.equal(usageStatus("opencode-go", half, [half], observedAt), "optimal");
   const under = win("weekly", { used: 1, limit: 10 });
   assert.equal(usageStatus("opencode-go", under, [under], observedAt), "under");
-  const over = win("weekly", { used: 9, limit: 10 });
+  const over = win("weekly", { used: 8, limit: 10 });
   assert.equal(usageStatus("opencode-go", over, [over], observedAt), "over");
+  const warn = win("weekly", { used: 9, limit: 10 });
+  assert.equal(usageStatus("opencode-go", warn, [warn], observedAt), "warn");
   const zeroLimit = win("weekly", { used: 5, limit: 0 });
   assert.equal(usageStatus("opencode-go", zeroLimit, [zeroLimit], observedAt), "n/a");
   const neither = win("weekly");
@@ -64,11 +66,11 @@ test("actual 98% 이상이면 예상과 무관하게 limit", () => {
   assert.equal(usageStatus("opencode-go", usedLimit, [usedLimit], observedAt), "limit");
 });
 
-test("actual 98 미만(97.99·97)은 98 기준으로 기존 규칙 그대로", () => {
-  const justBelow = win("weekly", { percent: 97.99 }); // expected 50 → over
-  assert.equal(usageStatus("opencode-go", justBelow, [justBelow], observedAt), "over");
-  const wasLimit = win("weekly", { percent: 97 }); // 이전(97 기준)에는 limit이던 값 → over
-  assert.equal(usageStatus("opencode-go", wasLimit, [wasLimit], observedAt), "over");
+test("actual 98 미만 90 이상(97.99·97)은 warn", () => {
+  const justBelow = win("weekly", { percent: 97.99 }); // expected 50 → warn
+  assert.equal(usageStatus("opencode-go", justBelow, [justBelow], observedAt), "warn");
+  const wasLimit = win("weekly", { percent: 97 }); // 이전(97 기준)에는 limit이던 값 → warn
+  assert.equal(usageStatus("opencode-go", wasLimit, [wasLimit], observedAt), "warn");
 });
 
 test("expected를 못 구해도 actual 99면 limit", () => {

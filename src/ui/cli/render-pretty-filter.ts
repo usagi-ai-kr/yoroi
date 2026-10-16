@@ -2,8 +2,8 @@ import pc from "picocolors";
 import type { ProviderId } from "../../domain/usage.js";
 import type { UsageStatus } from "./pace.js";
 
-/** 기본 pretty 표는 4개 상태와 xAI weekly n/a를 표시한다. */
-const SHOWN_STATUSES: ReadonlySet<UsageStatus> = new Set<UsageStatus>(["limit", "under", "optimal", "over"]);
+/** 기본 pretty 표는 5개 상태와 xAI weekly n/a를 표시한다. */
+const SHOWN_STATUSES: ReadonlySet<UsageStatus> = new Set<UsageStatus>(["limit", "warn", "under", "optimal", "over"]);
 let fullModeActive = false;
 export const setPrettyFullMode = (enabled: boolean): void => { fullModeActive = enabled; };
 export const isPrettyFullMode = (): boolean => fullModeActive;
@@ -25,6 +25,7 @@ const statusColors: Readonly<Record<UsageStatus, (text: string) => string>> = {
   "optimal": (text) => pc.green(text),
   under: (text) => pc.cyan(text),
   over: (text) => pc.yellow(text),
+  warn: (text) => pc.yellowBright(text),
   limit: (text) => pc.red(text),
   "n/a": (text) => text,
 };

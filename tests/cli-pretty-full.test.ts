@@ -28,9 +28,9 @@ const sampleResults: readonly UsageResult[] = [
 ];
 
 test("isShownStatus shows limit, under, optimal, over and hides n/a unless full", () => {
-  for (const s of ["limit", "under", "optimal", "over"] as const) assert.equal(isShownStatus(s, false), true);
+  for (const s of ["limit", "warn", "under", "optimal", "over"] as const) assert.equal(isShownStatus(s, false), true);
   for (const s of ["n/a"] as const) assert.equal(isShownStatus(s, false), false);
-  for (const s of ["under", "optimal", "n/a", "over", "limit"] as const) assert.equal(isShownStatus(s, true), true);
+  for (const s of ["under", "optimal", "n/a", "over", "warn", "limit"] as const) assert.equal(isShownStatus(s, true), true);
 });
 
 test("parseArgs parses --full and --pretty --full correctly without global mutation", () => {
@@ -45,14 +45,14 @@ const stripAnsi = (s: string): string => s.replace(/\u001b\[[0-9;]*m/g, ""); // 
 test("renderPretty default shows limit/under/optimal/over, hides n/a and displays hidden summary", () => {
   setPrettyFullMode(false);
   const text = stripAnsi(renderPretty(sampleResults).join("\n"));
-  assert.ok(text.includes("ok over") || text.includes("ok limit"), "over and limit are shown");
+  assert.ok(text.includes("ok warn") || text.includes("ok over") || text.includes("ok limit"), "warn, over and limit are shown");
   assert.ok(!text.includes("ok n/a"), "n/a is hidden");
   assert.ok(text.includes("숨김 1개(n/a)"), "provider with all hidden windows displays summary row");
 });
 
 test("renderPretty with full option displays all windows including n/a", () => {
   const text = stripAnsi(renderPretty(sampleResults, undefined, { full: true }).join("\n"));
-  assert.ok(text.includes("ok over") || text.includes("ok limit"), "over and limit visible in full mode");
+  assert.ok(text.includes("ok warn") || text.includes("ok over") || text.includes("ok limit"), "warn, over and limit visible in full mode");
   assert.ok(text.includes("ok n/a"), "n/a visible in full mode");
 });
 

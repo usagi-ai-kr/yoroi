@@ -27,9 +27,9 @@ test("plain puts usage_status right after the window label and unit", () => {
 
 test("status follows the actual-versus-expected comparison", () => {
   assert.equal(statusOf(win({ id: "weekly", percent: 3, resetAt })), "under");
-  assert.equal(statusOf(win({ id: "weekly", percent: 95, resetAt })), "over");
+  assert.equal(statusOf(win({ id: "weekly", percent: 95, resetAt })), "warn");
   assert.equal(statusOf(win({ id: "weekly", percent: 86, resetAt })), "optimal");
-  assert.equal(statusOf(win({ id: "weekly", used: 95, limit: 100, resetAt })), "over");
+  assert.equal(statusOf(win({ id: "weekly", used: 95, limit: 100, resetAt })), "warn");
 });
 
 test("missing expected or actual ratio stays n/a", () => {
@@ -61,7 +61,7 @@ test("pretty header puts Status right after Provider", () => {
 });
 
 test("formatStatus colors each status and keeps the ok prefix", () => {
-  for (const status of ["under", "optimal", "over", "limit", "n/a"] as const) {
+  for (const status of ["under", "optimal", "over", "warn", "limit", "n/a"] as const) {
     const plainText = stripVTControlCharacters(formatStatus(false, status));
     const colored = stripVTControlCharacters(formatStatus(true, status));
     assert.equal(plainText, `ok ${status}`);

@@ -50,15 +50,14 @@
 - [완료] 레터: [#160](https://github.com/qus0in/yoroi/issues/160)(Grok 4.6) 발행·4.6행 GET 확인 후 #157 댓글·close. #157과 차이 원인 미확정 유지.
 - [제외] 1.1 effort 3파일·orchestration·takeover 보존.
 
-## 1.0.2 준비 상태 (2026-10-16, 미발행·PR #166 초안 단계)
+## 1.0.2 준비 상태 (2026-10-16, 미발행 · PR #166 병합 후속)
 
-- 범위: (1) 오케 R 4차원 선형 가성비 복구(70/5/10/15, `valueForMoney = I/(P+0.01)`·log10 유지·Cog USD/task 역방향 소스별 min-max 후 차원 max) (2) 역할별 전체 적격 대표 모집단 midrank → Φ⁻¹ → 50+10z **표시 보정**(raw 가중합·worker bonus·대표 effort·Grok 자격·순위·▽ 원정책 유지). 신규 milestone 없음.
-- 상태: **커밋·dev push 완료(PR #166 초안)**, main merge·tag·Release·전역은 미실행.
-- 검증: clean 단위 **1042** / **BDD 45** / **632**·typecheck·build PASS(`yoroi 1.0.2`), validate PASS. followup(compact 축약·budget test·doc price cell) snapshot 동일 PASS. **CI pending**(PR #166 checks).
-- 표시 변화: raw 점수는 불변, **표시 점수만 50중심·SD 약10으로 보정**된다(▽·존·미측정 표시는 raw 기준).
-- [보존] **1.1 워커 이월**: worker hunk(p85 cpt·total·effort fallback)·orchestration·takeover는 1.0.2에서 제외·1.1에서 재검토. worker raw 30/20/10/40·하한33·가산5 불변.
-- [미발행] 레터(R 가성비·정규 표시 반영) 게시 미완료 → 본 PR에 `Closes #160` **금지**. (Grok 4.6/4.7 쌍불변·4.6 이탈 허용 순위재계산 유지.)
-- [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban(점수분포 포함·Top10에서만 제외)·[#164](https://github.com/qus0in/yoroi/issues/164) warn 90% — 버전·milestone 미지정, 구현 없음.
+- 범위: (1) 오케 R 4차원 선형 가성비 복구(70/5/10/15, `valueForMoney = I/(P+0.01)`·log10 유지·Cog USD/task 역방향 소스별 min-max 후 차원 max) (2) 역할별 전체 적격 대표 모집단 midrank → Φ⁻¹ → 50+10z **표시 보정** (3) #164 warn(90% 이상 표시·계약 문서) (4) #165 Antigravity `gemini-4-argon` 카탈로그 (5) #167 `muse-spark-open` 카탈로그·공개근거. 신규 milestone 없음.
+- 상태: PR #166 머지 완료(main `9cd019015a680e0e57bdc1ac3b1df14bb368f074`)·**v1.0.2 tag·Release 없음**(원격 확인 2026-10-16). (3)~(5) 변경은 아직 미커밋 → clean 후보 `/tmp/yoroi-102-final-clean`+manifest 준비(검증은 [release-102-candidate.md](insights/release-102-candidate.md) 참조).
+- **tag·Release·전역 CLI 갱신·레터 재발행 미실행**(다음 단계: dev 커밋 → PR → main CI → 승인 머지 → tag/Release).
+- [보존] **1.1 워커 이월**: worker hunk(`letter-top10-score.ts`·`four-source-score.md`)·`orchestration.md`·takeover·`insights-worker-effort-source.test.ts`는 후보에서 제외하고 워킹트리에 보존. worker raw 30/20/10/40·하한33·가산5 불변.
+- [미발행] 레터(R 가성비·정규 표시 반영) 게시 미완료 → PR에 `Closes #160` **금지**.
+- [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban·[#164](https://github.com/qus0in/yoroi/issues/164) warn — 버전·milestone 미지정, 구현은 warn만 후보 포함.
 
 ## 버전 이력 요약
 

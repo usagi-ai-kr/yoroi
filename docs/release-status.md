@@ -50,11 +50,11 @@
 - [완료] 레터: [#160](https://github.com/qus0in/yoroi/issues/160)(Grok 4.6) 발행·4.6행 GET 확인 후 #157 댓글·close. #157과 차이 원인 미확정 유지.
 - [제외] 1.1 effort 3파일·orchestration·takeover 보존.
 
-## 1.0.2 준비 상태 (2026-10-16, 미발행·커밋/PR 전 단계)
+## 1.0.2 준비 상태 (2026-10-16, 미발행·PR #166 초안 단계)
 
 - 범위: (1) 오케 R 4차원 선형 가성비 복구(70/5/10/15, `valueForMoney = I/(P+0.01)`·log10 유지·Cog USD/task 역방향 소스별 min-max 후 차원 max) (2) 역할별 전체 적격 대표 모집단 midrank → Φ⁻¹ → 50+10z **표시 보정**(raw 가중합·worker bonus·대표 effort·Grok 자격·순위·▽ 원정책 유지). 신규 milestone 없음.
-- 상태: **준비(완료 아님)** — core·render·regression·compact 최종독립리뷰 PASS, clean 후보(50 allowlist 파일) 구성. 아직 git index/branch/commit/push/PR·레터 미발행.
-- 검증: R 단계 clean check **1027** 단위 / **BDD 45** / **632**·build PASS, final review PASS, typecheck 0, validate PASS(워킹트리 단위 1029 — clean은 worker hunk 제외 2건 차이). **정규 순위 표시 보정 통합 검증은 pending**(수학 모듈 단위테스트 8/8만 완료).
+- 상태: **커밋·dev push 완료(PR #166 초안)**, main merge·tag·Release·전역은 미실행.
+- 검증: clean 단위 **1042** / **BDD 45** / **632**·typecheck·build PASS(`yoroi 1.0.2`), validate PASS. followup(compact 축약·budget test·doc price cell) snapshot 동일 PASS. **CI pending**(PR #166 checks).
 - 표시 변화: raw 점수는 불변, **표시 점수만 50중심·SD 약10으로 보정**된다(▽·존·미측정 표시는 raw 기준).
 - [보존] **1.1 워커 이월**: worker hunk(p85 cpt·total·effort fallback)·orchestration·takeover는 1.0.2에서 제외·1.1에서 재검토. worker raw 30/20/10/40·하한33·가산5 불변.
 - [미발행] 레터(R 가성비·정규 표시 반영) 게시 미완료 → 본 PR에 `Closes #160` **금지**. (Grok 4.6/4.7 쌍불변·4.6 이탈 허용 순위재계산 유지.)

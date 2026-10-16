@@ -57,8 +57,7 @@ export const SCORE_FORMULA_LINES: readonly string[] = [
 /** compact 전용 짧은 산출 공식(정보 동일·문구 축약, full/markdown은 SCORE_FORMULA_LINES 유지). */
 export const COMPACT_FORMULA_LINES: readonly string[] = [
   '- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점·동점 모델명',
-  `- 가중치: 오케·리뷰어 ${weightsText('orchestrator')} / 워커·메신저 ${weightsText('worker')}`,
-  '- 성능·속도: 오케 AA·Cog, 워커 AA / 사용량: OR·OCD',
+  '- 가중치(성능·사용량·속도·오케 가성비/워커 가격): 오케 70/5/10/15%, 워커 30/20/10/40%',
   '- 가성비: 오케 AA·Cog max (AA I/(P+.01)↑, Cog $/task↓, 결측 0)',
   `- 워커 가격 cpt·total 평균(혼합단가 *), 가산 ${WORKER_BONUS_CAP}×평균`,
   '- 워커 intel≥33, 오케 전변형 P1(동점 낮은 effort)',

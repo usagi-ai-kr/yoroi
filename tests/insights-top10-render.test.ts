@@ -22,10 +22,9 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('두 목록 Top10: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커·메신저) 통과 모델, 보유 요금제 접근 가능만'));
   assert.ok(rendered.includes('정렬: 스코어 내림차순(동점 시 모델명)'));
   assert.ok(rendered.includes('스코어 = 100 × Σ(가중치 × 차원값)'));
-  assert.ok(rendered.includes('오케·리뷰어 성능 70%·사용량 5%·속도 10%·가성비 15% / 워커'));
-  assert.ok(rendered.includes('워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%'));
   assert.ok(rendered.includes('워커 intel≥33, 오케 전변형 P1(동점 낮은 effort)'));
-  assert.ok(rendered.includes('속도: 오케 AA·Cog, 워커 AA') && rendered.includes('워커 가격 cpt·total 평균(혼합단가 *), 가산 5×평균'));
+  assert.ok(rendered.includes('오케 가성비/워커 가격): 오케 70/5/10/15%, 워커 30/20/10/40%'));
+  assert.ok(rendered.includes('워커 가격 cpt·total 평균(혼합단가 *), 가산 5×평균'));
   assert.ok(!rendered.includes('I²/P') && rendered.includes('- 가성비: 오케 AA·Cog max'), 'R: compact 가성비 문구 있음(선형, 축약형)');
   assert.ok(!rendered.includes('오케 사용량') && !rendered.includes('오케·리뷰어 사용량'));
   assert.ok(rendered.includes('off-peak·파레토, score 원 API'));
@@ -57,6 +56,15 @@ test('renderTop10Letter indicates all sources normal and keeps the whole compact
   assert.ok(!rendered.includes('수집 실패 소스: cognition'));
   assert.ok(rendered.includes('수집 실패 소스: openrouter'));
   assert.ok(rendered.length < 3800, `length ${rendered.length} >= 3800`);
+});
+test('compact default fits 3600 chars and preserves effort, score, dimensions, price, and the lower-zone marker', () => {
+  const base = fakeLists('budgetx', true);
+  const mark = (list: RoleLists['orchestrator']) => ({ ...list, entries: list.entries.map((e, i) => ({ ...e, belowZone: i === 4 })) });
+  const rendered = renderTop10Letter({ publicationDate: '2026-10-12',
+    lists: { orchestrator: mark(base.orchestrator), worker: mark(base.worker) } });
+  assert.ok(rendered.length <= 3600, `length ${rendered.length} > 3600`);
+  assert.ok(rendered.includes('1. budgetx-model-1 · effort high · 스코어 90.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
+  assert.ok(rendered.includes('▽ 5. budgetx-model-5 · effort high · 스코어 78.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
 });
 test('renderTop10Letter summarizes all-new, partial-new, and no-new cohorts per list', () => {
   const mkLists = (changes: readonly ('신규' | '유지' | '▲1' | '진입')[]): RoleLists => ({

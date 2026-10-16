@@ -19,7 +19,7 @@ p49 "소스별 표준화 후 상위 2개 평균"과 p50 플랜별 Top3를 되돌
 | 성능 | AA 역할 지표(오케·리뷰어=Intelligence, 워커·메신저=p85부터 Intelligence) · Cognition main `correct` | 선형, 높을수록 | 두 표준화 값 중 최댓값 |
 | 사용량 | 오케·워커 모두 OpenRouter·OpenCode Data 토큰(오케 가중 0.05, 워커 0.20) | 양수 토큰 log10 | 역할별 최댓값(이중 가산 없음) |
 | 속도 | 오케: AA 출력 tok/s · Cognition 소요 분, 워커: AA 출력 tok/s만 | 선형 | 오케 최댓값 / 워커 AA |
-| price 키 | 오케 **가성비**=AA I/(P+.01) log10 정방향 · Cog USD/task 역방향, 소스별 min-max 후 max / 워커 **가격**=AA cost_per_task·total_cost 각각 log 역방향 min-max 후 평균(보유 플랜 verified 모델 max(원값, p75) 적용) | log10 | 오케 max, 결측 0 / 워커 두 값 평균, 없으면 혼합 단가 대체(`*`), 결측 .99 |
+| price 키 | 오케 **가성비**=AA I/(P+.01) log10 정방향 · Cog USD/task 역방향, 소스별 min-max 후 max / 워커 **가격**=AA cost_per_task·total_cost 각각 log 역방향 min-max 후 평균(보유 플랜 verified 모델 max(원값, p75) 적용) | 오케 AA log10(I/(P+.01)) 정방향 · Cog USD/task 역방향 / 워커 log10(v+.01) 낮을수록 | 오케 max, 결측 0 / 워커 두 값 평균, 없으면 혼합 단가 대체(`*`), 결측 .99 |
 
 - P는 effort별 AA 혼합 API단가 `(3입력+출력)/4` USD/1M이다. Cog 정답률은 성능에만 참여하고 Cog USD/task는 오케 가성비에만 쓴다(워커는 불참). 오케 단가는 표시·파레토용으로도 남는다.
 - 오케 AA tok/s와 Cog 작업시간(분)은 각각 표준화 후 speed max. 워커 속도는 AA tok/s만. 계열별 속도·가격 정의가 다르다.

@@ -44,3 +44,14 @@
 - /tmp/yoroi-normal-final-letter-preview.md는 renderTop10Letter의 수정 없는 실제 출력이며 NaN/Infinity 문자열은 없다. 양 role section은 포함된다.
 - 출력은 3,655자로 3,600 예산을 55자 초과했고, renderer의 Free 축약 경로 때문에 Free 섹션은 빠졌다. source freeze 지시에 따라 source 수정·preview 수동 보정 없이 이 결과를 기록했다.
 - machine checks와 row별 보정 기대값은 /tmp/yoroi-calibrated-letter-verify.json에 있다. 검증은 현재 dirty working tree 기준이며 clean 재구성 결과와는 별개다.
+
+## 예산 후속 검증
+
+- 기본 발행 경로는 `renderTop10FromRecords → renderTop10Letter`이며 길이 옵션이 없다. `renderInsights` 기본 compact 호출도 같은 결과다. 3,600자는 renderer 계약이고 3,800자는 비교용 상한이다.
+- 수정 전 고정 입력은 3,655 JS 문자(3,600 초과·3,800 이하)였고, `>3,500` fallback에서 Free 섹션이 접혔다. 1.0.1 CLI의 기본 경로·예산 코드도 같다. 저장된 1.0.1 full Markdown 3,717자/Free 포함 artifact는 별도 `--markdown` 경로라 직접 비교하지 않았다.
+- compact 푸터에서 안내문과 중복되던 차원 출처 한 줄을 제거하고 가중치를 순서형 숫자로 축약했다. 행·모델·effort·rawScore·정규 표시점수·가격·가성비·▽ 의미와 예산 상수는 바꾸지 않았다.
+- 현재 고정 입력 preview는 3,597 JS 문자로 3,600·3,800을 통과하고 두 role section 및 Top10 행을 유지한다. Free 섹션은 기존 `>3,500` fallback에 따라 접히며 NaN/Infinity는 없다.
+- 1.0.1 고정 입력 재렌더는 약 100초 동안 끝나지 않아 길이와 Free 포함 여부를 측정하지 않았다. 이를 추정하지 않으며, 1.0.1 source의 기본 경로와 예산 fallback은 읽기 전용으로 확인했다.
+- `/tmp/yoroi-calibrated-letter-verify.json`의 row별 검증값은 이전 실행 그대로다. 그 파일의 preview count는 수정 전 값이며 최신 길이 결과는 이 후속 기록과 report에 있다. 현재 dirty working tree 기준이다.
+- 검증: `tests/insights-top10-render.test.ts` 5/5, 로컬 `tsc --noEmit`, `validate-repo.py`, `git diff --check` 통과. pnpm typecheck는 Corepack registry signature fetch 실패로 거부되어 설정을 바꾸지 않고 로컬 tsc를 실행했다.
+- 현재 green snapshot commit/push가 대기 중인 dirty root다. 이번 source/test 변경은 후속 commit에 포함해야 하며, 이 작업에서는 staging·commit·push를 하지 않았다.

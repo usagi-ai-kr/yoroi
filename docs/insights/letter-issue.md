@@ -52,19 +52,22 @@
 - **공개 범위**: private 전제. Cognition·AA 포함으로 public 전환 시 발행 즉시 중단.
 - **발행 시 사용자 통보**: 이슈 번호·링크·KST 시각을 사용자에게 통보한다.
 
-## 마크다운 본문 예시
+## 마크다운 본문 예시 (1.2.0 형식, 2026-10-16)
+
+- 1.2.0 개편([letter-format-1.2.md](letter-format-1.2.md)·[#178](https://github.com/qus0in/yoroi/issues/178)·[milestone 1.2.0](https://github.com/qus0in/yoroi/milestone/27)): 본문은 🧭 오케 Top7 + 🛠 워커 Top7(선발 15의 앞 7, 재계산 없음), **Free 섹션은 본문 제외**. 아래는 본문 예시(표 머리·범례는 기존과 동일).
+- 발행은 본문 생성 후 **댓글 3개 순서 고정**: 1) `## 🧭 오케스트레이터·리뷰어 Top15`+🚪 퇴장 2) `## 🛠 워커·메신저 Top15`+🚪 퇴장 3) Free tier 전체. 구분자 `<!-- yoroi:comment N -->`, 한 댓글이라도 실패하면 이전 레터 close 없이 종료.
 
 ```markdown
 # AI 인사이트 데일리: 2026-10-12 KST
 ![date](https://img.shields.io/badge/date-2026--10--12-blue)
 ![sources](https://img.shields.io/badge/sources-4_total-informational)
 ![status](https://img.shields.io/badge/status-all_healthy-success)
-## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)
-## 🧭 오케스트레이터 Top10 (판단·계획 / Intelligence Index)
+## 🧭 오케스트레이터·리뷰어 Top7 (판단·계획·검토)
+## 🛠 워커·메신저 Top7 (실행·검증)
 | 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도 | AA 지수 | 혼합 단가 | 변동 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 👍 | anthropic/claude-3-7-sonnet | high | 78.4 | 100/57/62 | 85.2 | $3.75 | ➖ |
-| ▽ 9 |  | provider/fill-model | default | 40.1 | 80/-/- | - | $1.50 | 🆕 |
+| ▽ 7 |  | provider/fill-model | default | 40.1 | 80/-/- | - | $1.50 | 🆕 |
 
 ## 📖 표시 안내
 - 👍 파레토 최적(파레토 열): 더 싸고 더 좋은 모델이 없는 상태(단가 대비 스코어 경계선)

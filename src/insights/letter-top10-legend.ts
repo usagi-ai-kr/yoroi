@@ -16,6 +16,10 @@ export function formatChange(change: RoleChange): string {
 export const exitLine = (modelId: string, previousRank: number): string => `🚪 이탈: ${modelId} (전일 ${previousRank}위)`;
 /** p75: 오케·리뷰어 성능/사용량/속도 3차원, p85: 워커·메신저 성능/속도/가격 3차원+가산 열, 가중치는 역할별. 역할 제목은 SECTION_HEADINGS 하나로 쓴다. */
 export const ROLE_HEADINGS = SECTION_HEADINGS;
+export const ROLE_HEADINGS_TOP7 = { orchestrator: '## 🧭 오케스트레이터·리뷰어 Top7 (판단·계획·검토)',
+  worker: '## 🛠️ 워커·메신저 Top7 (실행·코딩·전달)' } as const;
+export const ROLE_HEADINGS_TOP15 = { orchestrator: '## 🧭 오케스트레이터·리뷰어 Top15 (판단·계획·검토)',
+  worker: '## 🛠️ 워커·메신저 Top15 (실행·코딩·전달)' } as const;
 export const ROLE_LABELS = { orchestrator: '오케스트레이터·리뷰어', worker: '워커·메신저' } as const;
 export const ZONE_TEXT = `스코어 ≥ 후보 최고 스코어 × ${OPTIMAL_ZONE_THRESHOLDS.orchestrator * 100}%(오케스트레이터·리뷰어)/${OPTIMAL_ZONE_THRESHOLDS.worker * 100}%(워커·메신저)`;
 const SOURCE_LABELS = { aa: 'AA', cognition: 'Cog', openrouter: 'OR', opencode: 'OCD' } as const;
@@ -41,7 +45,7 @@ export const LEGEND_HEADING = '## 📖 표시 안내';
 export const LEGEND_LINES: readonly string[] = [
   LEGEND_HEADING,
   '- 👍 파레토 최적(파레토 열): 더 싸고 더 좋은 모델이 없는 상태(단가 대비 스코어 경계선)',
-  '- ▲N / ▼N 전일 대비 순위 상승/하락, ➖ 유지, 🆕 신규 진입(전일 Top10 밖), 🌱 첫 집계(전일 기록 없음), 🚪 이탈',
+  '- ▲N / ▼N 전일 대비 순위 상승/하락, ➖ 유지, 🆕 신규 진입(전일 Top15 밖), 🌱 첫 집계(전일 기록 없음), 🚪 이탈',
   `- ▽ 하한 보충: 임계(원점수 최고의 ${OPTIMAL_ZONE_THRESHOLDS.orchestrator * 100}%/${OPTIMAL_ZONE_THRESHOLDS.worker * 100}%) 미달이어도 후보를 스코어 순으로 보충; 워커는 AA intel ≥${WORKER_INTEL_FLOOR}만 · 표시 점수=역할별 정규순위 50중심(근사), 임계·차원·순위=원점수`,
   `- 0~100 차원: 오케 성능/사용량/속도/가성비, 워커 성능/속도/가격; 워커 intel<${WORKER_INTEL_FLOOR}·결측 제외`,
   `- 사용량: OR/OCD(오케 ${weightPct('orchestrator', 'usage')}%·워커는 가산); 속도: 오케 ${sourceText('orchestrator', 'speed')}, 워커 ${sourceText('worker', 'speed')}; '-'=근거 없음`,

@@ -46,8 +46,8 @@ test('kimi-k3 at its official blended price remains eligible and Top10 fills nor
   const entries = computeRoleTop10(records).orchestrator.entries;
   // 상한 없음: 비싼 kimi-k3도 후보다(오케 스코어는 가격과 무관하다. 작은 풀로도 확인).
   assert.ok(computeRoleTop10(records.slice(0, 4)).orchestrator.entries.some(e => e.modelId === 'kimi-k3'), 'kimi-k3 공식 단가($3.00/$15.00, 혼합 $6)도 후보로 남는다');
-  assert.equal(entries.length, 10, 'Top10은 10개를 채운다');
-  assert.equal(entries.at(-1)!.rank, 10);
+  assert.equal(entries.length, 13, 'Top15는 후보 13개를 모두 담는다');
+  assert.equal(entries.at(-1)!.rank, 13);
 });
 
 test('high peak and adjusted off-peak prices both keep a candidate', () => {

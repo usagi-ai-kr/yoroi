@@ -58,6 +58,11 @@
 - [후속] **1.0.3 준비**: 워커 effort 라벨-지표 소스 불일치(AA Max 지표에 Cog high 라벨) 최소 수정 후보 — [release-103-effort-fix-candidate.md](insights/release-103-effort-fix-candidate.md). tag `v1.0.3`·Release·레터는 별도 승인 흐름.
 - [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban·[#164](https://github.com/qus0in/yoroi/issues/164) warn — 버전·milestone 미지정, 구현은 warn만 후보 포함.
 
+## 1.2.0 발행 준비 (2026-10-16, milestone 27, [#178](https://github.com/qus0in/yoroi/issues/178))
+
+- 범위(minor): 인사이트 레터 마크다운을 본문 Top7(오케·워커 각 7행) + 순서 고정 댓글 3개(① 오케 Top15+퇴장 ② 워커 Top15+퇴장 ③ Free 티어)로 분리(`TOP_N=15`, `LetterParts`·`joinLetterParts`, Free 가드 댓글 3 적용, 댓글 실패 시 close 금지). 명세: [letter-format-1.2.md](insights/letter-format-1.2.md).
+- [검증] unit 1086/1086·typecheck·validate PASS, w3 발행 리뷰·w2 렌더 교차 리뷰 차단 0, 본문 1–7위 모델·스코어·변동이 #175(1.1.0) 스냅샷 1–7위와 일치.
+
 ## 1.1.1 발행 완료 (2026-10-16, PR #177 → main `29c968fe8ea05037563f77690786a69b21c1f890` = tag `v1.1.1`, milestone 26, [#176](https://github.com/qus0in/yoroi/issues/176))
 
 - 범위(patch): 전역 CLI가 레터 모델 목록 설정을 읽도록 `YOROI_LETTER_MODEL_LISTS` → `${XDG_CONFIG_HOME:-~/.config}/yoroi/letter-model-lists.json` → 레포 config → 기본값 순으로 해석. 파싱 실패는 stderr 경고 1줄. 밴은 오케·워커별(`ban.common` 하위호환), 버전 허용 `allowOlder`는 공통(사용자 확정).

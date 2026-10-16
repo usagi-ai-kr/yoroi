@@ -30,7 +30,7 @@ const NAME_LIMIT = 120, EXIT_LIMIT = 5, FAILURE_LIMIT = 3;
 function section(role: OptimalZoneRole, list: RoleList): string[] {
   const lines = [ROLE_HEADINGS[role]];
   if (!list.entries.length) lines.push('자료 부족: 존을 통과한 접근 가능 모델이 없습니다.');
-  for (const e of list.entries) {
+  for (const e of list.entries.slice(0, 10)) {
     const rank = e.belowZone ? `▽ ${e.rank}` : String(e.rank);
     const refs = [e.openrouterRankText, e.isPareto ? PARETO_MARK : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
     lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${dimensionsText(e, role)}${bonusSuffix(e, role)}` +

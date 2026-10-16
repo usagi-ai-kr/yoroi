@@ -1,43 +1,26 @@
 import { computeRoleTop10, type RoleList, type RoleLists } from './letter-top10-unified.js';
-import type { OptimalZoneRole } from './letter-top10-worker.js';
 import type { Top10RecordInput } from './letter-top10-rank.js';
 import { top10OptionsFrom } from './letter-top10-render-options.js';
 import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
-import { LEGEND_LINES, PARETO_MARK, ROLE_HEADINGS, ROLE_LABELS, dimensionsLabel, ZONE_TEXT, changeNote, exitLine, formatChange, leadText, dimensionsText, bonusText } from './letter-top10-legend.js';
+import { LEGEND_LINES, ROLE_HEADINGS_TOP15, ROLE_HEADINGS_TOP7, ZONE_TEXT } from './letter-top10-legend.js';
 import { freeListsFrom, renderFreeSectionMarkdown, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js';
+import { renderRoleTable, summarizeLists } from './letter-markdown-tables.js';
+import { joinLetterParts, type LetterParts } from './letter-parts.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 
 export { escapeShields, OMISSION_MARK, MARKDOWN_LIMIT } from './letter-markdown-format.js';
 export type { RoleLists, RoleList, RoleEntry, RoleExit } from './letter-top10-unified.js';
+export { joinLetterParts, type LetterParts } from './letter-parts.js';
 
-/** 파레토 최적은 순위·모델 칸에 섞지 않고 독립 열(👍)로 둔다(2026-10-13 사용자 지시). 교집합 표시는 두지 않는다. */
-/** 두 계열 공통 열(2026-10-13): 스코어 옆에 스코어에 쓰인 근거를, AA 지수는 두 역할 모두 Intelligence(p85)를 보인다. 워커만 `가산` 열이 더 있다. */
-const columns = (role: OptimalZoneRole): string[] => ['순위', '파레토', '모델', '추천 effort', '스코어', dimensionsLabel(role),
-  ...(role === 'worker' ? ['가산'] : []), 'AA 지수', '혼합 단가', '변동'];
-const tableHead = (role: OptimalZoneRole): string => `| ${columns(role).join(' | ')} |\n| ${columns(role).map(() => '---').join(' | ')} |`;
 
-function renderTable(role: OptimalZoneRole, list: RoleList): string {
-  const rows = list.entries.map(e => {
-    const rank = `${e.belowZone ? '▽ ' : ''}${e.rank}`;
-    const cells = [rank, e.isPareto ? PARETO_MARK : '', e.modelId, e.repEffort, e.scoreText ?? '-', dimensionsText(e, role),
-      ...(role === 'worker' ? [bonusText(e, role)] : []), e.indexText, `${e.blendedCostText}${e.offPeak ? ' off-peak' : ''}`, formatChange(e.change)];
-    return `| ${cells.join(' | ')} |`;
-  });
-  const exits = list.exits.map(x => exitLine(x.modelId, x.previousRank));
-  return [`${ROLE_HEADINGS[role]}\n\n${tableHead(role)}`, ...rows, ...(exits.length ? ['', ...exits] : [])].join('\n');
-}
-function summarize(lists: RoleLists): string {
-  const o = lists.orchestrator.entries[0], w = lists.worker.entries[0];
-  const lead = o || w ? `선두: ${ROLE_LABELS.orchestrator} ${leadText(o)} · ${ROLE_LABELS.worker} ${leadText(w)}` : '선두: 자료 부족';
-  return `## 요약\n- ${lead}\n- 변동: ${changeNote(ROLE_LABELS.orchestrator, lists.orchestrator)} · ${changeNote(ROLE_LABELS.worker, lists.worker)}`;
-}
-
-export function renderTop10Markdown(data: {
+export interface MarkdownLetterData {
   readonly publicationDate: string; readonly lists: RoleLists; readonly free?: RoleLists | undefined;
   readonly freeUnmeasured?: readonly UnmeasuredFree[];
   readonly failedSources?: readonly string[]; readonly partialSources?: readonly string[]; readonly notes?: readonly string[];
-}): string {
+}
+/** 본문 Top7 + 댓글 Top15·Top15·Free 분리. 본문 요약·변동은 Top7 기준, 퇴장은 댓글에만 둔다. */
+export function renderLetterParts(data: MarkdownLetterData): LetterParts {
   const failed = data.failedSources ?? [], partial = data.partialSources ?? [], notes = data.notes ?? [];
   const badges = [
     `![date](https://img.shields.io/badge/date-${escapeShields(data.publicationDate)}-blue)`,
@@ -56,17 +39,28 @@ export function renderTop10Markdown(data: {
     `${formulas}\n\n### 실패 소스 안내\n${sourceStatusLines(failed, partial).join('\n')}${warnings}\n\n### 출처\n` +
     `${SOURCE_LINES.join('\n')}\n</details>`;
 
-  const parts = [
+  const top7 = (list: RoleList): RoleList => ({ entries: list.entries.slice(0, 7), exits: [] });
+  const bodyLists: RoleLists = { orchestrator: top7(data.lists.orchestrator), worker: top7(data.lists.worker) };
+  const body = truncateAtRowBoundary([
     `# AI 인사이트 데일리: ${data.publicationDate} KST`,
     badges,
-    summarize(data.lists),
-    renderTable('orchestrator', data.lists.orchestrator),
-    renderTable('worker', data.lists.worker),
-    renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? []).join('\n'),
+    summarizeLists(bodyLists),
+    renderRoleTable('orchestrator', bodyLists.orchestrator, ROLE_HEADINGS_TOP7.orchestrator, 7, false),
+    renderRoleTable('worker', bodyLists.worker, ROLE_HEADINGS_TOP7.worker, 7, false),
     LEGEND_LINES.join('\n'),
     details,
-  ];
-  return truncateAtRowBoundary(parts.join('\n\n'));
+  ].join('\n\n'));
+  const [commentOke, commentWorker, commentFree] = ([
+    renderRoleTable('orchestrator', data.lists.orchestrator, ROLE_HEADINGS_TOP15.orchestrator),
+    renderRoleTable('worker', data.lists.worker, ROLE_HEADINGS_TOP15.worker),
+    renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? []).join('\n'),
+  ]).map(part => truncateAtRowBoundary(part));
+  const comments: [string, string, string] = [commentOke!, commentWorker!, commentFree!];
+  return { body, comments };
+}
+
+export function renderTop10Markdown(data: MarkdownLetterData): string {
+  return joinLetterParts(renderLetterParts(data));
 }
 
 export interface MarkdownLetterInput {
@@ -75,12 +69,12 @@ export interface MarkdownLetterInput {
   readonly opencodeDataRecords?: readonly Top10RecordInput[]; readonly cognitionRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[];
   readonly notes?: readonly string[]; readonly partialSources?: readonly string[];
-  readonly freeCatalog?: readonly PlanCatalogEntry[];
+  readonly catalog?: readonly PlanCatalogEntry[]; readonly freeCatalog?: readonly PlanCatalogEntry[];
 }
-export function renderTop10MarkdownFromRecords(input: MarkdownLetterInput): string {
+export function renderLetterPartsFromRecords(input: MarkdownLetterInput): LetterParts {
   const opts = top10OptionsFrom(input);
   const free = freeListsFrom(input.records, input.freeCatalog, opts);
-  return renderTop10Markdown({
+  return renderLetterParts({
     publicationDate: input.publicationDate,
     lists: computeRoleTop10(input.records, opts),
     free,
@@ -89,4 +83,7 @@ export function renderTop10MarkdownFromRecords(input: MarkdownLetterInput): stri
     ...(input.partialSources && { partialSources: input.partialSources }),
     ...(input.notes && { notes: input.notes }),
   });
+}
+export function renderTop10MarkdownFromRecords(input: MarkdownLetterInput): string {
+  return joinLetterParts(renderLetterPartsFromRecords(input));
 }

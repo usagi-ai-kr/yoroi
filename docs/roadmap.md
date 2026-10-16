@@ -36,11 +36,11 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 - [완료] 레터 갱신: [#160](https://github.com/qus0in/yoroi/issues/160)(Grok 4.6, 4.6행 GET 확인) 발행 후 #157 댓글·close. #157과 차이 원인 미확정 유지.
 - [제외] 1.1 effort 3파일·orchestration·takeover는 보존한다.
 
-## 1.1.0 후속 (이월, 1.0 제외)
+## 1.1.0 진행 ([1.1.0 milestone](https://github.com/qus0in/yoroi/milestone/25) open, 2026-10-16)
 
-- [이월] 접근 가능 effort 상한(xhigh) 반영: 사용자 실측으로 `muse-spark-1-3`은 max가 없고 xhigh까지만 쓸 수 있다. 현재 추천 effort는 AA 측정 변형에서 오고, 접근 필터는 모델 단위 verified만 본다(`letter-top10-candidates.ts:51-55`).
-- [이월] 워커 effort 정책 확정: 미커밋 3파일의 구현은 원문 정책 'AA 최고만'과 다르다(현재: Cognition 선택 effort를 AA에 있을 때 유지). 사용자 확정, 점수 델타 검증, 레터 재발행 판단을 거쳐 반영한다.
-- [후보] [#141](https://github.com/qus0in/yoroi/issues/141) 1.1 후보 성능 소스 검토(open, milestone 없음).
+- [확정] 범위(사용자 확정): [#163](https://github.com/qus0in/yoroi/issues/163) 설정 기반 레터 밴 목록 + 하위버전 화이트리스트 고도화만 — 근거·설계 [letter-model-lists-1.1.md](insights/letter-model-lists-1.1.md).
+- [진행] milestone 1.1.0 생성·#163 할당, #163에 고도화 범위 댓글. 구현 w3 · 테스트 w1 · 잡무 w2. 빈 목록=현재 동작·Top10/▽ 보충에서만 제외(점수·분포 불변).
+- [범위 밖] [#141](https://github.com/qus0in/yoroi/issues/141)·effort 상한(xhigh: `muse-spark-1-3`은 max 없음, 접근 필터는 모델 단위 verified만 — `letter-top10-candidates.ts:51-55`)·워커 effort 정책(미커밋 3파일, Cognition 선택 effort 유지)·#168 — 후속 재검토로 이월.
 
 ## 완료된 마일스톤 (0.1.0~0.6.0)
 

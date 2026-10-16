@@ -1,5 +1,6 @@
 import { normalizeModelName } from './model-id.js';
 export { normalizeModelName } from './model-id.js';
+import type { LetterModelLists } from './letter-model-lists.js';
 import { splitBaseAndEffort, effortForModel, calcBlendedCost, calcCostEfficiency, type ModelVariant } from './letter-top10-group.js';
 import { filterCandidates } from './letter-top10-filter.js';
 import type { OffPeakRate } from './model-price-overrides.js';
@@ -10,6 +11,7 @@ export interface Top10RecordInput { readonly modelId: string; readonly modelAlia
 export interface Top10Options { readonly openrouterRecords?: readonly Top10RecordInput[]; readonly previousCohort?: readonly Top10RecordInput[] | null;
   readonly priceOverrides?: Readonly<Record<string, OffPeakRate>>; readonly nowUtc?: string;
   readonly catalog?: readonly PlanCatalogEntry[]; readonly excludeModelIds?: ReadonlySet<string>;
+  readonly letterModelLists?: LetterModelLists;
   readonly opencodeDataRecords?: readonly Top10RecordInput[];
   /** Cognition main subset만. modelId는 정규화 base+effort 접미사. metric: `cognition_correct`(정답률 0..1)·
    *  `cognition_cost`(USD/task)·`cognition_duration_min`(분/task). p51 4차원 점수의 성능·가격·속도 근거. */

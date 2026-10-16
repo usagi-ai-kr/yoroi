@@ -1,13 +1,14 @@
 import { calcBlendedCost, calcCostEfficiency, type ModelVariant } from './letter-top10-group.js';
 import { normalizeModelName } from './model-id.js';
+import { DEFAULT_LETTER_MODEL_LISTS, isProtectedPair } from './letter-model-lists.js';
 import { findOffPeakRate, isOffPeakHour, OFF_PEAK_RATES, type OffPeakRate } from './model-price-overrides.js';
 
-/** 사용자 규칙 제외 계열(소문자 부분 일치): Fable·Astra. */
-export const EXCLUDED_PATTERNS = ['fable', 'astra'] as const;
+/** 사용자 규칙 제외 계열(기본값, 설정으로 변경 가능): Fable·Astra. */
+export const EXCLUDED_PATTERNS: readonly string[] = DEFAULT_LETTER_MODEL_LISTS.excludePatterns;
 
-export function isExcludedModel(modelId: string): boolean {
-  const id = modelId.toLowerCase();
-  return EXCLUDED_PATTERNS.some(pattern => id.includes(pattern));
+export function isExcludedModel(modelId: string, patterns: readonly string[] = EXCLUDED_PATTERNS): boolean {
+  const id = normalizeModelName(modelId);
+  return patterns.some(pattern => id.includes(pattern.toLowerCase()));
 }
 
 /** 연속 숫자 토큰을 버전으로 파싱(예 claude-opus-5-5 → claude-opus [5,5]). family 비면 null. */
@@ -44,21 +45,17 @@ export function vendorLine(family: string): string {
 }
 
 const modelKey = (id: string): string => normalizeModelName(id);
-/** 독립 유지 쌍: GPT 6/6.1 Sol(2026-10-14), Grok 4.6/4.7(2026-10-15). 서로만 세대·후속 제외를 건너뛴다. */
-const SEPARATE_PAIRS = [['gpt-6-sol', 'gpt-6-1-sol'], ['grok-4-6', 'grok-4-7']] as const;
-export const separateGptSolModels = (a: string, b: string): boolean => {
-  const ids = [normalizeModelName(a), normalizeModelName(b)];
-  return new Set(ids).size === 2 && SEPARATE_PAIRS.some(pair => pair.every(id => ids.includes(id)));
-};
+export const separateGptSolModels = (a: string, b: string, allowOlder: readonly string[] = DEFAULT_LETTER_MODEL_LISTS.allowOlder): boolean =>
+  isProtectedPair(a, b, allowOlder);
 const isGptGrade = (family: string): boolean => {
   const parts = family.split('-');
   return parts[0] === 'gpt' && (GRADE_TOKENS as readonly string[]).includes(parts.at(-1)!);
 };
 type Parsed = { id: string; pv: NonNullable<ReturnType<typeof parseFamilyVersion>> };
-/** 같은 family는 전체 버전, GPT 등급끼리는 메이저, 등록된 기본형→등급은 전체 버전. */
-function supersedes(newer: Parsed, older: Parsed): boolean {
+/** 같은 family는 전체 버전, GPT 등급끼리는 메이저, 등록된 기본형→등급은 전체 버전(화이트리스트 older 보호). */
+function supersedes(newer: Parsed, older: Parsed, allow: ReadonlySet<string>): boolean {
   if (newer.pv.family === older.pv.family) {
-    if (separateGptSolModels(newer.id, older.id)) return false;
+    if (allow.has(older.id)) return false;
     return compareVersions(newer.pv.version, older.pv.version) > 0;
   }
   if (isGptGrade(newer.pv.family) && isGptGrade(older.pv.family) && vendorLine(newer.pv.family) === vendorLine(older.pv.family) &&
@@ -69,11 +66,15 @@ function supersedes(newer: Parsed, older: Parsed): boolean {
   return grades?.includes(parts.at(-1)!) === true &&
     parts.slice(0, -1).join('-') === older.pv.family && compareVersions(newer.pv.version, older.pv.version) > 0;
 }
-/** 전체 접근 가능 AA 모델 집합에서 같은 등급은 전체 버전, GPT 교차 등급은 메이저 세대를 비교한다. */
-export function olderGenerationModelIds(modelIds: readonly string[]): ReadonlySet<string> {
-  const parsed = modelIds.map(id => ({ id: modelKey(id), pv: parseFamilyVersion(modelKey(id)) }));
-  const ok = parsed.filter((x): x is Parsed => x.pv !== null);
-  return new Set(ok.filter(x => ok.some(y => supersedes(y, x))).map(x => x.id));
+/** 전체 접근 가능 AA 모델 집합에서 같은 등급은 전체 버전, GPT 교차 등급은 메이저 세대를 비교한다.
+ *  allowOlder 목록은 세대 비교·후속 규칙 어느 쪽으로도 superseded되지 않는다. */
+export function olderGenerationModelIds(modelIds: readonly string[],
+  allowOlder: readonly string[] = DEFAULT_LETTER_MODEL_LISTS.allowOlder): ReadonlySet<string> {
+  const allow = new Set(allowOlder.map(modelKey));
+  const ok = modelIds.map(id => ({ id: modelKey(id), pv: parseFamilyVersion(modelKey(id)) })).filter((x): x is Parsed => x.pv !== null);
+  const older = new Set(ok.filter(x => ok.some(y => supersedes(y, x, allow))).map(x => x.id));
+  for (const id of allow) older.delete(id);
+  return older;
 }
 
 /** 같은 family의 낮은 버전 및 더 낮은 GPT 메이저를 제외한다. 파싱 불가·동일 세대는 유지한다. */

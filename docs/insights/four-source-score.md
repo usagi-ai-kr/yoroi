@@ -41,6 +41,7 @@ p49 "소스별 표준화 후 상위 2개 평균"과 p50 플랜별 Top3를 되돌
 - 오케 추천 effort: 성능 소스에서 관측된 minimal<low<medium<high<xhigh<max 변형마다 성능·속도·가성비를 같은 effort로 평가한다(상한 없음, max·xhigh 유지 — p63 상한은 p64에서 폐기). 등급 변형이 없으면 default 단일, 등급이 있으면 default는 공유 근거만이다. 소스에 해당 effort가 없으면 단일 default/전 effort 동일값만 공유하고 나머지는 결측0이다. 전 변형 풀 표준화 후 R 점수(70/5/10/15) 최고를 대표로 고르며 동점은 낮은 effort다. 임계·순위는 대표 점수로 계산한다.
 - 워커 추천 effort: 성능 차원을 낸 소스(동점 AA)의 최고 effort이며, AA 속도 최대·단가 최소는 base 최선값을 유지한다.
 - GPT-6.1 Sol과 GPT-6 Sol은 독립 후보이며 두 모델 사이 세대 제외·후속 관계·점수 복사를 적용하지 않는다(2026-10-14 사용자 결정).
+- 허용·제외 목록(`config/letter-model-lists.json`): `allowOlder`(기본 grok-4-6·gpt-6-sol)는 하위버전 자동 배제·후속 규칙에서 제외한다. `ban`(공통 ∪ 역할, 기본 빈값)은 Top10 선발·▽ 보충에서만 제외하고 점수·모집단에는 포함하며 반대 역할에 영향이 없다. `excludePatterns`(기본 Fable·Astra)는 후보 풀 제외 그대로다.
 - 전역 Free-only 제외는 폐기했다. Free 모델도 전체 Top10에 들어간다(Free 별도 섹션은 유지 가능, 접근 근거만 담당). 두 목록 사이 강제 배제·quota는 없다.
 - **표시 보정(R 확정)**: raw 점수는 I 선형 가중합 그대로다. 표시 점수는 역할별 전체 적격 대표 모델의 raw를 midrank 정규 순위(50중심·SD 약10)로 변환한 값이며, Top10 컷·▽·존 판정은 raw 기준을 유지한다. finite만 모집단, n=0은 빈 배열, n=1·전부 동점은 50, 동점은 midrank 근사.
 

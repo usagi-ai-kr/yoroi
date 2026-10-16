@@ -1,5 +1,6 @@
 import { splitBaseAndEffort } from './letter-top10-group.js';
 import { separateGptSolModels } from './letter-top10-filter.js';
+import { activeLetterModelLists, banSetFor, listKeyOf } from './letter-model-lists.js';
 import { FREE_ACCESS_METRIC, normalizeModelName, toRefMap, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
 import { buildCandidatePool, plansForCatalogModel } from './letter-top10-candidates.js';
 import { type OptimalZoneRole, type ScoreComponents, type ScoredGroup } from './letter-top10-worker.js';
@@ -28,13 +29,12 @@ export interface RoleLists { readonly orchestrator: RoleList; readonly worker: R
 
 const costTextOf = (cost?: number): string => cost === undefined ? '단가 -' : cost === 0 ? '무료' : `$${cost.toFixed(2)}/1M`;
 function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, opts: Top10Options, catalog: readonly PlanCatalogEntry[], excluded: ReadonlySet<string>,
-  scored: readonly ScoredGroup[], cal: ReadonlyMap<ScoredGroup, number>): RoleList {
+  scored: readonly ScoredGroup[], cal: ReadonlyMap<ScoredGroup, number>, allowOlder: readonly string[]): RoleList {
   const successors = new Map<string, string>();
-  for (const r of records) if (r.successorOf !== undefined &&
-    !separateGptSolModels(splitBaseAndEffort(r.modelId).base, splitBaseAndEffort(r.successorOf).base))
+  for (const r of records) if (r.successorOf !== undefined && !separateGptSolModels(splitBaseAndEffort(r.modelId).base, splitBaseAndEffort(r.successorOf).base, allowOlder))
     successors.set(normalizeModelName(splitBaseAndEffort(r.modelId).base), r.successorOf);
   const selected = scored
-    .filter(s => !excluded.has(normalizeModelName(s.group.baseModelId))).slice(0, TOP_N);
+    .filter(s => !excluded.has(listKeyOf(s.group.baseModelId))).slice(0, TOP_N);
   const entries = selected.map((s, i) => {
     const g = s.group, rep = g.repVariant, key = normalizeModelName(g.baseModelId);
     const or = (opts?.openrouterRecords ?? []).find(o => normalizeModelName(o.modelId) === key);
@@ -74,17 +74,17 @@ const markBoth = (list: RoleList, other: ReadonlySet<string>): RoleList =>
 export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: Top10Options): RoleLists {
   // p51: 런타임 free 카탈로그를 전체 후보에 합치고, 검증 free 경로 모델에는 접근 근거 표지 행만 넣는다(p52: 가격 불변).
   const base = opts?.catalog ?? PLAN_CATALOG, catalog = [...base, ...(opts?.freeCatalog ?? []).filter(f => !base.some(p => p.planId === f.planId))];
-  const excluded = new Set([...(opts?.excludeModelIds ?? [])].map(id => normalizeModelName(splitBaseAndEffort(id).base)));
+  const lists = opts?.letterModelLists ?? activeLetterModelLists(), excluded = new Set([...(opts?.excludeModelIds ?? [])].map(id => listKeyOf(splitBaseAndEffort(id).base)));
   const freeRows = catalog.filter(p => p.tier === 'free').flatMap(p => p.models.filter(m => m.verified).map(m => ({ modelId: m.modelId, metric: FREE_ACCESS_METRIC, value: 0 })));
   const evidence = [...(opts?.openrouterRecords ?? []), ...(opts?.opencodeDataRecords ?? []), ...(opts?.cognitionRecords ?? []), ...freeRows];
-  const candidates = buildCandidatePool(records, catalog, evidence).accessibleRecords;
+  const candidates = buildCandidatePool(records, catalog, evidence, lists).accessibleRecords;
   // p75: 오케 성능·사용량·속도, p85: 워커 성능·속도·가격+가산(사용량은 가산 입력), 역할별 가중치(ROLE_DIMENSION_WEIGHTS)·AA 지표. 두 계열 간 강제 배제 없음.
   // 점수 보정: 역할 선택자격 후 Top10 컷 전 대표 모집단 raw를 정규순위(50중심)로 1회 보정 — 표시 scoreText만 바꾸고 순위·▽존·representative·components는 raw 유지(▽ raw max×0.85/.60 원정책).
   const pick = (role: OptimalZoneRole) => {
     const scored = scoreRoleCandidatesFromSources(candidates, role, opts);
     const calibrated = normalRankScores(scored.map(s => s.score));
     const cal = new Map<ScoredGroup, number>(scored.map((s, i): [ScoredGroup, number] => [s, calibrated[i]!]));
-    return buildList(candidates, role, opts ?? {}, catalog, excluded, scored, cal);
+    return buildList(candidates, role, opts ?? {}, catalog, new Set([...excluded, ...banSetFor(lists, role)]), scored, cal, lists.allowOlder);
   };
   const orchestrator = pick('orchestrator'), worker = pick('worker');
   const oKeys = new Set(orchestrator.entries.map(e => normalizeModelName(e.modelId)));

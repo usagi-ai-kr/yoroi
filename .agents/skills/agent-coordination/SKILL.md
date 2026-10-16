@@ -79,6 +79,10 @@ metadata:
    bash <skill-dir>/scripts/watch_workers.sh --reports <report>... --panes <pane>... [--interval 20] [--max-polls 120] [--limit-pattern <ERE>]
    ```
    종료 코드는 감지 0, 인자 오류 2, 변화 없음 3이다. 감지 근거를 화면으로 확인하고 사용자 조치는 메신저로 전달한다.
+6. **완료 및 보고서 판정 규칙**:
+   - 워커 상태가 `done`이나 보고서가 없으면(`done + missing report`) 추가 sleep/대기를 하지 않고 실제 산출물(파일·CI·외부 상태)을 즉시 대조한다.
+   - `no_report`는 진행 중(미완료)과 명확히 구분한다. 패킷은 임의로 자동 재전송하지 않는다.
+   - 누적 대기 상한을 두고 최초 발송(send) 시각을 기준으로 지연 원인을 진단하고 인계/조치한다.
 
 자세한 절차·감사 한계는 [플레이북](references/playbook.md)을 따른다.
 도구: [task_packet.py](scripts/task_packet.py), [report_audit.py](scripts/report_audit.py),

@@ -23,7 +23,7 @@ o(agy `w12:pR`)는 분배·진척만 맡고 구현·문서·검증은 워커가 
 | `packet <task_id> <label> <owned,...> <criteria,...> [report]` | 라벨→pane 변환 후 `task_packet.py create`에 위임 | task_packet 코드 |
 | `send <label> <packet.json>` | 아래 전송 규칙 | 0 성공 / 1 거부·미시작 / 2 인자·라벨 오류 / 3 대기 시간 초과 |
 | `audit <packet.json> <report.json>` | `report_audit.py`에 위임 | 위임 코드 |
-| `watch <label...> [--reports f...]` | 라벨→pane 변환 후 `watch_workers.sh` 위임. 보고 경로 생략 시 각 라벨에 마지막 send한 패킷의 report_path | 위임 코드 |
+| `watch <label...> [--reports f...]` | 라벨→pane 변환 후 완료/보고서 감시(300초 누적 예산) | 0(READY) / 3(TIMEOUT) / 4(MISSING) / 5(DEADLINE) / 6(STALE) |
 
 공통 옵션: `--roster <path>`(기본 `docs/orchestration.md`), `--herdr <cmd>`(기본 `herdr`, 테스트 주입용).
 
@@ -66,7 +66,11 @@ prompt 거부(exit 1) 시 실패 기록, seq 미전진 not_started exit 1, 대�
 - 스킬은 재사용 가능하게 쓰고 레포 값(pane·로스터 경로)은 docs에 둔다. 기존 `watch_workers.sh` 원시 예시는 coord 예시로 바꾼다.
 - 표 형식은 로스터 계약(1열 백틱 pane, 2열 라벨)을 유지한다. 각 파일 100줄 이하.
 
-## 공통
+## 공통 및 완료 판정 불변 원칙
 
-커밋·stage·push 금지, 기존 변경 보존, 모델·세션 변경 금지, 5분 단위 진척, 패킷 report_path JSON 작성.
-완료 검증: `python3 .agents/skills/agent-coordination/scripts/test_coordination.py`, `test_coord.py`, `python3 scripts/validate-repo.py`.
+1. **보고서 부재 즉시 포착 (exit 4 REPORT_MISSING)**: 워커가 `done` 상태이거나 감시 중 `working -> done` 전이 시 보고서가 없으면 추가 sleep 없이 즉시 exit 4로 반환하여 산출물·CI를 대조한다.
+2. **300초 누적 예산 (exit 5 WATCH_DEADLINE)**: 호스트 5분 규칙에 맞춰 기본 예산은 300초이며, 최초 send 시점(`scratch/coord-send.log`)을 앵커로 삼아 반복 재호출 간 예산을 리셋하지 않는다.
+3. **stale 판정 (exit 6 WATCH_STALE)**: send 앵커가 없거나 1시간 이상 경과한 오래된 작업은 exit 6으로 거부한다.
+4. **미완료 구분 및 재호출 원칙**: no_report/deadline/stale 신호 수신 시 맹목적으로 watch를 재호출하거나 패킷을 재전송하지 않고, 즉시 reconcile_now 또는 메신저 조치를 수행한다.
+5. 커밋·stage·push 금지, 기존 변경 보존, 모델·세션 변경 금지, 5분 단위 진척, 패킷 report_path JSON 작성.
+6. 완료 검증: `python3 scripts/validate-repo.py`.

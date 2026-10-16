@@ -42,9 +42,16 @@ export const displayDimensions = (role: OptimalZoneRole): readonly ScoreDimensio
 /** 역할별 표시 라벨: 오케 price 차원은 가성비(R 1.0.2)다. core가 ROLE_DIMENSION_LABELS를 재export하면 이 지역 정의를 대체한다. */
 export const ROLE_DIMENSION_LABELS: Readonly<Record<OptimalZoneRole, Readonly<Record<ScoreDimension, string>>>> = {
   orchestrator: { ...DIMENSION_LABELS, price: '가성비' }, worker: DIMENSION_LABELS };
+/** 가중치 퍼센트(소수 1자리, 예: 0.05 → 5). config(ROLE_DIMENSION_WEIGHTS)가 단일 원본이다. */
+export const weightPct = (role: OptimalZoneRole, d: ScoreDimension): number => Number(((ROLE_DIMENSION_WEIGHTS[role][d] ?? 0) * 100).toFixed(1));
 /** 스코어 산출 공식 문구(p75: 오케 성능/사용량/속도, p85: 워커 성능/속도/가격+가산, 역할별 가중치). 상수는 letter-top10-score.ts에서 읽는다. */
 const weightsText = (role: OptimalZoneRole): string =>
-  displayDimensions(role).map(d => `${ROLE_DIMENSION_LABELS[role][d]} ${Number(((ROLE_DIMENSION_WEIGHTS[role][d] ?? 0) * 100).toFixed(1))}%`).join('·');
+  displayDimensions(role).map(d => `${ROLE_DIMENSION_LABELS[role][d]} ${weightPct(role, d)}%`).join('·');
+/** compact 가중치 표기: 표시 차원 순서의 퍼센트만(예: 70/5/10/15%). 숫자는 config에서 생성한다. */
+const weightShares = (role: OptimalZoneRole): string => `${displayDimensions(role).map(d => weightPct(role, d)).join('/')}%`;
+/** compact 차원 이름(표 순서): 가성비·가격은 역할별 라벨을 함께 적는다. */
+const compactDimensionNames = (): string => displayDimensions('orchestrator')
+  .map(d => d === 'price' ? `${ROLE_DIMENSION_LABELS.orchestrator.price}/${ROLE_DIMENSION_LABELS.worker.price}` : ROLE_DIMENSION_LABELS.orchestrator[d]).join('·');
 export const SCORE_FORMULA_LINES: readonly string[] = [
   `- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점(재분배 없음), 동점 모델명`,
   `- 가중치: 오케·리뷰어 ${weightsText('orchestrator')} / 워커·메신저 ${weightsText('worker')}`,
@@ -54,12 +61,12 @@ export const SCORE_FORMULA_LINES: readonly string[] = [
   `- 워커 intel ≥${WORKER_INTEL_FLOOR}(결측 제외); 오케 E=전 변형 풀 표준화·P1 최고점(성능·가성비 고려, 동점 낮은 effort); AA 지수도 E값`,
   '- off-peak·파레토, score 원 API',
 ];
-/** compact 전용 짧은 산출 공식(정보 동일·문구 축약, full/markdown은 SCORE_FORMULA_LINES 유지). */
+/** compact 전용 짧은 산출 공식: 가중치는 config에서 생성하고 출처를 짧게 둔다. 가성비·intel 기준은 범례(LEGEND_LINES)가 설명하며, 전체 공식은 SCORE_FORMULA_LINES다. */
 export const COMPACT_FORMULA_LINES: readonly string[] = [
   '- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점·동점 모델명',
-  '- 가중치(성능·사용량·속도·오케 가성비/워커 가격): 오케 70/5/10/15%, 워커 30/20/10/40%',
-  '- 가성비: 오케 AA·Cog max (AA I/(P+.01)↑, Cog $/task↓, 결측 0)',
+  `- 가중치(${compactDimensionNames()}): 오케 ${weightShares('orchestrator')}, 워커 ${weightShares('worker')}`,
+  '- 출처: 성능·속도 오케 AA·Cog/워커 AA, 사용량 OR·OCD',
   `- 워커 가격 cpt·total 평균(혼합단가 *), 가산 ${WORKER_BONUS_CAP}×평균`,
-  '- 워커 intel≥33, 오케 전변형 P1(동점 낮은 effort)',
+  '- 오케 전변형 P1(동점 낮은 effort)',
   '- off-peak·파레토, score 원 API',
 ];

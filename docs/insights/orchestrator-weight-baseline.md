@@ -17,3 +17,7 @@
 
 ## 인터페이스
 - `computeRoleTop10` · `renderTop10MarkdownFromRecords` · `scoreRoleCandidatesFromSources` · `buildCandidatePool`.
+
+## 현재 정책 (R 1.0.2 준비)
+- 이 기준선의 82/6/12 raw 수치는 **역사 실험 기록**이다. 사용자 확정은 R 오케 70/5/10/15 + `I/(P+.01)` + 정규 순위 표시. 아직 Release 미발행.
+- 현재 정책: [score-weights.md](score-weights.md)·[role-score-product-verification.md](role-score-product-verification.md).

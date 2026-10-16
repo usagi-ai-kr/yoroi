@@ -33,3 +33,7 @@
 ## 메타·보존
 - ▽는 최고점 대비 85% 상대 판정이다 (절대 최적 표시 아님).
 - 워커 6 case 불변. control=native. Free는 fresh 대조군(원본 아님). 제품 미적용, 1.0.x 선택 대기.
+
+## 현재 정책 (R 1.0.2 준비)
+- 이 비교표의 I² R·control 수치는 **역사 실험 기록**이다. 사용자 확정은 R 오케 70/5/10/15 + 제곱 제거 `I/(P+.01)` + 역할 전체 적격 정규 순위(50중심·SD 약10) 표시. 아직 Release 미발행.
+- 현재 정책: [score-weights.md](score-weights.md)·[role-score-product-verification.md](role-score-product-verification.md).

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import { renderTop10Letter, type Top10LetterInput } from '../src/insights/letter-top10-render.js';
 import type { RoleEntry, RoleExit, RoleLists } from '../src/insights/letter-top10-unified.js';
 
@@ -22,8 +23,13 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('두 목록 Top10: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커·메신저) 통과 모델, 보유 요금제 접근 가능만'));
   assert.ok(rendered.includes('정렬: 스코어 내림차순(동점 시 모델명)'));
   assert.ok(rendered.includes('스코어 = 100 × Σ(가중치 × 차원값)'));
-  assert.ok(rendered.includes('워커 intel≥33, 오케 전변형 P1(동점 낮은 effort)'));
-  assert.ok(rendered.includes('오케 가성비/워커 가격): 오케 70/5/10/15%, 워커 30/20/10/40%'));
+  assert.ok(rendered.includes('- 오케 전변형 P1(동점 낮은 effort)') && rendered.includes('워커는 AA intel ≥33만'));
+  assert.ok(rendered.includes('- 가중치(성능·사용량·속도·가성비/가격): 오케 70/5/10/15%, 워커 30/20/10/40%'));
+  // 가중치는 config에서 생성돼야 한다(숫자 복사 금지): config 값과 대조한다.
+  const cfg = JSON.parse(readFileSync(new URL('../config/score-weights.json', import.meta.url), 'utf8'));
+  const shares = (role: 'orchestrator' | 'worker') => ['performance', 'usage', 'speed', 'price'].map(d => Number((cfg[role][d] * 100).toFixed(1))).join('/');
+  assert.ok(rendered.includes(`오케 ${shares('orchestrator')}%, 워커 ${shares('worker')}%`));
+  assert.ok(rendered.includes('- 출처: 성능·속도 오케 AA·Cog/워커 AA, 사용량 OR·OCD'));
   assert.ok(rendered.includes('워커 가격 cpt·total 평균(혼합단가 *), 가산 5×평균'));
   assert.ok(!rendered.includes('I²/P') && rendered.includes('- 가성비: 오케 AA·Cog max'), 'R: compact 가성비 문구 있음(선형, 축약형)');
   assert.ok(!rendered.includes('오케 사용량') && !rendered.includes('오케·리뷰어 사용량'));

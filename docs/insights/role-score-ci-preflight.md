@@ -43,19 +43,20 @@
 | 중복 설명만 축약 | 아님 | HEAD의 `성능·속도: 오케 AA·Cog, 워커 AA / 사용량: OR·OCD` 줄이 compact에서 사라졌다. compact의 다른 줄과 중복이 아니다. 파일 주석의 "정보 동일"과 맞지 않는다 |
 | 가중치 생성 | 주의 | 기존 weightsText 생성을 리터럴로 바꿔 config 변경 시 드리프트 위험이 생겼다 |
 
-- 판정: **조건부**. 소스 귀속 줄을 짧게 복원하고 budget 테스트를 다시 돌리면 수용 가능하다.
-- PR head c9fde22에는 영향이 없다. HEAD 버전이 소스 줄과 생성식을 유지한다.
+- 판정 (이후 갱신): 조건부였던 항목은 `role-score-compact-final.md`에서 해소됐다. 소스 귀속 줄을 복원하고 가중치를 config에서 생성했으며, 캐노니컬 고정 입력은 3,562자로 3,600 이하다.
+- PR head c9fde22에는 영향이 없다. HEAD 버전이 소스 줄과 생성식을 유지한다. 수정 내용은 ROOT 워킹트리에만 있으며, 후속 커밋 뒤 PR CI를 다시 확인해야 한다.
 
-## 6. 소스 해시 (검토 기준)
-- `src/insights/letter-markdown-format.ts`: ROOT `cb1e9b2e470c9ce1…`, HEAD `7ba12d7019a34a95…`
-- `tests/insights-top10-render.test.ts`: ROOT `120245448ee6634e…`, HEAD `c686c71c09d8e61d…`
+## 6. 소스 해시 (수정 후, sha256 앞 12자)
+- `src/insights/letter-markdown-format.ts`: ROOT `7186003fda28`, HEAD ef94e90 `cb1e9b2e470c`
+- `src/insights/letter-top10-legend.ts`: ROOT `e35a83c32e75`, HEAD `950fb0eff3c5`
+- `tests/insights-top10-render.test.ts`: ROOT `5de5d03d676b`, HEAD `120245448ee6`
 
 ## 7. 테스트·w4 상태
-- 관련 테스트 3파일(top10-render, render-top10, letter-top10) 15/15 PASS. ROOT 기준, 위 해시에서 1회 실행했다.
-- PR run 38839789044는 c9fde22의 전체 check(tests·BDD·build)가 success였다.
-- w4 예산 보고는 디스크에서 찾지 못했다(working). 따라서 위 해시 기준 조건부 판정이며, 최종 소스 변경이 없을 때만 적용된다. 무기한 대기는 하지 않았다.
+- 관련 테스트 26/26 PASS(renderer 3파일 15개 + markdown·legend 2파일 11개). 수정 후 해시 기준으로 1회 실행했다.
+- PR run 38839789044는 c9fde22의 전체 check(tests·BDD·build)가 success였다. 후속 커밋 뒤에는 새 head의 PR run을 다시 봐야 한다.
+- w4 예산 보고(`yoroi-normal-render-budget-w4-report.json`)는 완료 상태다. 최종 독립 검토는 w4 다음 단계다.
 
 ## 8. 잔여
-- w4가 소스 귀속 줄 복원 여부를 결정한다.
-- ROOT compact 변경을 커밋에 포함할지는 후속 커밋 경계에서 정한다.
+- 수정 파일 3개와 `role-score-compact-final.md`를 후속 source 커밋으로 묶어야 한다(w2 snapshot follow-up과 경계 확인).
+- 후속 커밋 뒤 PR head 기준 CI 확인 절차는 섹션 4를 따른다.
 - ready, merge, release, global은 위임 범위 안의 후속 단계이며 이 패킷에서는 실행하지 않았다.

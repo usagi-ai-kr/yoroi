@@ -21,3 +21,7 @@
 
 ## 후보 grid (합 100 확인)
 - p70 70/5/10/15 · A 60/5/15/20 · B 55/5/15/25 · C 50/5/20/25. 사용량 5% 고정.
+
+## 현재 정책 (R 1.0.2 준비)
+- 위 p70 수식(I²)은 **역사 실험**이다. 사용자 확정은 R 오케 70/5/10/15 + 제곱 제거 `I/(P+.01)`이며, 역할 전체 적격 모집단 정규 순위(50중심·SD 약10) 표시 보정을 함께 준비한다. 아직 Release 미발행.
+- 현재 정책: [score-weights.md](score-weights.md)·[role-score-product-verification.md](role-score-product-verification.md).

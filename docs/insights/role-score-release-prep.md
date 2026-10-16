@@ -1,6 +1,7 @@
 # 정규 순위 보정 릴리스 준비 (1.0.2)
 
 - 확정 범위: R 가성비 4차원 복구 + 역할별 전체 적격 대표 모집단 normal midrank→Φ⁻¹→50+10z 표시 보정.
+- **역사 연구 4docs 정정 완료**: orchestrator-value-restoration·weight-study·baseline·comparison에 "역사 실험" 표시 + 현재 정책 링크 추가(숫자표·조사 시점·Free aux 고지 미수정).
 - raw 가중합·worker bonus·대표 effort·Grok 자격·▽ 원정책 유지. 표시 점수만 50중심·SD 약10.
 - 릴리스 문서 갱신: release-status·tasks·PR body. 이전 "worker 점수 완전 불변" → **raw 불변/표시 보정**으로 명확화.
 - 검증 구분: R 단계 clean 1027 PASS / 표시 보정 통합 검증 진행(clean 신규 구성으로 validate 672·calibration/score-normal/dimension-contract 24/24).

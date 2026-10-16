@@ -61,5 +61,14 @@ export function pickEffortValues(r: Raw, effort: string, role: OptimalZoneRole):
     r.cogCorrect = r.cogEffort?.get(effort) ?? best(r.cogEffort)?.[1]; return; }
   const at = (m?: ReadonlyMap<string, number>) => m?.get(effort) ?? common(m);
   r.aaPerf = at(r.aaEffort); r.cogCorrect = at(r.cogEffort); r.aaSpeed = at(r.aaSpeedE); r.aaPrice = at(r.aaPriceE);
-  r.cogDuration = at(r.cogDurE); r.cogCost = at(r.cogCostE); r.orchValue = valueForMoney(r.aaPerf, r.aaPrice);
+  r.cogDuration = at(r.cogDurE); if (r.aaSpeed === undefined && r.cogDuration === undefined) r.aaSpeed = extreme(r.aaSpeedE, Math.max);
+  r.cogCost = at(r.cogCostE); r.orchValue = valueForMoney(r.aaPerf, r.aaPrice);
+}
+
+/** Worker fallback speed: standardize Cognition duration over every orchestrator variant (shorter is faster). */
+export function workerCognitionSpeed(raws: readonly Raw[], efforts: readonly string[]): (number | undefined)[] {
+  const duration = (r: Raw, e: string) => r.cogDurE?.get(e) ?? common(r.cogDurE) ?? extreme(r.cogDurE, Math.min);
+  const pool = raws.flatMap(r => orchestratorVariants(r).map(e => duration(r, e))).filter((v): v is number => v !== undefined);
+  const lo = Math.min(...pool), hi = Math.max(...pool);
+  return raws.map((r, i) => { const v = duration(r, efforts[i]!); return v === undefined ? undefined : hi === lo ? 1 : (hi - v) / (hi - lo); });
 }

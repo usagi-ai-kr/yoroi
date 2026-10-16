@@ -42,7 +42,8 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 - [진행] milestone 1.1.0 생성·#163 할당, #163에 고도화 범위 댓글. 구현 w3 · 테스트 w1 · 잡무 w2. 빈 목록=현재 동작·Top10/▽ 보충에서만 제외(점수·분포 불변).
 - [범위 밖] [#141](https://github.com/qus0in/yoroi/issues/141)·effort 상한(xhigh: `muse-spark-1-3`은 max 없음, 접근 필터는 모델 단위 verified만 — `letter-top10-candidates.ts:51-55`)·워커 effort 정책(미커밋 3파일, Cognition 선택 effort 유지)·#168 — 후속 재검토로 이월.
 - [1.1.1] [milestone 1.1.1](https://github.com/qus0in/yoroi/milestone/26)·[추적 이슈 #176](https://github.com/qus0in/yoroi/issues/176): 전역 CLI 레터 모델 목록 사용자 설정 경로(env→XDG→repo→기본값, 파싱 실패 경고) — [letter-model-lists-1.1.md §1.1.1](insights/letter-model-lists-1.1.md).
-- [1.2.0] [milestone 1.2.0](https://github.com/qus0in/yoroi/milestone/27)·[추적 이슈 #178](https://github.com/qus0in/yoroi/issues/178): 레터 본문 Top7·댓글 Top15·Free 개편(선발 15, 본문 앞 7·댓글 3개 순서 고정) — [letter-format-1.2.md](insights/letter-format-1.2.md).
+- [1.2.0 완료] [milestone 1.2.0](https://github.com/qus0in/yoroi/milestone/27)(closed)·[추적 이슈 #178](https://github.com/qus0in/yoroi/issues/178)(closed)·[PR #179](https://github.com/qus0in/yoroi/pull/179)(main `d8bed39`)·[Release v1.2.0](https://github.com/qus0in/yoroi/releases/tag/v1.2.0)·레터 [#181](https://github.com/qus0in/yoroi/issues/181): 레터 본문 Top7·댓글 Top15·Free 개편 — [letter-format-1.2.md](insights/letter-format-1.2.md). 차기 제안: [#180 Free 티어 자체 캘리브레이션(루브릭·과제 세트)](https://github.com/qus0in/yoroi/issues/180).
+- [1.2.1] [milestone 1.2.1](https://github.com/qus0in/yoroi/milestone/28)·[추적 이슈 #182](https://github.com/qus0in/yoroi/issues/182): 오케 사용량 제외(0.75/0/0.10/0.15)·luna/haiku 오케 배제·Grok 4.7 단일화·역할 간 속도 대체 — [letter-121-spec.md](insights/letter-121-spec.md).
 
 ## 완료된 마일스톤 (0.1.0~0.6.0)
 

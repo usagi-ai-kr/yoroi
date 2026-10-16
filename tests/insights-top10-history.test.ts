@@ -37,13 +37,13 @@ test('identical AA+OR snapshots compare with OR on both sides: below-threshold f
     { modelId: 'claude-opus-5-5', value: 80, metric: idx, priceInput: 1.2, priceOutput: 1.2 },
     { modelId: 'claude-haiku-5-5', value: 60, metric: idx, priceInput: 1, priceOutput: 1 }];
   const noOr = computeRoleTop10(current).orchestrator.entries.map(e => `${e.modelId}${e.rank}`);
-  assert.deepEqual(noOr, ['gpt-6-1-sol1', 'claude-opus-5-52', 'claude-haiku-5-53']); // p52 오케: GPT 85·Opus 50·Haiku 10
+  assert.deepEqual(noOr, ['gpt-6-1-sol1', 'claude-opus-5-52']); // 1.2.1: haiku 오케 밴으로 sol·opus 2행
   const build = buildPreviousRanks(history, '2026-10-12', { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: aa },
     'rankings-daily:day:top50', 'openrouter-rankings-v1', true);
   assert.deepEqual(build.warnings, []);
   const orInputs: Top10RecordInput[] = or.map(v => ({ modelId: v.record.modelId, value: v.record.value, metric: 'total_tokens' }));
   const withOr = computeRoleTop10(current, { openrouterRecords: orInputs, previousCohort: build.ranks });
-  assert.deepEqual(withOr.orchestrator.entries.map(e => [e.modelId, e.rank, e.change]), [['gpt-6-1-sol', 1, '유지'], ['claude-opus-5-5', 2, '유지'], ['claude-haiku-5-5', 3, '유지']]);
+  assert.deepEqual(withOr.orchestrator.entries.map(e => [e.modelId, e.rank, e.change]), [['gpt-6-1-sol', 1, '유지'], ['claude-opus-5-5', 2, '유지']]); // 1.2.1 밴 반영
   assert.deepEqual(withOr.orchestrator.exits, []);
 });
 test('missing previous OR data yields an explicit hold instead of an estimated comparison', () => {
@@ -76,12 +76,12 @@ test('previous ranks include previous-day OpenCode Data evidence like today’s 
   const aa = [rec('gpt-6-1-sol', idx, 90, '2026-10-11'), rec('gpt-6-1-sol', 'price_1m_input_tokens', 1, '2026-10-11'),
     rec('gpt-6-1-sol', 'price_1m_output_tokens', 1, '2026-10-11')];
   const prevAa = { ok: true as const, source: 'artificial-analysis' as const, rejectedRows: 0, records: aa };
-  const oc: Top10RecordInput[] = [{ modelId: 'claude-haiku-5-5', value: 100, metric: 'opencode_data_tokens' }];
+  const oc: Top10RecordInput[] = [{ modelId: 'mistral-large-4', value: 100, metric: 'opencode_data_tokens' }];
   const ids = (b: ReturnType<typeof buildPreviousRanks>) => b.ranks.filter(r => r.metric === 'orchestrator').map(r => r.modelId);
   const without = buildPreviousRanks(new MemoryInsightHistory(), '2026-10-12', prevAa, 'x', undefined, false);
   const withOc = buildPreviousRanks(new MemoryInsightHistory(), '2026-10-12', prevAa, 'x', undefined, false, oc);
-  assert.ok(!ids(without).includes('claude-haiku-5-5'));
-  assert.ok(ids(withOc).includes('claude-haiku-5-5'));
+  assert.ok(!ids(without).includes('mistral-large-4'));
+  assert.ok(ids(withOc).includes('mistral-large-4')); // 1.2.1: 밴 대상(haiku) 대신 비밴 모델로 OCD 증거 편입 검증
 });
 test('previous cohort applies the same release rule: older dated release rows drop when releaseDate is stored', () => {
   const dated = (v: ValidatedInsightRecord, releaseDate?: string): ValidatedInsightRecord =>

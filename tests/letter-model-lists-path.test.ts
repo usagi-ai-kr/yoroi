@@ -38,7 +38,7 @@ function runActive(dir: string, env: Record<string, string>): { out: string; err
   return { out: result.stdout ?? '', err: result.stderr ?? '', status: result.status ?? -1 };
 }
 
-test('active: 명시 파일 사용 — ban.common 하위호환(누락 worker 키는 빈 배열)', () => {
+test('active: 명시 파일 사용 — ban.common 하위호환(누락 worker 키는 기본값=빈 배열)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'lml-path-'));
   const file = join(dir, 'explicit.json');
   writeFileSync(file, JSON.stringify({ allowOlder: ['custom-x'], ban: { common: ['gamma'], orchestrator: ['alpha'] } }));

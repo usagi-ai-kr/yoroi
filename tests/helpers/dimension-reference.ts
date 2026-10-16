@@ -1,19 +1,17 @@
 import { effortForModel, splitBaseAndEffort } from '../../src/insights/letter-top10-group.js';
 import { normalizeModelName } from '../../src/insights/model-id.js';
 
-/** p85 독립 참조(core/policy 비참조). 워커: 성능 AA intel(원값 하한 33)·속도 AA tok/s·가격=cpt·total 평균(단독·혼합단가 대체)+가산 cap5.
- *  2026-10-15 사용자 확정: 워커 가중치 성능 .30·사용량 .20·속도 .10·가격 .40(존 임계 .60·상향 p75·상한 $5/M은 zone·참조 계약 테스트에서 다룬다). R 1.0.2: 오케 70/5/10/15 선형 가성비. */
+/** p85 독립 참조(core/policy 비참조). 워커 .30/.20/.10/.40+가산; R 1.2.1 오케 .75/0/.10/.15 및 역할 간 속도 대체. */
 export interface DimRow { readonly modelId: string; readonly modelAlias?: string; readonly metric?: string; readonly value?: number; readonly priceInput?: number; readonly priceOutput?: number }
 export const DIMS = ['performance', 'usage', 'speed', 'price'] as const;
 export type Dim = typeof DIMS[number];
 export type Weights = Readonly<Record<Dim, number>>;
 export type Role = 'orchestrator' | 'worker';
 export const PRICE_MISSING = 0.99, WORKER_FLOOR = 0.70;
-/** p85: 워커 성능 하한은 AA intelligence 원값, 가산 상한은 5점이다(표준화 하한 0.70은 폐지, 상수는 이전 기록으로 둔다). */
 export const WORKER_INTEL_RAW_FLOOR = 33, WORKER_BONUS_CAP = 5;
 export const EQUAL_WEIGHTS: Weights = { performance: 0.25, usage: 0.25, speed: 0.25, price: 0.25 };
 export const ROLE_WEIGHTS: Readonly<Record<Role, Weights>> = {
-  orchestrator: { performance: 0.70, usage: 0.05, speed: 0.10, price: 0.15 }, worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } };
+  orchestrator: { performance: 0.75, usage: 0, speed: 0.10, price: 0.15 }, worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } };
 export const SOURCES = ['aaPerf', 'cogCorrect', 'or', 'ocd', 'aaSpeed', 'cogDuration', 'aaPrice', 'cogCost', 'aaCpt', 'aaTotal'] as const;
 export type Src = typeof SOURCES[number];
 export const DIM_OF: Readonly<Record<Src, Dim>> = { aaPerf: 'performance', cogCorrect: 'performance', or: 'usage', ocd: 'usage', aaSpeed: 'speed', cogDuration: 'speed', aaPrice: 'price', cogCost: 'price', aaCpt: 'price', aaTotal: 'price' };
@@ -44,6 +42,8 @@ export function referenceDimensions(rows: readonly DimRow[], role: Role, freeIds
   const at = (m: Map<string, number> | undefined, e: string) => m?.get(e) ?? common(m);
   const ranges = (values: (number | undefined)[]) => { const v = values.filter((x): x is number => x !== undefined); return [Math.min(...v), Math.max(...v)] as const; };
   const scale = (v: number | undefined, [lo, hi]: readonly [number, number], low = false) => v === undefined ? undefined : hi === lo ? 1 : low ? (hi - v) / (hi - lo) : (v - lo) / (hi - lo);
+  const cogAt = (o: Observed, e: string) => at(o.cogDuration, e) ?? (o.cogDuration?.size ? Math.min(...o.cogDuration.values()) : undefined);
+  const cogRange = ranges([...models.values()].flatMap(o => { const seen = new Set([...(o.aaPerf?.keys() ?? []), ...(o.cogCorrect?.keys() ?? [])]), es = ORDER.filter(e => seen.has(e)); return (es.length ? es : ['default']).map(e => cogAt(o, e)); }));
   const pr = { aaPerf: ranges([...models.values()].map(o => best(o.aaPerf)?.[1])), cogCorrect: ranges([...models.values()].map(o => best(o.cogCorrect)?.[1])) };
   const variants: { modelId: string; effort: string; raw: Raw }[] = [];
   for (const [modelId, o] of models) {
@@ -54,8 +54,7 @@ export function referenceDimensions(rows: readonly DimRow[], role: Role, freeIds
     for (const effort of orch ? efforts.length ? efforts : ['default'] : [workerEffort]) {
       const raw: Raw = {};
       for (const s of SOURCES) {
-        if (!orch && (s === 'cogCost' || s === 'cogDuration')) continue;  // p70: 오케는 OR/OCD 사용량도 쓴다
-        // p85 워커 Cog correct는 대표 effort 값(없으면 base 최선) — core pickEffortValues와 같은 규칙.
+        if (!orch && (s === 'cogCost' || s === 'cogDuration')) continue;
         let v = orch ? at(o[s], effort) : s === 'cogCorrect' ? (o[s]?.get(effort) ?? best(o[s])?.[1])
           : s === 'aaPrice' || s === 'aaCpt' || s === 'aaTotal'
           ? o[s]?.size ? Math.min(...o[s]!.values()) : undefined : best(o[s])?.[1];
@@ -64,6 +63,7 @@ export function referenceDimensions(rows: readonly DimRow[], role: Role, freeIds
         if (s === 'aaPrice') { const I = at(o.aaPerf, effort); v = orch ? I !== undefined && I > 0 && v !== undefined ? Math.log10(I / (v + .01)) : undefined : v === undefined ? undefined : Math.log10(v + .01); }
         if (v !== undefined) raw[s] = v;
       }
+      if (orch && raw.aaSpeed === undefined && raw.cogDuration === undefined && o.aaSpeed?.size) raw.aaSpeed = Math.max(...o.aaSpeed.values());
       variants.push({ modelId, effort, raw });
     }
   }
@@ -81,6 +81,7 @@ export function referenceDimensions(rows: readonly DimRow[], role: Role, freeIds
       if (!orch && (s === 'aaPrice' || s === 'aaCpt' || s === 'aaTotal')) continue; // 워커 가격은 아래 평균으로 합친다
       const d = DIM_OF[s]; if (dimSource[d] === undefined || v > dims[d]) { dims[d] = v; dimSource[d] = s; }
     }
+    if (!orch && dimSource.speed === undefined) { const v = scale(cogAt(models.get(modelId)!, effort), cogRange, true); if (v !== undefined) { std.cogDuration = v; dims.speed = v; dimSource.speed = 'cogDuration'; } }
     if (!orch) { // p85 가격=cpt·total 평균(단독·혼합단가 대체)
       const priced = [std.aaCpt, std.aaTotal].filter((x): x is number => x !== undefined);
       if (priced.length) { dims.price = priced.reduce((a, b) => a + b, 0) / priced.length; dimSource.price = 'aa' as Src; }
@@ -94,7 +95,6 @@ export function referenceDimensions(rows: readonly DimRow[], role: Role, freeIds
     const item = { modelId, effort, raw, std, dims, dimSource, contrib, score: base + bonus }, prev = selected.get(modelId);
     if (!prev || item.score > prev.score || (item.score === prev.score && ORDER.indexOf(effort) < ORDER.indexOf(prev.effort))) selected.set(modelId, item);
   }
-  // p85: 워커 하한은 AA intelligence 원값 33(intel 없으면 제외). 오케는 기존 floor를 쓴다.
   return [...selected.values()].filter(r => orch ? r.dims.performance >= floor
     : (intelRaw.get(r.modelId) ?? -Infinity) >= WORKER_INTEL_RAW_FLOOR).sort((a, b) => b.score - a.score || a.modelId.localeCompare(b.modelId));
 }

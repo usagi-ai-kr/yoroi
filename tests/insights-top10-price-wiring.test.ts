@@ -39,6 +39,6 @@ test('price-only paired AA rows reach current and previous Top10 scoring inputs'
     schemaVersion: 'openrouter-rankings-v1' }, { ok: true, source: 'openrouter', rejectedRows: 0, records: previousOr }), true);
   const ranks = buildPreviousRanks(history, '2026-10-13', { ok: true, source: 'artificial-analysis', rejectedRows: 0, records: previousAa },
     'rankings-daily:day:top50', 'openrouter-rankings-v1', true);
-  assert.equal(ranks.ranks.find(r => r.metric === 'orchestrator' && r.modelId === 'gpt-6-1-sol')?.rank, 2,
-    'the previous OpenRouter-ranked Haiku precedes this price-only AA fallback');
+  assert.equal(ranks.ranks.find(r => r.metric === 'orchestrator' && r.modelId === 'gpt-6-1-sol')?.rank, 1,
+    'Haiku는 1.2.1 오케 밴으로 제외되어 price-only AA fallback이 1위');
 });

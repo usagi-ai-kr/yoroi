@@ -10,8 +10,8 @@ const COG = 'cognition_correct', COST = 'cognition_cost', DUR = 'cognition_durat
 const row = (modelId: string, metric: string, value: number, price?: [number, number]): DimRow => ({ modelId, metric, value, ...(price && { priceInput: price[0], priceOutput: price[1] }) });
 const entry = (modelId: string) => ({ modelId, displayName: modelId, sourceUrl: 'https://example.test', checkedOn: '2026-10-13', verified: true });
 const plan = (planId: string, ids: readonly string[], tier?: 'free'): PlanCatalogEntry => ({ planId, planName: planId, models: ids.map(entry), ...(tier && { tier }) });
-/** R 1.0.2: 오케 가성비 4차원(70/5/10/15)·워커 30/20/10/40+가산·source max 유지. 의존성: 참조헬퍼 I²→I 전까지 ref 대조 FAIL. */
-const ROLE_W = { orchestrator: { performance: .70, usage: .05, speed: .10, price: .15 }, worker: ROLE_WEIGHTS.worker } as const;
+/** R 1.2.1: 오케 성능/속도/가성비(75/10/15)·사용량 0, 워커 30/20/10/40+가산. */
+const ROLE_W = { orchestrator: { performance: .75, usage: 0, speed: .10, price: .15 }, worker: ROLE_WEIGHTS.worker } as const;
 const EVIDENCE = new Set([COG, COST, DUR, OR, OC]);
 /** 실제 공개 API(computeRoleTop10)로 계산하고 참조 구현과 같은 입력 행을 쓴다. */
 function run(rows: readonly DimRow[], paid: readonly string[], free: readonly string[] = [], role: Role = 'orchestrator') {
@@ -23,10 +23,10 @@ function run(rows: readonly DimRow[], paid: readonly string[], free: readonly st
 const W = ROLE_W.orchestrator, score = (e?: { scoreText?: string; rawScore?: number }) => Number(e?.rawScore ?? e?.scoreText); // raw 계약 검증
 const near = (a: number, b: number, msg = '') => assert.ok(Math.abs(a - b) <= 0.051, `${msg} ${a} vs ${b}`);
 
-test('오케도 OR·OCD 사용량을 점수·소스 기여로 반영한다(p70) — 워커처럼 후보를 유지한다', () => {
+test('오케 OR·OCD 사용량은 점수에 반영하지 않고 후보 근거로만 유지한다', () => {
   const rows = [row('alpha', IQ, 80), row('bravo', IQ, 40), row('charlie', OR, 1e9), row('delta', OR, 1e6)];
   const { byId } = run(rows, ['alpha', 'bravo', 'charlie', 'delta']); near(score(byId.get('alpha')), 100*W.performance);
-  near(score(byId.get('charlie')), 100*W.usage); assert.equal(byId.get('charlie')!.scoreComponents?.dimensionSources?.usage, 'openrouter');
+  near(score(byId.get('charlie')), 0); assert.equal(byId.get('charlie')!.scoreComponents?.dimensionSources?.usage, 'openrouter');
   near(score(byId.get('delta')), 0, 'OR 토큰 최저는 사용량 0');
   assert.equal(referenceDimensions(rows, 'worker').length, 2, 'intel이 있는 alpha·bravo만 워커 후보(charlie·delta는 intel 없음)');
 });
@@ -53,8 +53,8 @@ test('오케 I=0·가격결측·Free 접근만 근거는 가성비 0, 관측 가
   assert.deepEqual(['zero','no-price','freeonly'].map(id=>byId.get(id)!.scoreComponents!.cost),[0,0,0], 'I≤0·무가격·Free 근거는 가성비 0'); assert.ok(byId.get('known')!.scoreComponents!.cost > 0 && byId.get('freeonly')!.scoreComponents?.sources?.['price:missing'] === undefined, '관측가격 known 가성비 반영');
   const cog=run([row('a',IQ,50),row('b',COST,0)],['a','b']); assert.ok(cog.byId.get('b')!.scoreComponents!.cost > 0,'Cog USD/task도 가성비 소스');
 });
-test('역할별 가중치는 사용자 확정(오케 70/5/10/15·워커 30/20/10/40+가산)이며 워커 가격은 cpt·total 평균이다', () => {
-  assert.deepEqual(scoreModule.ROLE_DIMENSION_WEIGHTS,{orchestrator:{performance:.70,usage:.05,speed:.10,price:.15},worker:ROLE_WEIGHTS.worker});
+test('역할별 가중치는 사용자 확정(오케 75/0/10/15·워커 30/20/10/40+가산)이며 워커 가격은 cpt·total 평균이다', () => {
+  assert.deepEqual(scoreModule.ROLE_DIMENSION_WEIGHTS,{orchestrator:{performance:.75,usage:0,speed:.10,price:.15},worker:ROLE_WEIGHTS.worker});
   assert.deepEqual(ROLE_WEIGHTS.worker,{performance:.30,usage:.20,speed:.10,price:.40});
   const rows=[row('wa',IQ,70),row('wa',CODE,80,[1,5]),row('wb',IQ,60),row('wb',CODE,80,[.1,.4]),row('wc',IQ,50),row('wc',CODE,80),row('wc',COST,0),row('wc',DUR,1),row('wa',TPS,100),row('wc',OR,1e8)];
   const { byId,refBy }=run(rows,['wa','wb','wc'],[],'worker'); assert.equal(byId.get('wc')!.scoreComponents!.cost,PRICE_MISSING);

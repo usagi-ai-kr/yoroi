@@ -12,9 +12,9 @@ export interface LetterModelLists {
   readonly ban: LetterRoleLists;
 }
 export const DEFAULT_LETTER_MODEL_LISTS: LetterModelLists = {
-  allowOlder: ['grok-4-6', 'gpt-6-sol'],
+  allowOlder: ['gpt-6-sol'],
   excludePatterns: ['fable', 'astra'],
-  ban: { common: [], orchestrator: [], worker: [] },
+  ban: { common: [], orchestrator: ['gpt-6-luna', 'claude-haiku-5-5'], worker: [] },
 };
 const EMPTY_ALIASES = new Map<string, string>(), EMPTY_UNIVERSE = new Set<string>();
 /** 비교 키: 정규화 + 정적 별칭 해석. */
@@ -35,13 +35,14 @@ export function loadLetterModelLists(path: string = CONFIG_PATH): LetterModelLis
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new Error(`invalid model lists: ${path}`);
   const record = raw as Record<string, unknown>, def = DEFAULT_LETTER_MODEL_LISTS;
   const banRaw = (typeof record.ban === 'object' && record.ban !== null ? record.ban : {}) as Record<string, unknown>;
+  // ban 하위 키 생략 시 빈 배열이 아니라 기본값(사본)을 쓴다 — 기본 밴이 설정 파일로 유지되게 한다.
   return {
     allowOlder: 'allowOlder' in record ? strList(record.allowOlder) : [...def.allowOlder],
     excludePatterns: 'excludePatterns' in record ? strList(record.excludePatterns) : [...def.excludePatterns],
     ban: {
-      common: 'common' in banRaw ? strList(banRaw.common) : [],
-      orchestrator: 'orchestrator' in banRaw ? strList(banRaw.orchestrator) : [],
-      worker: 'worker' in banRaw ? strList(banRaw.worker) : [],
+      common: 'common' in banRaw ? strList(banRaw.common) : [...def.ban.common],
+      orchestrator: 'orchestrator' in banRaw ? strList(banRaw.orchestrator) : [...def.ban.orchestrator],
+      worker: 'worker' in banRaw ? strList(banRaw.worker) : [...def.ban.worker],
     },
   };
 }

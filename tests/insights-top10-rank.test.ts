@@ -75,9 +75,9 @@ test('fewer than ten candidates show all rows with below-zone fill; previous com
     { modelId: 'claude-haiku-5-5', value: 95, priceInput: 2, priceOutput: 4, metric: 'artificial_analysis_intelligence_index' },
     { modelId: 'claude-opus-5-5', value: 88, priceInput: 1, priceOutput: 2, metric: 'artificial_analysis_coding_index' },
     { modelId: 'gpt-6-1-sol', value: 82, priceInput: 0.5, priceOutput: 1, metric: 'artificial_analysis_coding_index' }];
-  const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }], cognitionRecords: [['claude-opus-5-5-max', 0.6], ['gpt-6-1-sol-high', 0.5], ['claude-haiku-5-5-max', 0.4]].map(([modelId, value]) => ({ modelId: String(modelId), metric: 'cognition_correct', value: Number(value) })) });
+  const lists = computeRoleTop10(records, { previousCohort: [{ modelId: 'claude-opus-5-5', rank: 1, metric: 'rank' }], cognitionRecords: [['claude-opus-5-5-max', 0.6], ['gpt-6-1-sol-high', 0.5], ['claude-haiku-5-5-max', 0.4]].map(([modelId, value]) => ({ modelId: String(modelId), metric: 'cognition_correct', value: Number(value) })), letterModelLists: { allowOlder: ['gpt-6-sol'], excludePatterns: ['fable', 'astra'], ban: { common: [], orchestrator: [], worker: [] } } });
   assert.equal(lists.orchestrator.entries.length, 3); // 후보 3개라 사용 가능한 행 모두 표시
-  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // R 70/5/10/15: 순서 유지
+  assert.deepEqual(lists.orchestrator.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // R 75/0/10/15(밴 없는 주입): 순서 유지
   assert.deepEqual(lists.worker.entries.map(e => e.modelId), ['claude-opus-5-5', 'claude-haiku-5-5', 'gpt-6-1-sol']); // 사용자 확정 워커 30/20/10/40: Opus 65.0 > Haiku 57.3 > Sol 42.5(보유 플랜 p75 상향, cut=65.0×0.60=39.0)
   assert.ok(lists.orchestrator.entries.some(e => e.isPareto));
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.both, true);
@@ -85,14 +85,14 @@ test('fewer than ten candidates show all rows with below-zone fill; previous com
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-haiku-5-5')!.change, '진입');
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.change, '유지'); // 종합 점수에서도 1위 유지
 });
-test('orchestrator weighs performance 70, usage 5, speed 10 and linear value 15 (R)', () => {
+test('orchestrator weighs performance 75, speed 10 and linear value 15; usage excluded (R)', () => {
   const metric = 'artificial_analysis_intelligence_index', speed = 'median_output_tokens_per_second';
   const records = [{ modelId: 'claude-opus-5-5', value: 96, priceInput: 2, priceOutput: 2, metric },
     { modelId: 'gpt-6-1-sol', value: 90, priceInput: 1.5, priceOutput: 1.5, metric },
     { modelId: 'claude-opus-5-5', value: 50, metric: speed }, { modelId: 'gpt-6-1-sol', value: 80, metric: speed }];
   const scores = (rs: typeof records, opts = {}) => computeRoleTop10(rs, opts).orchestrator.entries.map(e => [e.modelId, e.rawScore?.toFixed(1)]);
-  assert.deepEqual(scores(records), [['claude-opus-5-5', '70.0'], ['gpt-6-1-sol', '25.0']], '성능 Opus 1 / 속도·가성비 GPT 1 (R 70/10/15)');
-  const or = [{ modelId: 'claude-opus-5-5', value: 100, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 300, metric: 'total_tokens' }]; assert.deepEqual(scores(records, { openrouterRecords: or }), [['claude-opus-5-5', '70.0'], ['gpt-6-1-sol', '30.0']], 'OpenRouter 사용량도 오케 점수에 반영된다(R, 가중 5%)');
+  assert.deepEqual(scores(records), [['claude-opus-5-5', '75.0'], ['gpt-6-1-sol', '25.0']], '성능 Opus 1 / 속도·가성비 GPT 1 (R 75/10/15)');
+  const or = [{ modelId: 'claude-opus-5-5', value: 100, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 300, metric: 'total_tokens' }]; assert.deepEqual(scores(records, { openrouterRecords: or }), [['claude-opus-5-5', '75.0'], ['gpt-6-1-sol', '25.0']], '사용량 가중 0: OpenRouter 기록이 있어도 오케 점수 불변(R 1.2.1)');
 });
 test('total_tokens records get 1..N usage ranks so the token value never becomes a rank', () => {
   const or = [{ modelId: 'claude-sonnet-5-5', value: 530462835686, metric: 'total_tokens' }, { modelId: 'gpt-6-1-sol', value: 264308530787, metric: 'total_tokens' }];

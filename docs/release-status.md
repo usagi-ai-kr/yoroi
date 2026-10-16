@@ -58,6 +58,13 @@
 - [후속] **1.0.3 준비**: 워커 effort 라벨-지표 소스 불일치(AA Max 지표에 Cog high 라벨) 최소 수정 후보 — [release-103-effort-fix-candidate.md](insights/release-103-effort-fix-candidate.md). tag `v1.0.3`·Release·레터는 별도 승인 흐름.
 - [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban·[#164](https://github.com/qus0in/yoroi/issues/164) warn — 버전·milestone 미지정, 구현은 warn만 후보 포함.
 
+## 1.1.0 진행 (2026-10-16, milestone 25)
+
+- 범위(minor): [#163](https://github.com/qus0in/yoroi/issues/163) 밴 목록 + 하위버전 화이트리스트를 `config/letter-model-lists.json`으로 옮김(`allowOlder`·`excludePatterns`·`ban`). 명세: [letter-model-lists-1.1.md](insights/letter-model-lists-1.1.md).
+- [검증] unit 1074/1074·typecheck·validate PASS, w1 리뷰 차단 0([리뷰](insights/letter-model-lists-review-w1.md)), 기본 config 렌더 = 1.0.3 렌더 바이트 동일.
+- [비차단] 교차 family에서 목록 모델이 successor 쪽일 때 predecessor 보호(현 데이터 영향 0) — 1.1.x 후속.
+- 후속: PR → main CI → tag `v1.1.0`·Release → 전역 CLI → 레터 재발행.
+
 ## 1.0.3 발행 완료 (2026-10-16, PR #170 머지 → main `ea381c61b794390c43ac85cc2b515f0022c1af2a` = tag `v1.0.3`)
 
 - 범위(patch): 워커 effort 표기·AA 측정 소스 정합 1줄 + 신규 3케이스 + 버전 1.0.3 + 문서 8. max cap 없음.

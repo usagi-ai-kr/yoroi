@@ -1,6 +1,7 @@
 import { expandSuccessors } from './model-successors.js';
 import { validateInsightRecord, type ValidatedInsightRecord } from './validation.js';
 import { isExcludedModel, olderGenerationModelIds, separateGptSolModels } from './letter-top10-filter.js';
+import { activeLetterModelLists, type LetterModelLists } from './letter-model-lists.js';
 import { EVIDENCE_METRICS } from './top10-policy.js';
 import { effortForModel, splitBaseAndEffort, type ModelVariant } from './letter-top10-group.js';
 import { buildVariants, COGNITION_COST_METRIC, COGNITION_DURATION_METRIC, COGNITION_METRIC, FREE_ACCESS_METRIC, normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
@@ -46,21 +47,20 @@ export interface CandidatePool {
   readonly releaseWarnings: readonly string[];
 }
 /** 세대 제외는 1회 계산. 근거 행(OR/OpenCode Data)이 있으면 AA 미측정 모델도 후보에서 빼지 않는다(2026-10-13). */
-export function buildCandidatePool(records: readonly Top10RecordInput[], catalog: readonly PlanCatalogEntry[] = PLAN_CATALOG,
-  evidence: readonly Top10RecordInput[] = []): CandidatePool {
+export function buildCandidatePool(records: readonly Top10RecordInput[], catalog: readonly PlanCatalogEntry[] = PLAN_CATALOG, evidence: readonly Top10RecordInput[] = [], lists: LetterModelLists = activeLetterModelLists()): CandidatePool {
   const resolve = buildCatalogAliasResolver(records, catalog.flatMap(p => p.models.filter(m => m.verified).map(m => m.modelId)));
   const accessible = new Set(catalog.flatMap(p => p.models.filter(m => m.verified).map(m => resolve(normalizeModelName(m.modelId)))));
   const catalogIds = new Map(catalog.flatMap(p => p.models.filter(m => m.verified).map(m => [resolve(normalizeModelName(m.modelId)), m.modelId] as const)));
   const merged = [...records, ...evidence.map(r => { const canonical = resolve(modelIdOf(r));
-    return canonical === modelIdOf(r) ? r : { ...r, modelId: canonical }; })], modelIds = [...new Set(merged.map(modelIdOf))].filter(id => accessible.has(id) && !isExcludedModel(id));
-  const supersededModelIds = new Set(olderGenerationModelIds(modelIds));
+    return canonical === modelIdOf(r) ? r : { ...r, modelId: canonical }; })], modelIds = [...new Set(merged.map(modelIdOf))].filter(id => accessible.has(id) && !isExcludedModel(id, lists.excludePatterns));
+  const supersededModelIds = new Set(olderGenerationModelIds(modelIds, lists.allowOlder));
   for (const r of merged) if (r.successorOf !== undefined && accessible.has(modelIdOf(r)) &&
-    !separateGptSolModels(modelIdOf(r), splitBaseAndEffort(r.successorOf).base)) supersededModelIds.add(normalizeModelName(splitBaseAndEffort(r.successorOf).base));
+    !separateGptSolModels(modelIdOf(r), splitBaseAndEffort(r.successorOf).base, lists.allowOlder)) supersededModelIds.add(normalizeModelName(splitBaseAndEffort(r.successorOf).base));
   const eligible = merged.filter(r => !supersededModelIds.has(modelIdOf(r)));
   const isEvidence = (r: Top10RecordInput): boolean => r.metric !== undefined && [...EVIDENCE_METRICS, COGNITION_METRIC, COGNITION_COST_METRIC, COGNITION_DURATION_METRIC, FREE_ACCESS_METRIC].includes(r.metric);
   const releases = arbitrateReleases(eligible.filter(r => !isEvidence(r)), r => catalogIds.get(modelIdOf(r)) ?? modelIdOf(r));
   const allRecords = dedupeRecords([...releases.rows, ...eligible.filter(isEvidence)], catalogIds);
-  const accessibleRecords = allRecords.filter(r => accessible.has(resolve(modelIdOf(r))) && !isExcludedModel(r.modelId));
+  const accessibleRecords = allRecords.filter(r => accessible.has(resolve(modelIdOf(r))) && !isExcludedModel(r.modelId, lists.excludePatterns));
   return { allRecords, accessibleRecords, supersededModelIds, releaseWarnings: releases.warnings };
 }
 const AA_METRICS = new Set(['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index',

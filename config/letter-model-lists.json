@@ -1,0 +1,5 @@
+{
+  "allowOlder": ["grok-4-6", "gpt-6-sol"],
+  "excludePatterns": ["fable", "astra"],
+  "ban": { "common": [], "orchestrator": [], "worker": [] }
+}

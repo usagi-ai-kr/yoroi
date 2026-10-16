@@ -58,10 +58,12 @@
 - [후속] **1.0.3 준비**: 워커 effort 라벨-지표 소스 불일치(AA Max 지표에 Cog high 라벨) 최소 수정 후보 — [release-103-effort-fix-candidate.md](insights/release-103-effort-fix-candidate.md). tag `v1.0.3`·Release·레터는 별도 승인 흐름.
 - [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban·[#164](https://github.com/qus0in/yoroi/issues/164) warn — 버전·milestone 미지정, 구현은 warn만 후보 포함.
 
-## 1.1.1 진행 (2026-10-16, milestone 26, [#176](https://github.com/qus0in/yoroi/issues/176))
+## 1.1.1 발행 완료 (2026-10-16, PR #177 → main `29c968fe8ea05037563f77690786a69b21c1f890` = tag `v1.1.1`, milestone 26, [#176](https://github.com/qus0in/yoroi/issues/176))
 
 - 범위(patch): 전역 CLI가 레터 모델 목록 설정을 읽도록 `YOROI_LETTER_MODEL_LISTS` → `${XDG_CONFIG_HOME:-~/.config}/yoroi/letter-model-lists.json` → 레포 config → 기본값 순으로 해석. 파싱 실패는 stderr 경고 1줄. 밴은 오케·워커별(`ban.common` 하위호환), 버전 허용 `allowOlder`는 공통(사용자 확정).
 - [검증] unit 1080/1080·typecheck·validate PASS, 경로 테스트 6건(w1), 구현 리뷰 o(문서 예시 정정 1건).
+- [완료] main CI [38873193798](https://github.com/qus0in/yoroi/actions/runs/38873193798) success · [Release v1.1.1](https://github.com/qus0in/yoroi/releases/tag/v1.1.1) · 전역 CLI 1.1.1(`--check` exit 0) · #176 close · milestone 26 close. 레터 재발행 없음(기본값 동작 불변).
+- [스모크] 전역 CLI에 오케 밴 `claude-opus-5-5` 지정 시 오케 Top10에서만 빠지고 선두 `gpt-6-1-sol`, 워커 선두 불변. 잘못된 파일은 경고 1줄.
 
 ## 1.1.0 발행 완료 (2026-10-16, PR #174 → main `431bc7ce1245753b27280b1eaf88a1bac9e2b281` = tag `v1.1.0`)
 

@@ -13,11 +13,11 @@
 - [완료] D(xAI 구독 사용률) #147 closed.
 - [보존] 미커밋 5파일(effort 3·orchestration.md·takeover 기록)은 1.0 커밋에서 뺐고 워킹트리에 유지한다.
 - [완료] 1.0.1 patch: PR #159 머지 `c7c403ee`, main CI attempt 2 success, tag `v1.0.1`·Release(동일 SHA), 전역 1.0.1, 레터 [#160](https://github.com/qus0in/yoroi/issues/160) 발행 후 #157 close.
-- [진행] 1.0.2 R 선형 가성비 + 정규 순위 표시 보정(2026-10-16): 오케 70/5/10/15 `I/(P+0.01)` + 역할별 전체 적격 대표 모집단 midrank→Φ⁻¹→50+10z 표시. **PR #166 머지**(main `9cd019015a680e0e57bdc1ac3b1df14bb368f074`). warn/#165/#167 변경은 미커밋 → clean 후보 `/tmp/yoroi-102-final-clean`+manifest 준비(검증은 release-102-candidate.md). tag·Release·전역 미실행. dirty5(worker hunk·orchestration·takeover·worker-effort-source.test) 제외·워킹트리 보존. 레터 미발행 → PR에 `Closes #160` 금지. 신규 milestone 없음.
+- [완료] 1.0.2 R 선형 가성비 + 정규 순위 표시 보정(2026-10-16): **PR #169 머지**(main `adea4d33868b6b40219fdf4da06de1e0e637a2d2` = tag `v1.0.2` = Release, 06:01:24Z). dev 커밋 `44253ed`(warn·Argon·Muse 47파일) 포함. dirty5 제외·워킹트리 보존. **1.0.3 준비**: 워커 effort 라벨-지표 불일치 최소 수정 후보(release-103-effort-fix-candidate.md) — tag/Release/레터는 별도 흐름.
 
 ## 남은 작업
 
-- [진행] 1.0.2: PR #166 머지(main `9cd0190`) 완료. warn/#165/#167 미커밋분은 clean 후보(`/tmp/yoroi-102-final-clean`+manifest) 준비·검증 단계. dev 커밋 → PR → main CI → 승인 머지 → tag/Release/전역은 별도 승인 후.
+- [진행] 1.0.3: 1.0.2 발행 완료(PR #169·main `adea4d33`·tag/Release v1.0.2). 워커 effort 라벨-지표 소스 불일치(AA Max 값+Cog high 라벨) 최소 수정 clean 후보(`/tmp/yoroi-103-final-clean`+manifest) 준비·검증 단계. commit → PR → CI → 승인 머지 → tag/Release/전역 → 레터는 별도 승인 흐름.
 - [이월] 1.1.0: 접근 effort 상한(xhigh), 워커 effort 정책 확정([roadmap.md](roadmap.md) "1.1.0 후속").
 - [hold] [#29](https://github.com/qus0in/yoroi/issues/29): 0.1.2 milestone(#4)에 open·hold 유지(2026-10-10 사용자 결정).
 - [미착수] PR #86 후속: 토큰 갱신 이력 끊김(`n/a: no-previous`와 구분) 표시. 계정 다이제스트 값은 출력·로그에 노출하지 않는다(기록 시점 2026-10-14).

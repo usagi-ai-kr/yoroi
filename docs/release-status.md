@@ -50,13 +50,12 @@
 - [완료] 레터: [#160](https://github.com/qus0in/yoroi/issues/160)(Grok 4.6) 발행·4.6행 GET 확인 후 #157 댓글·close. #157과 차이 원인 미확정 유지.
 - [제외] 1.1 effort 3파일·orchestration·takeover 보존.
 
-## 1.0.2 준비 상태 (2026-10-16, 미발행 · PR #166 병합 후속)
+## 1.0.2 발행 완료 (2026-10-16, PR #169 머지 → main `adea4d33868b6b40219fdf4da06de1e0e637a2d2` = tag `v1.0.2`)
 
 - 범위: (1) 오케 R 4차원 선형 가성비 복구(70/5/10/15, `valueForMoney = I/(P+0.01)`·log10 유지·Cog USD/task 역방향 소스별 min-max 후 차원 max) (2) 역할별 전체 적격 대표 모집단 midrank → Φ⁻¹ → 50+10z **표시 보정** (3) #164 warn(90% 이상 표시·계약 문서) (4) #165 Antigravity `gemini-4-argon` 카탈로그 (5) #167 `muse-spark-open` 카탈로그·공개근거. 신규 milestone 없음.
-- 상태: PR #166 머지 완료(main `9cd019015a680e0e57bdc1ac3b1df14bb368f074`)·**v1.0.2 tag·Release 없음**(원격 확인 2026-10-16). (3)~(5) 변경은 아직 미커밋 → clean 후보 `/tmp/yoroi-102-final-clean`+manifest 준비(검증은 [release-102-candidate.md](insights/release-102-candidate.md) 참조).
-- **tag·Release·전역 CLI 갱신·레터 재발행 미실행**(다음 단계: dev 커밋 → PR → main CI → 승인 머지 → tag/Release).
-- [보존] **1.1 워커 이월**: worker hunk(`letter-top10-score.ts`·`four-source-score.md`)·`orchestration.md`·takeover·`insights-worker-effort-source.test.ts`는 후보에서 제외하고 워킹트리에 보존. worker raw 30/20/10/40·하한33·가산5 불변.
-- [미발행] 레터(R 가성비·정규 표시 반영) 게시 미완료 → PR에 `Closes #160` **금지**.
+- [완료] dev 커밋 `44253ed`(warn·Argon·Muse 코드/테스트/문서 47파일)를 PR #169(dev→main)로 머지 → main `adea4d33868b6b40219fdf4da06de1e0e637a2d2` = tag `v1.0.2` = [Release](https://github.com/qus0in/yoroi/releases/tag/v1.0.2)(publishedAt 2026-10-16T06:01:24Z). **전역 갱신·레터 발행은 별도 단계.**
+- [보존] **1.1 워커 이월**: worker hunk(`letter-top10-score.ts`·`four-source-score.md`)·`orchestration.md`·takeover·`insights-worker-effort-source.test.ts`는 1.0.2 소스에서 제외하고 워킹트리에 보존. worker raw 30/20/10/40·하한33·가산5 불변.
+- [후속] **1.0.3 준비**: 워커 effort 라벨-지표 소스 불일치(AA Max 지표에 Cog high 라벨) 최소 수정 후보 — [release-103-effort-fix-candidate.md](insights/release-103-effort-fix-candidate.md). tag `v1.0.3`·Release·레터는 별도 승인 흐름.
 - [등록만] 이슈 [#163](https://github.com/qus0in/yoroi/issues/163) ban·[#164](https://github.com/qus0in/yoroi/issues/164) warn — 버전·milestone 미지정, 구현은 warn만 후보 포함.
 
 ## 버전 이력 요약

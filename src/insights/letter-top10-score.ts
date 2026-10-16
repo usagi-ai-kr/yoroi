@@ -40,7 +40,7 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
     ? orchestratorVariants(r).map(effort => { const c = { ...r }; pickEffortValues(c, effort, role); return { r: c, base: bases[i]!, effort }; })
     : [(() => { const a = perfAa![i], c = perfCog![i];
       const m = a === undefined && c === undefined ? undefined : c !== undefined && (a === undefined || c > a) ? r.cogEffort : r.aaEffort;
-      const effort = best(m)?.[0] ?? 'default'; pickEffortValues(r, effort, role); return { r, base: bases[i]!, effort }; })()]);
+      const chosen = best(m)?.[0] ?? 'default', effort = r.aaEffort?.has(chosen) ? chosen : best(r.aaEffort)?.[0] ?? chosen; pickEffortValues(r, effort, role); return { r, base: bases[i]!, effort }; })()]);
   const genericParts = role === 'worker' ? parts.filter(p => p.dim !== 'price') : parts;
   const std = genericParts.map(p => stdOf(rows.map(x => x.r), p)), anyPrice = rows.some(x => parts.some(p => p.dim === 'price' && x.r[p.key] !== undefined));
   const pricePart = (key: 'aaCpt' | 'aaTotal' | 'aaPrice') => PARTS.find(p => p.dim === 'price' && p.key === key && (key !== 'aaPrice' || p.role === 'worker'))!;

@@ -6,7 +6,7 @@ import { WORKER_BONUS_CAP } from '../src/insights/letter-top10-score-weights.js'
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
-/** p54 C 워커 AA best 소스 + p75 오케 가성비 제거(0.82/0.06/0.12) + p85 워커 AA 산식, 2026-10-15 사용자 확정 갱신(성능 .30·사용량 .20·속도 .10·가격 .40·가산 cap 5·원값 하한 33·존 .60). 오케 effort 규칙은 insights-orchestrator-effort.test.ts. */
+/** p54 C 워커 AA best 소스 + R(1.0.2) 오케 가성비 복구(0.70/0.05/0.10/0.15, 선형 I/(P+.01)) + p85 워커 AA 산식, 2026-10-15 사용자 확정 갱신(성능 .30·사용량 .20·속도 .10·가격 .40·가산 cap 5·원값 하한 33·존 .60). 오케 effort 규칙은 insights-orchestrator-effort.test.ts. */
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
 const CPT = 'intelligence_index_cost_per_task', TOTAL = 'intelligence_index_total_cost';
 const catalogOf = (ids: readonly string[]): readonly PlanCatalogEntry[] => [{ planId: 'c-test', planName: 'C Test',
@@ -17,11 +17,11 @@ const cog = (modelId: string, metric: string, value: number): Top10RecordInput =
 const near = (actual: number | undefined, expected: number) => assert.ok(actual !== undefined && Math.abs(actual - expected) < 1e-3, `${actual} ≈ ${expected}`);
 
 test('role weights, per-role sources, worker floor and bonus cap are exported constants', () => {
-  assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.82, usage: 0.06, speed: 0.12 },
+  assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.70, usage: 0.05, speed: 0.10, price: 0.15 },
     worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } });
   assert.deepEqual([ROLE_SOURCES.worker.speed, ROLE_SOURCES.worker.price, ROLE_SOURCES.worker.usage, ROLE_SOURCES.orchestrator.speed, ROLE_SOURCES.orchestrator.price,
-    ROLE_SOURCES.orchestrator.usage], [['aa'], ['aa'], ['openrouter', 'opencode'], ['aa', 'cognition'], [], ['openrouter', 'opencode']]);
-  assert.deepEqual([ROLE_DIMENSIONS.orchestrator, ROLE_DIMENSIONS.worker.map(d => DIMENSION_LABELS[d]).at(-1)], [['performance', 'usage', 'speed'], '가격']);
+    ROLE_SOURCES.orchestrator.usage], [['aa'], ['aa'], ['openrouter', 'opencode'], ['aa', 'cognition'], ['aa', 'cognition'], ['openrouter', 'opencode']]);
+  assert.deepEqual([ROLE_DIMENSIONS.orchestrator, ROLE_DIMENSIONS.worker.map(d => DIMENSION_LABELS[d]).at(-1)], [['performance', 'usage', 'speed', 'price'], '가격']);
   assert.deepEqual([WORKER_PERFORMANCE_FLOOR, PRICE_MISSING_VALUE, WORKER_INTEL_FLOOR, WORKER_BONUS_CAP], [0.7, 0.99, 33, 5]);
 });
 
@@ -56,24 +56,24 @@ test('worker p85: intel performance, raw floor 33, price mean(cpt,total), capped
   assert.ok(lists.orchestrator.entries.some(x => x.modelId === 'w-weak'), '원값 하한은 워커 전용이다');
   // w-a: 성능 1·사용량 1·가격 mean(0,1)=0.5 → 30+20+20, 속도 (200-100)/(500-100)=0.25 → +2.5, 가산 5×mean(1,1)=5 → 77.5.
   // 탈락한 w-weak의 tok/s 500이 척도에 남는다(하한은 표준화 뒤에 적용한다).
-  assert.deepEqual([at('w-a').scoreText, at('w-a').scoreComponents?.bonus], ['77.5', 5]);
+  assert.deepEqual([at('w-a').rawScore?.toFixed(1), at('w-a').scoreComponents?.bonus], ['77.5', 5]);
   assert.deepEqual([at('w-a').scoreComponents?.cost, at('w-a').scoreComponents?.dimensionSources?.price], [0.5, 'aa']);
   // w-b: cpt만 있어 가격이 cpt 표준화값 그대로다. 가산 입력은 사용량 0 하나뿐이라 bonus 0이다.
   // 성능 풀에 w-weak 20이 있어 w-b 성능은 0.5 → 55.0으로 컷(77.5×0.60=46.5)을 넘는다.
-  assert.deepEqual([at('w-b').scoreText, at('w-b').scoreComponents?.cost, at('w-b').scoreComponents?.bonus], ['55.0', 1, 0]);
+  assert.deepEqual([at('w-b').rawScore?.toFixed(1), at('w-b').scoreComponents?.cost, at('w-b').scoreComponents?.bonus], ['55.0', 1, 0]);
   assert.equal(at('w-b').belowZone, undefined, 'w-b 55.0 ≥ 최고 77.5×0.60 → 존 통과');
 });
 
-test('orchestrator has no price dimension: price never moves the score or the cost component, usage counts lightly (p75)', () => {
-  const records = [aa('v-free', INTEL, 80, 0), aa('v-dear', INTEL, 90, 9.99), aa('v-mid', INTEL, 60, 1), aa('v-noprice', INTEL, 70), aa('v-noi', TPS, 100, 0.5)];
-  const openrouterRecords = [{ modelId: 'v-dear', metric: 'total_tokens', value: 1e9 }, { modelId: 'v-mid', metric: 'total_tokens', value: 1e3 }];
-  const run = (rs: Top10RecordInput[]) => computeRoleTop10(rs, { catalog: catalogOf(['v-free', 'v-dear', 'v-mid', 'v-noprice', 'v-noi']), openrouterRecords }).orchestrator.entries;
+test('orchestrator price dimension moves the score: same intel, cheaper wins via linear value (R)', () => {
+  const records = [aa('o-cheap', INTEL, 80, 1), aa('o-dear', INTEL, 80, 9)];
+  const run = (rs: Top10RecordInput[]) => computeRoleTop10(rs, { catalog: catalogOf(['o-cheap', 'o-dear']) }).orchestrator.entries;
   const at = (id: string) => run(records).find(x => x.modelId === id)!, c = (id: string) => at(id).scoreComponents!;
-  assert.deepEqual(['v-free', 'v-dear', 'v-mid', 'v-noprice', 'v-noi'].map(id => [c(id).cost, c(id).dimensionSources?.price, c(id).sources?.['price:aa']]), Array(5).fill([0, undefined, undefined]));
-  assert.deepEqual([c('v-dear').usage, c('v-dear').sources?.['usage:openrouter'], c('v-dear').dimensionSources?.usage], [1, 1, 'openrouter']);
-  assert.equal(at('v-dear').scoreText, (82 + 6).toFixed(1), 'v-dear: 성능 1 + 사용량 1, 속도 근거 없음'); // 성능 82 + 사용량 6
-  assert.equal(at('v-mid').scoreText, '0.0', 'v-mid: 성능 0·사용량 0·속도 없음');
-  const cheaper = run(records.map(r => ({ ...r, ...(r.priceInput !== undefined && { priceInput: 99, priceOutput: 99 }) })));
-  assert.deepEqual(cheaper.map(e => [e.modelId, e.scoreText]), run(records).map(e => [e.modelId, e.scoreText]), 'AA 단가가 바뀌어도 오케 스코어·순위는 같다');
-  assert.equal(at('v-free').blendedCostText, '무료', '단가는 표시·파레토용으로 남는다');
+  // orchValue cheap=80/1.01, dear=80/9.01 → log10 min-max 1 vs 0. 성능 둘 다 1, 사용량·속도 근거 없음.
+  // cheap: 70×1 + 15×1 = 85.0, dear: 70×1 + 15×0 = 70.0. 차원 원천은 aa다.
+  assert.deepEqual([at('o-cheap').rawScore?.toFixed(1), at('o-dear').rawScore?.toFixed(1)], ['85.0', '70.0']);
+  assert.deepEqual([c('o-cheap').cost, c('o-cheap').dimensionSources?.price], [1, 'aa']);
+  assert.deepEqual([c('o-dear').cost, c('o-dear').dimensionSources?.price], [0, 'aa']);
+  const dearer = run(records.map(r => ({ ...r, priceInput: 99, priceOutput: 99 })));
+  assert.deepEqual(dearer.map(e => [e.modelId, e.rawScore?.toFixed(1)]), [['o-cheap', '85.0'], ['o-dear', '85.0']], '둘 다 99면 가성비 동점 1 → 순위·점수 동일');
+  assert.equal(at('o-cheap').blendedCostText, '$1.00/1M', '단가는 표시·파레토용으로 남는다');
 });

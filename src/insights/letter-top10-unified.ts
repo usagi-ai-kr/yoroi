@@ -4,6 +4,7 @@ import { FREE_ACCESS_METRIC, normalizeModelName, toRefMap, type Top10Options, ty
 import { buildCandidatePool, plansForCatalogModel } from './letter-top10-candidates.js';
 import { type OptimalZoneRole, type ScoreComponents, type ScoredGroup } from './letter-top10-worker.js';
 import { scoreRoleCandidatesFromSources } from './letter-top10-score.js';
+import { normalRankScores } from './letter-score-normal.js';
 import { PLAN_CATALOG } from './plan-catalog.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 
@@ -14,7 +15,7 @@ export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = {
 export type RoleChange = '유지' | `▲${number}` | `▼${number}` | '진입' | '신규';
 export interface RoleEntry {
   readonly rank: number; readonly modelId: string; readonly indexText: string; readonly repEffort: string;
-  readonly blendedCostText: string; readonly scoreText?: string;
+  readonly blendedCostText: string; readonly scoreText?: string; readonly rawScore?: number;
   readonly scoreComponents?: ScoreComponents; readonly plans: readonly string[];
   readonly change: RoleChange; readonly isPareto: boolean; readonly both: boolean; readonly offPeak?: boolean;
   readonly belowZone?: boolean; readonly indexMissing?: boolean;
@@ -27,7 +28,7 @@ export interface RoleLists { readonly orchestrator: RoleList; readonly worker: R
 
 const costTextOf = (cost?: number): string => cost === undefined ? '단가 -' : cost === 0 ? '무료' : `$${cost.toFixed(2)}/1M`;
 function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, opts: Top10Options, catalog: readonly PlanCatalogEntry[], excluded: ReadonlySet<string>,
-  scored: readonly ScoredGroup[]): RoleList {
+  scored: readonly ScoredGroup[], cal: ReadonlyMap<ScoredGroup, number>): RoleList {
   const successors = new Map<string, string>();
   for (const r of records) if (r.successorOf !== undefined &&
     !separateGptSolModels(splitBaseAndEffort(r.modelId).base, splitBaseAndEffort(r.successorOf).base))
@@ -44,7 +45,7 @@ function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, 
     return { rank: i + 1, modelId: g.baseModelId, indexText: rep.indexMissing ? '-' : rep.value.toFixed(1), repEffort: rep.effort,
       // p52: Free 경로도 원 API 단가(off-peak 포함)를 그대로 표시한다. 가격 결측 보정(0.99)은 단가 '-'로 둔다.
       blendedCostText: costTextOf(rep.effectiveCost ?? rep.blendedCost),
-      scoreText: s.score.toFixed(1), scoreComponents: s.components,
+      scoreText: Number.isFinite(cal.get(s)) ? cal.get(s)!.toFixed(1) : '-', rawScore: s.score, scoreComponents: s.components,
       plans: plansForCatalogModel(g.baseModelId, catalog), isPareto: g.isPareto, both: false,
       ...(rep.indexMissing && { indexMissing: true }), ...(s.belowZone && { belowZone: true }),
       ...(rep.offPeak === true && { offPeak: true }),
@@ -78,7 +79,13 @@ export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: To
   const evidence = [...(opts?.openrouterRecords ?? []), ...(opts?.opencodeDataRecords ?? []), ...(opts?.cognitionRecords ?? []), ...freeRows];
   const candidates = buildCandidatePool(records, catalog, evidence).accessibleRecords;
   // p75: 오케 성능·사용량·속도, p85: 워커 성능·속도·가격+가산(사용량은 가산 입력), 역할별 가중치(ROLE_DIMENSION_WEIGHTS)·AA 지표. 두 계열 간 강제 배제 없음.
-  const pick = (role: OptimalZoneRole) => buildList(candidates, role, opts ?? {}, catalog, excluded, scoreRoleCandidatesFromSources(candidates, role, opts));
+  // 점수 보정: 역할 선택자격 후 Top10 컷 전 대표 모집단 raw를 정규순위(50중심)로 1회 보정 — 표시 scoreText만 바꾸고 순위·▽존·representative·components는 raw 유지(▽ raw max×0.85/.60 원정책).
+  const pick = (role: OptimalZoneRole) => {
+    const scored = scoreRoleCandidatesFromSources(candidates, role, opts);
+    const calibrated = normalRankScores(scored.map(s => s.score));
+    const cal = new Map<ScoredGroup, number>(scored.map((s, i): [ScoredGroup, number] => [s, calibrated[i]!]));
+    return buildList(candidates, role, opts ?? {}, catalog, excluded, scored, cal);
+  };
   const orchestrator = pick('orchestrator'), worker = pick('worker');
   const oKeys = new Set(orchestrator.entries.map(e => normalizeModelName(e.modelId)));
   const wKeys = new Set(worker.entries.map(e => normalizeModelName(e.modelId)));

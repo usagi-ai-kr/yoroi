@@ -8,16 +8,18 @@ export const SCORE_WEIGHT_ROLES = ['orchestrator', 'worker'] as const;
 export const SCORE_WEIGHT_DIMENSIONS = ['performance', 'usage', 'speed', 'price'] as const;
 export type ScoreWeightRole = typeof SCORE_WEIGHT_ROLES[number];
 export type ScoreWeightDimension = typeof SCORE_WEIGHT_DIMENSIONS[number];
-/** p75: 오케·리뷰어는 가성비(price)를 쓰지 않아 세 차원만 가진다. 워커·메신저는 네 차원이다. */
+/** p75: 오케·리뷰어는 가성비(price)를 쓰지 않아 세 차원만 가진다. 워커·메신저는 네 차원이다.
+ *  R(1.0.2): 오케 가성비 복구로 네 차원이다. */
 export const ROLE_WEIGHT_DIMENSIONS: Readonly<Record<ScoreWeightRole, readonly ScoreWeightDimension[]>> = {
-  orchestrator: ['performance', 'usage', 'speed'], worker: SCORE_WEIGHT_DIMENSIONS };
+  orchestrator: ['performance', 'usage', 'speed', 'price'], worker: SCORE_WEIGHT_DIMENSIONS };
 export type ScoreWeights = Readonly<Record<ScoreWeightRole, Readonly<Partial<Record<ScoreWeightDimension, number>>>>>;
 export const SCORE_WEIGHTS_PATH = resolve(packageRootFrom(import.meta.url), 'config/score-weights.json');
 /** 저장소 기본값. 사용자가 파일로 바꾸기 전까지 이 숫자를 코드에서 바꾸지 않는다.
  *  2026-10-15 사용자 확정: 워커 성능/사용량/속도/가격 .30/.20/.10/.40(존 임계 .60, priceMissing .99 유지 —
- *  시뮬레이션 근거 scratch/reports/yoroi-worker-tune-cap2.md·yoroi-worker-tune-final-review.md). */
+ *  시뮬레이션 근거 scratch/reports/yoroi-worker-tune-cap2.md·yoroi-worker-tune-final-review.md).
+ *  R(1.0.2): 오케 성능/사용량/속도/가격 .70/.05/.10/.15(가성비 복구, p70). */
 export const SCORE_WEIGHTS_DEFAULTS: ScoreWeights = {
-  orchestrator: { performance: 0.82, usage: 0.06, speed: 0.12 },
+  orchestrator: { performance: 0.70, usage: 0.05, speed: 0.10, price: 0.15 },
   worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } };
 /** p85: 워커 가산 상한(점). 기본 점수에 더하는 가산(bonus) 최대값이다. */
 export const WORKER_BONUS_CAP_DEFAULT = 5;

@@ -5,7 +5,7 @@ import { orchestratorVariants, type Raw } from '../src/insights/letter-top10-sco
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
-/** p75(2026-10-14): 오케 가중치 82/6/12(가성비 제거), effort 상한 없음. */
+/** R(1.0.2): 오케 가중치 70/5/10/15(선형 가성비 복구), effort 상한 없음. */
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
 const catalogOf = (ids: readonly string[]): readonly PlanCatalogEntry[] => [{ planId: 'e-test', planName: 'E Test',
   models: ids.map(modelId => ({ modelId, displayName: modelId, sourceUrl: 'https://example.test', checkedOn: '2026-10-14', verified: true })) }];
@@ -24,28 +24,29 @@ test('variants are the observed performance-source efforts in order; default onl
   assert.deepEqual([orchestratorVariants(raw(['default'], ['default'])), orchestratorVariants(raw([]))], [['default'], ['default']]);
 });
 
-test('each variant is scored on the all-variant pool; price no longer lets the cheaper variant lead (p75)', () => {
+test('each variant is scored on the all-variant pool; cheaper price wins via value (R)', () => {
   const y = aa('y', INTEL, 60, 1);
-  // x-low 89.5·$0.1 vs x-high 90·$10: 성능 .983 vs 1 → 가성비가 없으므로 high 82.0 > low 82×.9833 = 80.6.
+  // x-low 89.5·$0.1 vs x-high 90·$10: 성능 .983 vs 1, 가성비 log min-max 1 vs 0 → low 70×.983+15 = 83.8이 high 70.0을 앞선다.
   const near = orch([aa('x-low', INTEL, 89.5, 0.1), aa('x-high', INTEL, 90, 10), y], ['x', 'y']);
-  assert.deepEqual(near.map(e => [e.modelId, e.repEffort, e.scoreText]), [['x', 'high', '82.0'], ['y', 'default', '0.0']], 'y 성능은 두 x 변형 풀(60~90)로 표준화된다');
-  assert.deepEqual(orch([aa('x-low', INTEL, 85, 0.1), aa('x-high', INTEL, 90, 10), y], ['x', 'y'])[0]!.repEffort, 'high');
+  assert.deepEqual(near.map(e => [e.modelId, e.repEffort, e.rawScore?.toFixed(1)]), [['x', 'low', '83.8'], ['y', 'default', '6.3']], 'y 성능은 두 x 변형 풀(60~90)로 표준화된다');
+  assert.deepEqual(orch([aa('x-low', INTEL, 85, 0.1), aa('x-high', INTEL, 90, 10), y], ['x', 'y']).map(e => [e.modelId, e.repEffort, e.rawScore?.toFixed(1)]), [['x', 'low', '73.3'], ['y', 'default', '6.4']], 'R에서는 가성비 15점이 성능 차이를 뒤집는다');
 });
 
-test('speed 12% lets the lower effort lead when the high effort is far slower (p75)', () => {
+test('speed 10% and value 15% compose: cheaper low effort leads (R)', () => {
   const records = [aa('m-low', INTEL, 88, 1), aa('m-low', TPS, 400), aa('m-high', INTEL, 90, 1), aa('m-high', TPS, 50),
     aa('z', INTEL, 60, 1), aa('z', TPS, 100)];
-  assert.deepEqual(orch(records, ['m', 'z']).map(e => [e.modelId, e.repEffort, e.scoreText]), [['m', 'low', '88.5'], ['z', 'default', '1.7']],
-    '82/6/12에서 low는 성능 .933×82 + 속도 12 = 88.5로 high(82.0)를 앞선다(z는 속도 .143×12만 기여)');
+  assert.deepEqual(orch(records, ['m', 'z']).map(e => [e.modelId, e.repEffort, e.rawScore?.toFixed(1)]), [['m', 'low', '89.5'], ['z', 'default', '1.4']],
+    'R에서 low는 성능 .933×70 + 속도 10 + 가성비 .943×15 = 89.5로 high(85.0)를 앞선다(z는 속도 .143×10만 기여)');
 });
 
-test('Cognition USD/task and AA price no longer reach the orchestrator score or cost component (p75)', () => {
+test('Cognition USD/task reaches the orchestrator score via reverse max (R)', () => {
   const records = [aa('r-low', INTEL, 88, 10), aa('r-high', INTEL, 90, 1), aa('z', INTEL, 60, 0.05)];
   const withCost = orch(records, ['r', 'z'], [cogCost('r-low', 0.02), cogCost('r-high', 0.5)]), without = orch(records, ['r', 'z']);
   const r = withCost.find(e => e.modelId === 'r')!;
-  assert.deepEqual([r.repEffort, r.scoreComponents?.dimensionSources?.price, r.scoreComponents?.sources?.['price:cognition'], r.scoreComponents?.cost], ['high', undefined, undefined, 0],
-    '성능이 높은 high가 대표, Cog 비용이 더 싼 low는 이점이 없다');
-  assert.deepEqual(withCost.map(e => [e.modelId, e.repEffort, e.scoreText]), without.map(e => [e.modelId, e.repEffort, e.scoreText]));
+  assert.deepEqual([r.repEffort, r.scoreComponents?.dimensionSources?.price, r.scoreComponents?.sources?.['price:cognition'], r.scoreComponents?.cost], ['low', 'cognition', 1, 1],
+    'Cog 비용이 싼 low가 가성비 1로 대표가 된다');
+  assert.deepEqual(withCost.map(e => [e.modelId, e.repEffort, e.rawScore?.toFixed(1)]), [['r', 'low', '80.3'], ['z', 'default', '15.0']]);
+  assert.deepEqual(without.map(e => [e.modelId, e.repEffort, e.rawScore?.toFixed(1)]), [['r', 'high', '77.3'], ['z', 'default', '15.0']], 'Cog 없으면 AA 가성비로 high가 대표다');
 });
 
 test('equal variant scores pick the lower effort', () => {

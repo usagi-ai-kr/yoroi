@@ -2,7 +2,7 @@ import { calcBlendedCost, effortForModel, splitBaseAndEffort } from './letter-to
 import { COGNITION_COST_METRIC, COGNITION_DURATION_METRIC, COGNITION_METRIC, FREE_ACCESS_METRIC, normalizeModelName,
   type Top10RecordInput } from './letter-top10-rank.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
-import { ORCHESTRATOR_EFFORT_ORDER } from './letter-top10-score-policy.js';
+import { ORCHESTRATOR_EFFORT_ORDER, valueForMoney } from './letter-top10-score-policy.js';
 
 /** p54 score core 원값 수집. 성능·토큰은 base 최선값, 속도·가격·Cognition 시간·비용은 effort별로 모아 대표 effort가 정해진 뒤 역할별로 고른다.
  *  p85: 워커 성능 지표는 AA intelligence_index다. 가격 근거 AA cost_per_task·total_cost도 effort별로 모은다. */
@@ -12,7 +12,7 @@ export const AA_COST_PER_TASK_METRIC = 'intelligence_index_cost_per_task', AA_TO
 export interface Raw { aaPerf?: number | undefined; cogCorrect?: number | undefined; or?: number; ocd?: number; aaSpeed?: number | undefined; cogDuration?: number | undefined;
   aaPrice?: number | undefined; cogCost?: number | undefined; aaCpt?: number | undefined; aaTotal?: number | undefined; free?: boolean; aaEffort?: Map<string, number>; cogEffort?: Map<string, number>;
   aaSpeedE?: Map<string, number>; aaPriceE?: Map<string, number>; cogDurE?: Map<string, number>; cogCostE?: Map<string, number>;
-  aaCptE?: Map<string, number>; aaTotalE?: Map<string, number> }
+  aaCptE?: Map<string, number>; aaTotalE?: Map<string, number>; orchValue?: number | undefined }
 const SPEED = 'median_output_tokens_per_second', OR = 'total_tokens', OCD = 'opencode_data_tokens';
 export const baseOf = (id: string): string => normalizeModelName(splitBaseAndEffort(id).base);
 export const best = (m?: ReadonlyMap<string, number>) => m && [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
@@ -53,7 +53,7 @@ export function orchestratorVariants(r: Raw): string[] {
   return ranked.length ? [...ranked] : ['default'];
 }
 /** 오케: 변형 effort 값만 쓴다. 소스에 그 값이 없으면 base 공통 값(2개 이상 effort 동일 또는 단일 default)만 공유하고 그 외는 결측.
- *  성능·속도 모두 같은 effort다(p58 정정; p75: 오케 가성비 제거, 단가는 파레토·표시용으로만 남는다).
+ *  성능·속도·가성비 모두 같은 effort다(p58 정정; R 1.0.2: 오케 가성비 복구 — I/(P+.01)).
  *  워커(p85): AA 속도 최대·단가 최소·AA cost_per_task 최소·AA total_cost 최소(base best), 성능은 base 최선값. */
 export function pickEffortValues(r: Raw, effort: string, role: OptimalZoneRole): void {
   if (role === 'worker') { r.aaSpeed = extreme(r.aaSpeedE, Math.max); r.aaPrice = extreme(r.aaPriceE, Math.min);
@@ -61,5 +61,5 @@ export function pickEffortValues(r: Raw, effort: string, role: OptimalZoneRole):
     r.cogCorrect = r.cogEffort?.get(effort) ?? best(r.cogEffort)?.[1]; return; }
   const at = (m?: ReadonlyMap<string, number>) => m?.get(effort) ?? common(m);
   r.aaPerf = at(r.aaEffort); r.cogCorrect = at(r.cogEffort); r.aaSpeed = at(r.aaSpeedE); r.aaPrice = at(r.aaPriceE);
-  r.cogDuration = at(r.cogDurE); r.cogCost = at(r.cogCostE);
+  r.cogDuration = at(r.cogDurE); r.cogCost = at(r.cogCostE); r.orchValue = valueForMoney(r.aaPerf, r.aaPrice);
 }

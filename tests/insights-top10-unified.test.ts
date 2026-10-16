@@ -26,9 +26,9 @@ const cohortOf = (records: readonly Top10RecordInput[]) => {
 
 test('one candidate pool feeds both lists: intersection appears twice, excluded/inaccessible never', () => {
   const { orchestrator, worker } = computeRoleTop10(RECORDS, W);
-  assert.deepEqual(orchestrator.entries.map(e => [e.modelId, e.scoreText]), [['claude-opus-5-5', '82.0'], ['gpt-6-1-sol', '82.0'], ['claude-haiku-5-5', '0.0']],
-    'p75 82/6/12·변형 평가: 가성비가 없어 단가는 점수에 쓰지 않는다 → Opus·GPT 성능 1(동점은 모델명), Haiku 성능 0');
-  assert.deepEqual(worker.entries.map(e => [e.modelId, e.scoreText]), [['claude-opus-5-5', '67.9'], ['gpt-6-1-sol', '53.7'], ['claude-haiku-5-5', '40.0']],
+  assert.deepEqual(orchestrator.entries.map(e => [e.modelId, e.rawScore?.toFixed(1)]), [['gpt-6-1-sol', '80.5'], ['claude-opus-5-5', '70.0'], ['claude-haiku-5-5', '15.0']],
+    'R 70/15·선형 가성비: 단가가 점수에 쓰인다 → sol 가성비 1로 1위, opus 성능만 70.0, haiku 가성비만 15.0');
+  assert.deepEqual(worker.entries.map(e => [e.modelId, e.rawScore?.toFixed(1)]), [['claude-opus-5-5', '67.9'], ['gpt-6-1-sol', '53.7'], ['claude-haiku-5-5', '40.0']],
     '사용자 확정 워커 30/20/10/40+가산·p75 상향·.60 존 — 가격 차원 풀 [0, .6848, 1]의 p75=.8424로 보유 모델 상향: opus 100×(0.3×1+0.4×.8424)+4.2=67.9, gpt 100×(0.3×.5+0.4×.8424)+5=53.7, haiku 100×(0.4×1)=40.0');
   assert.deepEqual(worker.entries.map(e => e.both), [true, true, true], 'intersection models are marked in both lists');
   assert.deepEqual(orchestrator.entries.map(e => e.both), [true, true, true], 'Haiku도 intel이 있어 워커에 남는다');
@@ -37,7 +37,7 @@ test('one candidate pool feeds both lists: intersection appears twice, excluded/
   assert.ok(!orchestrator.entries.some(e => e.modelId === 'fable-pro'), '제외 계열은 존 계산 전에 걸러진다');
   assert.ok(orchestrator.entries.every(e => e.plans.length > 0));
   assert.equal(orchestrator.entries[0]!.rank, 1);
-  assert.equal(orchestrator.entries[0]!.indexText, '90.0');
+  assert.equal(orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.indexText, '90.0', 'R에서 sol이 1위여도 opus 지수는 그대로다');
   assert.match(orchestrator.entries[0]!.scoreText ?? '', /^\d+\.\d$/); assert.ok(orchestrator.entries[0]!.scoreComponents);
   assert.equal(worker.entries[0]!.indexText, '90.0');
 });

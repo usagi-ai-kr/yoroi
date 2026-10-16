@@ -28,12 +28,12 @@ test('AA-unmeasured models stay in the pool when OpenRouter or OpenCode evidence
   for (const id of ['or-bunny', 'oc-heavy', 'oc-lite']) assert.ok(accessible.has(id), id);
 });
 
-test('AA-unmeasured evidence models stay orchestrator candidates; p75 orchestrator usage contributes and there is no value-for-money', () => {
+test('AA-unmeasured evidence models stay orchestrator candidates; R usage 5% and linear value apply', () => {
   const entries = computeRoleTop10(AA_ROWS, opts).orchestrator.entries;
-  // p75 오케 82/6/12: zone-a 성능 82.0, zone-b 0(가성비 없음). AA 미측정은 성능·속도 결측이라
-  // 사용량(OR·OCD 표준화 × 6%)만 기여 → 최고 근거 모델 6.0, 동점은 모델명.
-  assert.deepEqual(entries.map(e => [e.modelId, e.scoreText, e.belowZone]), [['fixture-zone-a', '82.0', undefined], ['oc-heavy', '6.0', true],
-    ['or-bunny', '6.0', true], ['oc-dual', '4.6', true], ['fixture-zone-b', '0.0', true], ['oc-lite', '0.0', true]]);
+  // R 오케 70/5/10/15: zone-a 성능 70 + 가성비 15 = 85.0. AA 미측정은 성능·속도 결측이라
+  // 사용량(OR·OCD 표준화 × 5%)만 기여 → 최고 근거 모델 5.0, 동점은 모델명.
+  assert.deepEqual(entries.map(e => [e.modelId, e.rawScore?.toFixed(1), e.belowZone]), [['fixture-zone-a', '85.0', undefined], ['oc-heavy', '5.0', true],
+    ['or-bunny', '5.0', true], ['oc-dual', '3.8', true], ['fixture-zone-b', '0.0', true], ['oc-lite', '0.0', true]]);
   assert.deepEqual(entries.filter(e => e.indexMissing).map(e => e.modelId), ['oc-heavy', 'or-bunny', 'oc-dual', 'oc-lite']);
   const dual = entries.find(e => e.modelId === 'oc-dual')?.scoreComponents;
   assert.deepEqual([dual?.cost, dual?.dimensionSources?.price], [0, undefined]);

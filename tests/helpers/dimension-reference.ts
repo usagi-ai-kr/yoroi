@@ -2,7 +2,7 @@ import { effortForModel, splitBaseAndEffort } from '../../src/insights/letter-to
 import { normalizeModelName } from '../../src/insights/model-id.js';
 
 /** p85 독립 참조(core/policy 비참조). 워커: 성능 AA intel(원값 하한 33)·속도 AA tok/s·가격=cpt·total 평균(단독·혼합단가 대체)+가산 cap5.
- *  2026-10-15 사용자 확정: 워커 가중치 성능 .30·사용량 .20·속도 .10·가격 .40(존 임계 .60·상향 p75·상한 $5/M은 zone·참조 계약 테스트에서 다룬다). 오케 종전 유지. */
+ *  2026-10-15 사용자 확정: 워커 가중치 성능 .30·사용량 .20·속도 .10·가격 .40(존 임계 .60·상향 p75·상한 $5/M은 zone·참조 계약 테스트에서 다룬다). R 1.0.2: 오케 70/5/10/15 선형 가성비. */
 export interface DimRow { readonly modelId: string; readonly modelAlias?: string; readonly metric?: string; readonly value?: number; readonly priceInput?: number; readonly priceOutput?: number }
 export const DIMS = ['performance', 'usage', 'speed', 'price'] as const;
 export type Dim = typeof DIMS[number];
@@ -61,7 +61,7 @@ export function referenceDimensions(rows: readonly DimRow[], role: Role, freeIds
           ? o[s]?.size ? Math.min(...o[s]!.values()) : undefined : best(o[s])?.[1];
         if (v !== undefined && (s === 'or' || s === 'ocd')) v = Math.log10(v);
         if (v !== undefined && (s === 'cogCost' || s === 'aaCpt' || s === 'aaTotal')) v = Math.log10(v + 0.01);
-        if (s === 'aaPrice') { const I = at(o.aaPerf, effort); v = orch ? I !== undefined && I > 0 && v !== undefined ? Math.log10(I ** 2 / (v + .01)) : undefined : v === undefined ? undefined : Math.log10(v + .01); }
+        if (s === 'aaPrice') { const I = at(o.aaPerf, effort); v = orch ? I !== undefined && I > 0 && v !== undefined ? Math.log10(I / (v + .01)) : undefined : v === undefined ? undefined : Math.log10(v + .01); }
         if (v !== undefined) raw[s] = v;
       }
       variants.push({ modelId, effort, raw });

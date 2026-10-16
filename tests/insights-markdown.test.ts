@@ -52,7 +52,7 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
 
   assert.ok(md.includes('## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)'));
   assert.ok(md.includes('## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)'));
-  const orchHeader = '| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도 | AA 지수 | 혼합 단가 | 변동 |';
+  const orchHeader = '| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가성비 | AA 지수 | 혼합 단가 | 변동 |';
   const workerHeader = '| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |';
   assert.equal(md.split(orchHeader).length - 1, 1); assert.equal(md.split(workerHeader).length - 1, 1);
   assert.ok(md.includes('| --- | --- | --- | --- | --- | --- | --- | --- |'));
@@ -65,17 +65,17 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
 
   assert.ok(md.includes('<details><summary>출처 및 산출 공식</summary>'));
   assert.ok(!md.includes('오케스트레이터 점수 = 지수 50%') && !md.includes('워커 점수 = 코딩 35%'));
-  assert.ok(md.includes('- 자격: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커·메신저) · 오케 3차원 중 하나 이상 근거(검증 Free 경로 포함)·워커 AA intel 원값 하한 통과 · 보유 요금제 접근 모델만'));
+  assert.ok(md.includes('- 자격: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커·메신저) · 네 차원 중 하나 이상 근거(검증 Free 경로 포함)·워커 AA intel 원값 하한 통과 · 보유 요금제 접근 모델만'));
   assert.ok(md.includes('## 📖 표시 안내') && !md.includes('↔') && !md.includes('- 교집합: 두 목록에 모두 오르는 모델'));
   assert.ok(md.includes('- 혼합 단가=(3×입력+출력)/4 USD/1M'));
   assert.ok(md.includes('- 성능: 오케 AA Int·Cog, 워커 AA Int; 사용량: OR/OCD log10(워커는 가산); 속도: 오케 AA·Cog, 워커 AA'));
-  assert.ok(!md.includes('오케 가성비') && !md.includes('I²/P') && !md.includes('성능·가성비 고려'), 'p75: 오케 가성비 문구 없음');
+  assert.ok(md.includes('가성비: 오케') && md.includes('I/(P+.01)'), 'R: 오케 가성비 문구 있음(선형, 제곱 없음)');
   assert.ok(!md.includes('오케 사용량:') && !md.includes('오케 OR/OCD'));
   assert.ok(md.includes('- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점(재분배 없음), 동점 모델명'));
-  assert.ok(md.includes('- 가중치: 오케·리뷰어 성능 82%·사용량 6%·속도 12% / 워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%'));
-  assert.ok(md.includes('- 워커 intel ≥33(결측 제외); 오케 E=전 변형 풀 표준화·P1 최고점(성능·사용량·속도, 동점 낮은 effort); AA 지수도 E값'));
+  assert.ok(md.includes('- 가중치: 오케·리뷰어 성능 70%·사용량 5%·속도 10%·가성비 15% / 워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%'));
+  assert.ok(md.includes('- 워커 intel ≥33(결측 제외); 오케 E=전 변형 풀 표준화·P1 최고점(성능·가성비 고려, 동점 낮은 effort); AA 지수도 E값'));
   assert.ok(md.includes('가산 = 5×평균(Cog 정답률·사용량, 있는 것만)') && md.includes('(없으면 혼합 단가 `*`)') && !md.includes('검증 Free 경로=0') && !md.includes('AA 참고'));
-  assert.ok(!md.includes('정렬: 가성비 중 큰 값'));
+  assert.ok(!md.includes('정렬: 가성비 중 큰 값') && md.includes('오케 E=전 변형 풀 표준화·P1 최고점(성능·가성비 고려, 동점 낮은 effort)'), 'R 가성비 문구');
   assert.ok(md.includes(`- ${EXCLUSION_NOTE}`));
   assert.ok(md.includes('- 👍 파레토 최적(파레토 열): 더 싸고 더 좋은 모델이 없는 상태(단가 대비 스코어 경계선)') && !md.includes('⭐'));
   assert.ok(md.includes('⚠️ synthetic-source'));

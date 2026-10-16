@@ -1,7 +1,7 @@
 import { computeRoleTop10, type RoleList, type RoleLists } from './letter-top10-unified.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
-import { SCORE_FORMULA_LINES } from './letter-markdown-format.js';
+import { COMPACT_FORMULA_LINES } from './letter-markdown-format.js';
 import { freeListsFrom, renderFreeSectionCompact, shortPlan, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 import type { Top10RecordInput } from './letter-top10-rank.js';
@@ -69,7 +69,7 @@ export function renderTop10Letter(data: Top10LetterInput): string {
         (data.failedSources.length > FAILURE_LIMIT ? ` 외 ${data.failedSources.length - FAILURE_LIMIT}개` : '') : '전 소스 정상 수집',
     ...(data.partialSources?.length ? [`부분 수집 소스: ${data.partialSources.slice(0, FAILURE_LIMIT).map(s => clean(s, 40)).join(', ')}`] : []),
     '혼합 단가=(3×입력+출력)/4 USD/1M',
-    ...SCORE_FORMULA_LINES,
+    ...COMPACT_FORMULA_LINES,
     `정렬: 스코어 내림차순(동점 시 모델명) · ${EXCLUSION_NOTE}`,
     '상세 지표는 SQLite 이력에서 확인할 수 있습니다.',
     ...(data.notes ?? []).map(note => clean(note, 160)),

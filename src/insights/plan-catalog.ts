@@ -17,6 +17,8 @@ export interface PlanModelEntry {
   readonly sourceUrl: string;
   readonly checkedOn: string;
   readonly verified: boolean;
+  /** 공식 표기로 확인된 모델별 가용성 메모(티어 전용 등). 수치 한도는 usageLimit 전용(미공개면 미기재). */
+  readonly note?: string;
   readonly usageLimit?: UsageLimit;
   /** 공식 표기에서 무료(Free)로 확인된 모델만 true. 유료 표기 모델은 두지 않는다(추측 금지). */
   readonly free?: boolean;
@@ -50,10 +52,8 @@ const OPENCODE = 'https://opencode.ai/go';
 const OPENCODE_DOCS = 'https://opencode.ai/v2/docs/console/go';
 const ANTIGRAVITY = 'https://antigravity.google/docs/models';
 const CURSOR = 'https://cursor.com/pricing';
-const m = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
-  ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON, verified: true });
-const mDocs = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry =>
-  ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON_DOCS, verified: true });
+const m = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry => ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON, verified: true });
+const mDocs = (modelId: string, displayName: string, sourceUrl: string): PlanModelEntry => ({ modelId, displayName, sourceUrl, checkedOn: CHECKED_ON_DOCS, verified: true });
 
 export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
   { planId: 'chatgpt-plus', planName: 'ChatGPT Plus', models: ['GPT-6.1 Sol|gpt-6-1-sol', 'GPT-6 Astra|gpt-6-astra',
@@ -66,12 +66,14 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     .map(s => m(s.split('|')[1]!, s.split('|')[0]!, GOOGLE)) },
   { planId: 'ollama-cloud-pro', planName: 'Ollama Cloud Pro',
     usagePolicy: { credit: '$60/월', pricingModel: '토큰 단가 차감', concurrency: 3, sourceUrl: OLLAMA, checkedOn: CHECKED_ON },
-    models: ['DeepSeek V4.1 Flash|deepseek-v4-1-flash', 'DeepSeek V4 Pro|deepseek-v4-pro',
+    models: [...['DeepSeek V4.1 Flash|deepseek-v4-1-flash', 'DeepSeek V4 Pro|deepseek-v4-pro',
     'Gemma 4|gemma4', 'GLM-5.3|glm-5-3', 'GLM-5.3-Flash|glm-5-3-flash', 'GLM-5.2|glm-5-2', 'gpt-oss:120b|gpt-oss-120b',
     'gpt-oss:20b|gpt-oss-20b', 'Kimi K3|kimi-k3', 'Kimi K2.7 Code|kimi-k2-7-code', 'Kimi K2.6|kimi-k2-6', 'MiniMax M3|minimax-m3',
     'MiniMax M2.7|minimax-m2-7', 'Mistral Large 4|mistral-large-4', 'Mistral Large 3|mistral-large-3',
     'Nemotron 3 Nano|nvidia-nemotron-3-nano-30b-a3b-reasoning',
-    'Nemotron 3 Super|nemotron-3-super', 'Nemotron 3 Ultra|nemotron-3-ultra'].map(s => m(s.split('|')[1]!, s.split('|')[0]!, OLLAMA)) },
+    'Nemotron 3 Super|nemotron-3-super', 'Nemotron 3 Ultra|nemotron-3-ultra'].map(s => m(s.split('|')[1]!, s.split('|')[0]!, OLLAMA)),
+    // #167 Muse Spark Open: library 직접 확인(2026-10-16, cloud 단일 태그·요금 표기). pricing 미등재라 library를 sourceUrl로 둔다.
+    { modelId: 'muse-spark-open', displayName: 'Muse Spark Open', sourceUrl: 'https://ollama.com/library/muse-spark-open', checkedOn: '2026-10-16', verified: true }] },
   { planId: 'opencode-go-plus', planName: 'OpenCode Go Plus', models: [
     { ...m('kimi-k3', 'Kimi K3', OPENCODE), usageLimit: { count: 440, period: '5h', note: 'Est. requests / 5h: 440 (Plus)', sourceUrl: OPENCODE, checkedOn: CHECKED_ON } },
     ...['Kimi K2.7 Code|kimi-k2-7-code', 'Space Bunny|space-bunny', 'MiniMax M3|minimax-m3', 'Claude Haiku 5.5|claude-haiku-5-5',
@@ -84,11 +86,11 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     'DeepSeek V4 Pro|deepseek-v4-pro', 'DeepSeek V4 Flash|deepseek-v4-flash',
     'DeepSeek V4 Flash Vision Exp|deepseek-v4-flash-vision-exp', 'Hy4 preview|hy4-preview', 'Hy3|hy3',
     'Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6'].map(s => mDocs(s.split('|')[1]!, s.split('|')[0]!, OPENCODE_DOCS))] },
-  { planId: 'antigravity', planName: 'Antigravity', models: ['Gemini 3.8 Flash|gemini-3-8-flash', 'Gemini 3.7 Flash|gemini-3-7-flash',
+  { planId: 'antigravity', planName: 'Antigravity', models: [...['Gemini 3.8 Flash|gemini-3-8-flash', 'Gemini 3.7 Flash|gemini-3-7-flash',
     'Gemini 3.6 Flash|gemini-3-6-flash', 'Gemini 3.1 Pro|gemini-3-1-pro', 'Claude Sonnet 5.5 (thinking)|claude-sonnet-5-5',
     'Claude Opus 5.5 (thinking)|claude-opus-5-5', 'Claude Sonnet 4.6 (thinking)|claude-sonnet-4-6',
-    'Claude Opus 4.6 (thinking)|claude-opus-4-6', 'GPT-OSS-120b|gpt-oss-120b']
-    .map(s => mDocs(s.split('|')[1]!, s.split('|')[0]!, ANTIGRAVITY)) },
+    'Claude Opus 4.6 (thinking)|claude-opus-4-6', 'GPT-OSS-120b|gpt-oss-120b'].map(s => mDocs(s.split('|')[1]!, s.split('|')[0]!, ANTIGRAVITY)), // #165 Argon 공식 가용성 표(2026-10-16): 무료·Plus ❌, Pro·Ultra·Enterprise ✅, IDE 제외
+    { modelId: 'gemini-4-argon', displayName: 'Gemini 4 Argon', sourceUrl: ANTIGRAVITY, checkedOn: '2026-10-16', verified: true, note: '무료·Plus 불가, Pro(정식 구독)·Ultra·Enterprise 전용, IDE 제외' }] },
   // Higher tiers: Premium $30/4x, Super $100/15x, Ultra $200/50x.
   { planId: 'cursor', planName: 'Cursor Plus', price: '$8/month', sharedPoolPeriod: 'week', models: [
     ...['Grok 4.7|grok-4-7', 'Grok 4.6|grok-4-6', 'Grok 4.5|grok-4-5']

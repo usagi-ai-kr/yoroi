@@ -94,3 +94,7 @@ test("ollama-pro display keeps monthly windows and hides credits:purchased with 
   ]).map((window) => window.id), ["monthly"]);
   assert.deepEqual(displayWindows("ollama-pro", [w("session"), w("activity:last-4-weeks")]), []);
 });
+
+test("argon weekly is g-w-a without stealing gemini g-w, order-independent", () => { const ids = ["gemini-models:weekly-limit-remaining", "gemini-models:five-hour-limit-remaining", "claude-and-gpt-models:weekly-limit-remaining", "gemini-4-argon:gemini-4-argon-weekly-limit"];
+  assert.deepEqual(windowLabels("agy", ids.map((id) => w(id))), ["g-w", "g-5h", "c-w", "g-w-a"]);
+  assert.deepEqual(windowLabels("agy", [...ids].reverse().map((id) => w(id))), ["g-w-a", "c-w", "g-5h", "g-w"]); });

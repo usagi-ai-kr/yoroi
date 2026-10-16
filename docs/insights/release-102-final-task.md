@@ -1,0 +1,22 @@
+# 1.0.2 커밋·릴리스·레터 최종 작업
+
+- 사용자 최신 승인: 커밋, 릴리즈, 레터 발행 진행. 기존 보류는 이 범위에서 해제.
+- 버전: 아직 공개 tag·Release 없는 1.0.2에 현재 검증 변경을 묶음(원격 확인 후 확정).
+- w1 p17: 범위·깨끗한 후보·manifest, 다음 단계 commit/dev push.
+- w2 p18: 레터 게시 관행 확인·현재 공개 지표 기반 preview, Release 후 게시.
+- w3 p19: 독립 후보/완료 기준 리뷰, 다음 단계 PR/CI/머지/main CI.
+- 단계별 결과 확인 뒤 다음 패킷 전달. 긴 검증은 background, 단위5분.
+- 포함: R·정규 점수 기존 main 내용 + warn/#165/#167 코드·검증·관련 문서.
+- #168·#163은 제안 기록만, 구현 없이 open 유지.
+- 제외·보존: letter-top10-score.ts 워커 effort 변경, four-source-score.md 워커정책 변경.
+- 제외·보존: docs/orchestration.md, orchestration-takeover-20261015.md, worker-effort-source.test.ts.
+- 원본 dirty5 삭제·stash·reset 금지. main 직접push 금지, dev→main PR 사용.
+- PR CI 전부 통과·실제 head 확인 후 승인된 merge commit, dev 삭제 없음.
+- main CI 실제 mergeSHA success 뒤 tag/Release, 깨끗한mainSHA로global update.
+- 레터는 최종출시소스를사용, sourceSHA/입력날짜/preview/게시결과 기록.
+- 최신 레터 이슈·발행방식·수치 이슈 미기록 규칙은 기존 문서 절차 준수.
+- 실제 Top10 노출과 catalog지원 구분, AA결측 근거·역할별적격 사실대로.
+- 완료 issue는 기준 충족 후 close, 게시가 필요한 것은 PR Closes에 넣지 않음.
+- 신규 milestone/추가 기능/npm publish/패널·모델교체/w16접촉 없음.
+- 시크릿·env·개인사용량원본은 commit/이슈/log에 기록하지 않음.
+- 완료 기록·회고·validate-repo 후 최종URL/SHA/남은항목 보고.

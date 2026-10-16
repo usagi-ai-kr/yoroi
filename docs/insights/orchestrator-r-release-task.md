@@ -68,3 +68,10 @@
 - w2 clean52목록의이전R테스트/출시docs누락을보완후 전체check·validate.
 - w3 guard최소diff/기존rawassert·cleanworkerhunk/coverage 독립검토.
 - w4 정본renderer actual20행·전체38/19분포·preview 검증. 의존성대기없이각자보고.
+
+## 최종 발행 단계 분배
+- dev 4b30f72: unit1042·BDD45/632·빌드·validate680 PASS, compact3562자.
+- w3: PR166 최종 본문·ready·해당 head PR CI 확인. 머지는 다음 단계로 분리.
+- w2: w4 수정 전역 갱신 스크립트 독립 리뷰. main CI·Release 확인 후 설치 인계.
+- w4: 발행 후 최소 완료 문서·검증 체크 준비. 미실행 완료 주장 금지.
+- 사용자 원본 dirty5·1.1 이월·레터 발행 보류 유지.

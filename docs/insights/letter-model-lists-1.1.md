@@ -47,3 +47,22 @@
 - 블랙리스트: ban on/off에서 점수와 분포는 그대로이고 Top10만 바뀐다. ▽ 보충으로 재진입하지 않는다. 반대 역할에는 영향이 없다.
 - `pnpm typecheck`, unit 테스트, `validate-repo` PASS. 파일당 100줄 이하.
 - 커밋·push·버전 bump·PR·릴리스는 o가 통합한다.
+
+## 1.1.1 사용자 설정 경로 (2026-10-16 사용자 확정)
+
+- 밴은 오케·워커별로 둔다. 기본 파일은 `ban.orchestrator`·`ban.worker`만 보여주고, `ban.common`은 선택 키로 계속 받는다(하위 호환). 버전 허용 `allowOlder`는 두 역할 공통이다.
+- 전역 CLI는 패키지에 `config`가 없으므로 아래 순서로 읽는다.
+  1. `YOROI_LETTER_MODEL_LISTS`(명시 경로)
+  2. `${XDG_CONFIG_HOME:-~/.config}/yoroi/letter-model-lists.json`
+  3. 레포 `config/letter-model-lists.json`
+  4. 기본값
+- 존재하는 첫 파일만 읽는다. 누락 키는 기본값으로 채운다.
+- 파싱 실패 시 stderr에 `[yoroi] letter-model-lists 파싱 실패: <path> — 기본값 사용` 한 줄을 남기고 기본값을 쓴다(조용히 넘기지 않는다).
+- 인터페이스: `resolveLetterModelListsPath(env = process.env, exists = existsSync): string | undefined`를 추가한다. `activeLetterModelLists()`는 이 경로를 쓴다.
+- 문서: `docs/global-install.md`에 사용자 설정 경로와 예시를 적는다(≤10줄 추가).
+
+| 담당 | 범위 | 소유 |
+| --- | --- | --- |
+| w3 | 구현·config 기본 파일·global-install 문서 | `src/insights/letter-model-lists.ts`, `config/letter-model-lists.json`, `docs/global-install.md` |
+| w1 | 테스트(경로 우선순위·XDG·env·파싱 실패 경고·common 하위호환) → w3 리뷰 | `tests/letter-model-lists-path.test.ts` |
+| w2 | 잡무: milestone `1.1.1` 생성, 추적 이슈 1건 생성(milestone 연결), roadmap 1.1.1 한 줄 | `docs/roadmap.md` |

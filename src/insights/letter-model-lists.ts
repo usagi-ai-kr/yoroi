@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeModelName } from './model-id.js';
@@ -46,9 +47,31 @@ export function loadLetterModelLists(path: string = CONFIG_PATH): LetterModelLis
 }
 /** 캐시된 활성 목록(파일 우선, 실패 시 기본값). */
 let cached: LetterModelLists | undefined;
-export function activeLetterModelLists(): LetterModelLists {
+/** 설정 경로 해석: 명시 env → XDG → 레포 파일. 존재하는 첫 경로만 돌려준다. */
+export function resolveLetterModelListsPath(env: NodeJS.ProcessEnv = process.env,
+  exists: (path: string) => boolean = existsSync): string | undefined {
+  const explicit = env.YOROI_LETTER_MODEL_LISTS?.trim();
+  if (explicit && exists(explicit)) return explicit;
+  const home = env.HOME?.trim() || homedir();
+  const xdg = env.XDG_CONFIG_HOME?.trim() || join(home, '.config');
+  const userPath = join(xdg, 'yoroi', 'letter-model-lists.json');
+  if (exists(userPath)) return userPath;
+  if (exists(CONFIG_PATH)) return CONFIG_PATH;
+  return undefined;
+}
+export function activeLetterModelLists(env?: NodeJS.ProcessEnv): LetterModelLists {
   if (cached === undefined) {
-    try { cached = loadLetterModelLists(); } catch { cached = DEFAULT_LETTER_MODEL_LISTS; }
+    const path = resolveLetterModelListsPath(env ?? process.env);
+    if (path === undefined) {
+      cached = DEFAULT_LETTER_MODEL_LISTS;
+    } else {
+      try {
+        cached = loadLetterModelLists(path);
+      } catch {
+        console.error(`[yoroi] letter-model-lists 파싱 실패: ${path} — 기본값 사용`);
+        cached = DEFAULT_LETTER_MODEL_LISTS;
+      }
+    }
   }
   return cached;
 }

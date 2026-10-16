@@ -12,9 +12,9 @@
 
 | pane | 라벨 | 역할 |
 | --- | --- | --- |
-| `w12:p13` | o-opus | 오케스트레이터 |
-| `w12:p17` | w1-claude | 워커 |
-| `w12:p18` | w2-codex | 워커 |
+| `w12:p13` | o | 오케스트레이터 |
+| `w12:p17` | w1 | 워커 |
+| `w12:p18` | w2 | 워커 |
 | `w12:p19` | w3 | 워커 |
 
 리뷰는 구현자가 아닌 워커가 맡는다. 모델·세션 변경은 사용자 결정이다.
@@ -91,7 +91,7 @@ python3 .agents/skills/agent-coordination/scripts/coord.py watch w2 w3 \
 ## 배운 점 (기존 운영 기록)
 
 - 상태 문서 갱신에서 버전 줄·재번호·이동 이력이 누락됐다(2026-10-11·12). 머지 전 버전과 삭제 줄을 대조한다. watch_workers.sh의 LIMIT·BLOCKED는 패킷 문구나 순간 상태로 오탐할 수 있다. `agent get`과 visible 화면으로 확인하고, 반복 오탐 시 보고서 생성만 기다린다. 보고서 생성은 전체 작업 종료와 구분한다.
-- 작업 중 pane은 `herdr agent read --source visible`로 읽는다. 라벨(`o-opus`·`w1-claude`·`w2-codex`·`w3-gemini`·`w4-opencode`)은 w12(yoroi)와 w15(smallb) 양쪽에 있어 workspace_id(pane의 `:` 접두)를 먼저 확인하고 `--workspace <id>`로 지정한다.
+- 작업 중 pane은 `herdr agent read --source visible`로 읽는다. 라벨(`o`·`w1`·`w2`·`w3`)은 w12(yoroi)와 다른 워크스페이스 양쪽에 있어 workspace_id(pane의 `:` 접두)를 먼저 확인하고 `--workspace <id>`로 지정한다.
 - zsh는 따옴표 없는 `$x`도 단어 분리하지 않는다(`set -- $x` 빈 전송, 경로 묶음 `ls $R` 감시가 0건으로 무한 대기 2026-10-16). 여러 값은 직접 나열하거나 배열로 쓴다.
 - 2026-10-08 임의 종료·재시작·키 입력으로 모델이 바뀐 사고 이후 모델·세션은 사용자 결정으로 유지한다.
 - 근거 산출 스크립트가 렌더 경로 옵션(가격·previousRanks·excludeModelIds·toRankedRecords)을 빠뜨리면 레터와 결괏값이 어긋난다(2026-10-13, p9). 산출물은 레터 Top10 일치 여부를 먼저 대조한다.

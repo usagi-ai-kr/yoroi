@@ -20,6 +20,12 @@ pnpm remove -g yoroi
 - `YOROI_DEBUG=1`이면 파일별 경로와 적용된 키 이름만 stderr에 표시한다(값 미출력).
 - 존재하는 `.env`의 로드 실패는 `yoroi: env file load failed <경로> (<코드>)`만 남기고 종료 코드 2로 멈춘다.
 
+## 레터 모델 목록 사용자 설정
+
+- 전역 패키지에는 `config`가 없으므로 `YOROI_LETTER_MODEL_LISTS`(명시 경로) → `${XDG_CONFIG_HOME:-~/.config}/yoroi/letter-model-lists.json` → 레포 `config/letter-model-lists.json` → 기본값 순으로 존재하는 첫 파일을 읽는다.
+- 예시(`~/.config/yoroi/letter-model-lists.json`, 밴만 지정): `{"ban": {"orchestrator": ["longcat-2-5"], "worker": []}}`. 적은 키는 목록 전체를 교체하므로 `allowOlder`·`excludePatterns`는 바꿀 때만 전체 목록으로 적는다.
+- 파싱 실패 시 `[yoroi] letter-model-lists 파싱 실패: <path> — 기본값 사용` 한 줄을 stderr에 남기고 기본값을 쓴다.
+
 ## 전역 설치 동작 원리
 
 - `install:global`은 pnpm pack tarball로 레포와 독립된 사본을 전역 설치한다(디렉터리 설치는 심볼릭 링크라 쓰지 않음).

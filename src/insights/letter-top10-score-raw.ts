@@ -2,6 +2,7 @@ import { calcBlendedCost, effortForModel, splitBaseAndEffort } from './letter-to
 import { COGNITION_COST_METRIC, COGNITION_DURATION_METRIC, COGNITION_METRIC, FREE_ACCESS_METRIC, normalizeModelName,
   type Top10RecordInput } from './letter-top10-rank.js';
 import type { OptimalZoneRole } from './letter-top10-worker.js';
+import { effortWithinCap, mapWithinCap } from './letter-effort-availability.js';
 import { ORCHESTRATOR_EFFORT_ORDER, valueForMoney } from './letter-top10-score-policy.js';
 
 /** p54 score core 원값 수집. 성능·토큰은 base 최선값, 속도·가격·Cognition 시간·비용은 effort별로 모아 대표 effort가 정해진 뒤 역할별로 고른다.
@@ -46,29 +47,41 @@ export const hasEvidence = (r: Raw): boolean => r.free === true || r.aaPerf !== 
 const common = (m?: ReadonlyMap<string, number>) => m?.size && new Set(m.values()).size === 1 && (m.size > 1 || m.has('default')) ? [...m.values()][0] : undefined;
 const extreme = (m: ReadonlyMap<string, number> | undefined, f: (...v: number[]) => number) => m?.size ? f(...m.values()) : undefined;
 /** p58 정정 오케 평가 변형: 성능 소스(AA Intelligence·Cog 정답률)에서 관측된 effort(순서 안의 것, 낮은 순).
- *  순서 안 effort가 없으면(전부 default·관측 없음) default 단일 변형이다. default는 다른 effort가 있으면 변형이 아니고 공유 근거로만 쓴다. */
-export function orchestratorVariants(r: Raw): string[] {
+ *  순서 안 effort가 없으면(전부 default·관측 없음) default 단일 변형이다. default는 다른 effort가 있으면 변형이 아니고 공유 근거로만 쓴다.
+ *  #188: 환경 cap이 있으면 cap 안의 관측 effort만 변형 후보로 남긴다(전부 cap 밖이면 default 단일 변형). */
+export function orchestratorVariants(r: Raw, cap?: string): string[] {
   const seen = new Set([...(r.aaEffort?.keys() ?? []), ...(r.cogEffort?.keys() ?? [])]);
-  const ranked = ORCHESTRATOR_EFFORT_ORDER.filter(e => seen.has(e));
+  const ranked = ORCHESTRATOR_EFFORT_ORDER.filter(e => seen.has(e) && effortWithinCap(e, cap));
   return ranked.length ? [...ranked] : ['default'];
 }
+/** #188: cap 안 관측치만으로 best를 고른다. 점수 입력이 표시(선택 가능) effort와 어긋나지 않게 한다. */
+export const bestWithinCap = (m?: ReadonlyMap<string, number>, cap?: string) => best(mapWithinCap(m, cap));
 /** 오케: 변형 effort 값만 쓴다. 소스에 그 값이 없으면 base 공통 값(2개 이상 effort 동일 또는 단일 default)만 공유하고 그 외는 결측.
  *  성능·속도·가성비 모두 같은 effort다(p58 정정; R 1.0.2: 오케 가성비 복구 — I/(P+.01)).
- *  워커(p85): AA 속도 최대·단가 최소·AA cost_per_task 최소·AA total_cost 최소(base best), 성능은 base 최선값. */
-export function pickEffortValues(r: Raw, effort: string, role: OptimalZoneRole): void {
-  if (role === 'worker') { r.aaSpeed = extreme(r.aaSpeedE, Math.max); r.aaPrice = extreme(r.aaPriceE, Math.min);
-    r.aaCpt = extreme(r.aaCptE, Math.min); r.aaTotal = extreme(r.aaTotalE, Math.min);
-    r.cogCorrect = r.cogEffort?.get(effort) ?? best(r.cogEffort)?.[1]; return; }
+ *  워커(p85): AA 속도 최대·단가 최소·AA cost_per_task 최소·AA total_cost 최소(base best), 성능은 base 최선값.
+ *  #188: cap이 있으면 극값·fallback best도 cap 안 관측치로만 모은다. */
+export function pickEffortValues(r: Raw, effort: string, role: OptimalZoneRole, cap?: string): void {
+  if (role === 'worker') { const at = (m?: ReadonlyMap<string, number>) => mapWithinCap(m, cap);
+    r.aaSpeed = extreme(at(r.aaSpeedE), Math.max); r.aaPrice = extreme(at(r.aaPriceE), Math.min);
+    r.aaCpt = extreme(at(r.aaCptE), Math.min); r.aaTotal = extreme(at(r.aaTotalE), Math.min);
+    r.cogCorrect = r.cogEffort?.get(effort) ?? best(at(r.cogEffort))?.[1]; return; }
   const at = (m?: ReadonlyMap<string, number>) => m?.get(effort) ?? common(m);
   r.aaPerf = at(r.aaEffort); r.cogCorrect = at(r.cogEffort); r.aaSpeed = at(r.aaSpeedE); r.aaPrice = at(r.aaPriceE);
-  r.cogDuration = at(r.cogDurE); if (r.aaSpeed === undefined && r.cogDuration === undefined) r.aaSpeed = extreme(r.aaSpeedE, Math.max);
+  r.cogDuration = at(r.cogDurE); if (r.aaSpeed === undefined && r.cogDuration === undefined) r.aaSpeed = extreme(mapWithinCap(r.aaSpeedE, cap), Math.max);
   r.cogCost = at(r.cogCostE); r.orchValue = valueForMoney(r.aaPerf, r.aaPrice);
 }
 
-/** Worker fallback speed: standardize Cognition duration over every orchestrator variant (shorter is faster). */
-export function workerCognitionSpeed(raws: readonly Raw[], efforts: readonly string[]): (number | undefined)[] {
-  const duration = (r: Raw, e: string) => r.cogDurE?.get(e) ?? common(r.cogDurE) ?? extreme(r.cogDurE, Math.min);
-  const pool = raws.flatMap(r => orchestratorVariants(r).map(e => duration(r, e))).filter((v): v is number => v !== undefined);
+/** #188: 워커 성능 원값(aaPerf·cogCorrect)도 cap 안 최선값으로 좁는다. 전역 최대가 점수에 새는 것을 막는다. */
+export const capWorkerPerf = (r: Raw, cap?: string): Raw => ({ ...r,
+  aaPerf: extreme(mapWithinCap(r.aaEffort, cap), Math.max), cogCorrect: extreme(mapWithinCap(r.cogEffort, cap), Math.max) });
+
+/** Worker fallback speed: cap이 있으면 cap 안 관측치로만 모아 표준화한다(짧을수록 빠르다).
+ *  #188: 선택 effort의 값(denomin이 변형 목록에 없어도)을 풀에 함께 넣어 결과가 항상 0..1에 머문다. */
+export function workerCognitionSpeed(raws: readonly Raw[], efforts: readonly string[], caps?: readonly (string | undefined)[]): (number | undefined)[] {
+  const cap = (i: number) => caps?.[i];
+  const duration = (r: Raw, e: string, i: number) => { const m = mapWithinCap(r.cogDurE, cap(i)); return m?.get(e) ?? common(m) ?? extreme(m, Math.min); };
+  const queried = raws.map((r, i) => duration(r, efforts[i]!, i));
+  const pool = [...raws.flatMap((r, i) => orchestratorVariants(r, cap(i)).map(e => duration(r, e, i))), ...queried].filter((v): v is number => v !== undefined);
   const lo = Math.min(...pool), hi = Math.max(...pool);
-  return raws.map((r, i) => { const v = duration(r, efforts[i]!); return v === undefined ? undefined : hi === lo ? 1 : (hi - v) / (hi - lo); });
+  return queried.map(v => v === undefined ? undefined : hi === lo ? 1 : (hi - v) / (hi - lo));
 }

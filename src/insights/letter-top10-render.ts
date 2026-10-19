@@ -1,22 +1,15 @@
-import { computeRoleTop10, type RoleList, type RoleLists } from './letter-top10-unified.js';
-import type { OptimalZoneRole } from './letter-top10-worker.js';
-import { EXCLUSION_NOTE } from './top10-policy.js';
-import { COMPACT_FORMULA_LINES } from './letter-markdown-format.js';
-import { freeListsFrom, renderFreeSectionCompact, shortPlan, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js';
-import type { PlanCatalogEntry } from './plan-catalog.js';
-import type { Top10RecordInput } from './letter-top10-rank.js';
-import { top10OptionsFrom } from './letter-top10-render-options.js';
+import { computeRoleTop10, type RoleEntry, type RoleList, type RoleLists } from './letter-top10-unified.js'; import type { OptimalZoneRole } from './letter-top10-worker.js'; import { EXCLUSION_NOTE } from './top10-policy.js'; import { COMPACT_FORMULA_LINES } from './letter-markdown-format.js'; import { top10OptionsFrom } from './letter-top10-render-options.js';
+import { freeListsFrom, renderFreeSectionCompact, shortPlan, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js'; import type { PlanCatalogEntry } from './plan-catalog.js';
+import type { Top10RecordInput } from './letter-top10-rank.js'; import type { EffortAvailability } from './letter-effort-availability.js';
 import { LEGEND_LINES, PARETO_MARK, ROLE_HEADINGS, ROLE_LABELS, ZONE_TEXT, changeNote, exitLine, formatChange, leadText, dimensionsText, bonusSuffix } from './letter-top10-legend.js';
 
 export interface Top10LetterInput {
   readonly publicationDate: string; // YYYY-MM-DD
-  readonly lists: RoleLists; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
-  readonly partialSources?: readonly string[]; readonly free?: RoleLists | undefined; readonly freeUnmeasured?: readonly UnmeasuredFree[];
+  readonly lists: RoleLists; readonly failedSources?: readonly string[]; readonly notes?: readonly string[]; readonly partialSources?: readonly string[];
+  readonly free?: RoleLists | undefined; readonly freeUnmeasured?: readonly UnmeasuredFree[];
 }
 
-const ATTRIBUTIONS = ['출처: OpenRouter (CC-BY-4.0)',
-  '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
-  '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)'] as const;
+const ATTRIBUTIONS = ['출처: OpenRouter (CC-BY-4.0)', '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)', '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)'] as const;
 
 /** Control/bidi characters removed and credential-like fragments redacted, like the legacy renderer. */
 const clean = (value: string, limit = 120): string => value
@@ -26,6 +19,11 @@ const clean = (value: string, limit = 120): string => value
   .replace(/\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|password|secret)\s*[:=]\s*[^\s&]+/gi, '[redacted]')
   .replace(/\b(?:sk-|sk_|hf_|gh[pousr]_)[A-Za-z0-9_-]{4,}/g, '[redacted]').slice(0, limit);
 const NAME_LIMIT = 120, EXIT_LIMIT = 5, FAILURE_LIMIT = 3;
+/** #188 compact 안내: 예산 계약 때문에 짧은 마커(▲=상한, ?=미확인)를 한 번만 쓴다. */
+const COMPACT_EFFORT_NOTE = 'effort 표기: ▲=관측 상한 적용, ?=가용성 미확인(이론값)';
+/** compact 셀: 가용성 모드가 명시된 행만 표기한다(생산 파이프라인은 항상 명시, 수기 입력은 원문 유지). */
+const compactEffort = (e: RoleEntry): string => e.effortAvailability === undefined ? e.repEffort
+  : `${e.repEffort}${e.effortAvailability === 'capped' ? '▲' : '?'}${e.benchmarkEffort ? `→${e.benchmarkEffort}` : ''}`;
 
 function section(role: OptimalZoneRole, list: RoleList): string[] {
   const lines = [ROLE_HEADINGS[role]];
@@ -33,7 +31,7 @@ function section(role: OptimalZoneRole, list: RoleList): string[] {
   for (const e of list.entries.slice(0, 10)) {
     const rank = e.belowZone ? `▽ ${e.rank}` : String(e.rank);
     const refs = [e.openrouterRankText, e.isPareto ? PARETO_MARK : ''].filter(r => r !== undefined && r !== '' && !r.endsWith('-'));
-    lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)} · effort ${clean(e.repEffort, 12)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${dimensionsText(e, role)}${bonusSuffix(e, role)}` +
+    lines.push(`${rank}. ${clean(e.modelId, NAME_LIMIT)} · effort ${clean(compactEffort(e), 60)} · 스코어 ${clean(e.scoreText ?? '-', 40)} · ${dimensionsText(e, role)}${bonusSuffix(e, role)}` +
       ` · ${clean(e.blendedCostText, 40)}${e.offPeak ? ' off-peak' : ''} · 접근 ${e.plans.map(shortPlan).join('+') || '미상'}` +
       `${refs.length ? ` · ${refs.join(' · ')}` : ''}${e.variantsText ? ` · 변형 ${clean(e.variantsText, 160)}` : ''}` +
       ` · ${formatChange(e.change)}`);
@@ -58,6 +56,7 @@ export function renderTop10Letter(data: Top10LetterInput): string {
     ...section('orchestrator', data.lists.orchestrator),
     '',
     ...section('worker', data.lists.worker),
+    ...([...data.lists.orchestrator.entries, ...data.lists.worker.entries].some(e => compactEffort(e) !== e.repEffort) ? [COMPACT_EFFORT_NOTE] : []),
     ...renderFreeSectionCompact(data.free, data.freeUnmeasured ?? [], 2),
     '',
     ...LEGEND_LINES,
@@ -77,7 +76,7 @@ export function renderTop10Letter(data: Top10LetterInput): string {
   let text = lines.join('\n');
   if (text.length > 3500) text = (c => c === text ? text : c.replace('상세 지표는 SQLite 이력에서 확인할 수 있습니다.', '상세 지표는 SQLite 이력에서 확인할 수 있습니다. (Free 티어 생략)'))(text.replace(/\n## 🆓 Free 티어[\s\S]*?(?=\n## )/, '')); // 예산에 가까우면 Free 섹션을 먼저 접는다(전문은 --markdown)
   if (text.length > 3600) { // 필수 필드(effort·지수·접근)를 지키기 위해 모델 이름만 줄인다(원문 저장은 유지)
-    const clip = (s: string): string => [...s].length > 24 ? `${[...s].slice(0, 24).join('')}…` : s;
+    const clip = (s: string): string => [...s].length > 18 ? `${[...s].slice(0, 18).join('')}…` : s; // #188 예산: 24→18
     text = text.replace(/^(\d+\. )([^\n]+?)( · effort )/gm, (_m, h, n, t) => `${h}${clip(n)}${t}`)
       .replace(/^(- 선두: 오케스트레이터 )([^ ]+)( · 워커 )([^ ]+)$/m, (_m, a, b, c, d) => `${a}${clip(b)}${c}${clip(d)}`);
   }
@@ -89,7 +88,8 @@ export function renderTop10Letter(data: Top10LetterInput): string {
 export interface CompactLetterInput { readonly publicationDate: string; readonly records: readonly Top10RecordInput[];
   readonly openrouterRecords?: readonly Top10RecordInput[]; readonly opencodeDataRecords?: readonly Top10RecordInput[]; readonly cognitionRecords?: readonly Top10RecordInput[];
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[]; readonly notes?: readonly string[];
-  readonly partialSources?: readonly string[]; readonly freeCatalog?: readonly PlanCatalogEntry[] }
+  readonly partialSources?: readonly string[]; readonly freeCatalog?: readonly PlanCatalogEntry[];
+  readonly effortAvailability?: EffortAvailability } // #188: run-once 스냅샷(없으면 computeRoleTop10이 env 게이트 기본 해석).
 /** Builds the compact letter from letter rows (no I/O): per-role zone policy over AA indices. */
 export function renderTop10FromRecords(input: CompactLetterInput): string {
   const options = top10OptionsFrom(input);

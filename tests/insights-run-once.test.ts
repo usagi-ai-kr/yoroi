@@ -86,3 +86,13 @@ test('OpenCode Data aggregate "Other" rows never become evidence rows (like Open
   const ids = (await runInsightsOnce(s)).top10?.opencodeDataRecords?.map(r => r.modelId) ?? [];
   assert.deepEqual(ids, ['Model-A']);
 });
+test('run-once는 하나의 가용성 스냅샷을 previousRanks와 결과 데이터에 함께 쓴다 (#188)', async () => {
+  const prev = process.env.YOROI_EFFORT_PROFILE;
+  try {
+    process.env.YOROI_EFFORT_PROFILE = 'observed-2026-10-19';
+    const run = await runInsightsOnce(setup());
+    assert.deepEqual(run.top10?.effortAvailability?.activeProfile, 'observed-2026-10-19', '스냅샷이 결과 데이터로 반환된다');
+  } finally { if (prev === undefined) delete process.env.YOROI_EFFORT_PROFILE; else process.env.YOROI_EFFORT_PROFILE = prev; }
+  const run = await runInsightsOnce(setup());
+  assert.deepEqual(run.top10?.effortAvailability?.activeProfile, undefined, '선택자 없으면 프로필 비활성(unlisted 기준)');
+});

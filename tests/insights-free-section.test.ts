@@ -30,12 +30,12 @@ test('the free section renders one merged table with notes limited to Zen/Go Fre
   // 표시 점수는 Free 포함 모집단 정규 순위: step-5 워커 43.3(raw 30.0). AA 지수는 indexText 90.0.
   assert.ok(rows.some(line => /^\| step-5 \| ✓ [\d.]+ \| ✓ 43\.3 \| 90\.0 \| /.test(line)), '표시 보정: step-5 워커 43.3');
   assert.ok(rows.filter(line => /^\| [^|]+ \| - \| - \| /.test(line)).every(line => line.includes('근거 없음')), '두 역할 -는 근거 없음 행에만');
-  assert.ok(rows.some(line => /\| 90\.0 \|/.test(line)) && rows.some(line => /\| 80\.0 \|/.test(line)));
-  assert.ok(section.includes('OpenCode Go Free'), 'Go Free path keeps the plain plan label');
-  assert.ok(section.includes('OpenCode Zen Free+OpenCode Go Free'));
+  assert.ok(rows.some(line => /\| 90\.0 \|/.test(line)) && rows.some(line => /\| 80\.0 \|/.test(line)));  assert.ok(section.includes('OpenCode Go Free') && section.includes('OpenCode Zen Free+OpenCode Go Free'), 'Go Free path keeps the plain plan label');
   assert.ok(!section.includes('x-opencode-session'), '세션 헤더 문구는 발행본에 나타나지 않는다');
   assert.ok(section.includes('- OpenCode Zen Free: 기간 한정 무료') && section.includes('- OpenCode Go Free: Unlimited·기간 한정'));
-  assert.ok(!section.includes('↔') && !section.includes('⭐') && !section.includes('Antigravity Free') && !section.includes('미확인'));
+  assert.ok(!section.includes('↔') && !section.includes('⭐') && !section.includes('Antigravity Free'));
+  // #188: 가용성 표기(미확인 등)는 비고 칸까지 허용하고, 플랜 안내 문구(행 단락 텍스트)에는 나오지 않는다.
+  assert.ok(section.split('\n').filter(l => l.startsWith('- ')).every(l => !l.includes('미확인')), '플랜 안내 문구에는 가용성 표기가 없다');
 });
 test('ranked free models outside the old top-5 cut still get rows (p78 2a)', () => {
   const models = ['alpha-zen', 'bravo-zen', 'charlie-zen', 'delta-zen', 'echo-zen', 'foxtrot-zen', 'golf-zen', 'hotel-zen'].map(id => freeEntry(id));

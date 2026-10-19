@@ -65,7 +65,7 @@ test('render shows original prices, the 99 missing-price cell, and role weights 
   const md = renderTop10MarkdownFromRecords({ publicationDate: '2026-10-14', records: same(['m-paid'], () => 2), catalog: [PAID], freeCatalog: [FREE] } as never);
   const o = md.slice(md.indexOf('## 🧭'), md.indexOf('## 🛠️'));
   // 표시 점수는 모집단(3) 정규 순위: m-paid 59.7, m-both/m-free 45.7. raw는 90/0/75.
-  assert.ok(o.includes('| 1 | 👍 | m-paid | default | 59.7 | 100/-/100 |') && o.includes('| ▽ 3 |  | m-free | default | 45.7 | -/-/- |') && !md.includes('무료(Free 경로)'), o);
+  assert.ok(o.includes('| 1 | 👍 | m-paid | default(미확인) | 59.7 | 100/-/100 |') && o.includes('| ▽ 3 |  | m-free | default(미확인) | 45.7 | -/-/- |') && !md.includes('무료(Free 경로)'), o);
   assert.ok(md.includes('- 가중치: 오케·리뷰어 성능 75%·속도 10%·가성비 15% / 워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%'));
   assert.ok(md.includes('워커 intel<33·결측 제외'));
 });

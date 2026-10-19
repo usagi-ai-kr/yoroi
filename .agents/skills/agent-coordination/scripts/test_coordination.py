@@ -38,6 +38,7 @@ def test_report_audit():
         "verification_results": ["PASS: test 1"]
     }
     assert audit_report(pkt, rep) == []
+    assert audit_report(pkt, dict(rep, modified_files=[])) == []  # Read-only task
 
     # Unowned file modification reported
     bad_files = dict(rep, modified_files=["f1.ts", "unowned.ts"])

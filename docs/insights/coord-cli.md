@@ -57,6 +57,8 @@ o(agy `w12:pR`)는 분배·진척만 맡고 구현·문서·검증은 워커가 
 prompt 거부(exit 1) 시 실패 기록, seq 미전진 not_started exit 1, 대기 초과 exit 3, status 모델 줄 파싱.
 기존 `test_coordination.py`도 통과해야 한다. 각 파일 100줄 이하(초과 시 모듈 분리).
 
+읽기 전용 작업의 보고서는 `modified_files: []`를 허용한다. `report_audit.py`는 변경이 없다는 사실 보고를 거부하지 않는다.
+
 ## 규칙 문서 (w3)
 
 - `SKILL.md`·`docs/orchestration.md`에 다음을 넣는다: **분배·상태·전송·감사는 coord CLI로만 한다. `herdr`를 직접 배우거나 원시 명령을 쓰지 않는다.**

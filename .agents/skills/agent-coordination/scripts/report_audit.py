@@ -44,8 +44,8 @@ def audit_report(packet_data, report_data) -> list[str]:
     errors = []
     owned = set(packet_data.get("owned_files", [])) | {packet_data.get("report_path") or ""} - {""}  # 보고서 자체는 소유로 본다
     mod = report_data.get("modified_files")
-    if not isinstance(mod, list) or not mod or not all(is_non_empty_str(f) for f in mod):
-        errors.append("modified_files는 비어있지 않은 문자열 배열이어야 합니다.")
+    if not isinstance(mod, list) or not all(is_non_empty_str(f) for f in mod):
+        errors.append("modified_files는 문자열 배열이어야 합니다 (변경 없음은 빈 배열 허용).")
     else:
         unowned = sorted(f for f in mod if not _is_owned(f, owned))
         if unowned:

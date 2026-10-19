@@ -11,8 +11,8 @@
 
 ## 1.1.0 발행 완료 (2026-10-16, PR #174 → main `431bc7ce1245753b27280b1eaf88a1bac9e2b281` = tag `v1.1.0`)
 
-- 범위(minor): [#163](https://github.com/qus0in/yoroi/issues/163) 밴 목록 + 하위버전 화이트리스트를 `config/letter-model-lists.json`으로 옮김(`allowOlder`·`excludePatterns`·`ban`). 명세: [letter-model-lists-1.1.md](letter-model-lists-1.1.md).
-- [검증] unit 1074/1074·typecheck·validate PASS, w1 리뷰 차단 0([리뷰](letter-model-lists-review-w1.md)), 기본 config 렌더 = 1.0.3 렌더 바이트 동일.
+- 범위(minor): [#163](https://github.com/qus0in/yoroi/issues/163) 밴 목록 + 하위버전 화이트리스트를 `config/letter-model-lists.json`으로 옮김(`allowOlder`·`excludePatterns`·`ban`). 명세: [letter-model-lists-1.1.md](insights/letter-model-lists-1.1.md).
+- [검증] unit 1074/1074·typecheck·validate PASS, w1 리뷰 차단 0([리뷰](insights/letter-model-lists-review-w1.md)), 기본 config 렌더 = 1.0.3 렌더 바이트 동일.
 - [비차단] 교차 family에서 목록 모델이 successor 쪽일 때 predecessor 보호(현 데이터 영향 0) — 1.1.x 후속.
 - [완료] main CI [38870609040](https://github.com/qus0in/yoroi/actions/runs/38870609040) success · [Release v1.1.0](https://github.com/qus0in/yoroi/releases/tag/v1.1.0) · 전역 CLI 1.1.0(`--check` exit 0) · 레터 [#175](https://github.com/qus0in/yoroi/issues/175)(2026-10-16 17:01 KST) 발행 후 #171 close · #163 close(PR Closes) · milestone 25 close.
 - [참고] 전역 설치본은 `files`=dist라 `config/letter-model-lists.json`이 없고 기본값으로 동작한다(held-plans와 같은 fallback).

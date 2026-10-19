@@ -3,6 +3,7 @@ import { buildPriceMap } from './letter-top10-price.js';
 import { withSuccessors } from './letter-top10-candidates.js';
 import { MODEL_SUCCESSORS } from './model-successors.js';
 import { previousRanks } from './letter-top10-unified.js';
+import type { EffortAvailability } from './letter-effort-availability.js';
 import { normalizeModelName, toRankedRecords, type Top10RecordInput } from './letter-top10-rank.js';
 import { getDailyWithLegacyFallback } from './legacy-scopes.js';
 import type { ValidatedInsightRecord } from './validation.js';
@@ -63,7 +64,8 @@ export function buildPreviousRanks(history: InsightHistoryPort, publicationDate:
   orScope: string, orSchema: string | undefined, currentHasOr: boolean,
   prevOpencodeData: readonly Top10RecordInput[] = [], prevCognition: readonly Top10RecordInput[] = [],
   current: CurrentTop10Coverage = { aaOrchestrator: false, aaWorker: false, cognition: false,
-    openrouter: currentHasOr, opencodeData: prevOpencodeData.length > 0 }): PreviousRankBuild {
+    openrouter: currentHasOr, opencodeData: prevOpencodeData.length > 0 },
+  effortAvailability?: EffortAvailability): PreviousRankBuild {
   const prevRecords = historicalSuccessors(aaPrevious?.records ?? []);
   const aaInputs = buildAaTop10Inputs(prevRecords);
   let orInputs: Top10RecordInput[] = [];
@@ -78,7 +80,7 @@ export function buildPreviousRanks(history: InsightHistoryPort, publicationDate:
   }
   // previousRanks reuses computeRoleTop10 → buildCandidatePool → role score, matching today's candidates.
   // 오늘 후보 풀과 같도록 전일 OpenCode Data 근거 행도 넣는다(unmeasured-evidence).
-  const pr = previousRanks(aaInputs, { ...(orInputs.length && { openrouterRecords: orInputs }),
+  const pr = previousRanks(aaInputs, { ...(effortAvailability && { effortAvailability }), ...(orInputs.length && { openrouterRecords: orInputs }),
     ...(prevOpencodeData.length && { opencodeDataRecords: prevOpencodeData }), ...(prevCognition.length && { cognitionRecords: prevCognition }) });
   const ranks = (['orchestrator', 'worker'] as const)
     .flatMap(role => [...pr[role]].map(([modelId, rank]) => ({ modelId, rank, metric: role })));

@@ -1,4 +1,5 @@
 import type { RoleEntry, RoleLists } from './letter-top10-unified.js';
+import { effortCell } from './letter-markdown-tables.js';
 
 /** p75 B: Free 한 표의 행 모델과 정렬. 오케·워커 두 목록을 모델 기준으로 합친다. */
 export interface FreeCell { readonly score: string; readonly passed: boolean }
@@ -37,7 +38,7 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
       const row = at(entry.modelId, entry.plans);
       const cell: FreeCell = { score: entry.scoreText ?? '-', passed: !entry.belowZone };
       if (role === 'orchestrator') row.orchestrator = cell; else row.worker = cell;
-      row.effort ??= entry.repEffort;
+      row.effort ??= effortCell(entry); // #188: Free도 역할 표와 같은 가용성 표기(상한·미확인·벤치마크)를 쓴다.
       row.indexText ??= entry.indexText;
       row.pareto = row.pareto === true || stars.has(entry.modelId);
     }

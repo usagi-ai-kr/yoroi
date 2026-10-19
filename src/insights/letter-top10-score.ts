@@ -1,14 +1,14 @@
 import type { ModelGroup, ModelVariant } from './letter-top10-group.js';
 import { filterCandidates } from './letter-top10-filter.js';
 import { normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { best, collect, hasEvidence, orchestratorVariants, pickEffortValues, workerCognitionSpeed, type Raw } from './letter-top10-score-raw.js';
+import { bestWithinCap, capWorkerPerf, collect, hasEvidence, orchestratorVariants, pickEffortValues, workerCognitionSpeed, type Raw } from './letter-top10-score-raw.js';
 import { OPTIMAL_ZONE_THRESHOLDS, type OptimalZoneRole, type ScoredGroup } from './letter-top10-worker.js';
 import { MODEL_SUCCESSORS } from './model-successors.js';
 import { ORCHESTRATOR_EFFORT_ORDER, PERFORMANCE_FLOOR, PRICE_MISSING, ROLE_DIMENSION_WEIGHTS, ROLE_SOURCES, SCORE_DIMENSIONS, WORKER_INTEL_FLOOR, type ScoreDimension, type ScoreSource } from './letter-top10-score-policy.js';
 import { WORKER_BONUS_CAP } from './letter-top10-score-weights.js';
+import { capOfModel } from './letter-effort-availability.js';
 import { applyMixedPriceCap, upliftHeldPlanPriceDimensions } from './letter-top10-worker-price.js';
-export * from './letter-top10-score-policy.js';
-export { ROLE_AA_METRIC } from './letter-top10-score-raw.js';
+export * from './letter-top10-score-policy.js'; export { ROLE_AA_METRIC } from './letter-top10-score-raw.js';
 /** 역할별 가중합·후보 풀 min-max. R(1.2.1) 오케 0.75/0/0.10/0.15; 워커 속도는 AA 우선, 결측이면 오케 Cog 시간. */
 const safeLog = (c: number): number => Math.log10(c + 0.01);
 const PARTS: readonly { dim: ScoreDimension; src: ScoreSource; key: keyof Raw; low?: boolean; log?: (v: number) => number; role?: OptimalZoneRole }[] = [
@@ -28,18 +28,18 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
   const superseded = new Set(MODEL_SUCCESSORS.filter(m => has(normalizeModelName(m.successor))).map(m => normalizeModelName(m.predecessor)));
   const evidenced = ([base, r]: [string, Raw]) => hasEvidence(r) && !superseded.has(base) ||
     (role === 'worker' && !superseded.has(base) && (!!r.aaCptE?.size || !!r.aaTotalE?.size));
-  const raws = [...collected].filter(evidenced).map(([, r]) => r);
-  const bases = [...collected].filter(evidenced).map(([base]) => base);
+  const bases = [...collected].filter(evidenced).map(([base]) => base), capOf = (i: number) => capOfModel(bases[i]!, opts?.effortAvailability);
+  const raws = [...collected].filter(evidenced).map(([, r], i) => role === 'worker' ? capWorkerPerf(r, capOf(i)) : r);
   const parts = PARTS.filter(p => ROLE_SOURCES[role][p.dim].includes(p.src) && (p.role ?? role) === role), w = ROLE_DIMENSION_WEIGHTS[role], floor = PERFORMANCE_FLOOR[role];
   const stdOf = (rs: readonly Raw[], p: typeof PARTS[number]) => minMax(rs.map(r => { const v = r[p.key] as number | undefined; return v === undefined ? undefined : p.log ? p.log(v) : v; }), p.low);
   // 워커: 성능 소스(동점 AA)의 최고 effort 하나. 오케(p58 정정): 관측 effort 변형마다 그 effort 값을 고른 행을 만들어 전 변형 풀로 표준화한다.
   const [perfAa, perfCog] = role === 'worker' ? [PARTS[0]!, PARTS[1]!].map(p => stdOf(raws, p)) : [];
   const rows = raws.flatMap((r, i) => role === 'orchestrator'
-    ? orchestratorVariants(r).map(effort => { const c = { ...r }; pickEffortValues(c, effort, role); return { r: c, base: bases[i]!, effort }; })
+    ? orchestratorVariants(r, capOf(i)).map(effort => { const c = { ...r }; pickEffortValues(c, effort, role, capOf(i)); return { r: c, base: bases[i]!, effort }; })
     : [(() => { const a = perfAa![i], c = perfCog![i];
       const m = a === undefined && c === undefined ? undefined : c !== undefined && (a === undefined || c > a) ? r.cogEffort : r.aaEffort;
-      const chosen = best(m)?.[0] ?? 'default', effort = r.aaEffort?.has(chosen) ? chosen : best(r.aaEffort)?.[0] ?? chosen; pickEffortValues(r, effort, role); return { r, base: bases[i]!, effort }; })()]);
-  const workerCogSpeed = role === 'worker' ? workerCognitionSpeed(raws, rows.map(x => x.effort)) : [];
+      const chosen = bestWithinCap(m, capOf(i))?.[0] ?? 'default', effort = r.aaEffort?.has(chosen) ? chosen : bestWithinCap(r.aaEffort, capOf(i))?.[0] ?? chosen; pickEffortValues(r, effort, role, capOf(i)); return { r, base: bases[i]!, effort }; })()]);
+  const workerCogSpeed = role === 'worker' ? workerCognitionSpeed(raws, rows.map(x => x.effort), rows.map((_, i) => capOf(i))) : [];
   const genericParts = role === 'worker' ? parts.filter(p => p.dim !== 'price') : parts;
   const std = genericParts.map(p => stdOf(rows.map(x => x.r), p)), anyPrice = rows.some(x => parts.some(p => p.dim === 'price' && x.r[p.key] !== undefined));
   const pricePart = (key: 'aaCpt' | 'aaTotal' | 'aaPrice') => PARTS.find(p => p.dim === 'price' && p.key === key && (key !== 'aaPrice' || p.role === 'worker'))!;
@@ -68,7 +68,7 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
     const missing = PRICE_MISSING[role]; // 가격 결측 보정은 'price:missing'으로만(워커 .99, 오케 가성비 결측은 0·보정 없음)
     if (dims.price === undefined && anyPrice && missing !== undefined) { sources['price:missing'] = dims.price = missing; from.price = 'missing'; }
     const score = 100 * SCORE_DIMENSIONS.reduce((sum, d) => sum + (w[d] ?? 0) * (dims[d] ?? 0), 0) + (bonus ?? 0),
-      aa = role === 'orchestrator' ? r.aaPerf : r.aaEffort?.get(effort) ?? best(r.aaEffort)?.[1];
+      aa = role === 'orchestrator' ? r.aaPerf : r.aaEffort?.get(effort) ?? bestWithinCap(r.aaEffort, capOf(i))?.[1];
     const variant: ModelVariant = { modelId: effort === 'default' ? base : `${base}-${effort}`, baseModelId: base, effort, value: aa ?? 0,
       ...(aa === undefined && { indexMissing: true }), ...(r.aaPrice !== undefined && { blendedCost: r.aaPrice }),
       ...(r.or !== undefined && { openrouterTokens: r.or }), ...(r.ocd !== undefined && { opencodeTokens: r.ocd }),

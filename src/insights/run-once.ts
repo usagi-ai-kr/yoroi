@@ -7,7 +7,7 @@ import { DEFAULT_REQUEST_SCOPES } from './run-once-steps.js';
 import { runSource, type SourceRun } from './run-source-stored.js';
 import type { ModelPrices } from './letter-top10-price.js';
 import { withSuccessors } from './letter-top10-candidates.js';
-import { buildAaTop10Inputs, buildPreviousRanks, previousOpenCodeDataTop10Records } from './letter-top10-history.js';
+import { buildAaTop10Inputs, buildPreviousRanks, previousOpenCodeDataTop10Records } from './letter-top10-history.js'; import { loadEffortAvailability, type EffortAvailability } from './letter-effort-availability.js';
 import { getDailyWithLegacyFallback, LEGACY_REQUEST_SCOPES } from './legacy-scopes.js';
 import { buildCognitionTop10Records, buildPreviousCognitionTop10Records } from './cognition-top10.js';
 import type { InsightSourcePort } from './source-port.js';
@@ -31,13 +31,13 @@ export interface InsightSourceReport {
   readonly reason?: string; readonly failure?: LetterFailure;
   readonly rejectedRows?: number; readonly partial?: boolean; readonly saved?: boolean;
 }
-export interface InsightTop10Row { readonly modelId: string; readonly modelAlias?: string; readonly value?: number; readonly metric?: string; readonly rank?: number;
-  readonly priceInput?: number; readonly priceOutput?: number; readonly releaseDate?: string }
+export interface InsightTop10Row { readonly modelId: string; readonly modelAlias?: string; readonly value?: number; readonly metric?: string; readonly rank?: number; readonly priceInput?: number; readonly priceOutput?: number; readonly releaseDate?: string }
 export interface InsightTop10Data { readonly records: readonly InsightTop10Row[]; readonly openrouterRecords: readonly InsightTop10Row[]; readonly failedSources: readonly string[];
   readonly opencodeDataRecords?: readonly InsightTop10Row[]; readonly cognitionRecords?: readonly InsightTop10Row[];
   readonly previousRanks: readonly { readonly modelId: string; readonly rank: number; readonly metric: string }[];
-  readonly warnings?: readonly string[];
-  readonly observedAt?: string; readonly nowUtc?: string }
+  readonly warnings?: readonly string[]; readonly observedAt?: string; readonly nowUtc?: string;
+  /** #188: 현재·전일 순위가 같은 스냅샷을 쓰는지 검증 가능한 가용성 프로필. */
+  readonly effortAvailability?: EffortAvailability }
 const top10Row = (value: ValidatedInsightRecord, metric: string, prices?: ModelPrices): InsightTop10Row =>
   ({ modelId: value.record.modelId, ...(value.record.modelAlias && { modelAlias: value.record.modelAlias }), value: value.record.value, metric,
     ...(prices?.input !== undefined && { priceInput: prices.input }), ...(prices?.output !== undefined && { priceOutput: prices.output }),
@@ -78,12 +78,13 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
   const previousCognitionRecords = cognitionFirst ? buildPreviousCognitionTop10Records(deps.history, publicationDate, deps.requestScopes?.cognition ?? DEFAULT_REQUEST_SCOPES.cognition, cognitionFirst.schemaVersion) : [];
   const coverage = { aaOrchestrator: records.some(r => r.metric === 'artificial_analysis_intelligence_index'), aaWorker: records.some(r => r.metric === 'artificial_analysis_coding_index'),
     cognition: cognitionRecords.length > 0, openrouter: openrouterRecords.length > 0, opencodeData: opencodeDataRecords.length > 0 };
+  // #188: 프로필 스냅샷을 한 번만 읽어 전일 순위 계산과 결과 데이터가 같은 프로필을 쓰게 한다.
+  const effortAvailability = loadEffortAvailability();
   const prev = buildPreviousRanks(deps.history, publicationDate, previous, orScope, success('openrouter')?.records[0]?.record.schemaVersion,
-    openrouterRecords.length > 0, prevOc, previousCognitionRecords, coverage);
+    openrouterRecords.length > 0, prevOc, previousCognitionRecords, coverage, effortAvailability);
   return { records, openrouterRecords, previousRanks: prev.ranks, failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source),
-    ...(opencodeDataRecords.length > 0 && { opencodeDataRecords }),
-    ...(cognitionRecords.length > 0 && { cognitionRecords }),
-    observedAt, nowUtc: observedAt, ...(prev.warnings.length && { warnings: prev.warnings }) };
+    ...(opencodeDataRecords.length > 0 && { opencodeDataRecords }), ...(cognitionRecords.length > 0 && { cognitionRecords }),
+    observedAt, nowUtc: observedAt, ...(effortAvailability && { effortAvailability }), ...(prev.warnings.length && { warnings: prev.warnings }) };
 }
 /** One internal-only run: collect/reuse → validate → store → compare → letter. No rendering, delivery or LLM. */
 export async function runInsightsOnce(deps: InsightRunDeps): Promise<InsightRunResult> {

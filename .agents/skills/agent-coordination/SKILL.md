@@ -68,7 +68,7 @@ metadata:
    python3 <skill-dir>/scripts/task_packet.py create <task_id> <target_pane> <owned_files,...> <criteria,...> [report_path]
    ```
 2. 워커는 소유 범위의 구현·단위 검증을 마치고 진행 docs·최종 issue·패킷의 JSON 보고서를 남긴다.
-   보고서에는 변경 파일·검증 결과·막힌 원인과 역할별 조치를 구분한다.
+   보고서에는 변경 파일·검증 결과·막힌 원인과 역할별 조치를 구분한다. 읽기 전용 작업은 `modified_files: []`로 기록한다.
 3. 리뷰어는 보고서와 실제 diff/status를 대조해 파일 침범·시크릿·요구 충족을 평가한다.
    ```bash
    python3 <skill-dir>/scripts/report_audit.py <task_packet.json> <report.json>

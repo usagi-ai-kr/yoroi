@@ -1,6 +1,7 @@
 import { computeRoleTop10, type RoleList, type RoleLists } from './letter-top10-unified.js';
 import type { Top10RecordInput } from './letter-top10-rank.js';
 import { top10OptionsFrom } from './letter-top10-render-options.js';
+import type { EffortAvailability } from './letter-effort-availability.js';
 import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { LEGEND_LINES, ROLE_HEADINGS_TOP15, ROLE_HEADINGS_TOP7, ZONE_TEXT } from './letter-top10-legend.js';
@@ -70,6 +71,8 @@ export interface MarkdownLetterInput {
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[];
   readonly notes?: readonly string[]; readonly partialSources?: readonly string[];
   readonly catalog?: readonly PlanCatalogEntry[]; readonly freeCatalog?: readonly PlanCatalogEntry[];
+  /** #188: run-once 가용성 스냅샷(없으면 computeRoleTop10이 env 게이트로 기본 해석). */
+  readonly effortAvailability?: EffortAvailability;
 }
 export function renderLetterPartsFromRecords(input: MarkdownLetterInput): LetterParts {
   const opts = top10OptionsFrom(input);

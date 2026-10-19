@@ -3,6 +3,7 @@ export { normalizeModelName } from './model-id.js';
 import type { LetterModelLists } from './letter-model-lists.js';
 import { splitBaseAndEffort, effortForModel, calcBlendedCost, calcCostEfficiency, type ModelVariant } from './letter-top10-group.js';
 import { filterCandidates } from './letter-top10-filter.js';
+import type { EffortAvailability } from './letter-effort-availability.js';
 import type { OffPeakRate } from './model-price-overrides.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 
@@ -17,7 +18,9 @@ export interface Top10Options { readonly openrouterRecords?: readonly Top10Recor
    *  `cognition_cost`(USD/task)·`cognition_duration_min`(분/task). p51 4차원 점수의 성능·가격·속도 근거. */
   readonly cognitionRecords?: readonly Top10RecordInput[];
   /** p51: 런타임 검증 free 카탈로그(tier 'free'). 전체 Top10 후보 풀에 합친다(p52: 접근 근거일 뿐 가격 불변). */
-  readonly freeCatalog?: readonly PlanCatalogEntry[] }
+  readonly freeCatalog?: readonly PlanCatalogEntry[];
+  /** #188: 환경·프로필별 effort 가용성. 없으면 정책 없음(모든 관측 effort가 후보) — 모델 전역 하드코딩 상한은 없다. */
+  readonly effortAvailability?: EffortAvailability }
 /** Cognition main 근거 지표: 정답률(ratio)·작업당 비용(USD/task)·작업당 소요 시간(분). */
 export const COGNITION_METRIC = 'cognition_correct', COGNITION_COST_METRIC = 'cognition_cost', COGNITION_DURATION_METRIC = 'cognition_duration_min';
 /** p51: 검증 free 카탈로그 경로 표지 행(값은 의미 없음, 가격 아님). 후보 풀에서 접근 근거 행으로만 다룬다. */

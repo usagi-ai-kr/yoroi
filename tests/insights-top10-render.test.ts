@@ -39,14 +39,12 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)'));
   assert.ok(rendered.includes('- 선두: 오케스트레이터·리뷰어 unified-model-1 (스코어 90.0) · 워커·메신저 unified-model-1 (스코어 90.0)'));
   assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
-  assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
-  assert.ok(rendered.includes('3. unified-model-3 · effort high · 스코어 84.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
+  assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus') && rendered.includes('3. unified-model-3 · effort high · 스코어 84.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(!rendered.includes('가성비 1위 · 접근'));
   for (const t of ['➖', '👍']) assert.ok(rendered.includes(t), t);
   assert.ok(rendered.includes('🚪 이탈: unified-old-model (전일 8위)'));
   assert.ok(rendered.includes('## 📖 표시 안내') && rendered.includes('- 👍 파레토 최적(파레토 열): 더 싸고 더 좋은 모델이 없는 상태(단가 대비 스코어 경계선)') && !rendered.includes('↔'));
-  assert.ok(rendered.indexOf('## 📖 표시 안내') < rendered.indexOf('## 출처 및 안내'));
-  assert.ok(rendered.includes('## 출처 및 안내'));
+  assert.ok(rendered.indexOf('## 📖 표시 안내') < rendered.indexOf('## 출처 및 안내') && rendered.includes('## 출처 및 안내'));
   for (const t of ['출처: OpenRouter (CC-BY-4.0)',
     '출처: Artificial Analysis (라이선스 미상)', '출처: Cognition FrontierCode (라이선스 미상 · 내부 전용)',
     '출처: OpenCode Data (내부 참조 · 약관상 자동 추출 제한) (라이선스 미상)',
@@ -56,8 +54,7 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   }
 });
 test('renderTop10Letter indicates all sources normal and keeps the whole compact under the 3800-char budget', () => {
-  const data: Top10LetterInput = { publicationDate: '2026-10-12',
-    lists: fakeLists('long-vendor-org-name/long-model-name-extra-large-v1'), failedSources: ['openrouter', 'cognition'] };
+  const data: Top10LetterInput = { publicationDate: '2026-10-12', lists: fakeLists('long-vendor-org-name/long-model-name-extra-large-v1'), failedSources: ['openrouter', 'cognition'] };
   const rendered = renderTop10Letter(data);
   assert.ok(!rendered.includes('수집 실패 소스: cognition'));
   assert.ok(rendered.includes('수집 실패 소스: openrouter'));
@@ -87,11 +84,16 @@ test('renderTop10Letter summarizes all-new, partial-new, and no-new cohorts per 
 });
 
 test('partial sources are reported instead of claiming all sources are normal', () => {
-  const data: Top10LetterInput = { publicationDate: '2026-10-12', lists: fakeLists('unified'),
-    partialSources: ['cognition'] };
+  const data: Top10LetterInput = { publicationDate: '2026-10-12', lists: fakeLists('unified'), partialSources: ['cognition'] };
   const rendered = renderTop10Letter(data);
   assert.ok(rendered.includes('부분 수집 소스: cognition'));
-  const both = renderTop10Letter({ ...data, failedSources: ['opencode-data'] });
-  assert.ok(both.includes('수집 실패 소스: opencode-data') && both.includes('부분 수집 소스: cognition'));
+  const both = renderTop10Letter({ ...data, failedSources: ['opencode-data'] }); assert.ok(both.includes('수집 실패 소스: opencode-data') && both.includes('부분 수집 소스: cognition'));
   assert.ok(!both.includes('전 소스 정상 수집'));
+});
+test('compact effort marking stays visible with short markers and a single legend line (#188)', () => {
+  const base = fakeLists('mark', true).orchestrator.entries[0]!, lists: RoleLists = { orchestrator: { entries: [{ ...base, repEffort: 'xhigh', effortAvailability: 'capped', benchmarkEffort: 'max' }], exits: [] },
+    worker: { entries: [{ ...base, repEffort: 'max', effortAvailability: 'unlisted' }], exits: [] } };
+  const text = renderTop10Letter({ publicationDate: '2026-10-12', lists });
+  for (const s of ['effort xhigh▲→max', 'effort max?', 'effort 표기: ▲=관측 상한 적용, ?=가용성 미확인(이론값)']) assert.ok(text.includes(s), s);
+  assert.equal(text.split('effort 표기:').length - 1, 1, '안내는 한 번만');
 });

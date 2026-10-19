@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { ProcessRunner } from '../infra/process-port.js';
-import type { CalibrationStore, CalibrationRunRecord } from './calibration-store.js';
+import { CALIBRATION_EVALUATOR_VERSION, type CalibrationStore, type CalibrationRunRecord } from './calibration-store.js';
+import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
 import { runCalibration, type CalibrationRunResult } from './calibration-runner.js';
 import { computeTaskScore, evaluateMultiRunCalibration, type CalibrationEvaluation } from './calibration-scorer.js';
 import { collectOpenCodeFreeModels, type OpenCodeFreeModel } from './opencode-free-models.js';
@@ -22,14 +23,15 @@ export interface CalibrationCliDeps {
 }
 
 export function parseCalibrationArgs(argv: readonly string[]): { ok: true; args: CalibrationCliArgs } | { ok: false; error: string } {
+  const args = argv[0] === 'free' ? argv.slice(1) : argv;
   let model: string | undefined, runs: 1 | 3 = 1, yes = false;
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i]!;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i]!;
     if (a === '--model') {
-      model = argv[++i];
+      model = args[++i];
       if (!model || model.startsWith('-')) return { ok: false, error: 'missing value for --model' };
     } else if (a === '--runs') {
-      const v = argv[++i];
+      const v = args[++i];
       if (v === '1' || v === '3') runs = Number(v) as 1 | 3;
       else return { ok: false, error: 'invalid --runs; must be 1 or 3' };
     } else if (a === '--yes' || a === '-y') {
@@ -44,6 +46,10 @@ export function parseCalibrationArgs(argv: readonly string[]): { ok: true; args:
 
 export async function runCalibrationCli(argv: readonly string[], deps: CalibrationCliDeps): Promise<number> {
   const log = deps.stdout ?? console.log, err = deps.stderr ?? console.error;
+  if (argv.includes('--help') || argv.includes('-h')) {
+    log('Usage: yoroi insights calibrate free --model <id> [--runs 1|3] [--yes]');
+    return 0;
+  }
   const parsed = parseCalibrationArgs(argv);
   if (!parsed.ok) { err(`calibration: ${parsed.error}`); return 2; }
   const { model: reqModel, runs, yes } = parsed.args;
@@ -68,8 +74,8 @@ export async function runCalibrationCli(argv: readonly string[], deps: Calibrati
   const record: CalibrationRunRecord = {
     runId: `calib-${Date.now()}-${randomUUID().slice(0, 8)}`,
     modelId: normalizedId,
-    taskSetVersion: 'v1',
-    evaluatorVersion: 'v1',
+    taskSetVersion: CALIBRATION_TASK_SET_VERSION,
+    evaluatorVersion: CALIBRATION_EVALUATOR_VERSION,
     runAt: new Date().toISOString(),
     tasks: runResults[0]!.taskResults.map(t => ({
       taskId: t.taskId, score: computeTaskScore(t.rubric), passed: t.passed ?? false,

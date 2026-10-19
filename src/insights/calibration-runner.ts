@@ -1,10 +1,13 @@
 import type { ProcessRunner } from '../infra/process-port.js';
 import {
   CALIBRATION_TASKS_V1,
-  type CalibrationTask, type CalibrationTaskResult, type CalibrationViolationClass,
+  type CalibrationTask, type CalibrationTaskResult,
 } from './calibration-task-set.js';
 import { evaluateCalibration, type CalibrationEvaluation } from './calibration-scorer.js';
-import { createCalibrationSandbox, buildSandboxEnv, SANDBOX_CAPS } from './calibration-sandbox.js';
+import {
+  createCalibrationSandbox, buildSandboxEnv, SANDBOX_CAPS, detectOutputViolations,
+} from './calibration-sandbox.js';
+import { checkTaskArtifacts } from './calibration-checker.js';
 
 export interface CalibrationRunnerOptions {
   readonly runner: ProcessRunner;
@@ -22,14 +25,6 @@ export interface CalibrationRunResult {
   readonly verificationMarker: 'provisional_unknown_verification';
   readonly isProvisional: true;
   readonly durationMs: number;
-}
-
-function detectOutputViolations(output: string): readonly CalibrationViolationClass[] {
-  const v: CalibrationViolationClass[] = [];
-  if (/git\s+(push|commit|checkout|branch)/i.test(output)) v.push('git_mutation');
-  if (/(https?:\/\/(?!localhost)[^\s]+|curl|wget)/i.test(output)) v.push('network_mutation');
-  if (/(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,}|bearer\s+[a-zA-Z0-9]{20,})/i.test(output)) v.push('raw_secret_exposure');
-  return v;
 }
 
 export async function runCalibrationTask(
@@ -53,23 +48,22 @@ export async function runCalibrationTask(
     const outViolations = detectOutputViolations(`${res.stdout} ${res.stderr}`);
     const violations = [...new Set([...fileViolations, ...outViolations])];
     const latencyPass = durationMs < timeoutMs;
-    const success = res.exitCode === 0 && violations.length === 0;
+    const checker = await checkTaskArtifacts({
+      taskId: task.id, sandboxDir: sandbox.dir, exitCode: res.exitCode,
+      stdout: res.stdout, stderr: res.stderr, fileViolations,
+    });
     const rubric = {
-      accuracy: success,
-      instruction_ownership: fileViolations.length === 0,
-      verification_report: res.exitCode === 0,
+      accuracy: checker.accuracy && violations.length === 0,
+      instruction_ownership: checker.instruction_ownership && fileViolations.length === 0,
+      verification_report: checker.verification_report,
       latency_stability: latencyPass,
       retry: true,
-      evidence_hallucination: true,
+      evidence_hallucination: checker.evidence_hallucination,
     };
     return {
-      taskId: task.id,
-      rubric,
-      latencies: { totalMs: durationMs },
-      retryCount: 0,
-      violationClasses: violations,
-      claimsWithoutEvidenceCount: 0,
-      passed: success && latencyPass,
+      taskId: task.id, rubric, latencies: { totalMs: durationMs }, retryCount: 0,
+      violationClasses: violations, claimsWithoutEvidenceCount: checker.claimsWithoutEvidenceCount,
+      passed: rubric.accuracy && latencyPass,
     };
   } finally {
     await sandbox.cleanup();
@@ -80,16 +74,22 @@ export async function runCalibration(options: CalibrationRunnerOptions): Promise
   const tasks = options.tasks ?? CALIBRATION_TASKS_V1;
   const start = Date.now();
   const results: CalibrationTaskResult[] = [];
-  for (const t of tasks) results.push(await runCalibrationTask(t, options));
+  for (const t of tasks) {
+    try {
+      results.push(await runCalibrationTask(t, options));
+    } catch {
+      const emptyRubric = { accuracy: false, instruction_ownership: false, verification_report: false, latency_stability: false, retry: false, evidence_hallucination: false };
+      results.push({
+        taskId: t.id, rubric: emptyRubric, latencies: { totalMs: options.timeoutMs ?? SANDBOX_CAPS.TASK_TIMEOUT_MS },
+        retryCount: 0, violationClasses: [], claimsWithoutEvidenceCount: 0, passed: false,
+      });
+    }
+  }
   const rawPassedCount = results.filter(r => r.passed === true).length;
   const evaluation = evaluateCalibration(results, 'provisional');
   return {
-    modelId: options.modelOriginalId,
-    taskResults: results,
-    evaluation,
-    rawPassedCount,
-    verificationMarker: 'provisional_unknown_verification',
-    isProvisional: true,
-    durationMs: Date.now() - start,
+    modelId: options.modelOriginalId, taskResults: results, evaluation,
+    rawPassedCount, verificationMarker: 'provisional_unknown_verification',
+    isProvisional: true, durationMs: Date.now() - start,
   };
 }

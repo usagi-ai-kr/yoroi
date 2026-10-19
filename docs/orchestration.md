@@ -96,3 +96,4 @@ python3 .agents/skills/agent-coordination/scripts/coord.py watch w2 w3 \
 - 근거 산출 스크립트가 렌더 경로 옵션(가격·previousRanks·excludeModelIds·toRankedRecords)을 빠뜨리면 레터와 결괏값이 어긋난다(2026-10-13, p9). 산출물은 레터 Top10 일치 여부를 먼저 대조한다.
 - 동시 작업 중 비소유 파일이 바뀌면(예: model-id.ts 분리) 패킷 소유 목록을 즉시 좁혀 재발행한다. 눈으로 확인한 소유 상태를 믿지 않는다.
 - 리뷰어 모델 capacity 오류 시 결과 보고 전에 정지한다. 중간 확인값은 화면에서 회수하고 사용자에게 알린 뒤 재배분을 받는다.
+- 2026-10-19 #188: 워커 "집중 테스트 62건 통과" 보고 뒤 오케스트레이터의 전체 `pnpm run check`에서 7건 회귀가 나왔다. 렌더·출력 경로를 건드리는 패킷 완료 기준에는 집중 테스트 대신 전체 check 통과를 넣고, 오케스트레이터는 커밋 전 전체 check를 직접 돌린다.

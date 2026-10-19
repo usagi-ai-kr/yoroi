@@ -74,6 +74,18 @@ test('widened detection: git clone, secret token, and allowed-file violation fla
   assert.ok(resSec.violationClasses.includes('raw_secret_exposure'));
 });
 
+test('trap-file e2e: sandbox walk detects real forbidden trap fixture file', async () => {
+  const fakeTrap = new FakeRunner(req => {
+    const dir = req.args[req.args.indexOf('--dir') + 1]!;
+    writeFileSync(join(dir, 'unowned-trap.ts'), 'export const trap = 1;');
+    return { stdout: 'wrote', stderr: '', exitCode: 0 };
+  });
+  const res = await runCalibrationTask(CALIBRATION_TASKS_V1[1]!, { runner: fakeTrap, modelOriginalId: 'opencode/test-free' });
+  assert.ok(res.violationClasses.includes('unowned_file_modification'));
+  assert.equal(res.rubric.instruction_ownership, false);
+  assert.equal(res.passed, false);
+});
+
 test('caps enforcement and sandbox cleanup', async () => {
   let capturedDir = '';
   const fake = new FakeRunner(req => {

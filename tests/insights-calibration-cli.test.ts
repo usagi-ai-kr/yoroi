@@ -76,7 +76,7 @@ test('env parity: gating and runner behavior are invariant to CI/minimal ambient
   }
 });
 
-test('fresh-DB first-run persists without error and open-failure fails fast before runner calls', async () => {
+test('fresh-DB first-run persists; file-path open fails deterministically', async () => {
   const tempDir = mkdtempSync(join(tmpdir(), 'calib-cli-fresh-'));
   try {
     const store = openCalibrationStore({ YOROI_DATA_DIR: tempDir }), runner = new FakeRunner();
@@ -84,10 +84,11 @@ test('fresh-DB first-run persists without error and open-failure fails fast befo
     assert.equal(store.listRuns('test').length, 1);
     store.close();
   } finally { rmSync(tempDir, { recursive: true, force: true }); }
-  const failRunner = new FakeRunner();
-  let exit: number | undefined;
-  try { openCalibrationStore({ YOROI_DATA_DIR: '/proc/invalid/read-only-path-fail' }); } catch { exit = 1; }
-  assert.equal(exit, 1); assert.equal(failRunner.runs, 0);
+  const blockRoot = mkdtempSync(join(tmpdir(), 'calib-cli-block-'));
+  try {
+    writeFileSync(join(blockRoot, 'file'), 'x');
+    assert.throws(() => openCalibrationStore({ YOROI_DATA_DIR: join(blockRoot, 'file', 'db') }), '파일 아래 경로는 결정적으로 실패한다');
+  } finally { rmSync(blockRoot, { recursive: true, force: true }); }
 });
 
 test('gating: non-vacuous separation between once/publish and calibrate CLI', () => {

@@ -47,3 +47,12 @@
 
 - [완료] PR #156 병합 `21405b0`, main CI 38716576120 success, 전역 CLI 0.13.3 설치(2026-10-15 21:54 KST 버전 확인).
 - [미완료·의도] `v0.13.3` tag·Release 없음. 병합 내용은 1.0.0에 포함한다.
+
+## 하네스 타 저장소 학습 (2026-10-20, w1/w2)
+
+- [완료] moi·dalmuti·paul 대조 기록(`docs/insights/harness-cross-repo-learning.md`).
+  이번 요청 채택: 스킬 초안(harness 사용자 학습·authoring 읽기 범위·검증),
+  CI docs-only 항상-validate 분리, development 설명. 보류: 바이트예산·ledger·Herdr-only.
+- [정정] 요청 시작 HEAD `5532dac` clean. 초안은 본 요청 중 root 서브에이전트
+  작성 후 사용자 지시로 중단, 기존 패널이 재대조. dalmuti Herdr-only 영구정책은 미이식.
+- [검증] skill validate·validate-repo.py·scripts unittest 19·diff --check PASS. 원격 CI 미실행. w2 최종 리뷰 통과.

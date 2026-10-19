@@ -49,10 +49,12 @@ jobs:
         run: |
           echo "Documentation-only change detected."
           echo "Fast passing required status check without running full application build."
-      - name: Validate repository and skills
-        if: steps.scope.outputs.docs_only != 'true'
+      - name: Validate repository and skills (always, including docs-only)
         run: |
           python3 scripts/validate-repo.py --ci
+      - name: Skill and script tests
+        if: steps.scope.outputs.docs_only != 'true'
+        run: |
           python3 -m unittest discover -s scripts -p "test_*.py"
           python3 .agents/skills/agent-coordination/scripts/test_coordination.py
           python3 .agents/skills/graceful-stop/scripts/test_stop_checkpoint.py

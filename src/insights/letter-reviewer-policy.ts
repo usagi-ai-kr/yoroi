@@ -1,21 +1,17 @@
 import type { RoleCandidate } from './letter-role-selection.js';
+import {
+  REVIEWER_WEIGHTS,
+  type ReviewerDimensionWeights,
+} from '../config/reviewer-policy.js';
 
-export interface ReviewerDimensionWeights {
-  readonly performance: number;
-  readonly speed: number;
-  readonly price: number;
-}
+export type { ReviewerDimensionWeights };
 
-/** #195 잠정 가중치: 성능 50% / 속도 20% / 가격 30%.
- *  사용자 승인 전 잠정(provisional)·미확정 기본값이며 오케·워커에는 절대 적용하지 않는다. */
-export const PROVISIONAL_REVIEWER_WEIGHTS: ReviewerDimensionWeights = {
-  performance: 0.50,
-  speed: 0.20,
-  price: 0.30,
-};
-
-export const REVIEWER_POLICY_STATUS = 'provisional' as const;
-export const REVIEWER_POLICY_CONFIRMED = false;
+/** #195 사용자 확정 가중치: config/reviewer-policy.json 원본 (성능 50% / 속도 20% / 가격 30%).
+ *  하드코드 금지 — 운영자 JSON 설정에 따라 즉시 반영된다. 오케·워커에는 절대 적용하지 않는다. */
+export const CONFIRMED_REVIEWER_WEIGHTS: ReviewerDimensionWeights = REVIEWER_WEIGHTS;
+export const PROVISIONAL_REVIEWER_WEIGHTS: ReviewerDimensionWeights = REVIEWER_WEIGHTS;
+export const REVIEWER_POLICY_STATUS = 'confirmed' as const;
+export const REVIEWER_POLICY_CONFIRMED = true;
 
 export interface ReviewerCandidateEvidence {
   readonly performance?: number;
@@ -43,16 +39,18 @@ const extractDim = (candidate: RoleCandidate, key: keyof ReviewerDimensionWeight
 
 export function computeReviewerScore<T extends RoleCandidate = RoleCandidate>(
   candidate: T,
-  weights: ReviewerDimensionWeights = PROVISIONAL_REVIEWER_WEIGHTS,
+  weights: ReviewerDimensionWeights = REVIEWER_WEIGHTS,
   callback?: ReviewerScoreCallback<T>,
 ): number | undefined {
-  if (typeof candidate.score === 'number' && Number.isFinite(candidate.score)) return candidate.score;
   if (callback) return callback(candidate, weights);
   const perf = extractDim(candidate, 'performance');
   const spd = extractDim(candidate, 'speed');
   const prc = extractDim(candidate, 'price');
-  if (perf === undefined || spd === undefined || prc === undefined) return undefined;
-  return Number((perf * weights.performance + spd * weights.speed + prc * weights.price).toFixed(2));
+  if (perf !== undefined && spd !== undefined && prc !== undefined) {
+    return Number((perf * weights.performance + spd * weights.speed + prc * weights.price).toFixed(2));
+  }
+  if (typeof candidate.score === 'number' && Number.isFinite(candidate.score)) return candidate.score;
+  return undefined;
 }
 
 export function applyReviewerPolicy<T extends RoleCandidate = RoleCandidate>(
@@ -60,9 +58,9 @@ export function applyReviewerPolicy<T extends RoleCandidate = RoleCandidate>(
   config: ReviewerPolicyConfig<T> = {},
 ): readonly (T & { score?: number })[] {
   const weights: ReviewerDimensionWeights = {
-    performance: config.weights?.performance ?? PROVISIONAL_REVIEWER_WEIGHTS.performance,
-    speed: config.weights?.speed ?? PROVISIONAL_REVIEWER_WEIGHTS.speed,
-    price: config.weights?.price ?? PROVISIONAL_REVIEWER_WEIGHTS.price,
+    performance: config.weights?.performance ?? REVIEWER_WEIGHTS.performance,
+    speed: config.weights?.speed ?? REVIEWER_WEIGHTS.speed,
+    price: config.weights?.price ?? REVIEWER_WEIGHTS.price,
   };
   const scored = candidates.map(c => {
     const score = computeReviewerScore(c, weights, config.scoreCallback);

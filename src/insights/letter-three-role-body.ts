@@ -1,0 +1,33 @@
+/** #195 unit6: 3역할 블록을 본문·출력 텍스트에 **한 번만** 넣기 위한 보조.
+ *  기존 2역할 블록(오케스트레이터·리뷰어 Top7 / 워커·메신저 Top7)을 잘라내고 그 자리에 3역할 블록을 넣는다.
+ *  제목·표시 안내·Free·댓글 3개 계약은 건드리지 않는다. */
+
+export interface ThreeRoleSections {
+  readonly orchestrator: string;
+  readonly reviewer: string;
+  readonly worker: string;
+}
+
+const LEGACY_ORCHESTRATOR = '## 🧭 오케스트레이터·리뷰어';
+const LEGACY_WORKER = '## 🛠️ 워커·메신저';
+export const THREE_ROLE_HEADING = '## 🧭 3역할 후보 (opt-in)';
+
+const threeRoleBlock = (sections: ThreeRoleSections): string[] =>
+  [THREE_ROLE_HEADING, '', sections.orchestrator, '', sections.reviewer, '', sections.worker];
+
+/** 기존 2역할 블록이 남아 있는지(테스트의 이중출력 단언용). */
+export function hasLegacyRoleBlocks(text: string): boolean {
+  const lines = text.split('\n');
+  return lines.some(line => line.startsWith(LEGACY_ORCHESTRATOR) || line.startsWith(LEGACY_WORKER));
+}
+
+/** 기존 2역할 블록을 3역할 블록으로 대체한다. 블록이 없으면 끝에 덧붙인다(중복 없음). */
+export function replaceLegacyRoleBlocks(text: string, sections: ThreeRoleSections): string {
+  const lines = text.split('\n');
+  const oIdx = lines.findIndex(line => line.startsWith(LEGACY_ORCHESTRATOR));
+  const wIdx = lines.findIndex(line => line.startsWith(LEGACY_WORKER));
+  if (oIdx < 0 || wIdx < 0) return [...lines, '', ...threeRoleBlock(sections), ''].join('\n');
+  let end = wIdx + 1;
+  while (end < lines.length && !lines[end]!.startsWith('## ')) end++;
+  return [...lines.slice(0, oIdx), ...threeRoleBlock(sections), '', ...lines.slice(end)].join('\n');
+}

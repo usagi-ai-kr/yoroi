@@ -46,9 +46,10 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
 
 ## 현재 운영 현황 (2026-10-20)
 
-- 버전: `package.json` 1.4.0. [Release v1.4.0](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.4.0) 발행(main `ff831c6482c618fc503503dd33d63acece519917`, publishedAt 2026-10-20T02:12:27Z).
-- tag·Release: `v1.4.0` 발행. 이전 이력은 [release-status.md](release-status.md)에 있다.
-- milestone: PR #191 관련 마일스톤은 해당 이슈에서 확인. 발행 순서와 기준은 위 §릴리스 순서를 따른다. 상세 기록은 [release-status.md](release-status.md)와 [roadmap.md](roadmap.md)에 있다.
+- main 운영 버전: `1.4.0` ([Release v1.4.0](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.4.0), commit `ff831c6482c618fc503503dd33d63acece519917`, publishedAt 2026-10-20T02:12:27Z).
+- dev 진행 상태: `package.json` 1.5.0 minor 갱신(PR 준비 중, main 미머지, v1.5.0 tag 및 Release 미발행).
+- 대상 범위: #168(모델 자동감지), #190(Arena 연동), #195(3역할 체계), #194(Actions 레터 발행).
+- 머지·발행 절차: dev → main PR 검증 통과 후 머지 → workflow_dispatch CI → tag/Release 생성 순서를 따름.
 
 ## 이전 운영 현황 (2026-10-10, 이력)
 

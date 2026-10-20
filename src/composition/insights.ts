@@ -10,7 +10,9 @@ import { openInsightsHistory } from '../infra/sqlite/insights-store.js';
 import { opencodeTarget } from '../config/load-config.js';
 import { buildFreeCatalog, collectOpenCodeFreeModels, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
 import { runOnceDiscovery, type OnceDiscoveryNotice, type OnceDiscoveryOptions } from '../insights/model-discovery-once.js';
-import { runThreeRolePipeline, type ThreeRolePipelineInput, type ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
+import type { ThreeRolePipelineInput, ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
+import { buildThreeRole } from './insights-three-role.js';
+import { letterThreeRoleConfig } from '../config/letter-three-role.js';
 
 export interface InsightsRunOptions {
   /** Provider/key environment (AA and OpenRouter keys come from the usual .env/process env; values are never logged). */
@@ -44,17 +46,6 @@ export type InsightsRunOutcome = Omit<InsightRunResult, 'top10'> & { readonly to
   readonly threeRole?: ThreeRolePipelineOutput;
 };
 
-const buildThreeRole = (opt?: boolean | ThreeRolePipelineInput, run?: InsightRunResult): ThreeRolePipelineOutput | undefined => {
-  if (!opt || (typeof opt === 'object' && opt.options?.enabled === false)) return undefined;
-  const isObj = typeof opt === 'object', recs = run?.top10?.records;
-  const toCand = (r: { modelId: string; value?: number }) => ({ modelId: r.modelId, ...(typeof r.value === 'number' && { score: r.value }) });
-  const o = isObj && opt.orchestrator ? opt.orchestrator : (recs?.map(toCand) ?? []);
-  const w = isObj && opt.worker ? opt.worker : o;
-  const r = isObj && opt.reviewer ? opt.reviewer : o;
-  return runThreeRolePipeline({ orchestrator: o, reviewer: r, worker: w,
-    options: { enabled: true, ...(run?.publicationDate !== undefined && { publicationDate: run.publicationDate }), ...(isObj ? opt.options : {}) } });
-};
-
 /** Wires one internal insights run: ports (I0) + history (S3, opened and closed per run) + run flow (O1).
  * A history that cannot be opened degrades to an in-memory history instead of failing the collection. */
 export async function runInsights(options: InsightsRunOptions): Promise<InsightsRunOutcome> {
@@ -73,7 +64,7 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
     const freeCatalog = freeModels && buildFreeCatalog(freeModels, run.publicationDate);
     const top10 = run.top10 ? { ...run.top10, ...(freeCatalog && { freeCatalog }) } : run.top10;
     const discoveryNotice = await runOnceDiscovery(options.discovery); // 기본 꺼짐·실패 무해(#168)
-    const threeRole = buildThreeRole(options.threeRole, run); // 기본 꺼짐(#195)
+    const threeRole = buildThreeRole(options.threeRole, run, letterThreeRoleConfig(options.env)); // 기본 꺼짐(#195)
     return { ...run, ...(top10 && { top10 }), ...(discoveryNotice && { discoveryNotice }), ...(threeRole && { threeRole }), storage };
   } finally { try { history.close?.(); } catch { /* close errors never change the result */ } }
 }

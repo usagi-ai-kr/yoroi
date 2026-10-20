@@ -39,6 +39,8 @@ export interface ThreeRolePipelineOutput<T extends RoleCandidate = RoleCandidate
   readonly selection?: ThreeRoleSelectionOutput<T & { score?: number }>;
   readonly markdown?: string;
   readonly sections?: ThreeRoleSections;
+  readonly emptyCause?: string;
+  readonly excluded?: readonly unknown[];
 }
 
 export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(

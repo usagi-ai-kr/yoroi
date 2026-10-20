@@ -19,7 +19,7 @@ CLI MVP 계획은 [#1](https://github.com/qus0in/yoroi/issues/1)과 하위 #2–
 
 ## 현재 상태 (2026-10-20)
 
-- [1.7.0–1.7.6 완료] PR #203(#168 adaptive discovery·#190 Arena·#196 공식 Free·#194 3역할) → #204 state·#207 순서·#209 표시 스코어·#212 모델명/effort/리뷰어 풀/usagi 비고·#214 -free 표시·#219 opus/sol 관측 effort 복원. 전역 1.7.6, Actions 레터 [#220](https://github.com/usagi-ai-kr/yoroi/issues/220) 검증 PASS. #180/#202/#198 종료.
+- [1.7.0–1.7.7 완료] PR #203(#168 adaptive discovery·#190 Arena·#196 공식 Free·#194 3역할) → #204 state·#207 순서·#209 표시 스코어·#212 모델명/effort/리뷰어 풀/usagi 비고·#214 -free·#219 opus/sol 복원·#222 DeepSeek dated snapshot 통합. 전역 1.7.7, 최종 레터 [#220](https://github.com/usagi-ai-kr/yoroi/issues/220) 검증 PASS. #180/#202/#198 종료.
 - 과거(2026-10-15) 버전: `package.json` 1.0.1. [Release v1.0.1](https://github.com/qus0in/yoroi/releases/tag/v1.0.1) 발행(target `c7c403eec32e5cc73a98f3a2852df3fd75833e4e`). 직전 [v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0)(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`).
 - [완료] 0.13.3 병합: PR #156 → main `21405b0`, main CI [38716576120](https://github.com/qus0in/yoroi/actions/runs/38716576120) success. 별도 0.13.3 tag·Release는 생략하고 1.0.0에 포함한다.
 - [완료] D(xAI 구독 사용률) [#147](https://github.com/qus0in/yoroi/issues/147)은 closed(0.13.0 milestone, 일치 확인 후 종료)다.

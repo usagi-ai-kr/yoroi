@@ -26,7 +26,8 @@
    (`capWorkerPerf`, `workerCognitionSpeed(..., caps)`).
 4. 가용성 기본 해석은 `computeRoleTop10` 한 곳(env 게이트)에서 하므로 현재 목록·previousRanks·compact·markdown·Free가 같은 프로필을 쓴다.
    run-once는 스냅샷을 한 번 읽어 `buildPreviousRanks`와 `InsightTop10Data.effortAvailability`로 돌려 현재·전일·렌더가 같은 스냅샷임을 보인다.
-5. 점수: 활성 프로필이 있으면 **cap 이 없는(unlisted) 모델은 `default` effort 만 쓴다**(상위 effort 추천·점수 제외).
+5. 점수: **cap 이 있는 모델만 상한을 적용**한다. cap 이 없는(unlisted) 모델은 관측된 effort 변형을 그대로 쓴다
+   (opus/sol 등 고effort 관측 행을 default-only로 지우지 않는다). 표기는 plain이며 `(미확인)` 같은 라벨을 붙이지 않는다.
    벤치마크 계산(`UNCONSTRAINED_AVAILABILITY`)은 기존처럼 cap 없이 유지된다.
 6. 표기(2026-10-20 변경): effort 칸은 **plain 값만**(`high`·`xhigh`·`default`)을 쓴다. `(미확인)`·`?`·`(상한)`·
    compact effort 범례를 출력에서 제거한다. 3역할 비고의 `미확인`·`가중치 미확정`도 제거한다(내부 값은 유지).

@@ -65,15 +65,15 @@ export function buildReviewerCandidates(
   const gone = variants.filter(v => !reachable.includes(v))
     .map(v => ({ modelId: v.modelId, missing: [] as const, reason: 'inaccessible-catalog' }));
   const set = toReviewerCandidates(reachable);
-  // effort cap: 활성 프로필에서 cap 초과 변형 제외, cap 없는 모델은 default만.
+  // effort cap: cap 이 있는 모델만 상한 초과 변형을 제외한다. cap 없는 모델은 관측 effort 를 그대로 쓴다.
   const av = input?.effortAvailability;
   const prof = av?.activeProfile !== undefined ? av.profiles?.[av.activeProfile] : undefined;
   const capped: ReviewerCandidate[] = [], cappedOut: ReviewerCandidateExclusion[] = [...gone];
   for (const c of set.candidates) {
     if (!prof) { capped.push(c); continue; }
     const cap = capOfModel(c.baseModelId, av);
-    if (cap !== undefined ? effortWithinCap(c.effort, cap) : c.effort === 'default') capped.push(c);
-    else cappedOut.push({ modelId: c.modelId, missing: [], reason: cap !== undefined ? 'over-effort-cap' : 'default-only-without-cap' });
+    if (cap === undefined || effortWithinCap(c.effort, cap)) capped.push(c);
+    else cappedOut.push({ modelId: c.modelId, missing: [], reason: 'over-effort-cap' });
   }
   const reviewer = applyReviewerPolicy(capped, { weights });
   // base dedupe: 같은 base는 최고 점수 1개만 남겨 역할 간 공유 가능하게 한다.

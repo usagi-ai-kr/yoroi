@@ -68,12 +68,18 @@
 
 ## 이어하기 단위2 및 후속 정합 (2026-10-20)
 
-- [완료] #180: CI 테스트 OS 의존 제거(ENOTDIR) 및 child fail-fast 격리 커밋 `58f5524` 완료. 원격 push·PR #191 반영은 대기.
+- [완료] #180: CI 테스트 OS 의존 제거(ENOTDIR) 및 child fail-fast 격리 커밋 `58f5524` 완료. PR #191의 게시·CI 상태는 보고 #193에서 추적한다.
 - [완료] #190 단위A: 순수 파서·타입·복합키·테스트(7/7) 구현, w3 최종 리뷰 PASS([보고서](insights/arena-final-review-20261020.md)). 초기 BLOCK 해소. 전체 이슈(수집/DB/once)는 후속.
 - [완료] #168: 순수 레지스트리 핵심(diff·게이트·render·snapshot 무효세대보완) 구현, 테스트 4파일 24/24 pass, 최종 리뷰 READY·중복 diff 최종 검토 PASS([리뷰](insights/model-discovery-review-20261020.md)·[최종](insights/discovery-duplicate-review-20261020.md)). 어댑터·저장소·config·레터 연결은 후속.
 - [완료] 하네스: skill-authoring 외부사실 검증 1개 보강, CI docs-only 항상-validate(`e3abe25`).
 - [중간 검증] 전체 `check` 1회차 1165/1166 통과(usage-history 시간단언 1건 1278ms), 단독 3회 순차 6/6 통과(788~813ms, 미변경) 후 재실행 결과 단위 1166/1166, BDD 45/635, typecheck/build exit 0 완료([flaky-tests](flaky-tests.md)).
 - [정리] 종합 상태 및 커밋 대상 그룹 분리는 [이슈별 종합 요약](insights/issue-units-summary-20261020.md) 참조.
 
-- [로컬 커밋] CI 수정 58f5524 · Arena d0ace75 · 자동감지 핵심 5eccc2b. 원격 미게시.
+- [이전 단위 종료 시점] CI 수정 58f5524 · Arena d0ace75 · 자동감지 핵심 5eccc2b. 당시 원격 미게시.
 - [최종 검증] 기본 병렬 1166/1167(기존 SQLite 시간 단언 실패), 직렬 전체 1167/1167·BDD45/635·타입·빌드 통과. [상세](insights/final-validation-20261020.md).
+
+## PR 갱신·보고 요청 (2026-10-20)
+
+- 사용자 요청으로 main 병합 이력을 dev에 동기화했다(aceefc2, 파일 내용 변경 없음).
+- [보고 #193](https://github.com/usagi-ai-kr/yoroi/issues/193)을 report 라벨로 생성했다.
+- PR #191의 게시 SHA·원격 CI·후속 상태는 보고 #193을 기준으로 추적한다.

@@ -7,7 +7,7 @@
 
 | 이슈 | 순수 단위 상태 | 이슈 전체 현황 및 미완료 범위 |
 | --- | --- | --- |
-| **#180** (Free 캘리브레이션) | **[완료]** w1 CI 테스트 ENOTDIR 대체 및 child fail-fast 격리 (`58f5524`) | **[진행/미반영]** 원격 `origin/dev` push 및 PR #191 재실행·머지 대기 중 |
+| **#180** (Free 캘리브레이션) | **[완료]** w1 CI 테스트 ENOTDIR 대체 및 child fail-fast 격리 (`58f5524`) | **[진행]** PR #191 CI·머지, 게시 상태는 [보고 #193](https://github.com/usagi-ai-kr/yoroi/issues/193)에서 추적 |
 | **#190** (Arena 코딩 단위A) | **[완료]** 순수 파서·타입·모델·테스트 7/7, 최종리뷰 PASS ([보고서](arena-final-review-20261020.md)) | **[미착수]** 실제 HF transport(수집), DB 저장소, `full` split 키 중복 방지, once·레터 연결 |
 | **#168** (모델 자동 감지) | **[완료/READY]** 순수 핵심 diff·eligibility·snapshot·render 구현, 테스트 4파일 24/24 PASS, 리뷰 READY·중복 diff 최종 검토 PASS ([보고서](model-discovery-review-20261020.md)·[최종](discovery-duplicate-review-20261020.md)) | **[미착수]** 실제 provider 어댑터(수집), 저장소 구현체, 설정 파일(`letter-model-lists.json`) 확장, catalog/once/레터 연결 |
 | **하네스** (학습·검증) | **[완료]** `skill-authoring/SKILL.md` 외부 사실 교차검증 항목 보강 | **[완료]** CI docs-only 항상-validate 분리 (`e3abe25`) |
@@ -51,4 +51,4 @@
 
 - 최종 상태: [최종 검증](final-validation-20261020.md). 기본 병렬 1166/1167(기존 시간 단언 실패), 직렬 1167/1167·BDD45/635·타입·빌드 통과.
 
-- 로컬 커밋: CI 수정 58f5524, Arena d0ace75, 자동감지 핵심 5eccc2b. #168·#190 전체 통합과 원격 갱신은 미완료다.
+- 로컬 커밋: CI 수정 58f5524, Arena d0ace75, 자동감지 핵심 5eccc2b. #168·#190 전체 통합은 미완료이며 원격 갱신 상태는 [보고 #193](https://github.com/usagi-ai-kr/yoroi/issues/193)에서 추적한다.

@@ -1,16 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-  ARENA_EVIDENCE_METRICS,
-  buildArenaEvidenceBundle,
-  buildCandidatePoolWithArena,
-  mergeArenaEvidence,
-  toArenaEvidenceRow,
-} from '../src/insights/letter-arena-evidence.js';
+import { ARENA_EVIDENCE_METRICS, buildArenaEvidenceBundle, buildCandidatePoolWithArena, mergeArenaEvidence,
+  toArenaEvidenceRow, arenaEvidenceNote, arenaEvidenceOutcome } from '../src/insights/letter-arena-evidence.js';
 import type { ArenaCodingRecord } from '../src/insights/arena-coding-model.js';
 import { buildCandidatePool } from '../src/insights/letter-top10-candidates.js';
 import { DEFAULT_LETTER_MODEL_LISTS } from '../src/insights/letter-model-lists.js';
 import { EVIDENCE_METRICS } from '../src/insights/top10-policy.js';
+import type { ValidatedInsightRecord } from '../src/insights/validation.js';
 
 const arena = (over: Partial<ArenaCodingRecord> = {}): ArenaCodingRecord => ({
   modelId: 'claude-opus-5-5-max', metric: 'arena_coding_rating', value: 63.3,
@@ -77,4 +73,23 @@ test('유사 이름·다른 subset은 병합하지 않는다', () => {
 test('결정성: 같은 입력은 같은 번들', () => {
   const records = [arena(), arena({ modelId: 'gpt-6-luna' })];
   assert.deepEqual(buildArenaEvidenceBundle(records, { enabled: true }), buildArenaEvidenceBundle(records, { enabled: true }));
+});
+
+test('노트는 출처를 분리해 밝히고 점수 미반영·게이트 상태를 함께 알린다', () => {
+  const note = arenaEvidenceNote(buildArenaEvidenceBundle([arena()], { enabled: true }))!;
+  assert.ok(note.includes('Arena 코딩 근거') && note.includes('성능 추가 근거·점수 미반영'), note);
+  assert.ok(note.includes('lmarena-ai/leaderboard-dataset') && note.includes('CC-BY-4.0'), '공식 출처·라이선스 명시');
+  assert.ok(note.includes('후보군 반영 보류'), '정책 게이트 상태 표기');
+  assert.equal(arenaEvidenceNote({ enabled: false, policyReady: false, rows: [], attribution: [], identities: [] }), undefined);
+});
+
+test('수집 행 → 근거 번들 → 노트: 부분 수집·게이트가 그대로 반영된다', () => {
+  const record: ValidatedInsightRecord = { comparisonDate: '2026-10-19', record: { source: 'arena-coding', modelId: 'm-one',
+    modelAlias: 'M One (Max)', metric: 'arena_coding_rating', value: 1807.3, unit: 'score', category: 'overall',
+    observedAt: '2026-10-20T00:00:00.000Z', sourceAsOf: '2026-10-19', sourceUrl: 'https://datasets-server.huggingface.co/rows',
+    sourceName: 'Arena Coding (HF Leaderboard)', license: 'CC-BY-4.0', attributionText: 'Source: Arena Leaderboard Dataset (CC BY 4.0).',
+    method: 'official-dataset', schemaVersion: 'arena-coding-v1', metadata: { subset: 'webdev', category: 'overall', effort: 'max' } } };
+  const outcome = arenaEvidenceOutcome([record]);
+  assert.equal(outcome.rowCount, 1);
+  assert.ok(outcome.note?.includes('webdev') && outcome.note.includes('lmarena-ai/leaderboard-dataset'));
 });

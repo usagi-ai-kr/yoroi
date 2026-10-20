@@ -43,11 +43,12 @@ export function isValidCheckedOn(value: string): boolean {
     date.getUTCMonth() + 1 === Number(match[2]) && date.getUTCDate() === Number(match[3]);
 }
 
-/** 모델 1건의 편입 사유 목록. verified는 입력값을 읽기만 하고 바꾸지 않는다. */
-export function modelEligibilityReasons(model: DiscoveredModel): readonly EligibilityReason[] {
+/** 모델 1건의 편입 사유 목록. verified는 입력값을 읽기만 하고 바꾸지 않는다.
+ *  requireVerified:false면 저장용으로 unverified를 묻지 않는다(등록 게이트는 기본 true 유지). */
+export function modelEligibilityReasons(model: DiscoveredModel, opts?: { requireVerified?: boolean }): readonly EligibilityReason[] {
   const reasons: EligibilityReason[] = [];
   if (!isValidModelId(model.modelId)) reasons.push('invalid-model-id');
-  if (model.verified !== true) reasons.push('unverified');
+  if (opts?.requireVerified !== false && model.verified !== true) reasons.push('unverified');
   if (!isValidSourceUrl(model.sourceUrl)) reasons.push('invalid-source-url');
   if (!isValidCheckedOn(model.checkedOn)) reasons.push('invalid-checked-on');
   if (model.planIds.length === 0 || model.planIds.some(plan => plan.trim() === '')) reasons.push('missing-tier');
@@ -57,7 +58,7 @@ export function modelEligibilityReasons(model: DiscoveredModel): readonly Eligib
 }
 
 /** provider 목록을 편입 가능·거부로 나눈다. 같은 id가 둘 이상이면 그 id 전체를 거부한다(모호 fail-closed). */
-export function checkEligibility(models: readonly DiscoveredModel[]): EligibilityReport {
+export function checkEligibility(models: readonly DiscoveredModel[], opts?: { requireVerified?: boolean }): EligibilityReport {
   const counts = new Map<string, number>();
   for (const model of models) {
     const key = normalizeDiscoveryModelId(model.modelId);
@@ -66,7 +67,7 @@ export function checkEligibility(models: readonly DiscoveredModel[]): Eligibilit
   const eligible: DiscoveredModel[] = [], rejected: RejectedModel[] = [];
   for (const model of models) {
     const key = normalizeDiscoveryModelId(model.modelId);
-    const reasons = [...modelEligibilityReasons(model)];
+    const reasons = [...modelEligibilityReasons(model, opts)];
     if ((counts.get(key) ?? 0) > 1) reasons.push('duplicate-model-id');
     if (reasons.length === 0) eligible.push(model);
     else rejected.push({ modelId: model.modelId, reasons });

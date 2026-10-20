@@ -10,7 +10,8 @@ import {
   ARENA_CODING_SOURCE,
   ARENA_CODING_RATING_METRIC,
 } from '../src/insights/arena-coding-types.js';
-import { ARENA_CODING_SOURCE_ID, arenaCodingIdentityKey, toArenaCodingRecord } from '../src/insights/arena-coding-model.js';
+import { ARENA_CODING_SOURCE_ID, arenaCodingIdentityKey, arenaCodingModelId, toArenaCodingRecord } from '../src/insights/arena-coding-model.js';
+import { splitBaseAndEffort } from '../src/insights/letter-top10-group.js';
 
 const webdev = (over: Record<string, unknown> = {}) => ({ category: 'overall',
   model_name: 'Claude Opus 5.5 (Max)', organization: 'anthropic', license: 'Proprietary',
@@ -71,4 +72,23 @@ test('저장소 행 계약과 식별키를 매핑한다', () => {
   const d = parseArenaCodingRow(webdev({ model_name: 'GPT-5.5' }), 'webdev')!;
   assert.equal(toArenaCodingRecord(d).modelId, 'gpt-5-5');
   assert.equal(arenaCodingIdentityKey(p), 'arena-coding|webdev|overall|claude-opus-5-5|max|-');
+});
+
+test('effort 없이 날짜·하네스 한정자만 있는 행은 버리지 않는다(#190 공식 스키마 실측)', () => {
+  assert.deepEqual(parseEffortToken('Qwen3.8-Max (0902)'), { effort: 'default', qualifier: '0902' });
+  assert.deepEqual(parseEffortToken('Kimi K2.5 (Thinking)'), { effort: 'default', qualifier: 'thinking' });
+  const p = parseArenaCodingRow(webdev({ model_name: 'Qwen3.8-Max (0902)' }), 'webdev')!;
+  assert.deepEqual([p.baseId, p.effort, p.effortQualifier], ['qwen3-8-max', 'default', '0902']);
+});
+
+test('여러 괄호 묶음에서도 effort를 잃지 않는다', () => {
+  assert.deepEqual(parseEffortToken('DeepSeek V4 Pro (High) (0813)'), { effort: 'high', qualifier: '0813' });
+  assert.deepEqual(parseEffortToken('Claude Opus 4.5 (High, 32K, 20251101)'), { effort: 'high', qualifier: '32k,20251101' });
+  assert.deepEqual(parseEffortToken('GPT-5.6 Sol (xHigh, Codex Harness)'), { effort: 'xhigh', qualifier: 'codex harness' });
+});
+
+test('한정자가 있으면 model id 에 남아 기본 모델과 series 키가 섞이지 않는다', () => {
+  const dated = arenaCodingModelId({ baseId: 'qwen3.8-max', effort: 'default', effortQualifier: '0902' });
+  assert.notEqual(dated, arenaCodingModelId({ baseId: 'qwen3.8-max', effort: 'default' }));
+  assert.equal(splitBaseAndEffort(arenaCodingModelId({ baseId: 'deepseek-v4-pro', effort: 'high', effortQualifier: '20260813' })).effort, 'high');
 });

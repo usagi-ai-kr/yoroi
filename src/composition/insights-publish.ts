@@ -28,9 +28,14 @@ export async function publishInsightsLetter(options: PublishLetterOptions, env: 
   const [hour, minute] = notBefore.split(':').map(Number), threshold = hour! * 60 + minute!;
   if (k.minuteOfDay < threshold) { env.stdout(`skip: before ${notBefore} KST\n`); return 0; }
   const title = `[letter] ${k.date} AI 인사이트 레터`, bin = options.ghBin || 'gh';
+  // #194 중복 게이트 분리: 조회 1회(ALL) 후 state 로 분류한다.
+  // OPEN(state !== 'closed' — state 미포함 구형 응답도 OPEN 취급)은 기존 동작(완전→skip, 댓글 누락→복구) 유지,
+  // CLOSED(state === 'closed')는 삭제 없이 이력으로 보존한 채 새 발행(같은 KST 날짜 교체)을 허용한다.
   const duplicates = await listIssues(options.runner, bin, 'all', `in:title "${title}"`, options.signal);
   if (!duplicates) return fail(env, 'duplicate check failed');
-  const existing = duplicates.find(issue => issue.title === title);
+  const sameTitle = duplicates.filter(issue => issue.title === title);
+  const existing = sameTitle.find(issue => issue.state !== 'closed');
+  const closedSameTitle = sameTitle.find(issue => issue.state === 'closed');
   if (existing) {
     const count = await fetchIssueCommentCount(options.runner, bin, existing.number, REPO, options.signal);
     if (count === undefined) {
@@ -47,7 +52,7 @@ export async function publishInsightsLetter(options: PublishLetterOptions, env: 
   if (options.dryRun) {
     const open = await listIssues(options.runner, bin, 'open', undefined, options.signal);
     if (!open) return fail(env, 'open letter query failed');
-    env.stdout(`dry-run: title="${title}" duplicate=${existing ? 'yes' : 'no'} close=${open.map(x => `#${x.number}`).join(',') || 'none'} comments=3\n`);
+    env.stdout(`dry-run: title="${title}" duplicate=${existing ? 'yes' : 'no'} closed_same_title=${closedSameTitle ? `#${closedSameTitle.number}` : 'none'} close=${open.map(x => `#${x.number}`).join(',') || 'none'} comments=3\n`);
     return 0;
   }
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-letter-publish-')), bodyFile = join(dir, 'body.md');

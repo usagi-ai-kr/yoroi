@@ -1,4 +1,5 @@
 import { ARENA_CODING_RATING_METRIC, type ArenaCodingSubset, type ParsedArenaCodingModel } from './arena-coding-types.js';
+import { arenaCodingModelId } from './arena-coding-model.js';
 import { SourceError } from '../app/usage-source.js';
 import { isIsoTimestamp, type ParseRowResult } from './parse-utils.js';
 import type { InsightRecord } from './record.js';
@@ -38,7 +39,7 @@ export async function fetchArenaCodingPayload(options: ArenaFetchOptions = {}): 
 function toRecord(parsed: ParsedArenaCodingModel, observedAt: string): InsightRecord | undefined {
   const publishDate = parsed.publishDate;
   if (publishDate === undefined) return undefined;
-  const modelId = parsed.effort === 'default' ? parsed.baseId : `${parsed.baseId}-${parsed.effort}`;
+  const modelId = arenaCodingModelId(parsed);
   return { source: ARENA_CODING_SOURCE_ID, modelId, modelAlias: parsed.displayName, metric: parsed.metric,
     value: parsed.value, unit: 'score', category: parsed.category, observedAt, sourceAsOf: publishDate,
     sourceUrl: ARENA_CODING_URL, sourceName: 'Arena Coding (HF Leaderboard)', license: 'CC-BY-4.0',

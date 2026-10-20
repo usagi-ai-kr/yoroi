@@ -43,7 +43,7 @@ test('UTC 날짜와 KST 날짜가 다르면 제목은 KST 날짜를 쓴다', asy
   assert.ok(h.stdout.some(l => l.includes('2026-10-13 08:30 KST')), '발행 시각도 KST 기준');
 });
 test('#194: 닫힌 같은 제목만 있으면 새 레터 생성을 허용하고 닫힌 레터는 건드리지 않는다', async () => {
-  const h = harness([json([issue(115, title, 'closed')]), ok('https://github.com/qus0in/yoroi/issues/125'), ok(), ok(), ok(), ok('[]')]);
+  const h = harness([json([issue(115, title, 'CLOSED')]), ok('https://github.com/qus0in/yoroi/issues/125'), ok(), ok(), ok(), ok('[]')]);
   assert.equal(await h.run(), 0);
   assert.ok(h.runner.requests.some(r => r.args.includes('create')) && h.stdout.some(l => l.includes('published #125')), 'closed 동일 제목은 새 발행을 막지 않는다');
   assert.ok(!h.runner.requests.some(r => r.args.includes('close')), '닫힌 레터는 닫거나 수정하지 않는다');
@@ -52,7 +52,7 @@ test('#194: OPEN 동일 제목이 있으면 create 없이 skip 또는 복구만 
   const run = async (existing: readonly string[]) => {
     const calls: string[][] = [], out: string[] = [];
     const runner = mockRunner(req => {
-      if (req.args.includes('--search')) return json([issue(192, title, 'open')]);
+      if (req.args.includes('--search')) return json([issue(192, title, 'OPEN')]);
       if (req.args.includes('view') && req.args.includes('comments')) return json({ comments: existing.map(body => ({ body })) });
       if (req.args.includes('view')) return json({ body: '# letter' });
       if (req.args.includes('list')) return json([]);
@@ -83,7 +83,7 @@ test('publishes body then 3 comments in order, then closes every older open lett
   assert.deepEqual(h.stdout, ['published #125 https://github.com/usagi-ai-kr/yoroi/issues/125 2026-10-13 09:00 KST\n']);
 });
 test('dry-run reports duplicate·closed_same_title·close targets without any GitHub write', async () => {
-  const h = harness([json([issue(115, title, 'closed')]), ok(JSON.stringify([issue(114, 'old')]))]);
+  const h = harness([json([issue(115, title, 'CLOSED')]), ok(JSON.stringify([issue(114, 'old')]))]);
   assert.equal(await h.run(true), 0); assert.equal(h.runner.requests.length, 2);
   assert.match(h.stdout[0]!, /title="\[letter\] 2026-10-13 AI 인사이트 레터" duplicate=no closed_same_title=#115 close=#114 comments=3/);
   assert.ok(h.runner.requests.every(r => !['create', 'comment', 'close'].includes(r.args[1]!)));

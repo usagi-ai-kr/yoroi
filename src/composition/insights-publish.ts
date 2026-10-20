@@ -29,13 +29,14 @@ export async function publishInsightsLetter(options: PublishLetterOptions, env: 
   if (k.minuteOfDay < threshold) { env.stdout(`skip: before ${notBefore} KST\n`); return 0; }
   const title = `[letter] ${k.date} AI 인사이트 레터`, bin = options.ghBin || 'gh';
   // #194 중복 게이트 분리: 조회 1회(ALL) 후 state 로 분류한다.
-  // OPEN(state !== 'closed' — state 미포함 구형 응답도 OPEN 취급)은 기존 동작(완전→skip, 댓글 누락→복구) 유지,
-  // CLOSED(state === 'closed')는 삭제 없이 이력으로 보존한 채 새 발행(같은 KST 날짜 교체)을 허용한다.
+  // 실제 gh 는 'OPEN'/'CLOSED' 대문자를 준다 → 대소문자 무관 비교. 미포함/OPEN 은 기존 동작(완전→skip,
+  // 댓글 누락→복구) 유지, CLOSED 는 삭제 없이 이력 보존 후 새 발행(같은 KST 날짜 교체)을 허용한다.
   const duplicates = await listIssues(options.runner, bin, 'all', `in:title "${title}"`, options.signal);
   if (!duplicates) return fail(env, 'duplicate check failed');
   const sameTitle = duplicates.filter(issue => issue.title === title);
-  const existing = sameTitle.find(issue => issue.state !== 'closed');
-  const closedSameTitle = sameTitle.find(issue => issue.state === 'closed');
+  const isClosed = (state: string | undefined): boolean => state?.toLowerCase() === 'closed';
+  const existing = sameTitle.find(issue => !isClosed(issue.state));
+  const closedSameTitle = sameTitle.find(issue => isClosed(issue.state));
   if (existing) {
     const count = await fetchIssueCommentCount(options.runner, bin, existing.number, REPO, options.signal);
     if (count === undefined) {

@@ -9,6 +9,7 @@ import type { ProcessRunner } from '../infra/process-port.js';
 import { openInsightsHistory } from '../infra/sqlite/insights-store.js';
 import { opencodeTarget } from '../config/load-config.js';
 import { buildFreeCatalog, collectOpenCodeFreeModels, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
+import { runOnceDiscovery, type OnceDiscoveryNotice, type OnceDiscoveryOptions } from '../insights/model-discovery-once.js';
 
 export interface InsightsRunOptions {
   /** Provider/key environment (AA and OpenRouter keys come from the usual .env/process env; values are never logged). */
@@ -27,6 +28,8 @@ export interface InsightsRunOptions {
   /** Test hooks: replace the SQLite history or the whole port set. */
   readonly openHistory?: () => InsightHistoryPort & { close(): void };
   readonly createPorts?: (client: HttpClient, lookup: (name: string) => string | undefined, options: InsightPortOptions) => readonly InsightSourcePort[];
+  /** #168 모델 감지(기본 꺼짐): config.enabled가 true일 때만 수집 뒤 실행한다. 실패해도 once는 실패하지 않는다. */
+  readonly discovery?: OnceDiscoveryOptions;
 }
 type InsightsTop10Data = NonNullable<InsightRunResult['top10']> & {
   readonly freeCatalog?: readonly RuntimeFreePlan[];
@@ -34,6 +37,7 @@ type InsightsTop10Data = NonNullable<InsightRunResult['top10']> & {
 export type InsightsRunOutcome = Omit<InsightRunResult, 'top10'> & { readonly top10?: InsightsTop10Data } & {
   /** `memory` means the database could not be opened: the run still works but nothing persists or compares. */
   readonly storage: 'sqlite' | 'memory';
+  readonly discoveryNotice?: OnceDiscoveryNotice;
 };
 
 /** Wires one internal insights run: ports (I0) + history (S3, opened and closed per run) + run flow (O1).
@@ -53,6 +57,7 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
         { ...(options.signal && { signal: options.signal }), target }) : Promise.resolve(undefined)]);
     const freeCatalog = freeModels && buildFreeCatalog(freeModels, run.publicationDate);
     const top10 = run.top10 ? { ...run.top10, ...(freeCatalog && { freeCatalog }) } : run.top10;
-    return { ...run, ...(top10 && { top10 }), storage };
+    const discoveryNotice = await runOnceDiscovery(options.discovery); // 기본 꺼짐·실패 무해(#168)
+    return { ...run, ...(top10 && { top10 }), ...(discoveryNotice && { discoveryNotice }), storage };
   } finally { try { history.close?.(); } catch { /* close errors never change the result */ } }
 }

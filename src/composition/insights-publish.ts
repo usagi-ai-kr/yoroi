@@ -6,33 +6,14 @@ import type { ProcessRunner } from '../infra/process-port.js';
 import { insightPublicationDate } from '../insights/history-port.js';
 import { freeSectionProblem } from '../insights/letter-free-guard.js';
 import type { LetterParts } from '../insights/letter-markdown.js';
+import { closePreviousLetters, DEFAULT_REPO, extractIssueUrlAndNumber, gh, isCanonicalOrRedirectRepo, listIssues, sanitizeLogOutput } from './insights-publish-target.js';
+import { fetchIssueCommentCount, recoverMissingLetterComments } from './insights-publish-recovery.js';
 
-const REPO = 'qus0in/yoroi', TIMEOUT_MS = 30_000;
-type Issue = { readonly number: number; readonly title: string };
+const REPO = DEFAULT_REPO;
 export interface PublishLetterOptions {
   readonly dryRun?: boolean; readonly notBefore?: string; readonly clock?: () => number;
   readonly runner: ProcessRunner; readonly ghBin?: string; readonly signal?: AbortSignal;
-  /** 본문+댓글 3개(w3 렌더 계약): 댓글 [오케 Top15, 워커 Top15, Free]. */
   readonly render: () => Promise<LetterParts>;
-}
-async function gh(runner: ProcessRunner, bin: string, args: readonly string[], signal?: AbortSignal) {
-  try { const out = await runner.run({ executable: bin, args, timeoutMs: TIMEOUT_MS }, signal); return out.exitCode === 0 ? out.stdout : undefined; }
-  catch { return undefined; }
-}
-async function listIssues(runner: ProcessRunner, bin: string, state: 'all' | 'open', search?: string, signal?: AbortSignal): Promise<Issue[] | undefined> {
-  const args = ['issue', 'list', '--repo', REPO, '--label', 'letter', '--state', state, '--limit', '1000',
-    ...(search ? ['--search', search] : []), '--json', 'number,title'];
-  const output = await gh(runner, bin, args, signal);
-  try {
-    const values: unknown = JSON.parse(output ?? 'null');
-    if (!Array.isArray(values)) return undefined;
-    return values.map(value => {
-      if (!value || typeof value !== 'object') throw new Error();
-      const row = value as Record<string, unknown>;
-      if (!Number.isSafeInteger(row.number) || (row.number as number) < 1 || typeof row.title !== 'string') throw new Error();
-      return { number: row.number as number, title: row.title };
-    });
-  } catch { return undefined; }
 }
 function kst(now: number) {
   const shifted = new Date(now + 9 * 60 * 60 * 1000), hour = shifted.getUTCHours(), minute = shifted.getUTCMinutes();
@@ -47,52 +28,55 @@ export async function publishInsightsLetter(options: PublishLetterOptions, env: 
   const [hour, minute] = notBefore.split(':').map(Number), threshold = hour! * 60 + minute!;
   if (k.minuteOfDay < threshold) { env.stdout(`skip: before ${notBefore} KST\n`); return 0; }
   const title = `[letter] ${k.date} AI 인사이트 레터`, bin = options.ghBin || 'gh';
-  const search = `in:title "${title}"`, duplicates = await listIssues(options.runner, bin, 'all', search, options.signal);
+  const duplicates = await listIssues(options.runner, bin, 'all', `in:title "${title}"`, options.signal);
   if (!duplicates) return fail(env, 'duplicate check failed');
   const existing = duplicates.find(issue => issue.title === title);
-  if (existing) { env.stdout(`skip: already published #${existing.number}\n`); return 0; }
+  if (existing) {
+    const count = await fetchIssueCommentCount(options.runner, bin, existing.number, REPO, options.signal);
+    if (count === undefined) {
+      env.stdout(`skip: already published #${existing.number}\n`);
+      return 0;
+    }
+  }
   let parts: LetterParts;
   try { parts = await options.render(); } catch { return fail(env, 'collection or rendering failed'); }
   const body = parts?.body, comments = parts?.comments;
-  if (!body?.trim() || !Array.isArray(comments) || comments.length !== 3 || comments.some(comment => !comment?.trim())) {
-    return fail(env, 'collection or rendering failed');
-  }
-  // Free 가드는 댓글 3(Free 섹션)에 적용한다.
+  if (!body?.trim() || !Array.isArray(comments) || comments.length !== 3 || comments.some(c => !c?.trim())) return fail(env, 'collection or rendering failed');
   const freeProblem = isRenderedLetter(body) ? freeSectionProblem(comments[2]!) : undefined;
   if (freeProblem) return fail(env, `free section invalid: ${freeProblem}`);
   if (options.dryRun) {
     const open = await listIssues(options.runner, bin, 'open', undefined, options.signal);
     if (!open) return fail(env, 'open letter query failed');
-    env.stdout(`dry-run: title="${title}" duplicate=no close=${open.map(x => `#${x.number}`).join(',') || 'none'} comments=3\n`);
+    env.stdout(`dry-run: title="${title}" duplicate=${existing ? 'yes' : 'no'} close=${open.map(x => `#${x.number}`).join(',') || 'none'} comments=3\n`);
     return 0;
   }
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-letter-publish-')), bodyFile = join(dir, 'body.md');
   try {
     writeFileSync(bodyFile, body, { encoding: 'utf8', mode: 0o600 });
-    const commentFiles = comments.map((comment, index) => {
-      const file = join(dir, `comment-${index + 1}.md`);
-      writeFileSync(file, comment!, { encoding: 'utf8', mode: 0o600 });
-      return file;
-    });
-    const created = await gh(options.runner, bin, ['issue', 'create', '--repo', REPO, '--title', title,
-      '--label', 'letter', '--body-file', bodyFile], options.signal);
-    const match = created?.match(/https:\/\/github\.com\/qus0in\/yoroi\/issues\/(\d+)/);
-    if (!match) return fail(env, 'issue creation failed');
-    const number = Number(match[1]), url = `https://github.com/${REPO}/issues/${number}`;
-    for (let index = 0; index < commentFiles.length; index++) {
-      const posted = await gh(options.runner, bin, ['issue', 'comment', String(number), '--repo', REPO,
-        '--body-file', commentFiles[index]!], options.signal);
-      if (posted === undefined) return fail(env, `comment ${index + 1} failed (issue #${number} left open)`);
+    const commentFiles = comments.map((c, i) => { const f = join(dir, `c-${i + 1}.md`); writeFileSync(f, c!, { encoding: 'utf8', mode: 0o600 }); return f; });
+    if (existing) {
+      const rec = await recoverMissingLetterComments(options.runner, bin, existing.number, existing.title, commentFiles, REPO, options.signal, body);
+      if (rec.status === 'already_complete') { env.stdout(`skip: already published #${existing.number}\n`); return 0; }
+      if (rec.status === 'recovered') {
+        const url = `https://github.com/${REPO}/issues/${existing.number}`;
+        const closed = await closePreviousLetters(options.runner, bin, existing.number, url, options.signal);
+        env.stdout(`recovered #${existing.number} ${url} (posted ${rec.recoveredCount} missing comments)\n`);
+        return closed ? 0 : fail(env, 'recovered comments but previous letter cleanup failed');
+      }
+      return fail(env, `recovery failed for #${existing.number}: ${rec.error}`);
     }
-    const open = await listIssues(options.runner, bin, 'open', undefined, options.signal);
-    let failed = !open;
-    for (const issue of open ?? []) if (issue.number !== number) {
-      const comment = `후속 레터 [#${number}](${url}) 발행으로 종료합니다.`;
-      if (await gh(options.runner, bin, ['issue', 'comment', String(issue.number), '--repo', REPO, '--body', comment], options.signal) === undefined) { failed = true; continue; }
-      if (await gh(options.runner, bin, ['issue', 'close', String(issue.number), '--repo', REPO], options.signal) === undefined) failed = true;
+    const created = await gh(options.runner, bin, ['issue', 'create', '--repo', REPO, '--title', title, '--label', 'letter', '--body-file', bodyFile], options.signal);
+    const extracted = extractIssueUrlAndNumber(created ?? '');
+    if (!extracted || !isCanonicalOrRedirectRepo(extracted.repo)) return fail(env, `issue creation failed or unexpected repo URL: ${sanitizeLogOutput(created ?? '')}`);
+    const number = extracted.number, url = `https://github.com/${REPO}/issues/${number}`;
+    for (let i = 0; i < commentFiles.length; i++) {
+      if (await gh(options.runner, bin, ['issue', 'comment', String(number), '--repo', REPO, '--body-file', commentFiles[i]!], options.signal) === undefined) {
+        return fail(env, `comment ${i + 1} failed (issue #${number} left open)`);
+      }
     }
+    const closed = await closePreviousLetters(options.runner, bin, number, url, options.signal);
     const issuedAt = kst((options.clock ?? Date.now)());
     env.stdout(`published #${number} ${url} ${issuedAt.date} ${issuedAt.time} KST\n`);
-    return failed ? fail(env, 'published but previous letter cleanup failed') : 0;
+    return closed ? 0 : fail(env, 'published but previous letter cleanup failed');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }

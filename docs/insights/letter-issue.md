@@ -41,14 +41,12 @@
     - 실패 소스 안내: 정상 시 `모든 소스 정상 수집 완료`, 실패 시 `⚠️ 소스명`, 부분 수집(일부 행 거절) 시 `⚠️ 부분 수집 소스: ...`가 함께 표시된다.
     - 경고: 전일 자료 부족 등 수집 경고가 있으면 `### 경고` 블록에 나열한다.
     - 출처 4사 라이선스 명시 (OpenRouter, AA, Cognition, OpenCode Data (내부 참조 · 약관상 자동 추출 제한)).
-- **중복 방지 (이전 계약)**: `label:letter` 및 당일 제목 검색 시 재발행하지 않고 댓글로 남긴다.
-- **중복 방지 정정 (2026-10-13)**: 오늘 제목이 open/closed `label:letter` 이슈에 있으면 댓글 없이 `skip: already published #N`을 출력하고 종료한다.
-- **종료 코드**: `0` 정상, `1` 실패(이슈 미게시, 알림 발송), `2` 인자/설정 오류.
-- **전일 close (이전 계약)**: 새 레터 게시 직후 전일 `letter` 이슈를 close한다 (열린 레터 최신 1건).
-- **전일 close 정정 (2026-10-13)**: 생성 성공 후 새 이슈를 제외한 open `letter` 이슈 모두에 후속 레터 댓글을 단 뒤 close한다.
-- **p85 확정 산식 반영 후 수동 발행 절차 (2026-10-14 사용자 지시)**: 현재 `publish`는 당일 중복 방지로 오늘 이슈 #142가 있으면 `skip: already published #142`를 출력한다. p85 산식 반영본을 확인하려면 수동으로 `gh issue create`해 새 글을 확인한 뒤 #142를 닫는다. 명령: `gh issue create --title "[letter] 2026-10-14 AI 인사이트 레터 (p85)" --body "$(yoroi insights once --markdown)" --label letter`. 확인 후 `gh issue close 142 --comment "p85 확정 산식 반영본 확인 완료, 후속 이슈 별도 발행"`.
+- **중복 방지 및 부분 복구 (2026-10-20 정정)**: 당일 제목의 `label:letter` 이슈가 존재할 때, 댓글 3개가 완결되어 있으면 `skip: already published #N`을 출력하고 종료한다. 댓글 3개 미만인 부분 발행 상태면 재실행 시 CLI 옵션 추가 없이 누락 댓글만 순환 복원 게시(`recovered #N`)한다.
+- **안전 가드 및 전일 close**: 본문 생성 및 댓글 3개가 모두 완결된 후에만 이전 open 레터를 close한다. 제목이 `[letter] `가 아니거나 `memo`를 포함하는 이슈는 절대 쓰거나 닫지 않는다.
+- **레포 URL 정규화**: gh 반환 URL이 canonical `usagi-ai-kr/yoroi` 또는 `qus0in/yoroi`여도 안전하게 번호·URL을 파싱하며, 실패 로그는 시크릿 마스킹 후 출력한다.
+- **종료 코드**: `0` 정상, `1` 실패(이슈 미게시·댓글 미완·복구 실패), `2` 인자/설정 오류.
 - **Dry-run**: GitHub 쓰기 없이 제목·중복 판정·close 대상만 표시한다. 수집·렌더 실패는 이슈를 만들지 않고 exit 1이다.
-- **출력 및 보안**: 성공 stdout은 `published #N <url> <KST 시각>` 한 줄이다. 인증값과 본문 원문은 로그에 출력하지 않는다.
+- **출력 및 보안**: 성공 stdout은 `published #N <url> <KST 시각>` 또는 `recovered #N <url> (posted M missing comments)`. 인증값과 본문 원문은 로그에 출력하지 않는다.
 - **공개 범위**: private 전제. Cognition·AA 포함으로 public 전환 시 발행 즉시 중단.
 - **발행 시 사용자 통보**: 이슈 번호·링크·KST 시각을 사용자에게 통보한다.
 

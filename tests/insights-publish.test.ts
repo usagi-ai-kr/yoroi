@@ -65,16 +65,16 @@ test('publishes body then 3 comments in order, then closes every older open lett
     ok(JSON.stringify([{ number: 115, title }, { number: 125, title }, { number: 123, title: 'old' }])), ok(), ok(), ok(), ok()]);
   assert.equal(await h.run(), 0); assert.equal(h.runner.requests.length, 10);
   const create = h.runner.requests[1]!;
-  assert.deepEqual(create.args.slice(0, 9), ['issue', 'create', '--repo', 'qus0in/yoroi', '--title', title, '--label', 'letter', '--body-file']);
+  assert.deepEqual(create.args.slice(0, 9), ['issue', 'create', '--repo', 'usagi-ai-kr/yoroi', '--title', title, '--label', 'letter', '--body-file']);
   const comments = h.runner.requests.slice(2, 5);
   assert.deepEqual(comments.map(r => r.args.slice(0, 3)), [['issue', 'comment', '125'], ['issue', 'comment', '125'], ['issue', 'comment', '125']]);
   assert.ok(comments.every(r => r.args.includes('--body-file')), '댓글은 body-file로 단다');
   assert.deepEqual(h.bodies.slice(0, 4), ['# letter', 'c1', 'c2', 'c3'], '본문·댓글 순서 그대로 기록');
   assert.deepEqual(h.runner.requests.slice(6).map(r => r.args.slice(0, 3)), [
     ['issue', 'comment', '115'], ['issue', 'close', '115'], ['issue', 'comment', '123'], ['issue', 'close', '123']]);
-  assert.ok(h.runner.requests[6]!.args.includes('후속 레터 [#125](https://github.com/qus0in/yoroi/issues/125) 발행으로 종료합니다.'));
+  assert.ok(h.runner.requests[6]!.args.includes('후속 레터 [#125](https://github.com/usagi-ai-kr/yoroi/issues/125) 발행으로 종료합니다.'));
   assert.ok(h.runner.requests.every(r => r.executable === 'gh-test' && r.timeoutMs === 30_000));
-  assert.deepEqual(h.stdout, ['published #125 https://github.com/qus0in/yoroi/issues/125 2026-10-13 09:00 KST\n']);
+  assert.deepEqual(h.stdout, ['published #125 https://github.com/usagi-ai-kr/yoroi/issues/125 2026-10-13 09:00 KST\n']);
 });
 
 test('dry-run reports close targets and comments=3 without invoking any GitHub write', async () => {

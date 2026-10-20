@@ -29,6 +29,8 @@
 - `concurrency: group: letter-publish`, `cancel-in-progress: false` → 겹친 실행은 취소하지 않고 **순차 대기**한다.
 - 앱 내부 중복 방지: 당일 제목(`[letter] YYYY-MM-DD AI 인사이트 레터`)이 있으면 본문을 새로 만들지 않고,
   댓글 3개가 완결돼 있으면 `skip: already published #N`, 일부만 있으면 누락 댓글만 복원 게시한다.
+- **발행 대상 저장소는 canonical `usagi-ai-kr/yoroi`다**(중복 검사·댓글·close·복구 모두 이 곳). 저장소 이동 전 주소
+  `qus0in/yoroi`는 gh 가 리다이렉트로 돌려주는 URL 파싱·검증에만 허용하며 발행 대상이 아니다.
 - 이전 open 레터는 새 발행 뒤에 순차 close한다(workflow 권한 밖의 쓰기는 하지 않는다).
 
 ## 4. 알려진 한계 — 새 러너는 상태가 비영속이다

@@ -23,7 +23,7 @@ const withTemp = async (run: (dir: string) => Promise<void>): Promise<void> => {
 for (const [name, created] of [
   ['other repo', 'https://github.com/other/repo/issues/9\n'],
   ['non-github output', 'created #9 (no url)\n'],
-  ['multi output other-first', 'see https://github.com/other/repo/issues/9 then https://github.com/qus0in/yoroi/issues/193\n'],
+  ['multi output other-first', 'see https://github.com/other/repo/issues/9 then https://github.com/usagi-ai-kr/yoroi/issues/193\n'],
 ] as const) {
   test(`F1: create output ${name} fails closed without posting`, async () => {
     const commented: string[] = [];
@@ -53,7 +53,7 @@ test('F2: body mismatch refuses recovery with issue left open', async () => {
       if (req.args.includes('comment')) { posts++; return { stdout: 'ok', stderr: '', exitCode: 0 }; }
       return { stdout: JSON.stringify({ comments: [] }), stderr: '', exitCode: 0 };
     });
-    const r = await recoverMissingLetterComments(runner, 'gh', 192, '[letter] t', files, 'qus0in/yoroi', undefined, 'new body');
+    const r = await recoverMissingLetterComments(runner, 'gh', 192, '[letter] t', files, 'usagi-ai-kr/yoroi', undefined, 'new body');
     assert.equal(r.status, 'failed');
     assert.equal(posts, 0);
   });
@@ -69,9 +69,27 @@ test('F2: unrelated existing comments do not skip missing ones, no duplicates', 
       if (req.args.includes('comment')) { posted.push(req.args[req.args.indexOf('--body-file') + 1]!); return { stdout: 'ok', stderr: '', exitCode: 0 }; }
       return { stdout: '', stderr: '', exitCode: 0 };
     });
-    const r = await recoverMissingLetterComments(runner, 'gh', 192, '[letter] t', files, 'qus0in/yoroi', undefined, 'B');
+    const r = await recoverMissingLetterComments(runner, 'gh', 192, '[letter] t', files, 'usagi-ai-kr/yoroi', undefined, 'B');
     assert.equal(r.status, 'recovered');
     assert.equal(r.recoveredCount, 2);
     assert.deepEqual(posted.map(f => f.endsWith('c2.md') ? 'c2' : 'c3').sort(), ['c2', 'c3']);
   });
+});
+
+test('중복 검사는 canonical 저장소를 조회하고 오늘 레터를 감지한다', async () => {
+  const calls: string[][] = [];
+  const runner = new MockRunner(req => {
+    calls.push([...req.args]);
+    if (req.args.includes('--search')) {
+      return { stdout: JSON.stringify([{ number: 192, title: '[letter] 2026-10-20 AI 인사이트 레터' }]), stderr: '', exitCode: 0 };
+    }
+    return { stdout: '', stderr: '', exitCode: 0 };
+  });
+  const out: string[] = [], err: string[] = [];
+  const code = await publishInsightsLetter({ runner, render: async () => ({ body: '# letter', comments: ['c1', 'c2', 'c3'] }) as LetterParts,
+    clock: () => new Date('2026-10-20T09:30:00+09:00').getTime() }, { stdout: s => out.push(s), stderr: s => err.push(s) });
+  assert.equal(code, 0);
+  const list = calls.find(args => args.includes('--search'))!;
+  assert.equal(list[list.indexOf('--repo') + 1], 'usagi-ai-kr/yoroi', '중복 조회는 canonical 저장소를 본다');
+  assert.deepEqual(out, ['skip: already published #192\n'], '오늘 레터가 감지된다');
 });

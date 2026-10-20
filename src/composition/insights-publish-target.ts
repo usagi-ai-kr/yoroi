@@ -1,6 +1,9 @@
 import type { ProcessRunner } from '../infra/process-port.js';
 
-export const DEFAULT_REPO = 'qus0in/yoroi';
+/** 실제 저장소(저장소 이동 후 canonical). 중복 검사·댓글·close·복구가 전부 이 곳을 대상으로 한다. */
+export const DEFAULT_REPO = 'usagi-ai-kr/yoroi';
+/** 저장소 이동 전 주소. gh 가 리다이렉트로 돌려주는 URL 파싱·검증에만 허용한다(발행 대상 아님). */
+export const LEGACY_REPO = 'qus0in/yoroi';
 export const TIMEOUT_MS = 30_000;
 export type Issue = { readonly number: number; readonly title: string };
 
@@ -28,7 +31,7 @@ export function extractIssueUrlAndNumber(output: string): ExtractedIssue | undef
 
 export function isCanonicalOrRedirectRepo(repo: string): boolean {
   const norm = repo.toLowerCase();
-  return norm === 'qus0in/yoroi' || norm === 'usagi-ai-kr/yoroi';
+  return norm === LEGACY_REPO || norm === DEFAULT_REPO;
 }
 
 export async function gh(runner: ProcessRunner, bin: string, args: readonly string[], signal?: AbortSignal) {

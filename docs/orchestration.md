@@ -61,7 +61,7 @@ git/gh 단일 조작(PR 생성·CI 확인·위임된 머지)은 직접 한다. *
   사용자에게 전달하고 가능한 기존 워커에 재배정한다. 비밀값은 이슈·로그·커밋에 노출하지 않는다.
 - memo 이슈는 사람 전용으로 수정·생성·라벨 부착·close하지 않는다.
 - 중단 시 새 작업을 시작하지 않고 해당 작업의 워커·백그라운드 실행에 중단을 전파한다.
-- 임시 체크포인트는 `/tmp/yoroi-handoff.md`에 만든다(`stop_checkpoint.py create`). 기존 파일은 덮어쓰지 않고 새 이름 또는 사용자 확인 후 `--force`를 쓴다.
+- 임시 체크포인트는 레포 `tmp/`(gitignore, `.gitkeep`만 추적)에 만든다(`stop_checkpoint.py create tmp/stop-checkpoint-<날짜>.md`). docs/에 만들지 않는다. 기존 파일은 덮어쓰지 않고 새 이름 또는 사용자 확인 후 `--force`를 쓴다.
 - [session-handoff.md](session-handoff.md)는 커밋되는 인수인계다. 다음 세션에 필요한 결정·남은 작업만 옮긴다.
 - 체크포인트의 `재개 금지`는 사용자 명시 재개 요청까지 유효하다. 재개 시 현재 요청 범위만 수행한다.
 

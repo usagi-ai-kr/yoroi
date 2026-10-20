@@ -4,4 +4,6 @@
 * [Worker Operations](Worker-Operations)
 * [Usage Cache and Zen Free](Usage-Cache-and-Zen-Free)
 * [Detect](Detect)
+* [Insights Letter](Insights-Letter)
+* [Experimental Features](Experimental-Features)
 * [Checks and Troubleshooting](Checks-and-Troubleshooting)

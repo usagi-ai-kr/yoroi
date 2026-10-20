@@ -7,11 +7,11 @@
 | OpenCode Go | 공식 Go usage API | `YOROI_OPENCODE_GO_API_KEY` |
 | AGY | `agy -p /usage` | AGY CLI가 관리하는 세션 인증 |
 | Claude | OAuth usage GET | 명시 OAuth 변수 또는 실행 계정의 기존 프로필 |
-| xAI | Grok CLI billing API (opt-in) | 로컬 OpenCode OAuth 자격 (`opencode.db` / `auth.json`) |
+| xAI | Grok CLI billing API | 로컬 OpenCode OAuth 자격 (`opencode.db` / `auth.json`) |
 
 ## 환경 변수와 프로필
 
-- `YOROI_PROVIDERS`: 선택할 공급자 ID 목록. 생략하면 기본 다섯 개(`ollama-pro,opencode-go,codex,agy,claude`)를 조회합니다. xAI는 기본에서 제외되며 `YOROI_PROVIDERS=xai`(또는 목록에 포함)로 명시 opt-in 시에만 조회합니다.
+- `YOROI_PROVIDERS`: 선택할 공급자 ID 목록. 생략하면 기본 여섯 개(`ollama-pro,opencode-go,codex,agy,claude,xai`)를 조회합니다.
 - `YOROI_TIMEOUT_MS`: 전체 기본 timeout(기본 10000ms). `YOROI_<공급자>_TIMEOUT_MS`로 개별 조정합니다.
 - `YOROI_DEBUG=1`이면 읽은 `.env` 경로만 표시합니다.
 - `YOROI_CODEX_PATH`, `YOROI_AGY_PATH`: 실행 파일 경로를 지정할 때 사용합니다.

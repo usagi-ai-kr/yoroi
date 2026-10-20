@@ -1,7 +1,8 @@
 import { FREE_EMPTY_NOTE, FREE_HEADING } from './letter-markdown-free.js';
-import { FREE_TABLE_HEADER } from './letter-markdown-free-table.js';
+import { FREE_TABLE_HEADERS } from './letter-markdown-free-table.js';
 
-const headerLines = FREE_TABLE_HEADER.split('\n');
+// #196: 작업 가능성 열은 조건부 표시되므로 헤더 2종을 모두 인정한다.
+const headerLines = FREE_TABLE_HEADERS.flatMap(header => header.split('\n'));
 
 /** p85 잔재 가드: 레터 body의 Free 섹션이 실제 데이터 행을 갖는지 본다.
  *  사유 문자열은 발행 전 디버깅용이며 표시 문구와 문서 문자열을 다시 만들지 않는다. */

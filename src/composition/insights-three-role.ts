@@ -21,7 +21,7 @@ export function buildThreeRole(
   const w = isObj && opt.worker ? opt.worker : o;
 
   if (isObj && opt.reviewer) {
-    return runThreeRolePipeline({
+    const out = runThreeRolePipeline({
       orchestrator: o,
       reviewer: opt.reviewer,
       worker: w,
@@ -32,6 +32,12 @@ export function buildThreeRole(
         ...(opt.options ?? {}),
       },
     });
+    // #195 리뷰 F3: 명시적 reviewer 경로에서도 리뷰어가 비면 사유를 남긴다(미확인이라고 날조하지 않음).
+    if ((out.selection?.reviewer.all.length ?? 0) > 0) return out;
+    const provided = opt.reviewer.length;
+    return { ...out, emptyCause: provided === 0
+      ? 'no reviewer candidates provided (explicit input)'
+      : 'no reviewer candidate assigned after orchestrator/reviewer alternation and reviewer policy' };
   }
 
   const revOutcome = buildReviewerCandidates(run?.top10);

@@ -24,9 +24,10 @@
 ## 3. 전달 배선 완료 (소유 확장)
 
 - `src/composition/insights-cli.ts` 소유가 이 워커로 확장되어 실제 경로에 연결했다.
-  - publish: `insights-cli.ts:59-60` — `renderLetterPartsFromRecords` 결과 뒤 `outcome.threeRole?.sections`가 있으면
-    `replaceLegacyRoleBlocks(parts.body, sections)`로 **본문 역할 블록을 대체**하고 댓글 3개(`parts.comments`)는 그대로 둔다.
-  - once: `insights-cli.ts:80` — view에 `threeRoleSections`를 실어 `insights-command.ts:50`에서 stdout을 대체한다.
+  - publish: `insights-cli.ts:70-73` — `renderLetterPartsFromRecords` 결과 뒤 `outcome.threeRole?.sections`가 있으면
+    `replaceLegacyRoleBlocks(parts.body, sections)`로 **본문 역할 블록을 대체**하고, 댓글은 `composeThreeRoleComments`로
+    **같은 selection**에서 `[오케 Top15, 리뷰어 Top15, 워커 Top15 + Free]`로 매핑한다(기본 off면 댓글 3개 그대로).
+  - once: `insights-cli.ts:91-96` — view에 `threeRoleSections`를 실어 `insights-command.ts:50`에서 stdout을 대체한다.
 
 ## 3-1. 이중출력 방지 설계 (기존 role block 대체)
 
@@ -34,8 +35,10 @@
 - 그래서 `src/insights/letter-three-role-body.ts`(신규)가 **기존 2역할 블록을 잘라내고 그 자리에 3역할 블록을 넣는다**:
   `## 🧭 오케스트레이터·리뷰어…`·`## 🛠️ 워커·메신저…` 제목부터 다음 `## ` 직전까지를 제거하고
   `## 🧭 3역할 후보 (opt-in)` 블록(오케·리뷰어·워커 3섹션)을 삽입한다.
-- 소비 경로는 **1개**: 본문(o/r/w)만 쓰고 댓글 3개(오케 Top15·워커 Top15·Free)는 그대로 둔다(전체 markdown 동시 사용 금지).
-- 제목·표시 안내·Free·댓글 3개 계약은 건드리지 않는다.
+- 소비 경로는 **1개**: 본문은 3역할 블록(o/r/w) 하나만 쓴다(전체 markdown 동시 사용 금지).
+  댓글은 opt-in 시 같은 selection에서 `[오케 Top15, 리뷰어 Top15, 워커 Top15 + Free]` 3개를 만들고,
+  기본 off에서는 기존 댓글 3개(오케 Top15·워커 Top15·Free)를 그대로 둔다.
+- 제목·표시 안내·Free 표시 규칙은 건드리지 않는다(댓글 수 3개 계약 유지).
 
 ## 3-2. 리뷰어 차원 근거 연동 완료 (blocker 해소)
 
@@ -50,7 +53,21 @@
 - `tests/insights-reviewer-composition.test.ts` 5건: 전체 풀 보존, 3차원 가중치 순위 변동, 결측 분리, `buildThreeRole` opt-in 통합 및 emptyCause 확인.
 - 전체 typecheck 및 validate-repo 통과.
 
-## 5. 남은 범위
+## 5. 댓글 매핑·품질 기준·운영 예시 (#195 후속)
+
+- 댓글 매핑 (opt-in, 3개 계약 유지): `[c1 오케 Top15, c2 리뷰어 Top15, c3 워커 Top15 + Free]`.
+  세 댓글은 **같은 selection**(`threeRole.selection.top15`)에서 뽑는다 — 본문 Top7은 같은 selection의 앞 7개라
+  본문/댓글 선발 결과가 갈리지 않는다(#195 "본문/댓글에서 서로 다른 선발 결과를 사용하지 않는다").
+  기본 off면 댓글 3개는 기존대로(오케 Top15·워커 Top15·Free) 둔다.
+  계약 테스트: `tests/insights-reviewer-comment-contract.test.ts`(매핑·Free 원문·off 동일성·empty 사유).
+- 품질 기준: blend는 3차원 완비 후보만 사용. 일부 결측은 `excluded`에 사유 표기,
+  전부 결측은 빈 reviewer + `emptyCause`. score-only를 확정 가중치 결과로 전달 금지.
+  가격은 반전 정규화 (저비용 고득점), 모집단은 실행 내 reviewer 집합.
+- 운영 예시: `YOROI_LETTER_THREE_ROLE=on yoroi insights once --pretty` (미리보기),
+  `YOROI_LETTER_THREE_ROLE_DEPTH=15` (Top15 섹션). 발행은 동일 env로
+  `yoroi insights publish --dry-run` 확인 후 수행. 기본 off가 기본값이다.
+
+## 6. 남은 범위
 
 1. #195 최종 통합 검증(전체 `pnpm run check`) 및 w1 독립 리뷰 통과 후 dev 커밋.
 2. 실제 Actions 자동 발행 전환(#194) 및 파일럿 운영은 사용자 지시/머지 후 단계에서 확인.

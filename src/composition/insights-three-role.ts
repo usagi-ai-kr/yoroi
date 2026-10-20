@@ -1,6 +1,7 @@
 import type { InsightRunResult } from '../insights/run-once.js';
 import { runThreeRolePipeline, type ThreeRolePipelineInput, type ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
 import { buildReviewerCandidates } from './insights-reviewer-candidates.js';
+import { computeRoleTop10, type RoleList } from '../insights/letter-top10-unified.js';
 
 /** InsightRunResult의 전체 풀 근거를 활용하여 3역할(오케스트레이터·리뷰어·워커) 파이프라인을 합성한다.
  *  리뷰어 후보는 toReviewerCandidates를 통해 3차원 정규 증거가 완비된 후보만 선별하며,
@@ -17,8 +18,21 @@ export function buildThreeRole(
     modelId: r.modelId,
     ...(typeof r.value === 'number' && { score: r.value }),
   });
-  const o = isObj && opt.orchestrator ? opt.orchestrator : (recs?.map(toCand) ?? []);
-  const w = isObj && opt.worker ? opt.worker : o;
+  // #194 order 핫픽스: 3역할 후보는 원시 AA 행이 아니라 **computeRoleTop10 의 최종 ranked entries** 를 쓴다.
+  // (본문 Top10 요약과 3역할 표의 선두가 같은 모델이 되도록. 실패 시에만 원시 행으로 물러난다.)
+  const ranked = (() => {
+    if (!run?.top10) return undefined;
+    try { return computeRoleTop10(run.top10.records, { ...run.top10 }); }
+    catch { return undefined; }
+  })();
+  const fromRanked = (list: RoleList | undefined) => list?.entries.map(e => ({
+    modelId: e.modelId, ...(e.rawScore !== undefined && { score: e.rawScore }),
+    effort: e.repEffort, isPareto: e.isPareto, rank: e.rank }));
+  // ranked 목록이 비어 있으면(카탈로그 접근 가능 후보 없음)만 원시 행으로 물러난다.
+  const oRanked = ranked ? fromRanked(ranked.orchestrator) ?? [] : [];
+  const wRanked = ranked ? fromRanked(ranked.worker) ?? [] : [];
+  const o = isObj && opt.orchestrator ? opt.orchestrator : (oRanked.length ? oRanked : (recs?.map(toCand) ?? []));
+  const w = isObj && opt.worker ? opt.worker : (wRanked.length ? wRanked : o);
 
   if (isObj && opt.reviewer) {
     const out = runThreeRolePipeline({

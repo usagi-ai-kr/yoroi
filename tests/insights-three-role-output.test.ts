@@ -5,6 +5,9 @@ import type { ProcessOutput, ProcessRequest, ProcessRunner } from '../src/infra/
 import { letterThreeRoleConfig } from '../src/config/letter-three-role.js';
 import { publishInsightsLetter } from '../src/composition/insights-publish.js';
 import { hasLegacyRoleBlocks, replaceLegacyRoleBlocks, THREE_ROLE_HEADING } from '../src/insights/letter-three-role-body.js';
+import { buildThreeRole } from '../src/composition/insights-three-role.js';
+import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
+import type { InsightRunResult } from '../src/insights/run-once.js';
 import { renderLetterPartsFromRecords } from '../src/insights/letter-markdown.js';
 import type { LetterParts } from '../src/insights/letter-markdown.js';
 
@@ -60,10 +63,28 @@ test('opt-in: 기존 2역할 블록을 대체해 3역할이 한 번만 나오고
     { stdout: s => out.push(s), stderr: s => err.push(s) });
   assert.equal(code, 0);
   const text = bodyOf(runner);
-  assert.equal((text.match(/3역할 후보/g) ?? []).length, 1, '3역할 블록은 1회만');
+  assert.ok(!text.includes('3역할 후보'), '발행 본문에는 내부용 3역할 머리글을 남기지 않는다');
+  assert.equal((text.match(/## O section/g) ?? []).length, 1, '3역할 섹션은 1회만');
   assert.equal(hasLegacyRoleBlocks(text), false, '기존 2역할 블록은 대체됨(이중출력 없음)');
   for (const marker of ['## O section', '## R section', '## W section']) assert.ok(text.includes(marker), marker);
   const comments = runner.requests.filter(r => r.args.includes('comment'));
   assert.equal(comments.length, 3, '댓글 3개 계약 유지');
   for (const c of comments) assert.ok(!c.args.includes('3역할'), '댓글 경로에는 넣지 않는다(경로 1개)');
+});
+
+test('#194 order 핫픽스: 3역할 후보는 최종 ranked entries 순서를 따른다', () => {
+  const records = [
+    { modelId: 'space-bunny', metric: 'artificial_analysis_intelligence_index', value: 10 },
+    { modelId: 'kimi-k3', metric: 'artificial_analysis_intelligence_index', value: 90 },
+    { modelId: 'space-bunny', metric: 'artificial_analysis_coding_index', value: 20 },
+    { modelId: 'kimi-k3', metric: 'artificial_analysis_coding_index', value: 95 }];
+  const ranked = computeRoleTop10(records, {});
+  const run = { top10: { records, openrouterRecords: [], failedSources: [], previousRanks: [] } } as unknown as InsightRunResult;
+  const out = buildThreeRole(true, run);
+  const sel = out!.selection!;
+  assert.deepEqual(sel.orchestrator.all.map(c => c.modelId), ranked.orchestrator.entries.map(e => e.modelId), '오케스트레이터 = ranked entries');
+  assert.deepEqual(sel.worker.all.map(c => c.modelId), ranked.worker.entries.map(e => e.modelId), '워커 = ranked entries');
+  assert.equal(sel.orchestrator.all[0]!.modelId, 'kimi-k3', '선두는 ranked 1위(본문 요약과 동일)');
+  assert.notEqual(sel.orchestrator.all[0]!.modelId, records[0]!.modelId, 'records 순서를 따르지 않는다');
+  assert.equal(sel.orchestrator.all[0]!.score, ranked.orchestrator.entries[0]!.rawScore, 'score = rawScore');
 });

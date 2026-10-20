@@ -5,6 +5,7 @@ import { PRICE_MISSING_VALUE, DIMENSION_LABELS, ROLE_DIMENSIONS, ROLE_DIMENSION_
 import { WORKER_BONUS_CAP } from '../src/insights/letter-top10-score-weights.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
+import { UNCONSTRAINED_AVAILABILITY } from '../src/insights/letter-effort-availability.js';
 
 /** R(1.2.1) 오케 0.75/0/0.10/0.15, 워커 .30/.20/.10/.40+가산. */
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
@@ -32,7 +33,7 @@ test('worker price falls back to blended cost with a mark when cpt and total are
     rec('w-y', INTEL, 70), rec('w-y', TPS, 120),
     { modelId: 'w-y', metric: INTEL, value: 70, priceInput: 0.5, priceOutput: 0.5 },
     { modelId: 'w-y', metric: CPT, value: 0.2 }];
-  const lists = computeRoleTop10(records, { catalog: catalogOf(['w-x', 'w-y']) });
+  const lists = computeRoleTop10(records, { catalog: catalogOf(['w-x', 'w-y']), effortAvailability: UNCONSTRAINED_AVAILABILITY});
   const at = (id: string) => lists.worker.entries.find(x => x.modelId === id)!;
   // w-x: cpt·total 없음 → 혼합 단가 대체 + priceFallback. w-y: cpt만 있어 대체 없음.
   assert.deepEqual([at('w-x').scoreComponents?.priceFallback, at('w-x').scoreComponents?.dimensionSources?.price], [true, 'aa']);
@@ -49,7 +50,7 @@ test('worker p85: intel performance, raw floor 33, price mean(cpt,total), capped
     rec('w-nointel', CODE, 90), rec('w-nointel', TPS, 100)];
   const cognitionRecords = [cog('w-a', 'cognition_correct', 0.8)];
   const openrouterRecords = [{ modelId: 'w-a', metric: 'total_tokens', value: 1000 }, { modelId: 'w-b', metric: 'total_tokens', value: 10 }];
-  const lists = computeRoleTop10(records, { catalog: catalogOf(['w-a', 'w-b', 'w-weak', 'w-nointel']), cognitionRecords, openrouterRecords });
+  const lists = computeRoleTop10(records, { catalog: catalogOf(['w-a', 'w-b', 'w-weak', 'w-nointel']), cognitionRecords, openrouterRecords, effortAvailability: UNCONSTRAINED_AVAILABILITY});
   const w = lists.worker.entries, at = (id: string) => w.find(x => x.modelId === id)!;
   // w-weak(intel 20 < 33)와 w-nointel(intel 없음)은 후보에서 제외된다. 오케에는 하한이 없어 w-weak이 남는다.
   assert.deepEqual(w.map(x => x.modelId).sort(), ['w-a', 'w-b']);
@@ -66,7 +67,7 @@ test('worker p85: intel performance, raw floor 33, price mean(cpt,total), capped
 
 test('orchestrator price dimension moves the score: same intel, cheaper wins via linear value (R)', () => {
   const records = [aa('o-cheap', INTEL, 80, 1), aa('o-dear', INTEL, 80, 9)];
-  const run = (rs: Top10RecordInput[]) => computeRoleTop10(rs, { catalog: catalogOf(['o-cheap', 'o-dear']) }).orchestrator.entries;
+  const run = (rs: Top10RecordInput[]) => computeRoleTop10(rs, { catalog: catalogOf(['o-cheap', 'o-dear']), effortAvailability: UNCONSTRAINED_AVAILABILITY}).orchestrator.entries;
   const at = (id: string) => run(records).find(x => x.modelId === id)!, c = (id: string) => at(id).scoreComponents!;
   // orchValue cheap=80/1.01, dear=80/9.01 → log10 min-max 1 vs 0. usage는 0 가중치.
   // cheap: 75×1 + 15×1 = 90.0, dear: 75×1 + 15×0 = 75.0.
@@ -79,9 +80,9 @@ test('orchestrator price dimension moves the score: same intel, cheaper wins via
 });
 
 test('speed falls back between role definitions while preserving AA priority', () => {
-  const oo = computeRoleTop10([aa('oa-high', INTEL, 70), aa('oa-low', TPS, 100), aa('ob-high', INTEL, 80), aa('ob-high', TPS, 200)], { catalog: catalogOf(['oa', 'ob']) }).orchestrator.entries.find(e => e.modelId === 'oa')!;
+  const oo = computeRoleTop10([aa('oa-high', INTEL, 70), aa('oa-low', TPS, 100), aa('ob-high', INTEL, 80), aa('ob-high', TPS, 200)], { catalog: catalogOf(['oa', 'ob']), effortAvailability: UNCONSTRAINED_AVAILABILITY}).orchestrator.entries.find(e => e.modelId === 'oa')!;
   assert.ok(oo.scoreComponents?.sources?.['speed:aa'] !== undefined);
-  const ww = computeRoleTop10([aa('wa', INTEL, 60), aa('wb', INTEL, 70), aa('wc', INTEL, 80), aa('wc', TPS, 300)], { catalog: catalogOf(['wa', 'wb', 'wc']), cognitionRecords: [cog('wa', 'cognition_duration_min', 40), cog('wb', 'cognition_duration_min', 20)] }).worker.entries;
+  const ww = computeRoleTop10([aa('wa', INTEL, 60), aa('wb', INTEL, 70), aa('wc', INTEL, 80), aa('wc', TPS, 300)], { catalog: catalogOf(['wa', 'wb', 'wc']), cognitionRecords: [cog('wa', 'cognition_duration_min', 40), cog('wb', 'cognition_duration_min', 20)], effortAvailability: UNCONSTRAINED_AVAILABILITY}).worker.entries;
   const a = ww.find(e => e.modelId === 'wa')!, b = ww.find(e => e.modelId === 'wb')!, c = ww.find(e => e.modelId === 'wc')!;
   assert.deepEqual([a.scoreComponents?.sources?.['speed:cognition'], a.scoreComponents?.dimensionSources?.speed], [0, 'cognition']);
   assert.deepEqual([b.scoreComponents?.sources?.['speed:cognition'], b.scoreComponents?.dimensionSources?.speed], [1, 'cognition']);

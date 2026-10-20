@@ -4,7 +4,7 @@ import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 import * as scoreModule from '../src/insights/letter-top10-score.js';
 import { PRICE_MISSING, ROLE_WEIGHTS, referenceDimensions, type DimRow } from './helpers/dimension-reference.js';
-
+import { UNCONSTRAINED_AVAILABILITY } from '../src/insights/letter-effort-availability.js';
 const IQ = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
 const COG = 'cognition_correct', COST = 'cognition_cost', DUR = 'cognition_duration_min', OR = 'total_tokens', OC = 'opencode_data_tokens'; type Role = 'orchestrator' | 'worker';
 const row = (modelId: string, metric: string, value: number, price?: [number, number]): DimRow => ({ modelId, metric, value, ...(price && { priceInput: price[0], priceOutput: price[1] }) });
@@ -17,12 +17,11 @@ const EVIDENCE = new Set([COG, COST, DUR, OR, OC]);
 function run(rows: readonly DimRow[], paid: readonly string[], free: readonly string[] = [], role: Role = 'orchestrator') {
   const pick = (m: string[]) => rows.filter(r => m.includes(r.metric!)), aa = rows.filter(r => !EVIDENCE.has(r.metric!));
   const opts = { catalog: [plan('paid', paid)], freeCatalog: free.length ? [plan('zfree', free, 'free')] : [], cognitionRecords: pick([COG, COST, DUR]), openrouterRecords: pick([OR]), opencodeDataRecords: pick([OC]) };
-  const list = computeRoleTop10(aa, opts)[role], ref = referenceDimensions(rows, role, new Set(free), ROLE_W[role]);
+  const list = computeRoleTop10(aa, { ...opts, effortAvailability: UNCONSTRAINED_AVAILABILITY })[role], ref = referenceDimensions(rows, role, new Set(free), ROLE_W[role]);
   return { list, ref, byId: new Map(list.entries.map(e => [e.modelId, e])), refBy: new Map(ref.map(r => [r.modelId, r])) };
 }
 const W = ROLE_W.orchestrator, score = (e?: { scoreText?: string; rawScore?: number }) => Number(e?.rawScore ?? e?.scoreText); // raw 계약 검증
 const near = (a: number, b: number, msg = '') => assert.ok(Math.abs(a - b) <= 0.051, `${msg} ${a} vs ${b}`);
-
 test('오케 OR·OCD 사용량은 점수에 반영하지 않고 후보 근거로만 유지한다', () => {
   const rows = [row('alpha', IQ, 80), row('bravo', IQ, 40), row('charlie', OR, 1e9), row('delta', OR, 1e6)];
   const { byId } = run(rows, ['alpha', 'bravo', 'charlie', 'delta']); near(score(byId.get('alpha')), 100*W.performance);

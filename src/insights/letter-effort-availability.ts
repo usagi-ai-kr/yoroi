@@ -14,7 +14,9 @@ export interface EffortAvailabilityProfile {
   /** 표기 키(alias) → caps·unverifiedApproximate 키 매핑. 양쪽 모두 정규화된 이름으로 쓴다. */
   readonly aliases?: Readonly<Record<string, string>>;
 }
-export interface EffortAvailability { readonly activeProfile?: string; readonly profiles?: Readonly<Record<string, EffortAvailabilityProfile>> }
+export interface EffortAvailability { readonly activeProfile?: string; readonly profiles?: Readonly<Record<string, EffortAvailabilityProfile>>;
+  /** 환경변수 미지정 시 활성화할 기본 프로필(설정 파일 선언). */
+  readonly defaultProfile?: string }
 export type AvailabilityMode = 'capped' | 'unverified' | 'unlisted';
 export interface AvailabilityState { readonly mode: AvailabilityMode; readonly cap?: string; readonly profile?: string; readonly observedAt?: string }
 export const EFFORT_AVAILABILITY_PATH = resolve(packageRootFrom(import.meta.url), 'config/effort-availability.json');
@@ -56,7 +58,8 @@ export function loadEffortAvailability(path: string = EFFORT_AVAILABILITY_PATH):
   const raw = JSON.parse(readFileSync(path, 'utf8')) as EffortAvailability;
   for (const profile of Object.values(raw.profiles ?? {}))
     for (const [model, cap] of Object.entries(profile.caps ?? {})) effortKeyOf(cap, `caps[${model}]`);
-  const selected = process.env[EFFORT_PROFILE_ENV]?.trim();
+  // 환경변수(명시 선택)가 우선, 없으면 설정의 defaultProfile 을 활성화한다.
+  const selected = process.env[EFFORT_PROFILE_ENV]?.trim() || raw.defaultProfile?.trim();
   if (!selected) return raw.profiles ? { profiles: raw.profiles } : {};
   if (raw.profiles?.[selected] === undefined) throw new Error(`Invalid effort availability: 프로필 '${selected}'가 ${path}에 없다`);
   return { activeProfile: selected, profiles: raw.profiles };

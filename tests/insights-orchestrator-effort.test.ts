@@ -4,6 +4,7 @@ import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
 import { orchestratorVariants, type Raw } from '../src/insights/letter-top10-score-raw.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
+import { UNCONSTRAINED_AVAILABILITY } from '../src/insights/letter-effort-availability.js';
 
 /** R(1.2.1): 오케 가중치 75/0/10/15(사용량 제외·선형 가성비), effort 상한 없음. */
 const INTEL = 'artificial_analysis_intelligence_index', CODE = 'artificial_analysis_coding_index', TPS = 'median_output_tokens_per_second';
@@ -16,7 +17,7 @@ const cogCost = (modelId: string, value: number): Top10RecordInput => ({ modelId
 const raw = (aaE: readonly string[], cogE: readonly string[] = []): Raw =>
   ({ aaEffort: new Map(aaE.map(e => [e, 1])), cogEffort: new Map(cogE.map(e => [e, 0.5])) });
 const orch = (records: Top10RecordInput[], ids: string[], cognitionRecords: Top10RecordInput[] = []) =>
-  computeRoleTop10(records, { catalog: catalogOf(ids), cognitionRecords }).orchestrator.entries;
+  computeRoleTop10(records, { catalog: catalogOf(ids), cognitionRecords, effortAvailability: UNCONSTRAINED_AVAILABILITY}).orchestrator.entries;
 
 test('variants are the observed performance-source efforts in order; default only when it is the sole observation', () => {
   assert.deepEqual(orchestratorVariants(raw(['max', 'low'], ['medium'])), ['low', 'medium', 'max'], 'max·xhigh 유지(상한 없음, p64)');
@@ -65,7 +66,7 @@ test('a variant uses only its own effort values, sharing base-common values and 
 
 test('worker effort rule is unchanged: best performance effort and base-best AA values', () => {
   const records = [aa('w-a-low', CODE, 60, 1), aa('w-a-high', CODE, 90, 1), aa('w-a-low', INTEL, 60, 1), aa('w-a-high', INTEL, 90, 1), aa('w-b', CODE, 50, 2)];
-  const lists = computeRoleTop10(records, { catalog: catalogOf(['w-a', 'w-b']) });
+  const lists = computeRoleTop10(records, { catalog: catalogOf(['w-a', 'w-b']), effortAvailability: UNCONSTRAINED_AVAILABILITY});
   const wa = lists.worker.entries.find(x => x.modelId === 'w-a')!;
   assert.deepEqual([wa.repEffort, wa.indexText], ['high', '90.0']);
 });

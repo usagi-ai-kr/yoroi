@@ -24,6 +24,8 @@ test('the free section renders one merged table with notes limited to Zen/Go Fre
   const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
   assert.ok(rows.length >= 3 && rows.some(line => /^\| [^|]+ \| ✓ [\d.]+ \| /.test(line)), '오케 통과 행은 ✓ 스코어를 쓴다');
   assert.ok(rows.every(line => /^\| [^|]+ \| (✓ [\d.]+|✗|-) \| (✓ [\d.]+|✗|-) \| (-|[\d.]+) \| (✓|) \| (✓|) \| .+ \|$/.test(line)), section);
+  // #194: Free 표의 모델 열은 표시용으로 '-free' 접미사를 뺀다(내부 id 는 유지).
+  assert.ok(rows.every(line => !line.split('|')[1]!.includes('-free')), 'Free 표 모델 열에 -free 접미사가 없다');
   // 표시 점수는 Free 포함 모집단 정규 순위: step-5 워커 43.3(raw 30.0). AA 지수는 indexText 90.0.
   assert.ok(rows.some(line => /^\| step-5 \| ✓ [\d.]+ \| ✓ 43\.3 \| 90\.0 \| /.test(line)), '표시 보정: step-5 워커 43.3');
   assert.ok(rows.filter(line => /^\| [^|]+ \| - \| - \| /.test(line)).every(line => line.includes('근거 없음')), '두 역할 -는 근거 없음 행에만');

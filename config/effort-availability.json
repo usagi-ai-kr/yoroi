@@ -1,12 +1,11 @@
 {
+  "defaultProfile": "observed-2026-10-19",
   "profiles": {
     "observed-2026-10-19": {
       "observedAt": "2026-10-19",
-      "scope": "사용자 현재 실행 환경 관측치. 모델 전역·제공자 공식 지원 상한이 아니며, YOROI_EFFORT_PROFILE 환경변수로 이 프로필을 명시 선택할 때만 적용된다.",
+      "scope": "사용자 현재 실행 환경 관측치. 모델 전역·제공자 공식 지원 상한이 아니며, YOROI_EFFORT_PROFILE 환경변수로 다른 프로필을 명시 선택할 때만 갈아쓴다.",
       "caps": {
-        "muse-spark-1-3": "xhigh"
-      },
-      "unverifiedApproximate": {
+        "muse-spark-1-3": "xhigh",
         "claude-sonnet-5-5": "high"
       }
     }

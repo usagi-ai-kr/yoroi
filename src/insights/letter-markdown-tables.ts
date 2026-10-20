@@ -6,14 +6,8 @@ import { PARETO_MARK, ROLE_LABELS, dimensionsLabel, changeNote, exitLine, format
 const columns = (role: OptimalZoneRole): string[] => ['순위', '파레토', '모델', '추천 effort', '스코어', dimensionsLabel(role),
   ...(role === 'worker' ? ['가산'] : []), 'AA 지수', '혼합 단가', '변동'];
 const tableHead = (role: OptimalZoneRole): string => `| ${columns(role).join(' | ')} |\n| ${columns(role).map(() => '---').join(' | ')} |`;
-/** #188 추천 effort 표기: (상한)=환경 관측 상한 적용, (미확인)=가용성 미검증(벤치마크 이론값, 선택 가능 보장 없음).
- *  Top7·Top15·compact·Free가 같은 규칙을 쓴다. */
-export const effortCell = (e: RoleEntry): string => {
-  const base = (e.effortAvailability ?? 'unlisted') === 'capped' ? `${e.repEffort}(상한)` : `${e.repEffort}(미확인)`;
-  return e.benchmarkEffort ? `${base}·벤치마크 ${e.benchmarkEffort}` : base;
-};
-export const effortNote = (list: RoleList): string => list.entries.some(e => effortCell(e) !== e.repEffort)
-  ? 'effort 표기: (상한)=관측 상한 적용, (미확인)=가용성 미검증·벤치마크 이론값(선택 가능 보장 없음)' : '';
+/** #194: effort 칸은 plain(high/xhigh/default)만 — (미확인)·(상한)·벤치마크 표기를 화면에서 뺀다. */
+export const effortCell = (e: RoleEntry): string => e.repEffort;
 
 export function renderRoleTable(role: OptimalZoneRole, list: RoleList, heading: string, rowLimit = Infinity, withExits = true): string {
   const rows = list.entries.slice(0, rowLimit).map(e => {
@@ -22,8 +16,8 @@ export function renderRoleTable(role: OptimalZoneRole, list: RoleList, heading: 
       ...(role === 'worker' ? [bonusText(e, role)] : []), e.indexText, `${e.blendedCostText}${e.offPeak ? ' off-peak' : ''}`, formatChange(e.change)];
     return `| ${cells.join(' | ')} |`;
   });
-  const exits = withExits ? list.exits.map(x => exitLine(x.modelId, x.previousRank)) : [], note = effortNote(list);
-  return [`${heading}\n\n${tableHead(role)}`, ...rows, ...(exits.length ? ['', ...exits] : []), ...(note ? ['', `> ${note}`] : [])].join('\n');
+  const exits = withExits ? list.exits.map(x => exitLine(x.modelId, x.previousRank)) : [];
+  return [`${heading}\n\n${tableHead(role)}`, ...rows, ...(exits.length ? ['', ...exits] : [])].join('\n');
 }
 export function summarizeLists(lists: RoleLists): string {
   const o = lists.orchestrator.entries[0], w = lists.worker.entries[0];

@@ -4,6 +4,7 @@ import { LEGEND_HEADING, LEGEND_LINES, bonusSuffix, bonusText, changeNote, dimen
 import { renderTop10Markdown } from '../src/insights/letter-markdown.js';
 import { renderTop10Letter } from '../src/insights/letter-top10-render.js';
 import type { RoleChange, RoleEntry, RoleLists } from '../src/insights/letter-top10-unified.js';
+import { UNCONSTRAINED_AVAILABILITY } from '../src/insights/letter-effort-availability.js';
 
 const entry = (e: Partial<RoleEntry> & Pick<RoleEntry, 'rank' | 'modelId' | 'indexText' | 'change'>): RoleEntry =>
   ({ repEffort: 'high', blendedCostText: '$1.50', scoreText: (100 - e.rank).toFixed(1),
@@ -66,7 +67,8 @@ test('markdown worker table adds a 가산 column and * marker; orchestrator show
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists: custom, failedSources: [] });
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |'));
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/속도/가성비 | AA 지수 | 혼합 단가 | 변동 |'));
-  assert.ok(md.includes('| work-a | high(미확인) | 99.0 | 90/-/60/80* | +3.7 | 72.0 | $1.50 | ▼3 |'), md);
+  assert.ok(md.includes('| work-a | high | 99.0 | 90/-/60/80* | +3.7 | 72.0 | $1.50 | ▼3 |'), md);
+  assert.ok(!md.includes('(미확인)') && !md.includes('(상한)'), 'effort 칸은 plain(미확인·상한 표기 없음)');
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists: custom });
   assert.ok(compact.includes('· 90/-/60/80* 가산 +3.7 · $1.50 ·'), compact);
 });
@@ -88,7 +90,7 @@ test('both renderers place the guide under the two tables, outside the details b
 test('belowZone rows carry ▽ in the rank cell and indexMissing keeps the dash', () => {
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists, failedSources: [] });
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists });
-  assert.ok(md.includes('| ▽ 4 |  | orch-d | high(미확인) | 96.0 | - | - | $1.50 | 🌱 |'), md);
+  assert.ok(md.includes('| ▽ 4 |  | orch-d | high | 96.0 | - | - | $1.50 | 🌱 |'), md);
   assert.ok(compact.includes('▽ 4. orch-d · effort high · 스코어 96.0 · - · $1.50 · 접근 ChatGPT Plus · 🌱'), compact);
   assert.ok(!md.includes('| ▽ 1 |') && !compact.includes('▽ 1.'));
 });

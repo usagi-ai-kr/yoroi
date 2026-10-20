@@ -95,5 +95,6 @@ test('run-once는 하나의 가용성 스냅샷을 previousRanks와 결과 데�
     assert.deepEqual(run.top10?.effortAvailability?.activeProfile, 'observed-2026-10-19', '스냅샷이 결과 데이터로 반환된다');
   } finally { if (prev === undefined) delete process.env.YOROI_EFFORT_PROFILE; else process.env.YOROI_EFFORT_PROFILE = prev; }
   const run = await runInsightsOnce(setup());
-  assert.deepEqual(run.top10?.effortAvailability?.activeProfile, undefined, '선택자 없으면 프로필 비활성(unlisted 기준)');
+  // #194: 선택자가 없으면 설정의 defaultProfile 이 활성화된다(활성 프로필 없음이 아님).
+  assert.deepEqual(run.top10?.effortAvailability?.activeProfile, 'observed-2026-10-19', '선택자 없으면 기본 프로필이 활성화된다');
 });

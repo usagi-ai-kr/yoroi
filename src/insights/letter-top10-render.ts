@@ -19,11 +19,8 @@ const clean = (value: string, limit = 120): string => value
   .replace(/\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|password|secret)\s*[:=]\s*[^\s&]+/gi, '[redacted]')
   .replace(/\b(?:sk-|sk_|hf_|gh[pousr]_)[A-Za-z0-9_-]{4,}/g, '[redacted]').slice(0, limit);
 const NAME_LIMIT = 120, EXIT_LIMIT = 5, FAILURE_LIMIT = 3;
-/** #188 compact 안내: 예산 계약 때문에 짧은 마커(▲=상한, ?=미확인)를 한 번만 쓴다. */
-const COMPACT_EFFORT_NOTE = 'effort 표기: ▲=관측 상한 적용, ?=가용성 미확인(이론값)';
-/** compact 셀: 가용성 모드가 명시된 행만 표기한다(생산 파이프라인은 항상 명시, 수기 입력은 원문 유지). */
-const compactEffort = (e: RoleEntry): string => e.effortAvailability === undefined ? e.repEffort
-  : `${e.repEffort}${e.effortAvailability === 'capped' ? '▲' : '?'}${e.benchmarkEffort ? `→${e.benchmarkEffort}` : ''}`;
+/** #194: compact effort 도 plain(상한·미확인·벤치마크 마커 없음). */
+const compactEffort = (e: RoleEntry): string => e.repEffort;
 
 function section(role: OptimalZoneRole, list: RoleList): string[] {
   const lines = [ROLE_HEADINGS[role]];
@@ -56,7 +53,7 @@ export function renderTop10Letter(data: Top10LetterInput): string {
     ...section('orchestrator', data.lists.orchestrator),
     '',
     ...section('worker', data.lists.worker),
-    ...([...data.lists.orchestrator.entries, ...data.lists.worker.entries].some(e => compactEffort(e) !== e.repEffort) ? [COMPACT_EFFORT_NOTE] : []),
+
     ...renderFreeSectionCompact(data.free, data.freeUnmeasured ?? [], 2),
     '',
     ...LEGEND_LINES,

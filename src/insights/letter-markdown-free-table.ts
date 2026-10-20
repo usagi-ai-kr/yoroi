@@ -56,8 +56,10 @@ export const workabilityCell = (row: FreeRow): string => {
   const cell = calibrationCell(calOf(row));
   return cell === '미검증' ? '' : cell;
 };
+/** #194: Free 표의 모델 열은 표시용으로만 '-free' 접미사를 뗀다(내부 id 는 유지). */
+export const freeDisplayId = (modelId: string): string => modelId.replace(/-free$/, '');
 export const freeMarkdownRows = (rows: readonly FreeRow[], withWorkability = hasMeaningfulWorkability(rows)): string[] => rows.map(row =>
-  `| ${row.modelId} | ${freeCell(row.orchestrator)} | ${freeCell(row.worker)} | ${row.indexText ?? '-'} | ${freePlanCheck(row.plans, FREE_ZEN)} | ${freePlanCheck(row.plans, FREE_GO)} | ${freeNote(row)}${withWorkability ? ` | ${workabilityCell(row)}` : ''} |`);
+  `| ${freeDisplayId(row.modelId)} | ${freeCell(row.orchestrator)} | ${freeCell(row.worker)} | ${row.indexText ?? '-'} | ${freePlanCheck(row.plans, FREE_ZEN)} | ${freePlanCheck(row.plans, FREE_GO)} | ${freeNote(row)}${withWorkability ? ` | ${workabilityCell(row)}` : ''} |`);
 /** #196: compact는 확인된 플랜만 짧게(Zen ✓ / Go ✓). */
 export const freePlanChecksShort = (plans: readonly string[]): string =>
   [freePlanCheck(plans, FREE_ZEN) ? `Zen ✓` : '', freePlanCheck(plans, FREE_GO) ? `Go ✓` : ''].filter(Boolean).join(' ');

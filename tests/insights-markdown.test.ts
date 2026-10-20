@@ -4,7 +4,6 @@ import { escapeShields, renderTop10Markdown, renderTop10MarkdownFromRecords } fr
 import type { RoleEntry, RoleLists } from '../src/insights/letter-markdown.js';
 import { EXCLUSION_NOTE } from '../src/insights/top10-policy.js';
 import { SOURCE_LINES } from '../src/insights/letter-markdown-format.js';
-
 const entry = (e: Partial<RoleEntry> & Pick<RoleEntry, 'rank' | 'modelId' | 'indexText' | 'change'>): RoleEntry =>
   ({ repEffort: 'high', blendedCostText: '$1.50', scoreText: (100 - e.rank).toFixed(1),
     plans: ['ChatGPT Plus'], isPareto: false, both: false, ...e });
@@ -55,11 +54,13 @@ test('renderTop10Markdown renders shields.io badges, emojis, tables, details, le
   const workerHeader = '| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |';
   assert.equal(md.split(orchHeader).length - 1, 2); assert.equal(md.split(workerHeader).length - 1, 2);
   assert.ok(md.includes('| --- | --- | --- | --- | --- | --- | --- | --- |'));
-  assert.ok(md.includes('| 1 | 👍 | provider/orch-model | high(미확인) | 78.4 | - | 85.5 | $1.50 | 🌱 |'));
-  assert.ok(md.includes('| 2 |  | provider/orch-up | default(미확인) | 71.2 | - | 80.0 | $0.50 | ▲2 |'));
-  assert.ok(md.includes('| 3 |  | provider/orch-new | high(미확인) | 97.0 | - | 76.0 | $1.50 | 🆕 |'));
-  assert.ok(md.includes('| 4 |  | provider/orch-hold | high(미확인) | 96.0 | - | 75.0 | $1.50 | ➖ |'));
-  assert.ok(md.includes('| 1 |  | provider/worker-down | default(미확인) | 66.9 | - | - | 75.0 | $0.20 | ▼1 |'));
+  // #194: effort 칸은 plain(high/default)만 — (미확인) 표기 없음.
+  assert.ok(md.includes('| 1 | 👍 | provider/orch-model | high | 78.4 | - | 85.5 | $1.50 | 🌱 |'));
+  assert.ok(md.includes('| 2 |  | provider/orch-up | default | 71.2 | - | 80.0 | $0.50 | ▲2 |'));
+  assert.ok(md.includes('| 3 |  | provider/orch-new | high | 97.0 | - | 76.0 | $1.50 | 🆕 |'));
+  assert.ok(md.includes('| 4 |  | provider/orch-hold | high | 96.0 | - | 75.0 | $1.50 | ➖ |'));
+  assert.ok(md.includes('| 1 |  | provider/worker-down | default | 66.9 | - | - | 75.0 | $0.20 | ▼1 |'));
+  assert.ok(!md.includes('(미확인)') && !md.includes('(상한)'), 'effort 미확인·상한 표기가 출력에 없다');
   assert.ok(md.includes('🚪 이탈: provider/orch-old (전일 5위)'));
 
   assert.ok(md.includes('<details><summary>출처 및 산출 공식</summary>'));

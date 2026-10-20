@@ -20,8 +20,8 @@ function harness(respond: (request: HttpRequest, n: number) => HttpResponse) {
 const of = (url: string, name: string) => new URL(url).searchParams.get(name);
 
 test('the registry holds the four approved ports plus the OpenCode Data internal reference; Vals AI stays excluded', () => {
-  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
-  assert.deepEqual([...harness(() => json({})).ports.keys()], ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition']);
+  assert.deepEqual(INSIGHT_SOURCES.map(e => e.id), ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition', 'arena-coding']);
+  assert.deepEqual([...harness(() => json({})).ports.keys()], ['artificial-analysis', 'openrouter', 'opencode-data', 'cognition', 'arena-coding']);
 });
 test('AA pages are fetched with the key on every request, merged by H3, and the key never appears in URLs or errors', async () => {
   const h = harness(request => { const page = Number(of(request.url, 'page') ?? 1); return json(aaPage(page, 3, `model-${page}`)); });

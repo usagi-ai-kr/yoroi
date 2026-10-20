@@ -55,5 +55,5 @@ export function isNormalizedBenchmarkRecord(value: unknown): value is Normalized
 /** Every known source id; keeps providers closed without widening InsightSource. */
 export function isInsightSource(value: unknown): value is InsightSource {
   return value === 'artificial-analysis' ||
-    value === 'openrouter' || value === 'cognition' || value === 'opencode-data';
+    value === 'openrouter' || value === 'cognition' || value === 'opencode-data' || value === 'arena-coding';
 }

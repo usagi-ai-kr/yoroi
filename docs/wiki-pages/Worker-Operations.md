@@ -32,7 +32,7 @@ yoroi once --pretty
 yoroi once --pretty --full
 ```
 
-표는 `Provider`, `Status`, `Window`, `Usage`, `Reset (KST)` 순서의 열을 사용합니다(Status 내용·각 열 폭은 이전과 같음). `Reset (KST)` 값은 시각 뒤에 남은 시간을 `(6d 18h)`처럼 덧붙이고, reset 시각이 없으면 `-`입니다. 없는 값은 `-`, 오류는 `Status`에 표시합니다. 표 렌더링에는 `cli-table3` 0.6.5와 `picocolors` 1.1.1을 사용합니다. 편의를 위해 `yo`(`yoroi once --pretty`), `yo2`(`yoroi once --pretty --full`) 별칭을 사용할 수 있습니다.
+표는 `Provider`, `Status`, `Window`, `Usage`, `Reset (KST)` 순서의 열을 사용합니다(Status 내용·각 열 폭은 이전과 같음). `Reset (KST)` 값은 시각 뒤에 남은 시간을 `(6d 18h)`처럼 덧붙이고, reset 시각이 없으면 `-`입니다. 없는 값은 `-`, 오류는 `Status`에 표시합니다. 표 렌더링에는 `cli-table3` 0.6.5와 `picocolors` 1.1.1을 사용합니다. `yo`(`yoroi once --pretty`), `yo2`(`yoroi once --pretty --full`) 같은 별칭을 원하면 셸 설정에 직접 등록해 사용할 수 있습니다(설치 스크립트가 만들지 않습니다).
 
 `--pretty`가 없으면 각 window 줄에 `reset_in=6d18h`처럼 관측 시각 기준 남은 시간을 표시합니다. 큰 단위 두 개로 표시하며 1시간 미만은 분만, 이미 지난 reset은 `0m`입니다. 숫자 metric(`percent`, `used`, `limit`, `remaining`)은 plain·pretty 출력에서만 소수점 둘째 자리까지 올림하고 원본 값은 바꾸지 않습니다.
 
@@ -55,18 +55,3 @@ ollama-pro는 plain·pretty 모두 `monthly`·`credits:included`(월간 인정)�
 ## 프로필 운영
 
 서비스나 서버에서 실행할 때도 설치된 공급자 CLI와 인증 저장소는 Yoroi 실행 계정 기준입니다. 대화형 로그인이 필요한 경우 별도 터미널에서 해당 공급자 절차를 완료한 뒤 `once`로 확인합니다.
-
-## 워커 협업 패킷과 보고 감사
-
-`agent-coordination` skill은 파일 소유권·완료 기준·10분 이내 작업 단위를 지정하고 결과 보고를 검사합니다.
-
-```bash
-python3 .agents/skills/agent-coordination/scripts/task_packet.py create "task-1" "pane-id" "src/example.ts" "typecheck passes" > /tmp/task_packet.json
-python3 .agents/skills/agent-coordination/scripts/task_packet.py validate /tmp/task_packet.json
-python3 .agents/skills/agent-coordination/scripts/report_audit.py /tmp/task_packet.json /tmp/report.json
-python3 .agents/skills/agent-coordination/scripts/test_coordination.py
-```
-
-- 패킷은 소유 파일·완료 기준을 필수로 하며 timeout은 1–10분입니다. secret-pattern 검사를 통과하지 못하면 거부합니다.
-- `report_audit.py`는 수정 파일 자기보고, 검증 결과, provenance, secret-pattern을 확인합니다. 실제 Git diff와 대조하지는 않습니다.
-- 작업·보고 JSON에는 credential이나 개인 사용량을 넣지 않습니다. Skill 상세는 [agent-coordination](https://github.com/qus0in/yoroi/blob/main/.agents/skills/agent-coordination/SKILL.md)을 참고합니다.

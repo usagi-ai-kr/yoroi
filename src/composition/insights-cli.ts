@@ -3,6 +3,7 @@ import { runInsights } from './insights.js';
 import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
 import { joinLetterParts, renderLetterPartsFromRecords } from '../insights/letter-markdown.js';
 import { publishInsightsLetter } from './insights-publish.js';
+import { replaceLegacyRoleBlocks } from '../insights/letter-three-role-body.js';
 import { NodeProcessRunner } from '../infra/process-runner.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import type { InsightHistoryPort } from '../insights/history-port.js';
@@ -53,8 +54,10 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
         const top10 = outcome.top10 ?? { records: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
         const warnings = (top10 as { warnings?: readonly string[] }).warnings;
         const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
-        return renderLetterPartsFromRecords({ publicationDate: outcome.publicationDate, ...top10,
+        const parts = renderLetterPartsFromRecords({ publicationDate: outcome.publicationDate, ...top10,
           ...(warnings?.length && { notes: warnings }), ...(partialSources.length && { partialSources }) });
+        const sections = outcome.threeRole?.sections;
+        return sections ? { body: replaceLegacyRoleBlocks(parts.body, sections), comments: parts.comments } : parts;
       } }, ctx.env).finally(() => { unsubscribe(); controller.abort(); });
   }
   const deps: InsightsCommandDeps = {
@@ -72,8 +75,12 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
       const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
       const top10Payload = { publicationDate: outcome.publicationDate, ...top10, ...(warnings && warnings.length ? { notes: warnings } : {}),
         ...(partialSources.length ? { partialSources } : {}) };
-      return { letter, storage: outcome.storage, compact: renderTop10FromRecords(top10Payload),
-        markdown: joinLetterParts(renderLetterPartsFromRecords(top10Payload)) };
+      const sections = outcome.threeRole?.sections;
+      const compactText = renderTop10FromRecords(top10Payload);
+      const markdownRaw = joinLetterParts(renderLetterPartsFromRecords(top10Payload));
+      return { letter, storage: outcome.storage,
+        compact: sections ? replaceLegacyRoleBlocks(compactText, sections) : compactText,
+        markdown: sections ? replaceLegacyRoleBlocks(markdownRaw, sections) : markdownRaw };
     },
   };
   return runInsightsCommand(parsed, deps, ctx.env);

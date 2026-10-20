@@ -43,7 +43,7 @@ test('댓글 3개는 이슈 생성 후 --body-file로 순서대로 달린다', a
   assert.equal(comments.length, 3);
   assert.ok(comments.every(r => r.args.includes('--body-file')));
   assert.deepEqual(h.bodies.slice(1), ['c1', 'c2', FREE_OK], '댓글 내용이 순서대로 올라간다');
-  assert.deepEqual(h.stdout, ['published #130 https://github.com/qus0in/yoroi/issues/130 2026-10-13 09:00 KST\n']);
+  assert.deepEqual(h.stdout, ['published #130 https://github.com/usagi-ai-kr/yoroi/issues/130 2026-10-13 09:00 KST\n']);
 });
 
 test('댓글 실패 시 이전 레터 close를 하지 않고 실패 코드로 끝난다', async () => {

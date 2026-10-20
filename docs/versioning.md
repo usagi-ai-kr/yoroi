@@ -44,12 +44,12 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
   원인과 남은 작업을 보고한다.
 - milestone은 계획, tag는 검증된 커밋, Release는 발행 기록이다.
 
-## 현재 운영 현황 (2026-10-15)
+## 현재 운영 현황 (2026-10-20)
 
-- 버전: `package.json` 1.0.1. [Release v1.0.0](https://github.com/qus0in/yoroi/releases/tag/v1.0.0)은 발행됨(target `5111378cccf5f2436db0f1fae8c0715e76c94edb`, publishedAt 2026-10-15T13:50:05Z). [Release v1.0.1](https://github.com/qus0in/yoroi/releases/tag/v1.0.1) 발행(target `c7c403eec32e5cc73a98f3a2852df3fd75833e4e`, publishedAt 2026-10-15T14:47:25Z).
-- tag·Release: `v0.1.0`~`v0.13.2`에 이어 `v1.0.0`·`v1.0.1` 발행. 0.13.3은 별도 tag·Release 없이 1.0.0에 포함한다.
-- milestone: `1.0.0`(23) closed. 1.0.1은 새 milestone을 만들지 않는다. 0.x는 모두 closed다.
-- 발행 순서와 기준은 위 §릴리스 순서를 따른다. 상세 기록은 [release-status.md](release-status.md)와 [roadmap.md](roadmap.md)에 있다.
+- main 운영 버전: `1.4.0` ([Release v1.4.0](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.4.0), commit `ff831c6482c618fc503503dd33d63acece519917`, publishedAt 2026-10-20T02:12:27Z).
+- dev 진행 상태: `package.json` 1.5.0 minor 갱신(PR 준비 중, main 미머지, v1.5.0 tag 및 Release 미발행).
+- 대상 범위: #168(모델 자동감지), #190(Arena 연동), #195(3역할 체계), #194(Actions 레터 발행).
+- 머지·발행 절차: dev → main PR 검증 통과 후 머지 → workflow_dispatch CI → tag/Release 생성 순서를 따름.
 
 ## 이전 운영 현황 (2026-10-10, 이력)
 

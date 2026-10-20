@@ -6,6 +6,6 @@ test('letter attributions keep the internal-only condition for Cognition, and li
   const cognition = SOURCE_ATTRIBUTIONS.find(line => line.includes('Cognition'));
   assert.ok(cognition?.includes('내부 전용'), String(cognition));
   assert.ok(SOURCE_ATTRIBUTIONS.some(line => line.includes('OpenCode Data')));
-  assert.equal(SOURCE_ATTRIBUTIONS.length, 4);
+  assert.equal(SOURCE_ATTRIBUTIONS.length, 5);
   assert.ok(!SOURCE_ATTRIBUTIONS.find(line => line.includes('OpenRouter'))?.includes('내부 전용'));
 });

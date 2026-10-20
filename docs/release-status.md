@@ -76,6 +76,12 @@
 - [검증] unit 1086/1086·BDD 45/45·typecheck·validate PASS, w3 발행 리뷰·w2 렌더 교차 리뷰 차단 0, 본문 1–7위 모델·스코어·변동이 #175(1.1.0) 스냅샷 1–7위와 일치.
 - [완료] main CI [38876943266](https://github.com/qus0in/yoroi/actions/runs/38876943266) success · [Release v1.2.0](https://github.com/qus0in/yoroi/releases/tag/v1.2.0) · 전역 CLI 1.2.0(`--check` exit 0) · 레터 [#181](https://github.com/qus0in/yoroi/issues/181)(2026-10-16 17:58 KST, 댓글 3건) 발행 후 #175 close · #178 close(PR Closes) · milestone 27 close.
 
+## 1.4.0 발행 (2026-10-20, PR #191 → main `ff831c6482c618fc503503dd33d63acece519917` = tag `v1.4.0`)
+
+- 범위: Free 캘리브레이션(opt-in 명령만 호출)·Arena 코딩 파서·모델 감지 핵심·MiniMax M3.1 Free·발행 복구 게이트·하네스 위탁 우선·Actions 초안.
+- [검증] typecheck·unit 1223/1223·BDD 45/635·빌드·validate PASS(병합 전 dev 기준).
+- [완료] main CI [39357397662](https://github.com/usagi-ai-kr/yoroi/actions/runs/39357397662) success · [Release v1.4.0](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.4.0)(2026-10-20T02:12:27Z) · 전역 CLI 1.4.0 · #180 open 유지.
+
 ## 버전 이력 요약
 
 - 1.0.3–1.1.1 (2026-10-16): 발행 기록은 [release-history-pre120.md](release-history-pre120.md)로 옮겨 보관했다.

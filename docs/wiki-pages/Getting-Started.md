@@ -20,11 +20,11 @@ pnpm run dev once
 
 ## 공급자 선택
 
-기본값은 다섯 공급자 전체(`ollama-pro,opencode-go,codex,agy,claude`)입니다. xAI는 기본에서 제외되며 명시 opt-in해야 조회합니다. 일부만 조회하거나 xAI를 포함하려면 `YOROI_PROVIDERS`에 쉼표로 ID를 지정합니다.
+기본값은 여섯 공급자 전체(`ollama-pro,opencode-go,codex,agy,claude,xai`)입니다. 일부만 조회하려면 `YOROI_PROVIDERS`에 쉼표로 ID를 지정합니다.
 
 ```text
-ollama-pro,opencode-go,codex,agy,claude
 ollama-pro,opencode-go,codex,agy,claude,xai
+ollama-pro,opencode-go,codex,agy,claude
 ```
 
 지원 공급자 ID는 `ollama-pro`, `opencode-go`, `codex`, `agy`, `claude`, `xai`입니다. 중복되거나 지원하지 않는 ID는 설정 오류입니다.
@@ -41,7 +41,7 @@ yoroi once --pretty
 yoroi once --pretty --full
 ```
 
-전역 설치 후 `yo`(`yoroi once --pretty`), `yo2`(`yoroi once --pretty --full`) 별칭을 사용할 수 있습니다.
+전역 설치 후 `yo`(`yoroi once --pretty`), `yo2`(`yoroi once --pretty --full`) 같은 별칭을 원하면 셸 설정에 직접 등록해 사용할 수 있습니다(설치 스크립트가 만들지 않습니다).
 
 전역 설치를 제거할 때는 다음 명령을 실행합니다. 설치 사본과 복사본 `.env`도 함께 삭제됩니다(실측).
 
@@ -62,6 +62,8 @@ pnpm remove -g yoroi
 ## 다음 단계
 
 - 인증 환경 변수 이름과 프로필 선택은 [공급자와 인증](Providers-and-Authentication)을 확인합니다.
+- 사용량 변화 추이는 `yoroi trend --since 7d`로 확인합니다.
+- AI 인사이트 레터는 [인사이트 레터](Insights-Letter)를 확인합니다.
 - 반복 실행용 `watch`는 제거됐습니다. 주기 실행이 필요하면 외부 스케줄러로 `yoroi once`를 호출합니다.
 - 사용량 캐시·`--refresh`·`--pretty` 변화량과 Zen Free 상태는 [사용량 캐시와 Zen Free](Usage-Cache-and-Zen-Free)를 확인합니다.
 - 개발 검증 명령은 [체크와 문제 해결](Checks-and-Troubleshooting)을 확인합니다.

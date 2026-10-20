@@ -17,6 +17,13 @@ test('스케줄·게이트: UTC 23:00(=다음 날 08:00 KST)·KST 러너·기본
   assert.ok(workflow.includes("if: github.event_name == 'schedule' || inputs.dry_run != true"), '스케줄은 항상 실제 발행 경로');
 });
 
+test('수동 게이트 override: not_before 입력이 있을 때만 --not-before 를 전달', () => {
+  assert.ok(workflow.includes('not_before:'), 'not_before 입력 정의');
+  assert.ok(workflow.includes('NOT_BEFORE: ${{ inputs.not_before }}'), '입력을 env 로 전달');
+  assert.ok(workflow.includes('--not-before "$NOT_BEFORE"'), '수동 override 경로');
+  assert.ok(workflow.includes('insights publish --dry-run'), '기본 dry-run 경로 유지');
+});
+
 test('동시성·권한·시크릿: 순차 대기, issues 쓰기, 값 없는 참조만', () => {
   assert.ok(has('group: letter-publish') && has('cancel-in-progress: false'), '겹친 실행은 순차 대기');
   assert.ok(has('issues: write') && has('contents: read'), '최소 권한');

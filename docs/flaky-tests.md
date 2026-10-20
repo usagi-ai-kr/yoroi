@@ -45,6 +45,14 @@
 - 수정 전 강화 로컬 스트레스: CPU 바운더 2개와 DB당 8개 프로세스(detect·Zen·usage 혼합), 새 DB 12라운드(96회 첫 열기)에서 실패 0회. 로컬 무재현은 CI attempt 1 실패를 반박하지 않는다.
 - 수정 후 검증: 같은 CPU·프로세스 스트레스 96회에서 실패 0회, WAL 첫 열기와 lease 경합 CI 실패 테스트 각각 20/20 반복 통과. 로컬 `tsc -p tsconfig.json --noEmit` 통과; pnpm 경로는 고정 버전 서명 확인을 위한 registry fetch 실패로 실행되지 않았다. 테스트 임계값은 바꾸지 않았다.
 
+## 사용량 캐시 타임아웃: `tests/usage-history-store.test.ts`
+
+- 2026-10-20 전체 `pnpm run check` 1회차 관측: 1166개 단위 테스트 중 1165개 통과, 1건 실패.
+- 실패 상세: `usage-history-store.test.ts:84`의 `<1000ms` 시간 단언이 **1278.628ms**로 실패 (`fails within the 100ms cache timeout, not the 2000ms default`).
+- 단독 검증: 동일 환경에서 `node --import ./tests/harness-setup.mjs --import tsx --test tests/usage-history-store.test.ts` 순차 3회 실행 결과 모두 **6/6 통과** (해당 케이스 실측 각 **788.825ms / 794.284ms / 813.215ms**).
+- 판정: 임계값 및 테스트 코드는 수정하지 않음. 부하에 따른 일시 지연 가능성이 있으나 원인을 단순 부하로 확정하지 않으며 실패를 숨기지 않는다.
+- 재실행: 전체 `check` 1회 재실행 결과 단위 1166/1166 통과, BDD 45/635 통과, typecheck 및 build 모두 exit 0으로 통과함.
+
 ## 재현 명령과 결과 기록
 
 레포 루트에서 실행한다. 아래 명령은 합성 입력과 없는 실행 파일을 사용하며 실제 계정 API를 부르지 않는다.
@@ -59,3 +67,11 @@ node --import ./tests/harness-setup.mjs --import tsx --test tests/cli-process.te
 - 커밋·OS·Node 버전·실행 환경·동시 검증 유무·종료 코드·실측 시간·실패 단언·재실행 여부를 남긴다.
 - 전체 `check`가 테스트에서 멈추면 미실행 BDD·빌드는 따로 실행하고 각각 결과를 보고한다.
 - 임계값 변경이나 테스트 로직 수정은 별도 승인·근거가 필요한 작업이며 이 문서 범위에 포함하지 않는다.
+
+
+## 같은 단원 최종 상태 보완 (2026-10-20)
+
+- 중복 ID 보완 후 기본 병렬 전체는 1166/1167, 같은 usage-history-store 시간 단언이 1050.631ms로 재발했다.
+- 같은 최종 코드의 test-concurrency=1 전체는 1167/1167·BDD45/635·타입·빌드 통과. 임계값/테스트/제품 코드 변경 없음.
+- 기본 병렬 게이트 실패는 남아 있다. 직렬 통과만으로 부하가 근본 원인이라고 확정하지 않는다.
+- 전체 명령·단독 3회·이전 통과 이력은 [최종 검증](insights/final-validation-20261020.md)에 기록했다.

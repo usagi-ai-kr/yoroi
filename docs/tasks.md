@@ -56,3 +56,24 @@
 - [정정] 요청 시작 HEAD `5532dac` clean. 초안은 본 요청 중 root 서브에이전트
   작성 후 사용자 지시로 중단, 기존 패널이 재대조. dalmuti Herdr-only 영구정책은 미이식.
 - [검증] skill validate·validate-repo.py·scripts unittest 19·diff --check PASS. 원격 CI 미실행. w2 최종 리뷰 통과.
+
+## 현재 이슈 분배 (2026-10-20)
+
+- 기준·완료조건: [배정 문서](insights/issue-dispatch-20261020.md).
+- w1(w18:p2): #190 순수 파서·정규화/합성 검증. 소유 신규 arena-coding 파일·전용 테스트·단위 문서.
+- w2(w18:p3): #180/PR #191 반영 점검. 소유 calibration-release-audit-20261020.md.
+- w3(w18:p4): #168 자동감지 설계·소유경계. 소유 model-discovery-unit1.md.
+- 총괄: 로스터·본 작업기록·배정문서. 각 상세 소유는 배정문서와 패킷을 따른다.
+- 상태: 세 패널 모두 turn_started 확인. 공통 런타임 연결·게시·머지는 별도 후속 단위로 둔다.
+
+## 이어하기 단위2 및 후속 정합 (2026-10-20)
+
+- [완료] #180: CI 테스트 OS 의존 제거(ENOTDIR) 및 child fail-fast 격리 커밋 `58f5524` 완료. 원격 push·PR #191 반영은 대기.
+- [완료] #190 단위A: 순수 파서·타입·복합키·테스트(7/7) 구현, w3 최종 리뷰 PASS([보고서](insights/arena-final-review-20261020.md)). 초기 BLOCK 해소. 전체 이슈(수집/DB/once)는 후속.
+- [완료] #168: 순수 레지스트리 핵심(diff·게이트·render·snapshot 무효세대보완) 구현, 테스트 4파일 24/24 pass, 최종 리뷰 READY·중복 diff 최종 검토 PASS([리뷰](insights/model-discovery-review-20261020.md)·[최종](insights/discovery-duplicate-review-20261020.md)). 어댑터·저장소·config·레터 연결은 후속.
+- [완료] 하네스: skill-authoring 외부사실 검증 1개 보강, CI docs-only 항상-validate(`e3abe25`).
+- [중간 검증] 전체 `check` 1회차 1165/1166 통과(usage-history 시간단언 1건 1278ms), 단독 3회 순차 6/6 통과(788~813ms, 미변경) 후 재실행 결과 단위 1166/1166, BDD 45/635, typecheck/build exit 0 완료([flaky-tests](flaky-tests.md)).
+- [정리] 종합 상태 및 커밋 대상 그룹 분리는 [이슈별 종합 요약](insights/issue-units-summary-20261020.md) 참조.
+
+- [로컬 커밋] CI 수정 58f5524 · Arena d0ace75 · 자동감지 핵심 5eccc2b. 원격 미게시.
+- [최종 검증] 기본 병렬 1166/1167(기존 SQLite 시간 단언 실패), 직렬 전체 1167/1167·BDD45/635·타입·빌드 통과. [상세](insights/final-validation-20261020.md).

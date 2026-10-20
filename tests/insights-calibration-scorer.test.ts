@@ -84,8 +84,8 @@ test('insufficient-sample marking: 1-run provisional vs 3-run median stable', ()
   assert.equal(multi.verdict, 'assistant');
 });
 
-test('task-set v1 has 4 version-fixed synthetic fixtures without real secrets', () => {
-  assert.equal(CALIBRATION_TASK_SET_VERSION, 'v1');
+test('task-set v2 has 4 version-fixed synthetic fixtures without real secrets', () => {
+  assert.equal(CALIBRATION_TASK_SET_VERSION, 'v2');
   assert.equal(CALIBRATION_TASKS_V1.length, 4);
   for (const task of CALIBRATION_TASKS_V1) {
     assert.ok(task.fixture.allowedFiles.length > 0);

@@ -7,6 +7,8 @@ export interface ProcessRequest {
   readonly args: readonly string[];
   readonly timeoutMs: number;
   readonly env?: Readonly<Record<string, string>>;
+  /** 'merge'(기본): 호스트 env에 request.env를 덮는다. 'replace': request.env만 쓴다. */
+  readonly envMode?: 'merge' | 'replace';
   readonly input?: string;
   readonly steps?: readonly ProcessStep[];
 }

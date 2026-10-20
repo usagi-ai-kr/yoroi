@@ -2,13 +2,9 @@ import type { DatabaseSync } from 'node:sqlite';
 import { openDatabase, withMigrationRetry } from '../infra/sqlite/database.js';
 import { resolveDbPath } from '../infra/sqlite/data-dir.js';
 import type { Migration } from '../infra/sqlite/migrations.js';
-import {
-  CALIBRATION_HISTORY_CAP,
-  assertRunRecord,
-  toRunRecord,
-  type CalibrationRunRecord,
-  type CalibrationStore,
-} from './calibration-store.js';
+import { assertRunRecord, type CalibrationRunRecord, type CalibrationStore, CALIBRATION_HISTORY_CAP } from './calibration-store.js';
+import { decodeCalibrationPayload, encodeCalibrationPayload, sanitizeViolationClasses } from './calibration-store-codec.js';
+import { toRunRecord } from './calibration-record.js';
 
 /** #180 unit 3: calibration_runs 테이블(v7). 기존 테이블에 손대지 않는다. */
 const V7: Migration = { version: 7, sql: `
@@ -25,12 +21,27 @@ export const CALIBRATION_MIGRATIONS: readonly Migration[] = [V7];
 interface RunRow { run_id: string; model_id: string; task_set_version: string; evaluator_version: string;
   run_at: string; tasks_json: string; violations_json: string; total_score: number; verdict: string;
   sample_status: string; sample_count: number }
-const toRecord = (r: RunRow): CalibrationRunRecord => ({ runId: r.run_id, modelId: r.model_id,
-  taskSetVersion: r.task_set_version, evaluatorVersion: r.evaluator_version, runAt: r.run_at,
-  tasks: JSON.parse(r.tasks_json) as CalibrationRunRecord['tasks'],
-  violationClasses: JSON.parse(r.violations_json) as CalibrationRunRecord['violationClasses'],
-  totalScore: r.total_score, verdict: r.verdict as CalibrationRunRecord['verdict'],
-  sampleStatus: r.sample_status as CalibrationRunRecord['sampleStatus'], sampleCount: r.sample_count });
+const toRecord = (r: RunRow): CalibrationRunRecord => {
+  const payload = decodeCalibrationPayload(r.tasks_json);
+  return { runId: r.run_id, modelId: r.model_id,
+    taskSetVersion: r.task_set_version, evaluatorVersion: r.evaluator_version, runAt: r.run_at,
+    tasks: payload.tasks,
+    ...(payload.payload !== undefined && { samples: payload.payload.samples,
+      taskAggregates: payload.payload.taskAggregates, aggregate: payload.payload.aggregate }),
+    violationClasses: sanitizeViolationClasses(parseJsonArray(r.violations_json)),
+    totalScore: r.total_score, verdict: r.verdict as CalibrationRunRecord['verdict'],
+    sampleStatus: r.sample_status as CalibrationRunRecord['sampleStatus'], sampleCount: r.sample_count };
+};
+
+/** 파손 컬럼은 행 단위로 복구한다(한 행이 목록 전체를 깨뜨리지 않게 한다). */
+function parseJsonArray(json: string): unknown[] {
+  try {
+    const parsed: unknown = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 export class SqliteCalibrationStore implements CalibrationStore {
   constructor(private readonly db: DatabaseSync) {}
@@ -40,7 +51,7 @@ export class SqliteCalibrationStore implements CalibrationStore {
     this.write(() => this.db.prepare(`INSERT INTO calibration_runs (run_id, model_id, task_set_version,
       evaluator_version, run_at, tasks_json, violations_json, total_score, verdict, sample_status,
       sample_count, saved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(r.runId, r.modelId, r.taskSetVersion, r.evaluatorVersion, r.runAt, JSON.stringify(r.tasks),
+      .run(r.runId, r.modelId, r.taskSetVersion, r.evaluatorVersion, r.runAt, encodeCalibrationPayload(r),
         JSON.stringify(r.violationClasses), r.totalScore, r.verdict, r.sampleStatus, r.sampleCount,
         new Date().toISOString()));
     this.prune(r.modelId);

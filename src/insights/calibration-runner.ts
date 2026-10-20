@@ -1,12 +1,14 @@
 import type { ProcessRunner } from '../infra/process-port.js';
 import {
-  CALIBRATION_TASKS_V1,
+  CALIBRATION_TASKS_V2,
   type CalibrationTask, type CalibrationTaskResult,
 } from './calibration-task-set.js';
 import { evaluateCalibration, type CalibrationEvaluation } from './calibration-scorer.js';
 import {
-  createCalibrationSandbox, buildSandboxEnv, SANDBOX_CAPS, detectOutputViolations,
+  createCalibrationSandbox, SANDBOX_CAPS, detectOutputViolations,
 } from './calibration-sandbox.js';
+import { buildSandboxEnv } from './calibration-env.js';
+import { seedSandboxFixtures } from './calibration-fixture-files.js';
 import { checkTaskArtifacts } from './calibration-checker.js';
 
 export interface CalibrationRunnerOptions {
@@ -35,12 +37,14 @@ export async function runCalibrationTask(
   const start = Date.now();
   const timeoutMs = options.timeoutMs ?? SANDBOX_CAPS.TASK_TIMEOUT_MS;
   try {
+    await seedSandboxFixtures(sandbox.dir, task.id);
     const res = await options.runner.run({
       executable: 'opencode',
       args: ['run', '--model', options.modelOriginalId, '--max-turns', String(SANDBOX_CAPS.MAX_TURNS),
         '--max-tokens', String(SANDBOX_CAPS.MAX_OUTPUT_TOKENS), '--dir', sandbox.dir],
       timeoutMs,
-      env: buildSandboxEnv({ CALIBRATION_TASK_ID: task.id }),
+      env: buildSandboxEnv({ CALIBRATION_TASK_ID: task.id }, sandbox.homeDir),
+      envMode: 'replace',
       input: task.fixture.prompt,
     }, options.signal);
     const durationMs = Date.now() - start;
@@ -49,7 +53,7 @@ export async function runCalibrationTask(
     const violations = [...new Set([...fileViolations, ...outViolations])];
     const latencyPass = durationMs < timeoutMs;
     const checker = await checkTaskArtifacts({
-      taskId: task.id, sandboxDir: sandbox.dir, exitCode: res.exitCode,
+      taskId: task.id, sandboxDir: sandbox.dir, homeDir: sandbox.homeDir, exitCode: res.exitCode,
       stdout: res.stdout, stderr: res.stderr, fileViolations,
     });
     const rubric = {
@@ -71,7 +75,7 @@ export async function runCalibrationTask(
 }
 
 export async function runCalibration(options: CalibrationRunnerOptions): Promise<CalibrationRunResult> {
-  const tasks = options.tasks ?? CALIBRATION_TASKS_V1;
+  const tasks = options.tasks ?? CALIBRATION_TASKS_V2;
   const start = Date.now();
   const results: CalibrationTaskResult[] = [];
   for (const t of tasks) {

@@ -2,13 +2,8 @@ import { mkdtemp, rm, readdir, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import type { CalibrationViolationClass } from './calibration-task-set.js';
+import { buildSandboxEnv as buildEnv } from './calibration-env.js';
 
-/**
- * Enforcement levels per #180:
- * - Caps (timeout, max-turns, max-tokens, retries): ENFORCED by runner options.
- * - Isolation (git, non-model network, secrets): DETECT-AND-FLAG via env hints,
- *   symlink-aware walk diffs, and output scanning (OS-level container deferred).
- */
 export const SANDBOX_CAPS = {
   TASK_TIMEOUT_MS: 300_000,
   MAX_TURNS: 2,
@@ -29,6 +24,7 @@ export function detectOutputViolations(output: string): readonly CalibrationViol
 
 export interface CalibrationSandbox {
   readonly dir: string;
+  readonly homeDir: string;
   readonly allowedFiles: readonly string[];
   checkViolations(): Promise<readonly CalibrationViolationClass[]>;
   cleanup(): Promise<void>;
@@ -55,9 +51,11 @@ export async function createCalibrationSandbox(
   basePrefix = 'yoroi-calib-',
 ): Promise<CalibrationSandbox> {
   const dir = await mkdtemp(join(tmpdir(), basePrefix));
+  const homeDir = await mkdtemp(join(tmpdir(), `${basePrefix}home-`));
   const allowedSet = new Set(allowedFiles);
   return {
     dir,
+    homeDir,
     allowedFiles,
     async checkViolations(): Promise<readonly CalibrationViolationClass[]> {
       const actualFiles = await collectFiles(dir, dir);
@@ -71,19 +69,14 @@ export async function createCalibrationSandbox(
       return violations;
     },
     async cleanup(): Promise<void> {
-      await rm(dir, { recursive: true, force: true });
+      await Promise.all([
+        rm(dir, { recursive: true, force: true }),
+        rm(homeDir, { recursive: true, force: true }),
+      ]);
     },
   };
 }
 
-export function buildSandboxEnv(extra: Record<string, string> = {}): Record<string, string> {
-  return {
-    ...process.env,
-    GIT_DIR: '/dev/null',
-    GIT_WORK_TREE: '/dev/null',
-    GIT_TERMINAL_PROMPT: '0',
-    CALIBRATION_SANDBOX: '1',
-    ALLOW_NETWORKING: '0',
-    ...extra,
-  };
+export function buildSandboxEnv(extra: Record<string, string> = {}, homeDir?: string): Record<string, string> {
+  return buildEnv(extra, homeDir);
 }

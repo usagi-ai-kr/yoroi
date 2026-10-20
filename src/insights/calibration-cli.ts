@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { ProcessRunner } from '../infra/process-port.js';
-import { CALIBRATION_EVALUATOR_VERSION, type CalibrationStore, type CalibrationRunRecord } from './calibration-store.js';
+import { CALIBRATION_EVALUATOR_VERSION, type CalibrationStore } from './calibration-store.js';
+import { buildCalibrationRunRecord } from './calibration-record.js';
 import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
 import { runCalibration, type CalibrationRunResult } from './calibration-runner.js';
-import { computeTaskScore, evaluateMultiRunCalibration, type CalibrationEvaluation } from './calibration-scorer.js';
 import { collectOpenCodeFreeModels, type OpenCodeFreeModel } from './opencode-free-models.js';
 import { normalizeModelName } from './letter-top10-rank.js';
 import { SANDBOX_CAPS } from './calibration-sandbox.js';
@@ -66,32 +66,21 @@ export async function runCalibrationCli(argv: readonly string[], deps: Calibrati
 
   const runResults: CalibrationRunResult[] = [];
   for (let i = 0; i < runs; i++) runResults.push(await runCalibration({ runner: deps.runner, modelOriginalId: found.originalId }));
-  const evalResult: CalibrationEvaluation = runs === 3
-    ? evaluateMultiRunCalibration(runResults.map(r => r.taskResults))
-    : runResults[0]!.evaluation;
 
-  const normalizedId = normalizeModelName(found.modelId);
-  const record: CalibrationRunRecord = {
+  // 집계·표본 근거·CLI 출력은 모두 같은 레코드에서 나온다(3회 집계와 1회 tasks 혼용 금지).
+  const { record, evaluation } = buildCalibrationRunRecord({
     runId: `calib-${Date.now()}-${randomUUID().slice(0, 8)}`,
-    modelId: normalizedId,
+    modelId: normalizeModelName(found.modelId),
     taskSetVersion: CALIBRATION_TASK_SET_VERSION,
     evaluatorVersion: CALIBRATION_EVALUATOR_VERSION,
     runAt: new Date().toISOString(),
-    tasks: runResults[0]!.taskResults.map(t => ({
-      taskId: t.taskId, score: computeTaskScore(t.rubric), passed: t.passed ?? false,
-      latencyMs: t.latencies.totalMs, retryCount: t.retryCount,
-    })),
-    violationClasses: [...new Set(runResults.flatMap(r => r.taskResults.flatMap(t => t.violationClasses)))],
-    totalScore: evalResult.totalScore,
-    verdict: evalResult.verdict,
-    sampleStatus: runs === 3 ? 'stable' : 'provisional',
-    sampleCount: runs,
-  };
+    runs: runResults,
+  });
   if (deps.store) deps.store.saveRun(record);
 
   log(`--- 캘리브레이션 결과 요약 ---`);
-  log(`판정: ${evalResult.verdictLabel} (${evalResult.verdict})`);
-  log(`점수: ${evalResult.totalScore}/100 | 표본: ${record.sampleStatus} (${runs}회)`);
-  for (const t of runResults[0]!.taskResults) log(`- ${t.taskId}: ${t.passed ? 'PASS' : 'FAIL'}`);
+  log(`판정: ${evaluation.verdictLabel} (${record.verdict})`);
+  log(`점수: ${record.totalScore}/100 | 표본: ${record.sampleStatus} (${record.sampleCount}회, 집계: ${record.aggregate?.kind ?? 'single'})`);
+  for (const task of record.taskAggregates ?? []) log(`- ${task.taskId}: 최소 ${task.minScore}점 · 통과 ${task.passedCount}/${task.sampleCount}`);
   return 0;
 }

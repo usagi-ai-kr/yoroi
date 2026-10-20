@@ -18,8 +18,7 @@ class FakeRunner implements ProcessRunner {
     const dir = req.args[req.args.indexOf('--dir') + 1]!, env = req.env?.CALIBRATION_TASK_ID;
     if (env === 'task-1-packet-compliance') writeFileSync(join(dir, 'report.json'), JSON.stringify({ task_id: 't1', status: 'ok', checks_passed: true }));
     else if (env === 'task-2-single-file-edit') { mkdirSync(join(dir, 'src'), { recursive: true }); writeFileSync(join(dir, 'src/target.ts'), 'val'); }
-    return { stdout: 'completed successfully', stderr: '', exitCode: 0 };
-  }
+    return { stdout: 'completed successfully', stderr: '', exitCode: 0 }; }
 }
 class FakeStore implements CalibrationStore {
   public saved: CalibrationRunRecord[] = [];
@@ -37,8 +36,7 @@ test('arg parsing rejects invalid flags with exit 2 style and supports free subc
   assert.equal(parseCalibrationArgs(['free', '--model', 'm', '--runs', '3', '--yes']).ok, true);
   const badRunner = new FakeRunner();
   assert.equal(await runCalibrationCli(['--unknown'], { runner: badRunner }), 2);
-  assert.equal(badRunner.runs, 0);
-  assert.equal(await runCalibrationCli(['--help'], { runner: badRunner }), 0);
+  assert.equal(badRunner.runs, 0); assert.equal(await runCalibrationCli(['--help'], { runner: badRunner }), 0);
 });
 
 test('pre-run confirmation flow requires explicit confirmation and prints disclosures', async () => {
@@ -46,15 +44,13 @@ test('pre-run confirmation flow requires explicit confirmation and prints disclo
   const code = await runCalibrationCli(['--model', 'opencode/test-free'], { runner, models: MODELS, stdout: m => logs.push(m), stderr: m => errs.push(m) });
   assert.equal(code, 1); assert.equal(runner.runs, 0);
   assert.ok(logs.some(l => l.includes('쿼터 불명')) && logs.some(l => l.includes('Enforced: timeouts/turns/tokens/isolation/no-retry')));
-  assert.ok(errs.some(e => e.includes('pre-run confirmation required')));
-});
+  assert.ok(errs.some(e => e.includes('pre-run confirmation required'))); });
 
 test('rejects unverified or unlisted Free model without runner calls', async () => {
   const runner = new FakeRunner(), errs: string[] = [];
   const code = await runCalibrationCli(['--model', 'unverified-model', '--yes'], { runner, models: MODELS, stderr: m => errs.push(m) });
   assert.equal(code, 1); assert.equal(runner.runs, 0);
-  assert.ok(errs.some(e => e.includes('unverified or unlisted Free model')));
-});
+  assert.ok(errs.some(e => e.includes('unverified or unlisted Free model'))); });
 
 test('1-run provisional vs 3-run median stable saves with version constants and normalized id', async () => {
   const runner1 = new FakeRunner(), store1 = new FakeStore();
@@ -72,28 +68,33 @@ test('env parity: gating and runner behavior are invariant to CI/minimal ambient
   for (const envObj of [{}, { CI: 'true', GITHUB_ACTIONS: 'true' }, { YOROI_DATA_DIR: '/tmp' }]) {
     const r = new FakeRunner();
     assert.equal(await runCalibrationCli(['free', '--model', 'opencode/test-free', '--yes'], { runner: r, models: MODELS }), 0);
-    assert.equal(r.runs, 4);
-  }
+    assert.equal(r.runs, 4); }
 });
 
 test('fresh-DB first-run persists; file-path open fails deterministically', async () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'calib-cli-fresh-'));
-  try {
+  const tempDir = mkdtempSync(join(tmpdir(), 'calib-cli-fresh-')); try {
     const store = openCalibrationStore({ YOROI_DATA_DIR: tempDir }), runner = new FakeRunner();
     assert.equal(await runCalibrationCli(['free', '--model', 'opencode/test-free', '--yes'], { runner, store, models: MODELS }), 0);
-    assert.equal(store.listRuns('test').length, 1);
-    store.close();
+    assert.equal(store.listRuns('test').length, 1); store.close();
   } finally { rmSync(tempDir, { recursive: true, force: true }); }
-  const blockRoot = mkdtempSync(join(tmpdir(), 'calib-cli-block-'));
-  try {
+  const blockRoot = mkdtempSync(join(tmpdir(), 'calib-cli-block-')); try {
     writeFileSync(join(blockRoot, 'file'), 'x');
     assert.throws(() => openCalibrationStore({ YOROI_DATA_DIR: join(blockRoot, 'file', 'db') }), '파일 아래 경로는 결정적으로 실패한다');
   } finally { rmSync(blockRoot, { recursive: true, force: true }); }
+});
+
+test('CLI 출력과 저장 레코드가 같은 집계 근거를 쓴다', async () => {
+  const runner = new FakeRunner(), store = new FakeStore(), logs: string[] = [];
+  assert.equal(await runCalibrationCli(['free', '--model', 'opencode/test-free', '--runs', '3', '--yes'], { runner, store, models: MODELS, stdout: m => logs.push(m) }), 0);
+  const record = store.saved[0]!;
+  assert.equal(record.samples?.length, 3);
+  assert.ok(logs.some(l => l.includes(`점수: ${record.totalScore}/100`)), '출력 점수 = 저장 점수');
+  assert.ok(logs.some(l => l.includes('집계: median')), '출력에 집계 방식 표시');
+  for (const t of record.taskAggregates ?? []) assert.ok(logs.some(l => l.includes(`${t.taskId}: 최소 ${t.minScore}점 · 통과 ${t.passedCount}/${t.sampleCount}`)), t.taskId);
 });
 
 test('gating: non-vacuous separation between once/publish and calibrate CLI', () => {
   const err = parseInsights(['calibrate', 'free', '--model', 'opencode/test-free']);
   assert.equal(err.kind, 'error');
   assert.ok((err as { message: string }).message.includes('unexpected argument: calibrate'));
-  assert.equal(parseInsights(['once']).kind, 'insights'); assert.equal(parseInsights(['publish']).kind, 'insights');
-});
+  assert.equal(parseInsights(['once']).kind, 'insights'); assert.equal(parseInsights(['publish']).kind, 'insights'); });

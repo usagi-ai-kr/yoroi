@@ -92,9 +92,9 @@
 - [완료] 퍼블리셔 정규화 w1 보완(F1/F2 게이트, 1197/1197 PASS) 및 w3 최종 독립 리뷰 PASS([리뷰](insights/publisher-recovery-acceptance-review.md)).
 - [원칙] PR #191 draft 및 #180 open 유지 (머지·Closes 보류). #168/#190 런타임 미구현 유지.
 
-## PR #191 제품 코드 커밋·dev push (2026-10-20, w18:p4)
+- [완료] PR #191 커밋 4회(6235833·b5ad4c7·e33a019·a49628e)+최종·CI 기록(9829cd7·708484b), dev push·원격 CI 4run success·PR/이슈 반영.
 
-- [완료] 단위별 커밋(명시 경로 `git add`): `6235833` 캘리브레이션 env 경계·store v2 / `b5ad4c7` 퍼블리셔 복구(F1 repo 게이트·F2 본문 일치 게이트) / `e33a019` MiniMax M3.1 Flash 카탈로그 / `a49628e` 대응·리뷰 문서 13건.
-- [완료] 커밋 전 `validate-repo.py` PASS(860 files)·`git diff --check` clean. 제품 소스는 1197 PASS 시점 이후 변경 없음 → 전체 check 중복 실행 안 함.
-- [완료] PR #191 본문·댓글 갱신(Draft 유지·머지 보류), #180·#193 댓글 게시. main push·머지·#180 close 없음.
-- [완료] 원격 CI: head `9829cd7` push·PR 두 run 모두 success(39352122646·39352129061). [잔여] 외부 재리뷰만. #168/#190 런타임 미구현·#180 open·머지 보류 유지.
+## o 학습 통합 (2026-10-20, w18:p4)
+
+- [완료] roster에 리뷰 전담 r(w18:p5) 추가(coord status가 r 해석 확인). r 모델은 배정 직전 live 출력 기준.
+- [완료] 5원인 수용기준·DELTA 요소식 메시지 규칙을 하네스 최소 반영(규칙 1곳·참조 2곳·샘플 1·호스트 1줄). r 최종리뷰 패킷 전송 후 r PASS 시 로컬 커밋(push 없음).

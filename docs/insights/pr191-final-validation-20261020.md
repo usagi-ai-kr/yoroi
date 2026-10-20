@@ -56,3 +56,9 @@
 - `6235833` 캘리브레이션 env 경계·store v2 / `b5ad4c7` 퍼블리셔 복구 /
   `e33a019` MiniMax 카탈로그 / `a49628e` 대응·리뷰 문서.
 - 잔여: 외부 CI 확인과 외부 재리뷰만. #168/#190 런타임 미구현·#180 open 유지.
+## 외부 CI (push 직후, head 9829cd7)
+
+- push(dev): success — https://github.com/usagi-ai-kr/yoroi/actions/runs/39352122646
+- pull_request: success — https://github.com/usagi-ai-kr/yoroi/actions/runs/39352129061
+- 두 run 모두 head `9829cd7`·job `ci` success. 이전 head(2926b2e)도 push·PR 모두 success였음.
+- **머지 보류 유지**: CI 성공만으로 머지·PR ready·#180 종료하지 않는다. 외부 재리뷰 대기.

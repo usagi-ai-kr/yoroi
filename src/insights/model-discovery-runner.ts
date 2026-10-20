@@ -68,7 +68,7 @@ export async function runModelDiscovery(opts: DiscoveryRunnerOptions): Promise<D
         ...(opts.signal !== undefined && { signal: opts.signal }),
       });
       const filtered = raw.filter((m: DiscoveredModel) => !excluded.has(normalizeDiscoveryModelId(m.modelId)));
-      const { eligible } = checkEligibility(filtered);
+      const { eligible } = checkEligibility(filtered, { requireVerified: false });
       const diff = diffRegistry(providerId, observedAt, previous?.models ?? [], eligible);
       diffs.push(diff);
       const res = resolveCollection(previous, providerId, { ok: true, models: eligible, observedAt }, nowMs);

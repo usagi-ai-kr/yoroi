@@ -22,6 +22,8 @@ export function parseOpenCodeDiscovery(output: string, checkedOn: string, verifi
     modelId: normalizeDiscoveryModelId(m.modelId), displayName: m.originalId,
     sourceUrl: 'https://opencode.ai', checkedOn, verified: verified === true,
     planIds: m.provider === 'opencode' ? ['opencode-zen-free'] : ['opencode-go-free'],
+    // CLI 관측 경로는 effort를 알 수 없으므로 default만 둔다(high/max 날조 금지).
+    efforts: ['default'],
     free: true,
   }));
 }

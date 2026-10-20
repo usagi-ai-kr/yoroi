@@ -1,5 +1,6 @@
 {
   "allowOlder": ["gpt-6-sol"],
   "excludePatterns": ["fable", "astra"],
-  "ban": { "orchestrator": ["gpt-6-luna", "claude-haiku-5-5"], "worker": [] }
+  "ban": { "orchestrator": ["gpt-6-luna", "claude-haiku-5-5"], "worker": [] },
+  "discovery": { "autoEnroll": false, "collect": false }
 }

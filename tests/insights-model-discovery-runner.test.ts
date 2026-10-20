@@ -39,12 +39,14 @@ test('3. failed collection preserves last-good snapshot', async () => {
   assert.deepEqual([after?.generation, after?.models[0]?.modelId], [1, 'm1']);
 });
 
-test('4. unverified and invalid rows are rejected from snapshot', async () => {
+test('4. storage keeps structurally-valid unverified rows; invalid rows still rejected', async () => {
   const store = new MemoryStore();
   const res = await runModelDiscovery({ config: { enabled: true },
     adapters: [mock('p1', [{ ...valid('unver'), verified: false }, { ...valid('no-eff'), efforts: [] }, valid('good')])], store, now: NOW });
-  assert.equal(res.summary.added, 1);
-  assert.deepEqual((await store.read('p1'))?.models.map(m => m.modelId), ['good']);
+  const snap = await store.read('p1');
+  assert.deepEqual(snap?.models.map(m => m.modelId).sort(), ['good', 'unver']);
+  assert.ok(snap?.models.every(m => typeof m.modelId === 'string'));
+  assert.ok(snap?.models.some(m => m.verified === false), 'verified:false preserved, never promoted');
 });
 
 test('5. diff summary calculates added, removed, changed', async () => {

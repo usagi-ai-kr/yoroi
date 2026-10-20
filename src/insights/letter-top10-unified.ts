@@ -3,6 +3,7 @@ import { separateGptSolModels } from './letter-top10-filter.js';
 import { activeLetterModelLists, banSetFor, listKeyOf } from './letter-model-lists.js';
 import { FREE_ACCESS_METRIC, normalizeModelName, toRefMap, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
 import { buildCandidatePool, plansForCatalogModel } from './letter-top10-candidates.js';
+import { catalogWithDiscovery } from './model-discovery-catalog.js';
 import { type OptimalZoneRole, type ScoreComponents, type ScoredGroup } from './letter-top10-worker.js';
 import { scoreRoleCandidatesFromSources } from './letter-top10-score.js';
 import { normalRankScores } from './letter-score-normal.js';
@@ -10,8 +11,7 @@ import { PLAN_CATALOG, type PlanCatalogEntry } from './plan-catalog.js';
 import { loadEffortAvailability, resolveAvailability, UNCONSTRAINED_AVAILABILITY, type AvailabilityMode } from './letter-effort-availability.js';
 
 export const TOP_N = 15;
-export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = {
-  orchestrator: '## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)', worker: '## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)' };
+export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = { orchestrator: '## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)', worker: '## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)' };
 export type RoleChange = '유지' | `▲${number}` | `▼${number}` | '진입' | '신규';
 export interface RoleEntry {
   readonly rank: number; readonly modelId: string; readonly indexText: string; readonly repEffort: string;
@@ -72,9 +72,9 @@ const markBoth = (list: RoleList, other: ReadonlySet<string>): RoleList =>
 export function computeRoleTop10(records: readonly Top10RecordInput[], opts?: Top10Options): RoleLists {
   // #188: 가용성 기본값은 여기서 한 번만 env 게이트로 해석한다. 현재 목록·previousRanks·두 렌더러가 같은 프로필을 쓴다.
   const av = opts?.effortAvailability ?? loadEffortAvailability(), input: Top10Options = { ...(opts ?? {}), ...(av && { effortAvailability: av }) };
-  // p51: 런타임 free 카탈로그를 전체 후보에 합치고, 검증 free 경로 모델에는 접근 근거 표지 행만 넣는다(p52: 가격 불변).
-  const base = input.catalog ?? PLAN_CATALOG, catalog = [...base, ...(input.freeCatalog ?? []).filter(f => !base.some(p => p.planId === f.planId))];
+  // p51 free + #168 discovery(opt-in만 스냅샷 읽음): 검증 카탈로그에 합친다.
   const lists = input.letterModelLists ?? activeLetterModelLists(), excluded = new Set([...(input.excludeModelIds ?? [])].map(id => listKeyOf(splitBaseAndEffort(id).base)));
+  const base = input.catalog ?? PLAN_CATALOG, catalog = catalogWithDiscovery([...base, ...(input.freeCatalog ?? []).filter(f => !base.some(p => p.planId === f.planId))], { ...(lists.discovery?.autoEnroll !== undefined ? { autoEnroll: lists.discovery.autoEnroll } : {}) });
   const freeRows = catalog.filter(p => p.tier === 'free').flatMap(p => p.models.filter(m => m.verified).map(m => ({ modelId: m.modelId, metric: FREE_ACCESS_METRIC, value: 0 })));
   const evidence = [...(input.openrouterRecords ?? []), ...(input.opencodeDataRecords ?? []), ...(input.cognitionRecords ?? []), ...freeRows];
   const candidates = buildCandidatePool(records, catalog, evidence, lists).accessibleRecords;

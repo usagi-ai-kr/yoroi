@@ -6,10 +6,12 @@ import { normalizeModelName } from './model-id.js';
 import { resolveModelId } from './model-aliases.js';
 
 export interface LetterRoleLists { readonly common: string[]; readonly orchestrator: string[]; readonly worker: string[] }
+export interface LetterModelListsDiscovery { readonly autoEnroll?: boolean; readonly collect?: boolean }
 export interface LetterModelLists {
   readonly allowOlder: string[];
   readonly excludePatterns: string[];
   readonly ban: LetterRoleLists;
+  readonly discovery?: LetterModelListsDiscovery;
 }
 export const DEFAULT_LETTER_MODEL_LISTS: LetterModelLists = {
   allowOlder: ['gpt-6-sol'],
@@ -35,10 +37,14 @@ export function loadLetterModelLists(path: string = CONFIG_PATH): LetterModelLis
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new Error(`invalid model lists: ${path}`);
   const record = raw as Record<string, unknown>, def = DEFAULT_LETTER_MODEL_LISTS;
   const banRaw = (typeof record.ban === 'object' && record.ban !== null ? record.ban : {}) as Record<string, unknown>;
+  const discRaw = (typeof record.discovery === 'object' && record.discovery !== null ? record.discovery : {}) as Record<string, unknown>;
   // ban 하위 키 생략 시 빈 배열이 아니라 기본값(사본)을 쓴다 — 기본 밴이 설정 파일로 유지되게 한다.
   return {
     allowOlder: 'allowOlder' in record ? strList(record.allowOlder) : [...def.allowOlder],
     excludePatterns: 'excludePatterns' in record ? strList(record.excludePatterns) : [...def.excludePatterns],
+    ...('discovery' in record ? { discovery: {
+      ...(discRaw.autoEnroll === true ? { autoEnroll: true } : {}),
+      ...(discRaw.collect === true ? { collect: true } : {}) } } : {}),
     ban: {
       common: 'common' in banRaw ? strList(banRaw.common) : [...def.ban.common],
       orchestrator: 'orchestrator' in banRaw ? strList(banRaw.orchestrator) : [...def.ban.orchestrator],

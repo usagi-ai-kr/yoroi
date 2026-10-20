@@ -6,11 +6,18 @@ import {
 } from './letter-three-role.js';
 import {
   renderThreeRoleMarkdown,
+  renderThreeRoleSection,
 } from './letter-three-role-render.js';
 import {
   applyReviewerPolicy,
   type ReviewerPolicyConfig,
 } from './letter-reviewer-policy.js';
+
+export interface ThreeRoleSections {
+  readonly orchestrator: string;
+  readonly reviewer: string;
+  readonly worker: string;
+}
 
 export interface ThreeRolePipelineOptions<T extends RoleCandidate = RoleCandidate> {
   readonly enabled?: boolean;
@@ -31,6 +38,7 @@ export interface ThreeRolePipelineOutput<T extends RoleCandidate = RoleCandidate
   readonly enabled: boolean;
   readonly selection?: ThreeRoleSelectionOutput<T & { score?: number }>;
   readonly markdown?: string;
+  readonly sections?: ThreeRoleSections;
 }
 
 export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(
@@ -55,6 +63,12 @@ export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(
     depth,
   });
 
+  const sections: ThreeRoleSections = {
+    orchestrator: renderThreeRoleSection('orchestrator', selection.orchestrator.all, renderDepth),
+    reviewer: renderThreeRoleSection('reviewer', selection.reviewer.all, renderDepth),
+    worker: renderThreeRoleSection('worker', selection.worker.all, renderDepth),
+  };
+
   const markdown = renderThreeRoleMarkdown({
     orchestrator: selection.orchestrator.all,
     reviewer: selection.reviewer.all,
@@ -67,5 +81,6 @@ export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(
     enabled: true,
     selection,
     markdown,
+    sections,
   };
 }

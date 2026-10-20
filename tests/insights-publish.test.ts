@@ -26,9 +26,31 @@ function harness(outputs: ProcessOutput[], now = Date.UTC(2026, 9, 13), render: 
 }
 
 test('KST time guard skips before querying or rendering', async () => {
-  const h = harness([], Date.UTC(2026, 9, 12, 23, 59)), code = await h.run();
-  assert.equal(code, 0); assert.deepEqual(h.stdout, ['skip: before 09:00 KST\n']);
+  // 2026-10-12 22:59 UTC = 2026-10-13 07:59 KST (기본 게이트 08:00 이전)
+  const h = harness([], Date.UTC(2026, 9, 12, 22, 59)), code = await h.run();
+  assert.equal(code, 0); assert.deepEqual(h.stdout, ['skip: before 08:00 KST\n']);
   assert.equal(h.runner.requests.length, 0);
+});
+
+test('08:00 KST 경계: 07:59는 건너뛰고 08:00은 진행한다', async () => {
+  const before = harness([], Date.UTC(2026, 9, 12, 22, 59));
+  assert.equal(await before.run(), 0);
+  assert.deepEqual(before.stdout, ['skip: before 08:00 KST\n']);
+  assert.equal(before.runner.requests.length, 0, '가드는 조회·렌더 전에 동작한다');
+  const at = harness([ok('[]')], Date.UTC(2026, 9, 12, 23, 0));
+  await at.run();
+  assert.deepEqual(at.stdout, [], '08:00 KST는 skip 하지 않는다');
+  assert.ok(at.runner.requests.length > 0, '진행하면 중복 조회를 수행한다');
+});
+
+test('UTC 날짜와 KST 날짜가 다르면 제목은 KST 날짜를 쓴다', async () => {
+  // 2026-10-12 23:30 UTC = 2026-10-13 08:30 KST
+  const h = harness([ok('[]'), ok('https://github.com/qus0in/yoroi/issues/127'), ok(), ok(), ok(),
+    ok(JSON.stringify([])), ok(), ok(), ok(), ok()], Date.UTC(2026, 9, 12, 23, 30));
+  assert.equal(await h.run(), 0);
+  const create = h.runner.requests.find(r => r.args.includes('create'))!;
+  assert.equal(create.args[create.args.indexOf('--title') + 1], '[letter] 2026-10-13 AI 인사이트 레터');
+  assert.ok(h.stdout.some(l => l.includes('2026-10-13 08:30 KST')), '발행 시각도 KST 기준');
 });
 
 test('existing open or closed title skips creation and body generation', async () => {

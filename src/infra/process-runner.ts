@@ -16,7 +16,9 @@ export class NodeProcessRunner implements ProcessRunner {
     }
     return new Promise((resolve, reject) => {
       let child: ChildProcessWithoutNullStreams;
-      try { child = this.start(request.executable, request.args, { ...process.env, ...request.env }); }
+      // replace 모드에서는 process.env를 전혀 합치지 않는다(호스트 비밀·설정 차단).
+      const env = request.envMode === 'replace' ? { ...request.env } : { ...process.env, ...request.env };
+      try { child = this.start(request.executable, request.args, env); }
       catch { reject(new SourceError('unavailable')); return; }
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');

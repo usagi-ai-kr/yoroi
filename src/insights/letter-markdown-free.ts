@@ -2,8 +2,14 @@ import { buildCatalogAliasResolver } from './model-aliases.js';
 import { computeRoleTop10, type RoleLists } from './letter-top10-unified.js';
 import { splitBaseAndEffort } from './letter-top10-group.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
+import { existsSync } from 'node:fs';
+import { openDatabase } from '../infra/sqlite/database.js';
+import { resolveDbPath } from '../infra/sqlite/data-dir.js';
+import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
+import type { CalibrationRunRecord } from './calibration-store.js';
+import { SqliteCalibrationStore } from './calibration-store-sqlite.js';
 import { normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { freeCompactRows, freeMarkdownRows, FREE_TABLE_HEADER } from './letter-markdown-free-table.js';
+import { freeCompactRows, freeMarkdownRows, FREE_TABLE_HEADER, withCalibration } from './letter-markdown-free-table.js';
 import { freeRowsFrom } from './letter-markdown-free-sort.js';
 export { barePlan, freeOnlyModelIds, shortPlan } from './letter-top10-plans.js';
 
@@ -42,10 +48,25 @@ export const unmeasuredFreeEntries = (freeCatalog: readonly PlanCatalogEntry[] |
 
 /** p75 B: 오케·워커 두 표를 모델 기준 한 표로 합친다(열: 모델·오케·워커·Free 경로·비고).
  *  셀은 통과 `✓ 스코어`, 근거 있고 미달 `✗`, 근거 없음 `-`. 정렬은 letter-markdown-free-sort가 담당한다. */
+export type CalibrationLookup = (modelId: string) => readonly CalibrationRunRecord[] | undefined;
+/** #180 unit 5: DB 파일이 있을 때만 저장소를 읽는다. 없으면 undefined(once에서 저장소 생성 없음). */
+const lazyCalibrationLookup = (): CalibrationLookup | undefined => {
+  let path: string;
+  try { path = resolveDbPath(process.env); } catch { return undefined; }
+  if (!existsSync(path)) return undefined;
+  return (modelId: string) => {
+    try {
+      const store = new SqliteCalibrationStore(openDatabase(path, { migrations: [] }));
+      try { return store.listRuns(normalizeModelName(modelId), CALIBRATION_TASK_SET_VERSION); }
+      finally { store.close(); }
+    } catch { return undefined; }
+  };
+};
 export function renderFreeSectionMarkdown(lists: RoleLists | undefined,
-  unmeasured: readonly UnmeasuredFree[] = [], _limit = 5): string[] {
+  unmeasured: readonly UnmeasuredFree[] = [], _limit = 5, calibration?: CalibrationLookup): string[] {
   if (!lists) return [FREE_HEADING, '', FREE_EMPTY_NOTE];
-  return [FREE_HEADING, '', FREE_TABLE_HEADER, ...freeMarkdownRows(freeRowsFrom(lists, unmeasured, Infinity)), '', ...FREE_LIMIT_NOTES];
+  const rows = withCalibration(freeRowsFrom(lists, unmeasured, Infinity), calibration ?? lazyCalibrationLookup());
+  return [FREE_HEADING, '', FREE_TABLE_HEADER, ...freeMarkdownRows(rows), '', ...FREE_LIMIT_NOTES];
 }
 export function renderFreeSectionCompact(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], limit = 3): string[] {

@@ -47,3 +47,54 @@
 
 - [완료] PR #156 병합 `21405b0`, main CI 38716576120 success, 전역 CLI 0.13.3 설치(2026-10-15 21:54 KST 버전 확인).
 - [미완료·의도] `v0.13.3` tag·Release 없음. 병합 내용은 1.0.0에 포함한다.
+
+## 하네스 타 저장소 학습 (2026-10-20, w1/w2)
+
+- [완료] moi·dalmuti·paul 대조 기록(`docs/insights/harness-cross-repo-learning.md`).
+  이번 요청 채택: 스킬 초안(harness 사용자 학습·authoring 읽기 범위·검증),
+  CI docs-only 항상-validate 분리, development 설명. 보류: 바이트예산·ledger·Herdr-only.
+- [정정] 요청 시작 HEAD `5532dac` clean. 초안은 본 요청 중 root 서브에이전트
+  작성 후 사용자 지시로 중단, 기존 패널이 재대조. dalmuti Herdr-only 영구정책은 미이식.
+- [검증] skill validate·validate-repo.py·scripts unittest 19·diff --check PASS. 원격 CI 미실행. w2 최종 리뷰 통과.
+
+## 현재 이슈 분배 (2026-10-20)
+
+- 기준·완료조건: [배정 문서](insights/issue-dispatch-20261020.md).
+- w1(w18:p2): #190 순수 파서·정규화/합성 검증. 소유 신규 arena-coding 파일·전용 테스트·단위 문서.
+- w2(w18:p3): #180/PR #191 반영 점검. 소유 calibration-release-audit-20261020.md.
+- w3(w18:p4): #168 자동감지 설계·소유경계. 소유 model-discovery-unit1.md.
+- 총괄: 로스터·본 작업기록·배정문서. 각 상세 소유는 배정문서와 패킷을 따른다.
+- 상태: 세 패널 모두 turn_started 확인. 공통 런타임 연결·게시·머지는 별도 후속 단위로 둔다.
+
+## 이어하기 단위2 및 후속 정합 (2026-10-20)
+
+- [완료] #180: CI 테스트 OS 의존 제거(ENOTDIR) 및 child fail-fast 격리 커밋 `58f5524` 완료. PR #191의 게시·CI 상태는 보고 #193에서 추적한다.
+- [완료] #190 단위A: 순수 파서·타입·복합키·테스트(7/7) 구현, w3 최종 리뷰 PASS([보고서](insights/arena-final-review-20261020.md)). 초기 BLOCK 해소. 전체 이슈(수집/DB/once)는 후속.
+- [완료] #168: 순수 레지스트리 핵심(diff·게이트·render·snapshot 무효세대보완) 구현, 테스트 4파일 24/24 pass, 최종 리뷰 READY·중복 diff 최종 검토 PASS([리뷰](insights/model-discovery-review-20261020.md)·[최종](insights/discovery-duplicate-review-20261020.md)). 어댑터·저장소·config·레터 연결은 후속.
+- [완료] 하네스: skill-authoring 외부사실 검증 1개 보강, CI docs-only 항상-validate(`e3abe25`).
+- [중간 검증] 전체 `check` 1회차 1165/1166 통과(usage-history 시간단언 1건 1278ms), 단독 3회 순차 6/6 통과(788~813ms, 미변경) 후 재실행 결과 단위 1166/1166, BDD 45/635, typecheck/build exit 0 완료([flaky-tests](flaky-tests.md)).
+- [정리] 종합 상태 및 커밋 대상 그룹 분리는 [이슈별 종합 요약](insights/issue-units-summary-20261020.md) 참조.
+
+- [이전 단위 종료 시점] CI 수정 58f5524 · Arena d0ace75 · 자동감지 핵심 5eccc2b. 당시 원격 미게시.
+- [최종 검증] 기본 병렬 1166/1167(기존 SQLite 시간 단언 실패), 직렬 전체 1167/1167·BDD45/635·타입·빌드 통과. [상세](insights/final-validation-20261020.md).
+
+## PR 갱신·보고 요청 (2026-10-20)
+
+- 사용자 요청으로 main 병합 이력을 dev에 동기화했다(aceefc2, 파일 내용 변경 없음).
+- [보고 #193](https://github.com/usagi-ai-kr/yoroi/issues/193)을 report 라벨로 생성했다.
+- PR #191의 게시 SHA·원격 CI·후속 상태는 보고 #193을 기준으로 추적한다.
+
+## PR #191 리뷰 대응 및 하네스 커밋 (2026-10-20, w18:p3)
+
+- [완료] PR #191 지적 3건(env·checker·store) 독립 리뷰 수용 및 check 1192 PASS 시점 확인([요약](insights/pr191-response-summary-20261020.md)).
+- [완료] 하네스 위탁 우선 확립 및 `AGENTS.md` 서브에이전트 허용 삭제: 독립 리뷰 통과 후 `dev`에 커밋 `f4d868d` 완료 (9개 파일).
+- [완료] #192 누락 댓글 3건 원격 게시 완료([#192 댓글](https://github.com/usagi-ai-kr/yoroi/issues/192#issuecomment-6280879673), c0/c1 일치 증명·c2 보완 표기).
+- [완료] 퍼블리셔 정규화 w1 보완(F1/F2 게이트, 1197/1197 PASS) 및 w3 최종 독립 리뷰 PASS([리뷰](insights/publisher-recovery-acceptance-review.md)).
+- [원칙] PR #191 draft 및 #180 open 유지 (머지·Closes 보류). #168/#190 런타임 미구현 유지.
+
+- [완료] PR #191 커밋 4회(6235833·b5ad4c7·e33a019·a49628e)+최종·CI 기록(9829cd7·708484b), dev push·원격 CI 4run success·PR/이슈 반영.
+
+## o 학습 통합 (2026-10-20, w18:p4)
+
+- [완료] roster에 리뷰 전담 r(w18:p5) 추가(coord status가 r 해석 확인). r 모델은 배정 직전 live 출력 기준.
+- [완료] 5원인 수용기준·DELTA 요소식 메시지 규칙을 하네스 최소 반영(규칙 1곳·참조 2곳·샘플 1·호스트 1줄). r 최종리뷰 패킷 전송 후 r PASS 시 로컬 커밋(push 없음).

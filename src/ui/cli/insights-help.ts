@@ -11,6 +11,6 @@ export const INSIGHTS_HELP = [
   "  --full         render full detailed letter with all evidence rows",
   "  --markdown     render GitHub issue markdown layout",
   "  --dry-run      show publish actions without GitHub writes",
-  "  --not-before   minimum KST time to publish (default 09:00)",
+  "  --not-before   minimum KST time to publish (default 08:00)",
   "  -h, --help     show help for insights subcommand",
 ].join("\n");

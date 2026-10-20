@@ -18,6 +18,8 @@ export const MODEL_ALIAS_RULES: readonly ModelAliasRule[] = [
     checkedOn: '2026-10-15', sourceUrl: 'https://x.ai/news/grok-build-0-1' },
   { from: 'muse-spark-open:cloud', to: 'muse-spark-open', basis: 'Ollama Tags 단일 cloud 태그 + docs App/CLI :cloud 규칙',
     checkedOn: '2026-10-16', sourceUrl: 'https://ollama.com/library/muse-spark-open/tags' },
+  { from: 'minimax-m3-1-flash-free', to: 'minimax-m3-1-flash', basis: 'OpenCode Go 모델 id와 AA 정규화 id의 접미 -free 차이',
+    checkedOn: '2026-10-20', sourceUrl: 'https://opencode.ai/v2/docs/console/go' },
 ];
 
 /** A1(p28): AA modelAlias의 괄호부(예: "(High)")를 떼어 normalize한 보조 키 → AA canonical.

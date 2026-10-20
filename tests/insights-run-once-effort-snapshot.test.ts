@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MemoryInsightHistory } from '../src/insights/history-memory.js';
 import { parseAaResponse } from '../src/insights/aa-parser.js';
+import { previousRanks } from '../src/insights/letter-top10-unified.js';
 import { runInsightsOnce } from '../src/insights/run-once.js';
 import type { InsightSourcePort } from '../src/insights/source-port.js';
 
@@ -29,5 +30,28 @@ test('run-once previousRanks uses the active effort snapshot with a stored prior
       { modelId: 'claude-opus-5-5', rank: 1, metric: 'orchestrator' },
       { modelId: 'muse-spark-1-3', rank: 2, metric: 'orchestrator' },
     ]);
+  } finally { if (previous === undefined) delete process.env.YOROI_EFFORT_PROFILE; else process.env.YOROI_EFFORT_PROFILE = previous; }
+});
+
+test('previousRanks output equals current-ranks recomputation from the same snapshot (#188 follow-up)', async () => {
+  const previous = process.env.YOROI_EFFORT_PROFILE;
+  let observedAt = '2026-10-07T00:30:00.000Z';
+  const history = new MemoryInsightHistory();
+  const port: InsightSourcePort = { id: 'artificial-analysis', parse: parseAaResponse, fetch: async () => payload };
+  const deps = { ports: [port], history, now: () => observedAt };
+  try {
+    delete process.env.YOROI_EFFORT_PROFILE;
+    await runInsightsOnce(deps);
+    observedAt = '2026-10-08T00:30:00.000Z';
+    process.env.YOROI_EFFORT_PROFILE = 'observed-2026-10-19';
+    const run = await runInsightsOnce(deps);
+    const av = run.top10?.effortAvailability;
+    assert.equal(av?.activeProfile, 'observed-2026-10-19');
+    const recomputed = previousRanks(run.top10?.records ?? [], { effortAvailability: av });
+    const rows = (['orchestrator', 'worker'] as const).flatMap(role =>
+      [...recomputed[role]].map(([modelId, rank]) => ({ modelId, rank, metric: role })));
+    const byKey = (rs: readonly { metric: string; rank: number; modelId: string }[]) =>
+      [...rs].sort((a, b) => a.metric.localeCompare(b.metric) || a.rank - b.rank || a.modelId.localeCompare(b.modelId));
+    assert.deepEqual(byKey(rows), byKey(run.top10?.previousRanks ?? []), '전일 순위가 스냅샷 재계산과 같아야 한다');
   } finally { if (previous === undefined) delete process.env.YOROI_EFFORT_PROFILE; else process.env.YOROI_EFFORT_PROFILE = previous; }
 });

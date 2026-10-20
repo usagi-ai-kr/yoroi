@@ -8,8 +8,8 @@ import type { InsightRecord, InsightSource } from '../src/insights/record.js';
 import type { InsightSourcePort } from '../src/insights/source-port.js';
 
 const AT = '2026-10-13T00:30:00.000Z', CUR = '2026-10-12', PREV = '2026-10-11';
-const metrics = { 'artificial-analysis': ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index'],
-  openrouter: ['total_tokens'], cognition: ['correct'], 'opencode-data': ['opencode_data_tokens'] } as const;
+const metrics: Readonly<Record<string, readonly string[]>> = { 'artificial-analysis': ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index'],
+  openrouter: ['total_tokens'], cognition: ['correct'], 'opencode-data': ['opencode_data_tokens'] };
 const unit = (s: InsightSource) => s === 'cognition' ? 'ratio' : s === 'openrouter' || s === 'opencode-data' ? 'tokens' : 'score';
 const url = (s: InsightSource) => s === 'cognition' ? 'https://cognition.com' : s === 'openrouter' ? 'https://openrouter.ai' :
   s === 'opencode-data' ? 'https://opencode.ai' : 'https://artificialanalysis.ai';
@@ -22,9 +22,9 @@ function row(source: InsightSource, metric: string, date: string, schemaVersion 
   return checked.value;
 }
 const port = (source: InsightSource): InsightSourcePort => ({ id: source, fetch: async () => null,
-  parse: () => [{ ok: true, index: 0, records: metrics[source].map(metric => row(source, metric, CUR).record), warnings: [] }] });
+  parse: () => [{ ok: true, index: 0, records: metrics[source]!.map(metric => row(source, metric, CUR).record), warnings: [] }] });
 function savePrior(history: MemoryInsightHistory, source: InsightSource, schemaVersion = DEFAULT_SCHEMA_VERSIONS[source]): void {
-  const rows = metrics[source].map(metric => row(source, metric, PREV, schemaVersion));
+  const rows = metrics[source]!.map(metric => row(source, metric, PREV, schemaVersion));
   assert.equal(history.saveDaily({ source, publicationDate: '2026-10-12', requestScope: DEFAULT_REQUEST_SCOPES[source], schemaVersion },
     { ok: true, source, records: rows, rejectedRows: 0 }), true);
 }

@@ -8,6 +8,7 @@ import type { InsightSourcePort } from './source-port.js';
 import { fetchAaPages, parseAaPages } from './sources-aa.js';
 import { fetchOpenCodeData, OPEN_CODE_DATA_URL, OPEN_CODE_DATA_ATTRIBUTION, type OpenCodeDataPage, type OpenCodeDataTransport } from './sources-opencode-data.js';
 import { emitOpenCodeDataSchemaDiagnostic, parseOpenCodeDataJson } from './opencode-data-json-parser.js';
+import { ARENA_CODING_ATTRIBUTION, ARENA_CODING_URL, fetchArenaCodingPayload, parseArenaCodingPayload } from './sources-arena-coding-port.js';
 import type { ParseRowResult } from './parse-utils.js';
 
 type AuthKind = 'x-api-key' | 'bearer' | 'none';
@@ -18,7 +19,7 @@ export interface InsightSourceEntry {
   readonly displayName: string;
   /** Access URL (attribution). */
   readonly url: string;
-  readonly pipeline: 'http-json' | 'aa-pages' | 'opencode-json';
+  readonly pipeline: 'http-json' | 'aa-pages' | 'opencode-json' | 'arena-rows';
   readonly auth: AuthKind;
   /** Candidate env var name (docs/insights/sources-a.md, #79); user .env key name unconfirmed. */
   readonly authEnvName: string | null;
@@ -43,6 +44,9 @@ export const INSIGHT_SOURCES: readonly InsightSourceEntry[] = [
     url: 'https://cognition.com/data/frontiercode-leaderboard/data.json',
     pipeline: 'http-json', auth: 'none', authEnvName: null, timeoutMs: 15000,
     license: null, note: 'Internal use only; redistribution prohibited' },
+  { id: 'arena-coding', displayName: 'Arena Coding (HF Leaderboard)',
+    url: ARENA_CODING_URL, pipeline: 'arena-rows', auth: 'none', authEnvName: null, timeoutMs: 15000,
+    license: 'CC-BY-4.0', note: 'HF rows API · webdev·agent_bash_recovery_steps(latest) · 기존 overall arena 계통과 분리' },
 ];
 
 export type EnvLookup = (name: string) => string | undefined;
@@ -55,7 +59,8 @@ function authHeaders(entry: InsightSourceEntry, env: EnvLookup): Record<string, 
 }
 
 export type InsightPortOptions = PolicyFetchOptions & { readonly opencodeTransport?: OpenCodeDataTransport; readonly opencodeBaseUrl?: string;
-  /** Injected stderr sink for source diagnostics (CLI IO contract); defaults to process.stderr. */ readonly onDiagnostic?: (line: string) => void };
+  /** Injected stderr sink for source diagnostics (CLI IO contract); defaults to process.stderr. */ readonly onDiagnostic?: (line: string) => void;
+  /** Injected fetcher for the Arena rows pipeline (tests never hit the network). */ readonly arenaFetcher?: (url: string) => Promise<unknown> };
 
 /** Builds one port per registered source for ONE execution: every port gets its own request session that starts at
  * the shared run start (creation time), so the per-source 4-A request/time caps count pages and retries together.
@@ -75,6 +80,7 @@ export function createInsightSourcePorts(client: HttpClient, env: EnvLookup, opt
         switch (entry.pipeline) {
           case 'opencode-json': return fetchOpenCodeData({ ...(signal && { signal }), ...(options.opencodeTransport && { transport: options.opencodeTransport }), ...(options.opencodeBaseUrl && { baseUrl: options.opencodeBaseUrl }) });
           case 'aa-pages': return fetchAaPages(client, spec(), session, options, signal);
+          case 'arena-rows': return fetchArenaCodingPayload({ ...(options.arenaFetcher && { fetcher: options.arenaFetcher }), ...(signal && { signal }), timeoutMs: entry.timeoutMs });
           default: return fetchJsonWithPolicy(client, spec(), session, options, signal);
         }
       },
@@ -84,6 +90,7 @@ export function createInsightSourcePorts(client: HttpClient, env: EnvLookup, opt
           case 'openrouter': return parseOpenRouterResponse(payload, observedAt);
           case 'cognition': return parseCognitionResponse(payload, observedAt);
           case 'opencode-data': { const json = JSON.parse((payload as OpenCodeDataPage).jsonText) as unknown; emitOpenCodeDataSchemaDiagnostic(json, options.onDiagnostic); return parseOpenCodeDataJson(json, observedAt).rows; }
+          case 'arena-coding': return parseArenaCodingPayload(payload, observedAt);
           default: throw new SourceError('parse');
         }
       },

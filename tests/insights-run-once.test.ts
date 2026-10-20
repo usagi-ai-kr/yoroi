@@ -10,26 +10,27 @@ import type { InsightSource } from '../src/insights/record.js';
 import { runInsightsOnce } from '../src/insights/run-once.js';
 import { DEFAULT_REQUEST_SCOPES, DEFAULT_SCHEMA_VERSIONS } from '../src/insights/run-once-steps.js';
 import type { InsightSourcePort } from '../src/insights/source-port.js';
+import type { ParseRowResult } from '../src/insights/parse-utils.js';
 import { DatabaseSync } from 'node:sqlite';
 import { SqliteInsightHistory } from '../src/infra/sqlite/insights-store.js';
 import { migrate, INSIGHTS_MIGRATIONS } from '../src/infra/sqlite/migrations.js';
 
 const orMeta = { as_of: '2026-10-07T00:00:00Z', start_date: '2026-10-01', end_date: '2026-10-07', version: 'v1' };
 const orRow = { date: '2026-10-07', model_permaslug: 'gpt-5', total_tokens: 123 };
-const payloads = {
+const payloads: Readonly<Record<string, () => unknown>> = {
   'artificial-analysis': (): unknown => ({ tier: 'free', intelligence_index_version: 3, pagination: { page: 1, page_size: 10, total_pages: 1, has_more: false },
     data: [{ id: 'a', slug: 'a', name: 'A', release_date: null, model_creator: { id: 'c', name: 'C' }, evaluations: { artificial_analysis_intelligence_index: 42 }, pricing: {}, performance: {} }] }),
   openrouter: (): unknown => ({ meta: orMeta, data: [orRow] }),
   cognition: (): unknown => ({ v1_1: { models: ['M'], subsets: { main: 100 }, data: { M: { high: { main: { correct: 0.5, cost: 1.25 } } } } } }),
   'opencode-data': (): unknown => ({ jsonText: '{"updatedAt":"2026-10-07T00:00:00Z","dailyTokens":[{"date":"2026-10-07","total":1,"models":{"Model-A":1}}]}' }),
 };
-const parsers = { 'artificial-analysis': parseAaResponse, openrouter: parseOpenRouterResponse, cognition: parseCognitionResponse,
+const parsers: Readonly<Record<string, (p: unknown, at: string) => readonly ParseRowResult[]>> = { 'artificial-analysis': parseAaResponse, openrouter: parseOpenRouterResponse, cognition: parseCognitionResponse,
   'opencode-data': (p: unknown, at: string) => parseOpenCodeDataJson(JSON.parse((p as { jsonText: string }).jsonText) as unknown, at).rows };
 /** Fake four-source ports (real parsers, no network). behavior[id] is a SourceError to throw, or a replacement payload. */
 function setup() {
   const calls: Record<string, number> = {}, behavior: Partial<Record<InsightSource, unknown>> = {};
-  const ports: InsightSourcePort[] = (Object.keys(payloads) as InsightSource[]).map(id => ({ id, parse: parsers[id],
-    fetch: async () => { calls[id] = (calls[id] ?? 0) + 1; const b = behavior[id]; if (b instanceof Error) throw b; return b ?? payloads[id](); } }));
+  const ports: InsightSourcePort[] = (Object.keys(payloads) as InsightSource[]).map(id => ({ id, parse: parsers[id]!,
+    fetch: async () => { calls[id] = (calls[id] ?? 0) + 1; const b = behavior[id]; if (b instanceof Error) throw b; return b ?? payloads[id]!(); } }));
   return { calls, behavior, ports, history: new MemoryInsightHistory(), now: () => '2026-10-08T00:30:00.000Z' };
 }
 const statuses = (r: Awaited<ReturnType<typeof runInsightsOnce>>) => Object.fromEntries(r.sources.map(s => [s.source, s.failure ?? s.status]));

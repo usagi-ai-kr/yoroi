@@ -27,6 +27,8 @@ jobs:
     env:
       # 러너 시계는 KST로 맞춘다. 레터 날짜·게이트 판정은 앱 내부 KST 계산(UTC+9)을 쓴다.
       TZ: Asia/Seoul
+      # Free 카탈로그는 런타임 `opencode models --standalone`(V2)로 수집한다.
+      YOROI_OPENCODE_TARGET: v2
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # 수집 원본 키는 시크릿 참조만 둔다(값은 저장소에 쓰지 않는다).
       YOROI_AA_API_KEY: ${{ secrets.YOROI_AA_API_KEY }}
@@ -46,6 +48,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm run build
+      - name: Install OpenCode CLI (pinned)
+        run: |
+          curl -fsSL https://opencode.ai/install | bash -s -- --version 2.0.32 --no-modify-path
+          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
       - name: Dry run (no GitHub writes)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
         run: node dist/src/main.js insights publish --dry-run

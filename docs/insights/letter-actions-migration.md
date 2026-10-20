@@ -41,6 +41,22 @@
   지금 상태에서 둘 다 켜면 당일 제목 중복 검사로 본문 중복은 막히지만, 새 러너가 매번 수집해 자원을 중복 사용한다.
 - 이 한계의 해소(캐시·이력 영속화)는 별도 결정이 필요하다. 본 단위에서 결정하지 않는다.
 
+## 4-1. OpenCode CLI 의존(러너에 바이너리가 없다)
+
+- Free 티어 카탈로그는 런타임 `opencode models` 출력에서만 만들어진다(`opencode-free-models.ts`).
+  러너에는 OpenCode CLI가 없으면 **Free 목록이 비고** `Free 목록 수집 실패(opencode models)`로 발행이 실패한다.
+- 워크플로는 공식 설치 스크립트를 **버전 고정**해 설치한다:
+  `curl -fsSL https://opencode.ai/install | bash -s -- --version 2.0.32 --no-modify-path` → 설치 위치 `$HOME/.opencode/bin`.
+  설치 단계를 지난 뒤 실행할 수 있도록 `$HOME/.opencode/bin`을 `GITHUB_PATH`에 추가한다.
+- `YOROI_OPENCODE_TARGET: v2`로 두면 앱이 `opencode models --standalone`(V2, 자체 서버 경로)을 호출한다.
+  V1 기본값이면 백그라운드 서비스를 쓰므로 러너에서 목록이 비어 있을 수 있다.
+- **새 러너에는 OpenCode 설정·인증이 없다**(설정 파일·자격정보 없음). `opencode models --standalone`은
+  설치와 설정 없이도 공개 모델 목록을 출력하므로 Free 카탈로그는 구성된다. 다만 이 경로는 러너 로그에
+  계정별 정보가 없으므로, 개인 사용량·인증은 건드리지 않는다.
+- 로컬 검증(2026-10-20): 설치된 바이너리는 `opencode v2.0.32`(고정 버전과 동일)이고,
+  `YOROI_OPENCODE_TARGET=v2 opencode models --standalone` → exit 0, 모델 73행 중 `opencode/*-free` 8행
+  (`opencode-go/minimax-m3.1-flash-free`·`opencode/beam-free` 등). 값·자격정보는 출력하지 않았다.
+
 ## 5. 수동 시험 절차(라이브 발행 전)
 
 1. 로컬 dry-run: `pnpm run build && node dist/src/main.js insights publish --dry-run`

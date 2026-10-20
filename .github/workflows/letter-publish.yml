@@ -1,0 +1,44 @@
+name: letter-publish
+run-name: letter-publish · ${{ github.event_name }}
+
+on:
+  schedule:
+    # UTC 23:00 = 다음 날 08:00 KST. GitHub 스케줄러는 실행이 지연될 수 있다(발행 시각이 뒤로 밀린다).
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: letter-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    env:
+      # 러너 시계는 KST로 맞춘다. 레터 날짜·게이트 판정은 앱 내부 KST 계산(UTC+9)을 쓴다.
+      TZ: Asia/Seoul
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 수집 원본 키는 시크릿 참조만 둔다(값은 저장소에 쓰지 않는다).
+      YOROI_AA_API_KEY: ${{ secrets.YOROI_AA_API_KEY }}
+      YOROI_OPENROUTER_API_KEY: ${{ secrets.YOROI_OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # qketing과 동일 pin
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0 (packageManager 12.10.1 = pnpm 12)
+        with:
+          cache: true
+          install: false
+      - name: Install dependencies (frozen)
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
+      - name: Publish letter (08:00 KST gate, --not-before override 가능)
+        run: node dist/src/main.js insights publish

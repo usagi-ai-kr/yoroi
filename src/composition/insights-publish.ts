@@ -24,7 +24,7 @@ const fail = (env: CliEnvironment, message: string): number => { env.stderr(`ins
 const isRenderedLetter = (body: string): boolean => body.startsWith('# ') && body.includes('\n## ');
 
 export async function publishInsightsLetter(options: PublishLetterOptions, env: CliEnvironment): Promise<number> {
-  const now = (options.clock ?? Date.now)(), k = kst(now), notBefore = options.notBefore ?? '09:00';
+  const now = (options.clock ?? Date.now)(), k = kst(now), notBefore = options.notBefore ?? '08:00';
   const [hour, minute] = notBefore.split(':').map(Number), threshold = hour! * 60 + minute!;
   if (k.minuteOfDay < threshold) { env.stdout(`skip: before ${notBefore} KST\n`); return 0; }
   const title = `[letter] ${k.date} AI 인사이트 레터`, bin = options.ghBin || 'gh';

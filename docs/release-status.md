@@ -6,10 +6,10 @@
 - main 병합은 dev → main PR로만 진행한다(직접 push 금지).
 - PR 머지 뒤 원격 CI 통과를 확인하고, 버전 갱신 시 `global-cli-update` 스킬과 [docs/global-install.md](global-install.md) 절차로 전역 CLI를 갱신하고 버전 일치를 확인한다.
 
-## 1.7.1–1.7.3 핫픽스 (2026-10-20, PR #204/#207/#209 → main `124d8cd`/`428f0d1`/`a25e97c`)
+## 1.7.1–1.7.5 핫픽스·품질 패치 (2026-10-20, PR #204/#207/#209/#212/#214)
 
-- 범위: 발행 게이트 state 대소문자(#204), 3역할 순서=최종 ranked entries(#207), 표시 스코어 scoreText·enriched top10·내부 머리글 제거(#209). 각 PR CI·main CI success, Release v1.7.1/v1.7.2/v1.7.3, 전역 CLI 1.7.3.
-- [완료] 최종 Actions run [39415145667](https://github.com/usagi-ai-kr/yoroi/actions/runs/39415145667) success · 레터 [#210](https://github.com/usagi-ai-kr/yoroi/issues/210) 검증 PASS 16/0/0 · #192/#205/#208 closed(교체 이력 보존) · #194/#199 close · milestone 30 close.
+- 범위: state 대소문자, 3역할 순서=ranked entries, 표시 스코어, sonnet high/Spark xhigh cap·default-only·모델명 정리, 리뷰어 catalog 필터, Top15 접두+꼬리 중복, usagi 정성 비고. 각 PR CI·main CI success, Release v1.7.1–v1.7.5, 전역 CLI 1.7.5.
+- [완료] 최종 Actions run [39427728030](https://github.com/usagi-ai-kr/yoroi/actions/runs/39427728030) success · 레터 [#215](https://github.com/usagi-ai-kr/yoroi/issues/215) 검증 PASS 16/0/0 · sonnet high/Spark xhigh, k2-horizon·미확인·suffix 제거, Top15 overlap, usagi 비고 확인 · #192/#205/#208/#210/#213 closed(교체 이력) · #194/#199 close · milestone 30 close.
 - [보류] #198 umbrella open, #180/#202 격리 기준 유지·보류.
 
 ## 1.7.0 발행 완료 (2026-10-20, PR #203 → main `0331f7e6808fc928362666c7b2dc061a437e63a2` = tag `v1.7.0`)

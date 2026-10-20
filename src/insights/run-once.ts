@@ -10,7 +10,7 @@ import { withSuccessors } from './letter-top10-candidates.js';
 import { buildAaTop10Inputs, buildPreviousRanks, previousOpenCodeDataTop10Records } from './letter-top10-history.js'; import { loadEffortAvailability, type EffortAvailability } from './letter-effort-availability.js';
 import { getDailyWithLegacyFallback, LEGACY_REQUEST_SCOPES } from './legacy-scopes.js';
 import { buildCognitionTop10Records, buildPreviousCognitionTop10Records } from './cognition-top10.js';
-import type { InsightSourcePort } from './source-port.js';
+import type { InsightSourcePort } from './source-port.js'; import { arenaEvidenceOutcome } from './letter-arena-evidence.js';
 export interface InsightRunDeps {
   readonly ports: readonly InsightSourcePort[];
   readonly history: InsightHistoryPort;
@@ -74,17 +74,17 @@ function buildTop10Data(deps: InsightRunDeps, publicationDate: string, runs: rea
   const prevOc = ocRows[0] ? previousOpenCodeDataTop10Records(deps.history, publicationDate, deps.requestScopes?.['opencode-data'] ?? DEFAULT_REQUEST_SCOPES['opencode-data'], ocRows[0].record.schemaVersion) : [];
   const cognitionRows = intact('cognition') ? success('cognition')?.records ?? [] : [];
   const cognitionRecords = buildCognitionTop10Records(cognitionRows);
-  const cognitionFirst = cognitionRows[0]?.record;
-  const previousCognitionRecords = cognitionFirst ? buildPreviousCognitionTop10Records(deps.history, publicationDate, deps.requestScopes?.cognition ?? DEFAULT_REQUEST_SCOPES.cognition, cognitionFirst.schemaVersion) : [];
-  const coverage = { aaOrchestrator: records.some(r => r.metric === 'artificial_analysis_intelligence_index'), aaWorker: records.some(r => r.metric === 'artificial_analysis_coding_index'),
-    cognition: cognitionRecords.length > 0, openrouter: openrouterRecords.length > 0, opencodeData: opencodeDataRecords.length > 0 };
+  const arenaOutcome = arenaEvidenceOutcome(intact('arena-coding') ? success('arena-coding')?.records ?? [] : []); // #190: 추가 근거 전용(점수 미반영·부분 수집 미사용)
+  const cognitionFirst = cognitionRows[0]?.record, previousCognitionRecords = cognitionFirst ? buildPreviousCognitionTop10Records(deps.history, publicationDate, deps.requestScopes?.cognition ?? DEFAULT_REQUEST_SCOPES.cognition, cognitionFirst.schemaVersion) : [];
+  const coverage = { aaOrchestrator: records.some(r => r.metric === 'artificial_analysis_intelligence_index'), aaWorker: records.some(r => r.metric === 'artificial_analysis_coding_index'), cognition: cognitionRecords.length > 0, openrouter: openrouterRecords.length > 0, opencodeData: opencodeDataRecords.length > 0 };
   // #188: 프로필 스냅샷을 한 번만 읽어 전일 순위 계산과 결과 데이터가 같은 프로필을 쓰게 한다.
   const effortAvailability = loadEffortAvailability();
   const prev = buildPreviousRanks(deps.history, publicationDate, previous, orScope, success('openrouter')?.records[0]?.record.schemaVersion,
     openrouterRecords.length > 0, prevOc, previousCognitionRecords, coverage, effortAvailability);
   return { records, openrouterRecords, previousRanks: prev.ranks, failedSources: runs.filter(r => r.report.status === 'failed').map(r => r.report.source),
     ...(opencodeDataRecords.length > 0 && { opencodeDataRecords }), ...(cognitionRecords.length > 0 && { cognitionRecords }),
-    observedAt, nowUtc: observedAt, ...(effortAvailability && { effortAvailability }), ...(prev.warnings.length && { warnings: prev.warnings }) };
+    observedAt, nowUtc: observedAt, ...(effortAvailability && { effortAvailability }),
+    ...((prev.warnings.length > 0 || arenaOutcome.note !== undefined) && { warnings: [...prev.warnings, ...(arenaOutcome.note ? [arenaOutcome.note] : [])] }) };
 }
 /** One internal-only run: collect/reuse → validate → store → compare → letter. No rendering, delivery or LLM. */
 export async function runInsightsOnce(deps: InsightRunDeps): Promise<InsightRunResult> {

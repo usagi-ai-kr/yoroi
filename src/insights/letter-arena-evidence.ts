@@ -5,6 +5,7 @@ import type { LetterModelLists } from './letter-model-lists.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
 import type { Top10RecordInput } from './letter-top10-rank.js';
 import { EVIDENCE_METRICS } from './top10-policy.js';
+import type { ValidatedInsightRecord } from './validation.js';
 
 /** #190 단위E: Arena 코딩을 선택적 추가 근거로 쓰는 어댑터. 기본 꺼짐(기존 후보 풀·출력 불변). */
 export const ARENA_EVIDENCE_METRICS = ['arena_coding_rating', 'arena_coding_score'] as const;
@@ -63,4 +64,27 @@ export function mergeArenaEvidence(existing: readonly Top10RecordInput[], bundle
 export function buildCandidatePoolWithArena(records: readonly Top10RecordInput[], catalog: readonly PlanCatalogEntry[],
   existingEvidence: readonly Top10RecordInput[], lists: LetterModelLists, bundle: ArenaEvidenceBundle): CandidatePool {
   return buildCandidatePool(records, catalog, mergeArenaEvidence(existingEvidence, bundle), lists);
+}
+
+/** 레터 노트용 1줄 요약: 출처를 분리해 밝히고 '점수 미반영'과 정책 게이트 상태를 함께 알린다. */
+export function arenaEvidenceNote(bundle: ArenaEvidenceBundle): string | undefined {
+  if (!bundle.enabled || !bundle.rows.length) return undefined;
+  const subsets = [...new Set(bundle.rows.map(row => row.arenaSubset ?? '-'))];
+  const top = bundle.rows.slice(0, 3).map(row => `${row.modelId} ${row.value ?? '-'}`);
+  const gate = bundle.policyReady ? '후보군 반영 가능(가중치 미정)' : `후보군 반영 보류(${bundle.blockedReason ?? 'policy'})`;
+  return `Arena 코딩 근거(성능 추가 근거·점수 미반영, ${gate}): ${subsets.join('·')} ${bundle.rows.length}행` +
+    `${top.length ? ` — ${top.join(', ')}` : ''} · ${bundle.attribution.join(' / ')}`;
+}
+
+export interface ArenaEvidenceOutcome { readonly note?: string; readonly rowCount: number }
+
+/** 수집된 arena 행 → 근거 번들 + 출처 분리 노트. 점수 계산 경로와 완전히 분리한다(#190). */
+export function arenaEvidenceOutcome(records: readonly ValidatedInsightRecord[]): ArenaEvidenceOutcome {
+  const rows: ArenaCodingRecord[] = records.map(value => ({ modelId: value.record.modelId, metric: value.record.metric, value: value.record.value,
+    ...(typeof value.record.metadata?.effortQualifier === 'string' && { effortQualifier: value.record.metadata.effortQualifier }),
+    ...(typeof value.record.metadata?.subset === 'string' && { arenaSubset: value.record.metadata.subset }),
+    ...(typeof value.record.metadata?.category === 'string' && { arenaCategory: value.record.metadata.category }) }));
+  const bundle = buildArenaEvidenceBundle(rows, { enabled: true });
+  const note = arenaEvidenceNote(bundle);
+  return { rowCount: bundle.rows.length, ...(note !== undefined && { note }) };
 }

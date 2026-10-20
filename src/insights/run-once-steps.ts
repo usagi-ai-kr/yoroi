@@ -11,6 +11,7 @@ import { OPENROUTER_FULL_REQUEST_SCOPE } from './openrouter-parser.js';
 import { COGNITION_FULL_REQUEST_SCOPE } from './cognition-parser.js';
 import { OPENCODE_DATA_FULL_REQUEST_SCOPE } from './opencode-data-json-parser.js';
 import { ARENA_CODING_RANK_METRIC, ARENA_CODING_REQUEST_SCOPE, ARENA_CODING_SCHEMA_VERSION } from './sources-arena-coding-port.js';
+import { ARENA_CODING_SCORE_METRIC } from './arena-coding-types.js';
 
 /** Default parser schema versions (daily-reuse lookup happens before any fetch). A stale entry only misses the cache. */
 export const DEFAULT_SCHEMA_VERSIONS: Readonly<Record<InsightSource, string>> = Object.freeze({
@@ -28,7 +29,8 @@ export const RANK_COHORTS: Readonly<Record<InsightSource, { readonly metric: str
     extraMetrics: ['artificial_analysis_intelligence_index'] },
   openrouter: { metric: 'total_tokens', order: 'descending' }, cognition: { metric: 'correct', order: 'descending' },
   'opencode-data': { metric: 'opencode_data_rank', order: 'ascending' },
-  'arena-coding': { metric: ARENA_CODING_RANK_METRIC, order: 'descending' } });
+  'arena-coding': { metric: ARENA_CODING_RANK_METRIC, order: 'descending',
+    extraMetrics: [ARENA_CODING_SCORE_METRIC] } });
 
 /** Source/validation failure to the letter's failure kind: transport → fetch, bad rows → parse, nothing usable → empty. */
 export function failureKind(error: SourceError | undefined, validation?: Extract<InsightValidation, { ok: false }>): LetterFailure {

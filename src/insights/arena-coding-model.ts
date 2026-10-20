@@ -14,10 +14,23 @@ export interface ArenaCodingRecord extends Top10RecordInput {
   readonly arenaCategory?: string;
 }
 
+/** 한정자 슬러그: 소문자·비알파벳은 '-'. 날짜·하네스 표기를 그대로 구분한다. */
+const qualifierSlug = (qualifier: string): string =>
+  qualifier.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/** 저장소 model id 규칙: base + effort 접미사. 한정자가 있으면 base 뒤에 '--한정자' 를 넣는다.
+ *  이래야 날짜형 변형이 기본 모델과 같은 series 키를 공유하지 않는다(자동 병합 금지, #168 결정).
+ *  effort 접미사는 끝에 두어 splitBaseAndEffort 가 effort 를 그대로 읽는다. */
+export function arenaCodingModelId(parsed: Pick<ParsedArenaCodingModel, 'baseId' | 'effort' | 'effortQualifier'>): string {
+  const qualifier = parsed.effortQualifier === undefined ? '' : qualifierSlug(parsed.effortQualifier);
+  const base = qualifier ? `${parsed.baseId}--${qualifier}` : parsed.baseId;
+  return parsed.effort === 'default' ? base : `${base}-${parsed.effort}`;
+}
+
 /** base-effort 접미어 형태로 매핑해 기존 `splitBaseAndEffort`과 호환된다. */
 export function toArenaCodingRecord(parsed: ParsedArenaCodingModel): ArenaCodingRecord {
   return {
-    modelId: parsed.effort === 'default' ? parsed.baseId : `${parsed.baseId}-${parsed.effort}`,
+    modelId: arenaCodingModelId(parsed),
     metric: parsed.metric,
     value: parsed.value,
     ...(parsed.effortQualifier !== undefined && { effortQualifier: parsed.effortQualifier }),

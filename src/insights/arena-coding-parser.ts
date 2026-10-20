@@ -18,21 +18,43 @@ const num = (v: unknown): number | undefined =>
 const text = (v: unknown): string | undefined =>
   typeof v === 'string' && v.trim() ? v.trim() : undefined;
 
-/** `(Max)`·`(xHigh)`·`(High, 20260813)` 파싱. effort 토큰은 정책 순서 집합만 인정한다. */
+/** 뒤에서부터 연속한 괄호 묶음을 모두 뽑는다(예: '(High) (0813)' → ['(High)','(0813)']). */
+function trailingGroups(modelName: string): string[] {
+  const groups: string[] = [];
+  let rest = modelName.trim();
+  for (;;) {
+    const match = /\(([^()]*)\)\s*$/.exec(rest);
+    if (!match) break;
+    groups.unshift(match[1]!.trim());
+    rest = rest.slice(0, match.index).trim();
+  }
+  return groups;
+}
+
+/** 한정자로 인정하는 토큰: 숫자가 섞인 표기(날짜·32K 등)와 관측된 하네스·추론 표기. */
+const QUALIFIER_TOKENS = new Set(['thinking', 'non-thinking', 'reasoning', 'codex', 'harness', 'codex harness', 'preview']);
+const isQualifierToken = (token: string): boolean => /\d/.test(token) || QUALIFIER_TOKENS.has(token);
+
+/** effort 토큰은 정책 순서 집합만 인정한다. effort 토큰이 없으면 effort=default 이고 관측된
+ *  한정자(날짜·하네스)만 남긴다 — '(High, 20260813)'·'(0902)'·'(Thinking)' 행을 버리지 않는다.
+ *  effort 가 아닌 미지의 표기('Ultra')는 거부한다(지원 effort 를 default 로 잘못 표기하지 않음). */
 export function parseEffortToken(modelName: string): { effort: string; qualifier?: string } | undefined {
-  const match = /\(([^()]*)\)\s*$/.exec(modelName.trim());
-  if (!match) return { effort: 'default' };
-  const parts = match[1]!.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  const effort = parts.find(p => (ORCHESTRATOR_EFFORT_ORDER as readonly string[]).includes(p));
-  if (!effort) return undefined;
-  const qualifier = parts.filter(p => p !== effort).join(',');
+  const groups = trailingGroups(modelName);
+  if (!groups.length) return { effort: 'default' };
+  const tokens = groups.flatMap(group => group.split(',').map(token => token.trim().toLowerCase()).filter(Boolean));
+  const effort = tokens.find(token => (ORCHESTRATOR_EFFORT_ORDER as readonly string[]).includes(token));
+  const rest = tokens.filter(token => token !== effort);
+  if (rest.some(token => !isQualifierToken(token))) return undefined;
+  const qualifier = rest.join(',');
+  if (effort === undefined) return { effort: 'default', ...(qualifier && { qualifier }) };
   return qualifier ? { effort, qualifier } : { effort };
 }
 
-/** 표시명 → kebab base id. 유사 이름은 손대지 않는다(자동 병합 금지). */
+/** 표시명 → kebab base id. 괄호 묶음은 전부 제거한다(날짜 접미사는 그대로 둔다 = 자동 병합 금지). */
 export function toBaseId(displayName: string): string {
-  const noParen = displayName.replace(/\s*\([^()]*\)\s*$/, '').trim().toLowerCase();
-  return noParen.replace(/[\s_]+/g, '-').replace(/(?<=\d)\.(?=\d)/g, '-').replace(/-+/g, '-');
+  const noParen = trailingGroups(displayName).reduce((text, _group) => text.replace(/\s*\([^()]*\)\s*$/, ''), displayName.trim());
+  const trimmed = noParen.trim().toLowerCase();
+  return trimmed.replace(/[\s_]+/g, '-').replace(/(?<=\d)\.(?=\d)/g, '-').replace(/-+/g, '-');
 }
 
 /** HF 행 1건을 파싱한다. 서브셋은 행이 아니라 transport config로 주입한다.

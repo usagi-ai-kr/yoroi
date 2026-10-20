@@ -46,8 +46,15 @@
 1. 로컬 dry-run: `pnpm run build && node dist/src/main.js insights publish --dry-run`
    → 제목·중복 판정·close 대상만 출력하고 원격 쓰기는 없다.
 2. 게이트 경계 확인: `--not-before 07:59`로 실행하면 `skip: before 07:59 KST`로 종료한다(조회·렌더 없음).
-3. Actions 수동 실행: `workflow_dispatch` → `GH_TOKEN`과 수집 시크릿이 있어야 수집·발행이 진행된다.
-4. 첫 실행 후 확인: 이슈 본문·댓글 3개, `published #N ... KST` 로그, 이전 open 레터 close 여부.
+3. **시크릿 등록**(값은 저장하지 않고 키만 등록): `YOROI_AA_API_KEY`, `YOROI_OPENROUTER_API_KEY`.
+   `GH_TOKEN`은 Actions 기본 제공 토큰을 쓴다(별도 등록 불필요).
+4. **Actions dry-run**: Actions 탭 → `letter-publish` → `workflow_dispatch` → `dry_run`은 **기본값 true**로 둔다.
+   → `node dist/src/main.js insights publish --dry-run`만 실행되어 **GitHub 쓰기가 없다**(제목·중복·close 대상만 로그).
+   수집은 실제 API를 호출하므로 3번의 시크릿이 unregistered면 수집 단계가 실패한다.
+5. **실행 발행**: dry-run 로그·렌더를 확인한 뒤 `dry_run=false`로 수동 실행하거나, 스케줄(UTC 23:00 = 다음 날 08:00 KST)을 기다린다.
+   스케줄 실행은 `dry_run`과 무관하게 실제 발행 경로를 탄다.
+6. 첫 실행 후 확인: 이슈 본문·댓글 3개, `published #N ... KST` 로그, 이전 open 레터 close 여부.
+   PM2 로컬 발행은 계속 중지 상태로 둔다(§6).
 
 ## 6. PM2 중단·롤백 절차(실행하지 않음)
 

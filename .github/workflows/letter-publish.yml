@@ -6,6 +6,12 @@ on:
     # UTC 23:00 = 다음 날 08:00 KST. GitHub 스케줄러는 실행이 지연될 수 있다(발행 시각이 뒤로 밀린다).
     - cron: '0 23 * * *'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true면 원격 쓰기 없는 dry-run만 수행(기본값). false면 실제 발행.'
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -40,5 +46,9 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm run build
+      - name: Dry run (no GitHub writes)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
+        run: node dist/src/main.js insights publish --dry-run
       - name: Publish letter (08:00 KST gate, --not-before override 가능)
+        if: github.event_name == 'schedule' || inputs.dry_run != true
         run: node dist/src/main.js insights publish

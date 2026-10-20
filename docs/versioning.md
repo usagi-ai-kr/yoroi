@@ -46,8 +46,8 @@ python3 scripts/version.py --bump patch --apply  # manifest version 필드만 �
 
 ## 현재 운영 현황 (2026-10-20)
 
-- main 운영 버전: `1.7.1` ([Release v1.7.1](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.7.1), commit `124d8cdd28a50a526b564b363697a26ea94de944`, publishedAt 2026-10-20T10:24:50Z). 직전 v1.7.0은 같은 날 state 표기 핫픽스로 대체됐다.
-- 완료 범위: #168 adaptive discovery, #190 Arena, #194 Actions 3역할 실발행(레터 #205 검증), #196 공식 Free 근거.
+- main 운영 버전: `1.7.3` ([Release v1.7.3](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.7.3), commit `a25e97c85ffbb9568def40279b84734dfc853606`, publishedAt 2026-10-20T11:26:47Z). v1.7.0→1.7.3은 같은 날 핫픽스 체인이다.
+- 완료 범위: #168 adaptive discovery, #190 Arena, #194 Actions 3역할 실발행(최종 레터 #210 검증), #196 공식 Free 근거.
 - 보류: #180/#202는 사용자 결정으로 격리 기준 유지·보류(샘플·호스트 경로로 AC 완화 금지), #198 umbrella는 보류 해소 전 open 유지.
 - 머지·발행 절차: dev → main PR 검증 통과 후 머지 → workflow_dispatch CI → tag/Release 생성 순서를 따름.
 

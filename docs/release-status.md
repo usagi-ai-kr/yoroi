@@ -6,10 +6,10 @@
 - main 병합은 dev → main PR로만 진행한다(직접 push 금지).
 - PR 머지 뒤 원격 CI 통과를 확인하고, 버전 갱신 시 `global-cli-update` 스킬과 [docs/global-install.md](global-install.md) 절차로 전역 CLI를 갱신하고 버전 일치를 확인한다.
 
-## 1.7.1 핫픽스 (2026-10-20, PR #204 → main `124d8cdd28a50a526b564b363697a26ea94de944` = tag `v1.7.1`)
+## 1.7.1–1.7.3 핫픽스 (2026-10-20, PR #204/#207/#209 → main `124d8cd`/`428f0d1`/`a25e97c`)
 
-- 범위: GitHub CLI `issue list --json state`의 대문자 `OPEN`/`CLOSED` 표기를 소문자로 비교해 CLOSED 레터를 OPEN으로 오인하던 중복 게이트 버그 수정. OPEN은 skip/복구, CLOSED-only는 새 같은 제목 발행(기존 레터 보존).
-- [완료] main CI [39407558597](https://github.com/usagi-ai-kr/yoroi/actions/runs/39407558597) success · [Release v1.7.1](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.7.1)(publishedAt 2026-10-20T10:24:50Z) · 전역 CLI 1.7.1(`--check` exit 0) · Actions [39407866781](https://github.com/usagi-ai-kr/yoroi/actions/runs/39407866781) success · 레터 [#205](https://github.com/usagi-ai-kr/yoroi/issues/205) 검증 PASS 16/0/0 · #192 closed(교체 이력 보존) · #194/#199 close · milestone 30 close.
+- 범위: 발행 게이트 state 대소문자(#204), 3역할 순서=최종 ranked entries(#207), 표시 스코어 scoreText·enriched top10·내부 머리글 제거(#209). 각 PR CI·main CI success, Release v1.7.1/v1.7.2/v1.7.3, 전역 CLI 1.7.3.
+- [완료] 최종 Actions run [39415145667](https://github.com/usagi-ai-kr/yoroi/actions/runs/39415145667) success · 레터 [#210](https://github.com/usagi-ai-kr/yoroi/issues/210) 검증 PASS 16/0/0 · #192/#205/#208 closed(교체 이력 보존) · #194/#199 close · milestone 30 close.
 - [보류] #198 umbrella open, #180/#202 격리 기준 유지·보류.
 
 ## 1.7.0 발행 완료 (2026-10-20, PR #203 → main `0331f7e6808fc928362666c7b2dc061a437e63a2` = tag `v1.7.0`)

@@ -13,6 +13,12 @@ test('모델 열은 base 표시: effort 접미사(-xhigh)가 남지 않는다', 
   assert.ok(section.includes('| xhigh |'), 'effort 열은 plain 값');
 });
 
+test('모델 열은 -free 표시도 제거한다', () => {
+  const section = renderThreeRoleSection('orchestrator', [entry({ modelId: 'minimax-m3-1-flash-free' })], 7);
+  assert.ok(section.includes('| minimax-m3-1-flash |'), section);
+  assert.ok(!section.includes('minimax-m3-1-flash-free'), 'free 접미사가 모델 열에 없다');
+});
+
 test('baseModelId가 있으면 그 값을 쓴다', () => {
   const section = renderThreeRoleSection('worker', [entry({ modelId: 'x-high', baseModelId: 'x' })], 7);
   assert.ok(section.includes('| x |'), section);

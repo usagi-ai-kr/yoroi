@@ -54,7 +54,7 @@ const noteCell = (entry: ThreeRoleEntry, role: RoleFitRole): string => roleFitNo
 /** 모델 열은 base id 로(있다면 baseModelId) — effort 접미사('claude-sonnet-5-5-xhigh')를 숨긴다. */
 const modelCell = (entry: ThreeRoleEntry): string => {
   const base = typeof entry.baseModelId === 'string' && entry.baseModelId.trim() ? entry.baseModelId : entry.modelId;
-  return textCell(typeof base === 'string' ? base.replace(/-(?:minimal|low|medium|high|xhigh|max)$/, '') : base);
+  return textCell(typeof base === 'string' ? base.replace(/-(?:free|minimal|low|medium|high|xhigh|max)$/, '') : base);
 };
 const rowFor = (entry: ThreeRoleEntry, index: number, role: RoleFitRole): string =>
   `| ${rankCell(entry, index)} | ${entry.isPareto === true ? PARETO_MARK : ''} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} | ${textCell(noteCell(entry, role))} |`;

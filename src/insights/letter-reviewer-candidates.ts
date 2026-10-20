@@ -1,4 +1,5 @@
 import type { ModelVariant } from './letter-top10-group.js';
+import { normalizeModelName } from './model-id.js';
 import { invertDim, normalizeDim } from './letter-reviewer-candidate-normalize.js';
 
 /** reviewer blend용 정규 후보. score 없음 (구·신 computeReviewerScore 모두 blend 강제).
@@ -55,8 +56,10 @@ export function toReviewerCandidates(variants: readonly ModelVariant[]): Reviewe
   const prc = invertDim(idx.map(({ r }) => r.price!));
   const candidates = idx.map(({ r, i }, k) => {
     const v = variants[i]!;
-    return { modelId: v.modelId, baseModelId: v.baseModelId, effort: v.effort, value: r.performance!,
-      performance: perf[k]!, speed: spd[k]!, price: prc[k]! };
+    // 날짜 snapshot suffix(-1017 등)를 포함한 AA id를 base canonical로 정규화해
+    // 같은 모델의 dated variant가 별도 행으로 갈라지지 않게 한다.
+    return { modelId: normalizeModelName(v.modelId), baseModelId: normalizeModelName(v.baseModelId),
+      effort: v.effort, value: r.performance!, performance: perf[k]!, speed: spd[k]!, price: prc[k]! };
   });
   return candidates.length === 0 ? { candidates, excluded, emptyCause: 'unreachable' } : { candidates, excluded };
 }

@@ -27,7 +27,7 @@ if args[:2] == ["agent", "prompt"]:
 sys.exit(2)
 '''
 PACKET = {"task_id": "t1", "target_pane": "w12:p0", "timeout_minutes": 5, "owned_files": ["f.md"], "completion_criteria": ["c1"],
-          "report_path": "/tmp/t1-report.json", "requirements_doc": "docs/x.md", "forbidden_actions": ["git_mutation_without_permission"]}
+          "report_path": "tmp/t1-report.json", "requirements_doc": "docs/x.md", "forbidden_actions": ["git_mutation_without_permission"]}
 def prepare(tmp):
     (tmp / "herdr").write_text(FAKE); os.chmod(tmp / "herdr", 0o755)
     (tmp / "roster.md").write_text("| pane | 이름 | 역할 |\n| --- | --- | --- |\n| `w12:p0` | w2 | 워커 |\n")

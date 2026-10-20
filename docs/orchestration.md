@@ -69,16 +69,16 @@ git/gh 단일 조작(PR 생성·CI 확인·위임된 머지)은 직접 한다. *
 
 | 항목 | 경로 |
 | --- | --- |
-| 작업 패킷 | `/tmp/<task_id>-packet.json` |
-| 워커 보고서 | `/tmp/<task_id>-report.json` (패킷 `report_path`) |
+| 작업 패킷 | `tmp/<task_id>-packet.json` (레포 루트 기준) |
+| 워커 보고서 | `tmp/<task_id>-report.json` (패킷 `report_path`) |
 
 - `task_id`는 `yoroi-` 접두어를 쓴다(예: `yoroi-orch-docs`). 사용자 지정 패킷 ID·보고 경로를 우선한다.
-- `/tmp` 파일은 임시다. 커밋하지 않으며 진행 내용은 docs, 최종 의견·분석은 issue에 남긴다.
+- `tmp/` 파일은 임시다(gitignore). 커밋하지 않으며 진행 내용은 docs, 최종 의견·분석은 issue에 남긴다.
 - 보고서 생성·blocked·한도 감시는 아래 스크립트로 한다. 리뷰어 PR 발행 감시는 별도로 수행한다.
 
 ```bash
 python3 .agents/skills/agent-coordination/scripts/coord.py watch w2 w3 \
-  --reports /tmp/yoroi-<task>-report.json --interval 20 --max-polls 120
+  --reports tmp/yoroi-<task>-report.json --interval 20 --max-polls 120
 ```
 
 ## 분배 CLI (coord)

@@ -83,3 +83,18 @@
 - 사용자 요청으로 main 병합 이력을 dev에 동기화했다(aceefc2, 파일 내용 변경 없음).
 - [보고 #193](https://github.com/usagi-ai-kr/yoroi/issues/193)을 report 라벨로 생성했다.
 - PR #191의 게시 SHA·원격 CI·후속 상태는 보고 #193을 기준으로 추적한다.
+
+## PR #191 리뷰 대응 및 하네스 커밋 (2026-10-20, w18:p3)
+
+- [완료] PR #191 지적 3건(env·checker·store) 독립 리뷰 수용 및 check 1192 PASS 시점 확인([요약](insights/pr191-response-summary-20261020.md)).
+- [완료] 하네스 위탁 우선 확립 및 `AGENTS.md` 서브에이전트 허용 삭제: 독립 리뷰 통과 후 `dev`에 커밋 `f4d868d` 완료 (9개 파일).
+- [완료] #192 누락 댓글 3건 원격 게시 완료([#192 댓글](https://github.com/usagi-ai-kr/yoroi/issues/192#issuecomment-6280879673), c0/c1 일치 증명·c2 보완 표기).
+- [완료] 퍼블리셔 정규화 w1 보완(F1/F2 게이트, 1197/1197 PASS) 및 w3 최종 독립 리뷰 PASS([리뷰](insights/publisher-recovery-acceptance-review.md)).
+- [원칙] PR #191 draft 및 #180 open 유지 (머지·Closes 보류). #168/#190 런타임 미구현 유지.
+
+## PR #191 제품 코드 커밋·dev push (2026-10-20, w18:p4)
+
+- [완료] 단위별 커밋(명시 경로 `git add`): `6235833` 캘리브레이션 env 경계·store v2 / `b5ad4c7` 퍼블리셔 복구(F1 repo 게이트·F2 본문 일치 게이트) / `e33a019` MiniMax M3.1 Flash 카탈로그 / `a49628e` 대응·리뷰 문서 13건.
+- [완료] 커밋 전 `validate-repo.py` PASS(860 files)·`git diff --check` clean. 제품 소스는 1197 PASS 시점 이후 변경 없음 → 전체 check 중복 실행 안 함.
+- [완료] PR #191 본문·댓글 갱신(Draft 유지·머지 보류), #180·#193 댓글 게시. main push·머지·#180 close 없음.
+- [잔여] 외부 CI 결과 확인과 외부 재리뷰만. #168/#190 런타임 미구현·#180 open 유지.

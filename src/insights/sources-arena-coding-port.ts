@@ -48,7 +48,7 @@ function toRecord(parsed: ParsedArenaCodingModel, observedAt: string): InsightRe
       ...(parsed.rank !== undefined && { rank: parsed.rank }) } };
 }
 
-/** 페이로드를 레코드로 바꾼다. 실패한 서브셋은 진단 행으로 남고 다른 서브셋의 행은 살아 있다. */
+/** 페이로드를 레코드로 바꾼다. 실패·부분 서브셋과 발행일 없는 행은 진단 행으로 남고 다른 행은 살아 있다. */
 export function parseArenaCodingPayload(payload: unknown, observedAt: string): readonly ParseRowResult[] {
   if (typeof payload !== 'object' || payload === null || !Array.isArray((payload as ArenaCodingPayload).outcomes)) {
     throw new Error('arena-coding invalid-response');
@@ -58,11 +58,16 @@ export function parseArenaCodingPayload(payload: unknown, observedAt: string): r
   for (const outcome of (payload as ArenaCodingPayload).outcomes) {
     for (const parsed of outcome.rows) {
       const record = toRecord(parsed, observedAt);
-      if (record === undefined) continue;
+      if (record === undefined) {
+        results.push({ ok: false, index: results.length, reason: `arena-coding ${outcome.subset}: missing leaderboard_publish_date`, warnings: [] });
+        continue;
+      }
       results.push({ ok: true, index: results.length, records: [record], warnings: [] });
     }
-    if (outcome.status !== 'ok' && outcome.error !== undefined) {
-      results.push({ ok: false, index: results.length, reason: `arena-coding ${outcome.subset}: ${outcome.error}`, warnings: [] });
+    if (outcome.status !== 'ok') {
+      results.push({ ok: false, index: results.length,
+        reason: outcome.error !== undefined ? `arena-coding ${outcome.subset}: ${outcome.error}` : `arena-coding ${outcome.subset}: partial subset`,
+        warnings: [] });
     }
   }
   return results;

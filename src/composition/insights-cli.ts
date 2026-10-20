@@ -4,6 +4,7 @@ import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
 import { joinLetterParts, renderLetterPartsFromRecords, type LetterParts } from '../insights/letter-markdown.js';
 import { publishInsightsLetter } from './insights-publish.js';
 import { replaceLegacyRoleBlocks } from '../insights/letter-three-role-body.js';
+import { letterThreeRoleConfig } from '../config/letter-three-role.js';
 import { renderThreeRoleSection } from '../insights/letter-three-role-render.js';
 import type { ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
 import { NodeProcessRunner } from '../infra/process-runner.js';
@@ -29,14 +30,13 @@ export interface InsightsCliOptions {
     options: InsightPortOptions) => readonly InsightSourcePort[];
 }
 
-/** opt-in 댓글 3개: 동일 selection에서 [o15, r15, w15+Free] 구성. reviewer가 비면 사유행. Free 원문 유지. */
 export function composeThreeRoleComments(parts: LetterParts, threeRole: ThreeRolePipelineOutput): LetterParts['comments'] {
-  const top15 = threeRole.selection?.top15;
-  if (!top15) return parts.comments;
-  const cause = top15.reviewer.length === 0 && threeRole.emptyCause ? `\n\n- 제외 사유: ${threeRole.emptyCause}` : '';
-  return [renderThreeRoleSection('orchestrator', top15.orchestrator, 15), renderThreeRoleSection('reviewer', top15.reviewer, 15) + cause,
-    `${renderThreeRoleSection('worker', top15.worker, 15)}\n\n${parts.comments[2]}`];
+  const t = threeRole.selection?.top15; if (!t) return parts.comments;
+  return [renderThreeRoleSection('orchestrator', t.orchestrator, 15), renderThreeRoleSection('reviewer', t.reviewer, 15) + (t.reviewer.length === 0 && threeRole.emptyCause ? `\n\n- 제외 사유: ${threeRole.emptyCause}` : ''), `${renderThreeRoleSection('worker', t.worker, 15)}\n\n${parts.comments[2]}`];
 }
+/** env opt-in → runInsights threeRole 입력. off면 빈 객체다. */
+export const threeRoleInputFromEnv = (configEnv: Readonly<Record<string, string | undefined>>): { threeRole: true } | Record<string, never> =>
+  letterThreeRoleConfig(configEnv).enabled ? { threeRole: true as const } : {};
 
 /** Wires `yoroi insights once` to the existing internal run (O1). Opens and closes one history per run;
  * output, exit codes and abort handling stay in the ui command. No delivery, scheduling or LLM here. */
@@ -60,7 +60,7 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
           ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }),
           ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
           ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
-          signal: controller.signal });
+          signal: controller.signal, ...threeRoleInputFromEnv(ctx.configEnv) });
         if (outcome.exitCode !== 0) throw new Error('insights run failed');
         const top10 = outcome.top10 ?? { records: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
         const warnings = (top10 as { warnings?: readonly string[] }).warnings;
@@ -81,7 +81,7 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
         processRunner: runner,
         ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
         ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
-        ...(refresh && { refresh: true }), ...(signal && { signal }) });
+        ...(refresh && { refresh: true }), ...(signal && { signal }), ...threeRoleInputFromEnv(ctx.configEnv) });
       const letter: InsightLetterView = outcome.letter;
       const top10 = outcome.top10 ?? { records: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
       const warnings = (top10 as { warnings?: readonly string[] }).warnings;

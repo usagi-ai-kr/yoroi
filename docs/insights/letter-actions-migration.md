@@ -45,42 +45,51 @@
 
 ## 4-1. OpenCode CLI 의존(러너에 바이너리가 없다)
 
-- Free 티어 카탈로그는 런타임 `opencode models` 출력에서만 만들어진다(`opencode-free-models.ts`).
-  러너에는 OpenCode CLI가 없으면 **Free 목록이 비고** `Free 목록 수집 실패(opencode models)`로 발행이 실패한다.
+- Free 티어 카탈로그는 런타임 `opencode models` 출력으로 만든다(공식 free 목록이 판정 권위, CLI 관측은 미검증 보조).
+  러너에 OpenCode CLI가 없으면 Free 목록이 비고 `Free 목록 수집 실패(opencode models)`로 발행이 실패한다.
 - 워크플로는 공식 **V2** 설치 스크립트를 **버전 고정**해 설치한다:
-  `curl -fsSL https://opencode.ai/v2/install | bash -s -- --version 2.0.32 --no-modify-path` → 설치 위치 `$HOME/.opencode/bin`.
-  설치 단계를 지난 뒤 실행할 수 있도록 `$HOME/.opencode/bin`을 `GITHUB_PATH`에 추가한다.
-  **V1 설치 스크립트(`https://opencode.ai/install`)는 쓰지 않는다** — V2 버전 번호를 주면
-  `OpenCode 2.0.32 is not an OpenCode 1 release`로 거부되고 잡이 실패한다(설치 단계에서 발행 전에 중단).
-- `YOROI_OPENCODE_TARGET: v2`로 두면 앱이 `opencode models --standalone`(V2, 자체 서버 경로)을 호출한다.
-  V1 기본값이면 백그라운드 서비스를 쓰므로 러너에서 목록이 비어 있을 수 있다.
-- **새 러너에는 OpenCode 설정·인증이 없다**(설정 파일·자격정보 없음). `opencode models --standalone`은
-  설치와 설정 없이도 공개 모델 목록을 출력하므로 Free 카탈로그는 구성된다. 다만 이 경로는 러너 로그에
-  계정별 정보가 없으므로, 개인 사용량·인증은 건드리지 않는다.
-- 로컬 검증(2026-10-20): 설치된 바이너리는 `opencode v2.0.32`(고정 버전과 동일)이고,
-  `YOROI_OPENCODE_TARGET=v2 opencode models --standalone` → exit 0, 모델 73행 중 `opencode/*-free` 8행
-  (`opencode-go/minimax-m3.1-flash-free`·`opencode/beam-free` 등). 값·자격정보는 출력하지 않았다.
+  `curl -fsSL https://opencode.ai/v2/install | bash -s -- --version 2.0.32 --no-modify-path` → `$HOME/.opencode/bin`(`GITHUB_PATH` 추가).
+  **V1 스크립트(`https://opencode.ai/install`)는 쓰지 않는다**(V2 번호를 주면 거부되고 설치 단계에서 중단).
+- `YOROI_OPENCODE_TARGET: v2` → `opencode models --standalone`(자체 서버 경로). V1 기본값이면 목록이 비어 있을 수 있다.
+- **새 러너에는 OpenCode 설정·인증이 없다.** `opencode models --standalone`은 설치·설정 없이도 공개 목록을 출력한다.
+  개인 사용량·인증은 건드리지 않는다. 로컬 검증(2026-10-20): v2.0.32, exit 0, free 8행(값·자격정보 미출력).
+
+## 4-2. 3역할 경로 활성화와 최종 dispatch (2026-10-20, #194)
+
+- 프로덕션 Actions 는 `YOROI_LETTER_THREE_ROLE=on` 으로 3역할 경로를 켠다(워크플로 env 에 명시).
+  깊이는 지정하지 않는다 → **본문 3역할 Top7 + 댓글 3개 Top15(오케·리뷰어·워커+Free)** (같은 selection).
+- **#168 모델 감지 연동은 아직 env 키가 없다**(설정은 파일 기반 `loadModelDiscoveryConfig(raw)`).
+  워크플로에 임의의 감지 env 키를 만들지 않는다 — 활성화 인터페이스는 #168 구현 단위에서 확정한다.
+- 최종 dispatch·검증 패킷(선행 조건 **최종 v1.7.0 PR 병합 + 해당 main CI 성공**, 당일 교체 안전 규칙 포함)은
+  **임시 실행 패킷**이라 레포 `tmp/yoroi-194-dispatch-packet.md` 에 생성한다(커밋 대상 아님·CI 클론에 없으므로 링크하지 않는다).
+
+## 4-3. 당일 교체 절차 (같은 KST 날짜, #194)
+
+1. **준비**: dry-run 으로 본문·댓글 3개·소스 상태를 확인한다.
+2. **직전 교체**: 이전 OPEN 레터가 있으면 **검증된 새 발행 준비 직전에** close 한다. 닫힌 레터의 본문·댓글은
+   삭제·수정하지 않는다(이력 보존). 교체 대상은 dry-run 출력의 `closed_same_title` 로 확인한다.
+3. **dispatch**: `workflow_dispatch(dry_run=false)`. 중복 게이트는 **OPEN 기준**이라, 같은 제목의 CLOSED 레터만
+   남은 상태에서는 새 같은 제목 레터 생성이 허용된다(기존 open 중복 skip 의미는 그대로).
+4. **실패 시**: dry-run·발행이 실패하면 이전 레터를 **즉시 재오픈**한다. create 이후 댓글 실패면 새 이슈가 open 으로
+   남아 다음 실행의 복구 대상이 된다(복구 경로는 누락 댓글만 게시).
+5. **확인**: 새 이슈 본문·댓글 3개를 확인한 뒤에만 발행 완료로 기록한다(생성 전 '검증 완료' 표기 금지).
 
 ## 5. 수동 시험 절차(라이브 발행 전)
 
 1. 로컬 dry-run: `pnpm run build && node dist/src/main.js insights publish --dry-run`
    → 제목·중복 판정·close 대상만 출력하고 원격 쓰기는 없다.
 2. 게이트 경계 확인: `--not-before 07:59`로 실행하면 `skip: before 07:59 KST`로 종료한다(조회·렌더 없음).
-3. **시크릿 등록**(값은 저장하지 않고 키만 등록): `YOROI_AA_API_KEY`, `YOROI_OPENROUTER_API_KEY`.
-   `GH_TOKEN`은 Actions 기본 제공 토큰을 쓴다(별도 등록 불필요).
+3. **시크릿 등록**(값은 저장하지 않고 키만 등록): `YOROI_AA_API_KEY`, `YOROI_OPENROUTER_API_KEY`. `GH_TOKEN`은 Actions 기본 제공(별도 등록 불필요).
 4. **Actions dry-run**: Actions 탭 → `letter-publish` → `workflow_dispatch` → `dry_run`은 **기본값 true**로 둔다.
-   → `node dist/src/main.js insights publish --dry-run`만 실행되어 **GitHub 쓰기가 없다**(제목·중복·close 대상만 로그).
-   수집은 실제 API를 호출하므로 3번의 시크릿이 unregistered면 수집 단계가 실패한다.
+   → `--dry-run`만 실행되어 **GitHub 쓰기가 없다**(제목·중복·closed_same_title·close 대상만 로그). 시크릿 미등록이면 수집 단계가 실패한다.
 5. **실행 발행**: dry-run 로그·렌더를 확인한 뒤 `dry_run=false`로 수동 실행하거나, 스케줄(UTC 23:00 = 다음 날 08:00 KST)을 기다린다.
-   스케줄 실행은 `dry_run`과 무관하게 실제 발행 경로를 탄다.
-6. 첫 실행 후 확인: 이슈 본문·댓글 3개, `published #N ... KST` 로그, 이전 open 레터 close 여부.
-   PM2 로컬 발행은 계속 중지 상태로 둔다(§6).
+   스케줄 실행은 `dry_run`과 무관하게 실제 발행 경로를 탄다. 당일 교체는 §4-3 절차로 진행한다.
+6. 첫 실행 후 확인: 이슈 본문·댓글 3개, `published #N ... KST` 로그, 이전 open 레터 close 여부. PM2 는 계속 중지(§6).
 
 ## 6. PM2 중단·롤백 절차(실행하지 않음)
 
 - 전환 절차(사용자 승인 후): `pm2 stop yoroi-letter` → Actions 시크릿 등록 → `workflow_dispatch`로 1회 시험 → 정상 확인 후 cron 대기.
-- 롤백: `pm2 start yoroi-letter`로 로컬 발행 복귀. 필요하면 `.github/workflows/letter-publish.yml`을 삭제하고
-  기본 게이트를 09:00 KST로 되돌린다(코드 커밋이므로 되돌림 커밋이 필요하다).
+- 롤백: `pm2 start yoroi-letter`로 로컬 발행 복귀. 필요하면 워크플로를 되돌리는 커밋(3역할 env 제거 + 게이트 09:00 복귀)이 필요하다.
 
 ## 7. #194 완료를 위해 사용자 조치(미완료 항목)
 

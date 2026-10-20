@@ -5,7 +5,7 @@ export const DEFAULT_REPO = 'usagi-ai-kr/yoroi';
 /** 저장소 이동 전 주소. gh 가 리다이렉트로 돌려주는 URL 파싱·검증에만 허용한다(발행 대상 아님). */
 export const LEGACY_REPO = 'qus0in/yoroi';
 export const TIMEOUT_MS = 30_000;
-export type Issue = { readonly number: number; readonly title: string };
+export type Issue = { readonly number: number; readonly title: string; /** gh issue list 의 state. 미포함(구형 응답)은 OPEN 으로 취급한다. */ readonly state?: string };
 
 export interface ExtractedIssue {
   readonly number: number;
@@ -39,9 +39,9 @@ export async function gh(runner: ProcessRunner, bin: string, args: readonly stri
   catch { return undefined; }
 }
 
-export async function listIssues(runner: ProcessRunner, bin: string, state: 'all' | 'open', search?: string, signal?: AbortSignal): Promise<Issue[] | undefined> {
+export async function listIssues(runner: ProcessRunner, bin: string, state: 'all' | 'open' | 'closed', search?: string, signal?: AbortSignal): Promise<Issue[] | undefined> {
   const args = ['issue', 'list', '--repo', DEFAULT_REPO, '--label', 'letter', '--state', state, '--limit', '1000',
-    ...(search ? ['--search', search] : []), '--json', 'number,title'];
+    ...(search ? ['--search', search] : []), '--json', 'number,title,state'];
   const output = await gh(runner, bin, args, signal);
   try {
     const values: unknown = JSON.parse(output ?? 'null');
@@ -49,7 +49,8 @@ export async function listIssues(runner: ProcessRunner, bin: string, state: 'all
     return values.map(v => {
       const row = v as Record<string, unknown>;
       if (!Number.isSafeInteger(row?.number) || (row?.number as number) < 1 || typeof row?.title !== 'string') throw new Error();
-      return { number: row.number as number, title: row.title };
+      const state = typeof row.state === 'string' ? row.state : undefined;
+      return { number: row.number as number, title: row.title, ...(state !== undefined && { state }) };
     });
   } catch { return undefined; }
 }

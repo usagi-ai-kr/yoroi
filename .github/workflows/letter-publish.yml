@@ -29,6 +29,9 @@ jobs:
       TZ: Asia/Seoul
       # Free 카탈로그는 런타임 `opencode models --standalone`(V2)로 수집한다.
       YOROI_OPENCODE_TARGET: v2
+      # #195 3역할 출력 opt-in. 본문은 3역할 Top7, 댓글은 같은 selection의 Top15(+Free)로 발행된다.
+      # YOROI_LETTER_THREE_ROLE_DEPTH 는 지정하지 않는다(미지정 시 본문 Top7·댓글 Top15).
+      YOROI_LETTER_THREE_ROLE: on
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # 수집 원본 키는 시크릿 참조만 둔다(값은 저장소에 쓰지 않는다).
       YOROI_AA_API_KEY: ${{ secrets.YOROI_AA_API_KEY }}

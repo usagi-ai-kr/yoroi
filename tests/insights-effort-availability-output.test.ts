@@ -51,7 +51,7 @@ test('previousRanks도 같은 프로필을 쓴다: cap 유무로 순위가 바�
     // #194: 기본 프로필이 활성화되므로 cap 밖 effort(max)는 추천·점수에서 제외된다 → opus 가 1위.
     const top = computeRoleTop10(records).orchestrator.entries[0]!;
     assert.equal(top.modelId, 'claude-opus-5-5', '기본 프로필에서 cap 밖 effort 는 밀린다');
-    assert.equal(top.repEffort, 'default', 'cap 안 관측 없으면 default effort 만');
+    assert.equal(top.repEffort, 'default', 'cap 없는 opus는 관측된 default effort 사용');
   });
 });
 test('Free 표도 같은 가용성 표기를 쓴다', () => {

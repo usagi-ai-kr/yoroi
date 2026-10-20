@@ -67,8 +67,8 @@ test('레터: 상한 모델은 cap 안 effort 추천·AA 지수 일치, 이론�
     assert.deepEqual([sonnet.repEffort, sonnet.effortAvailability, sonnet.benchmarkEffort], ['high', 'capped', 'max'], `${role}: cap 안 effort 로만 추천`);
   }
   const unlisted = computeRoleTop10([aa('plain-max', 39)], { catalog: catalogOf(['plain']), effortAvailability: av });
-  assert.equal(unlisted.orchestrator.entries[0]?.repEffort, 'default', 'unlisted 는 default effort 만');
-  assert.equal(unlisted.orchestrator.entries[0]?.effortAvailability, 'unlisted');
+  assert.equal(unlisted.orchestrator.entries[0]?.repEffort, 'max', 'cap 없는 모델은 관측 effort 를 그대로 쓴다');
+  assert.equal(unlisted.orchestrator.entries[0]?.effortAvailability, 'unlisted', '표기만 unlisted(plain)');
   for (const table of [renderRoleTable('orchestrator', lists.orchestrator, 'H', 7), renderRoleTable('orchestrator', lists.orchestrator, 'H')]) {
     // #194: effort 칸은 plain 만( (미확인)·(상한)·범례 없음 ).
     assert.match(table, /\| muse-spark-1-3 \| xhigh \|/);

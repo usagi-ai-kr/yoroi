@@ -14,7 +14,7 @@ yoroi insights publish --not-before 08:00 # 08:00 KST 이후 발행
 - 본문 Top7: 오케스트레이터·리뷰어·워커 각 7개 추천.
 - 모델명은 base id + effort 별도 열로 표시합니다.
 - effort 상한: Sonnet high, Spark xhigh 등 관측 cap을 적용합니다.
-  cap이 없는 모델은 default만 사용합니다. 미확인 표기는 두지 않습니다.
+  cap이 없는 모델은 관측된 effort를 그대로 사용합니다. 미확인 표기는 두지 않습니다.
 - 댓글 Top15: 본문 Top7을 접두로 유지하고, 8위 이후는 역할별 독립 후보라
   오케스트레이터와 리뷰어에 같은 모델이 겹칠 수 있습니다.
 - 리뷰어 후보는 보유 플랜 catalog에 접근 가능한 모델만 씁니다

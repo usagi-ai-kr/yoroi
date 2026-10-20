@@ -85,7 +85,7 @@ test('8. effort caps enforced under active profile, open otherwise', () => {
   assert.ok(res.reviewer.some(r => r.modelId === 'glm-5-3-high'), 'at-cap variant passes');
   assert.ok(!res.reviewer.some(r => r.modelId === 'glm-5-3-xhigh'), 'over-cap variant excluded');
   assert.ok(res.excluded.some(e => e.modelId === 'glm-5-3-xhigh' && e.reason === 'over-effort-cap'));
-  assert.ok(res.reviewer.some(r => r.modelId === 'gemma4') && !res.reviewer.some(r => r.modelId === 'gemma4-low'), 'capless: default passes, non-default out');
+  assert.ok(res.reviewer.some(r => r.modelId === 'gemma4-low') && !res.reviewer.some(r => r.modelId === 'gemma4'), 'capless: observed efforts compete, best deduped');
   assert.equal(buildReviewerCandidates({ records: recs }).reviewer.length, 2, 'no profile means no cap filtering');
 });
 

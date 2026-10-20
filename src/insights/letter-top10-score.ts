@@ -28,8 +28,8 @@ export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[]
   const superseded = new Set(MODEL_SUCCESSORS.filter(m => has(normalizeModelName(m.successor))).map(m => normalizeModelName(m.predecessor)));
   const evidenced = ([base, r]: [string, Raw]) => hasEvidence(r) && !superseded.has(base) || (role === 'worker' && !superseded.has(base) && (!!r.aaCptE?.size || !!r.aaTotalE?.size));
   const bases = [...collected].filter(evidenced).map(([base]) => base);
-  // 활성 프로필이 있으면 cap 없는(unlisted) 모델은 default effort 만(상위 effort 추천·점수 제외).
-  const profileActive = opts?.effortAvailability?.activeProfile !== undefined, capOf = (i: number) => capOfModel(bases[i]!, opts?.effortAvailability) ?? (profileActive ? 'default' : undefined);
+  // cap 이 있는 모델만 상한을 적용한다. cap 없는 모델은 관측 effort 를 그대로 쓴다(표기만 plain).
+  const capOf = (i: number) => capOfModel(bases[i]!, opts?.effortAvailability);
   const raws = [...collected].filter(evidenced).map(([, r], i) => role === 'worker' ? capWorkerPerf(r, capOf(i)) : r);
   const parts = PARTS.filter(p => ROLE_SOURCES[role][p.dim].includes(p.src) && (p.role ?? role) === role), w = ROLE_DIMENSION_WEIGHTS[role], floor = PERFORMANCE_FLOOR[role];
   const stdOf = (rs: readonly Raw[], p: typeof PARTS[number]) => minMax(rs.map(r => { const v = r[p.key] as number | undefined; return v === undefined ? undefined : p.log ? p.log(v) : v; }), p.low);

@@ -1,9 +1,11 @@
 import { opencodeTarget } from '../config/load-config.js';
 import { runInsights } from './insights.js';
 import { renderTop10FromRecords } from '../insights/letter-top10-render.js';
-import { joinLetterParts, renderLetterPartsFromRecords } from '../insights/letter-markdown.js';
+import { joinLetterParts, renderLetterPartsFromRecords, type LetterParts } from '../insights/letter-markdown.js';
 import { publishInsightsLetter } from './insights-publish.js';
 import { replaceLegacyRoleBlocks } from '../insights/letter-three-role-body.js';
+import { renderThreeRoleSection } from '../insights/letter-three-role-render.js';
+import type { ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
 import { NodeProcessRunner } from '../infra/process-runner.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import type { InsightHistoryPort } from '../insights/history-port.js';
@@ -25,6 +27,15 @@ export interface InsightsCliOptions {
   readonly openHistory?: () => InsightHistoryPort & { close(): void };
   readonly createPorts?: (client: HttpClient, lookup: (name: string) => string | undefined,
     options: InsightPortOptions) => readonly InsightSourcePort[];
+}
+
+/** opt-in 댓글 3개: 동일 selection에서 [o15, r15, w15+Free] 구성. reviewer가 비면 사유행. Free 원문 유지. */
+export function composeThreeRoleComments(parts: LetterParts, threeRole: ThreeRolePipelineOutput): LetterParts['comments'] {
+  const top15 = threeRole.selection?.top15;
+  if (!top15) return parts.comments;
+  const cause = top15.reviewer.length === 0 && threeRole.emptyCause ? `\n\n- 제외 사유: ${threeRole.emptyCause}` : '';
+  return [renderThreeRoleSection('orchestrator', top15.orchestrator, 15), renderThreeRoleSection('reviewer', top15.reviewer, 15) + cause,
+    `${renderThreeRoleSection('worker', top15.worker, 15)}\n\n${parts.comments[2]}`];
 }
 
 /** Wires `yoroi insights once` to the existing internal run (O1). Opens and closes one history per run;
@@ -56,8 +67,10 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
         const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
         const parts = renderLetterPartsFromRecords({ publicationDate: outcome.publicationDate, ...top10,
           ...(warnings?.length && { notes: warnings }), ...(partialSources.length && { partialSources }) });
-        const sections = outcome.threeRole?.sections;
-        return sections ? { body: replaceLegacyRoleBlocks(parts.body, sections), comments: parts.comments } : parts;
+        const threeRole = outcome.threeRole;
+        if (!threeRole?.sections || !threeRole.selection) return parts;
+        return { body: replaceLegacyRoleBlocks(parts.body, threeRole.sections),
+          comments: composeThreeRoleComments(parts, threeRole) };
       } }, ctx.env).finally(() => { unsubscribe(); controller.abort(); });
   }
   const deps: InsightsCommandDeps = {

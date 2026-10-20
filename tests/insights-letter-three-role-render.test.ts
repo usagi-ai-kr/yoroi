@@ -11,7 +11,7 @@ test('세 역할 섹션이 각각 그려진다', () => {
   const md = renderThreeRoleMarkdown({ orchestrator: lists(2), reviewer: lists(1), worker: lists(3), depth: 7 });
   for (const heading of ['🧭 오케스트레이터', '🔍 리뷰어', '🛠️ 워커·메신저']) assert.ok(md.includes(heading), heading);
   assert.ok(md.includes('## 📖 표시 안내'), '범례');
-  assert.equal((md.match(/\| 순위 \| 파레토 \| 모델 \| 스코어 \| effort \| 비고 \|/g) ?? []).length, 3, '역할별 표 머리 3개');
+  assert.equal((md.match(/\| 순위 \| 파레토 \| 모델 \| 스코어 \| effort \|/g) ?? []).length, 3, '역할별 5열 표 머리 3개');
 });
 
 test('Top7과 Top15의 행 수가 depth를 따른다', () => {
@@ -34,7 +34,7 @@ test('빈 목록과 짧은 목록을 다룬다', () => {
 
 test('선택 필드가 없어도 "-" 로 그린다(가중치·점수를 지어내지 않는다)', () => {
   const md = renderThreeRoleMarkdown({ orchestrator: [{ modelId: 'plain-model' }] });
-  assert.ok(md.includes('| 1 |  | plain-model | - | - | - |'), md);
+  assert.ok(md.includes('| 1 |  | plain-model | - | - |'), md);
   assert.ok(!/\d+\.\d/.test(md.split('## 📖')[0]!.split('plain-model')[1]!.split('|')[1] ?? ''), '|score 를 만들지 않는다');
 });
 

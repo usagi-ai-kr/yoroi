@@ -49,16 +49,25 @@ const textCell = (value: unknown): string => typeof value === 'string' && value.
 const scoreCell = (value: unknown): string => typeof value === 'number' && Number.isFinite(value) ? String(value) : '-';
 const rankCell = (entry: ThreeRoleEntry, index: number): string =>
   typeof entry.rank === 'number' && Number.isFinite(entry.rank) ? String(entry.rank) : String(index + 1);
-/** 비고 칸: 정성 역할 적합성 노트(usagi 관찰). 점수·순위에는 영향 없음(렌더 전용). */
-const noteCell = (entry: ThreeRoleEntry, role: RoleFitRole): string => roleFitNote(entry.modelId, role) ?? '-';
 /** 모델 열은 base id 로(있다면 baseModelId) — effort 접미사('claude-sonnet-5-5-xhigh')를 숨긴다. */
 const modelCell = (entry: ThreeRoleEntry): string => {
   const base = typeof entry.baseModelId === 'string' && entry.baseModelId.trim() ? entry.baseModelId : entry.modelId;
   return textCell(typeof base === 'string' ? base.replace(/-(?:free|minimal|low|medium|high|xhigh|max)$/, '') : base);
 };
-const rowFor = (entry: ThreeRoleEntry, index: number, role: RoleFitRole): string =>
-  `| ${rankCell(entry, index)} | ${entry.isPareto === true ? PARETO_MARK : ''} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} | ${textCell(noteCell(entry, role))} |`;
-const tableHead = '| 순위 | 파레토 | 모델 | 스코어 | effort | 비고 |\n| --- | --- | --- | --- | --- | --- |';
+const rowFor = (entry: ThreeRoleEntry, index: number): string =>
+  `| ${rankCell(entry, index)} | ${entry.isPareto === true ? PARETO_MARK : ''} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} |`;
+const tableHead = '| 순위 | 파레토 | 모델 | 스코어 | effort |\n| --- | --- | --- | --- | --- |';
+/** 표 바로 아래 의견 주석: 표시된 모델만 모델당 1회·표 순서 유지. 의견 없으면 생략. */
+const footnotesFor = (rows: readonly ThreeRoleEntry[], role: RoleFitRole): readonly string[] => {
+  const seen = new Set<string>(), out: string[] = [];
+  for (const entry of rows) {
+    const name = modelCell(entry), note = roleFitNote(entry.modelId, role);
+    if (note === undefined || seen.has(name)) continue;
+    seen.add(name);
+    out.push(`> ${name}: ${note}`);
+  }
+  return out;
+};
 
 /** 역할 하나를 Top7/Top15 섹션으로 그린다. 목록이 비면 빈 줄 대신 상태를 한 줄 남긴다. */
 export function renderThreeRoleSection(key: ThreeRoleKey, entries: readonly ThreeRoleEntry[], depth: number): string {
@@ -66,7 +75,9 @@ export function renderThreeRoleSection(key: ThreeRoleKey, entries: readonly Thre
   const heading = `## ${THREE_ROLE_TITLES[key]} ${label}`;
   const rows = entries.slice(0, depth);
   if (!rows.length) return `${heading}\n\n- (목록 없음)`;
-  return [heading, '', tableHead, ...rows.map((entry, index) => rowFor(entry, index, key as RoleFitRole))].join('\n');
+  const notes = footnotesFor(rows, key as RoleFitRole);
+  return [heading, '', tableHead, ...rows.map((entry, index) => rowFor(entry, index)),
+    ...(notes.length ? ['', ...notes] : [])].join('\n');
 }
 
 /** 세 역할 섹션 + compact 범례. 같은 입력 → 같은 출력(정렬·무작위 없음). */

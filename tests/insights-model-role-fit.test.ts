@@ -52,6 +52,6 @@ test('렌더 전용: 정성 노트는 점수·순위 칸에 영향을 주지 않
   const withoutNote = renderThreeRoleSection('reviewer', [{ ...entry, modelId: 'other-model' }], 7);
   const scoreCell = (t: string) => (t.split('\n').find(l => l.startsWith('| 1 |')) ?? '').split('|')[4]?.trim() ?? '';
   assert.equal(scoreCell(withNote), scoreCell(withoutNote), '점수 칸 동일');
-  assert.ok(withNote.includes('usagi'), '알려진 모델은 정성 노트가 붙는다');
-  assert.ok(withoutNote.includes('| - |'), '모르는 모델은 비고 기본값');
+  assert.ok(withNote.split('\n').some(l => l.startsWith('> glm-5-3-flash: usagi')), '알려진 모델은 표 아래 주석');
+  assert.ok(!withoutNote.split('\n').some(l => l.startsWith('> ')), '모르는 모델은 주석 없음');
 });

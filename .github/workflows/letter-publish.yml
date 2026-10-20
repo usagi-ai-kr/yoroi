@@ -50,7 +50,7 @@ jobs:
         run: pnpm run build
       - name: Install OpenCode CLI (pinned)
         run: |
-          curl -fsSL https://opencode.ai/install | bash -s -- --version 2.0.32 --no-modify-path
+          curl -fsSL https://opencode.ai/v2/install | bash -s -- --version 2.0.32 --no-modify-path
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
       - name: Dry run (no GitHub writes)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true

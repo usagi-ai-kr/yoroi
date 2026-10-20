@@ -45,9 +45,11 @@
 
 - Free 티어 카탈로그는 런타임 `opencode models` 출력에서만 만들어진다(`opencode-free-models.ts`).
   러너에는 OpenCode CLI가 없으면 **Free 목록이 비고** `Free 목록 수집 실패(opencode models)`로 발행이 실패한다.
-- 워크플로는 공식 설치 스크립트를 **버전 고정**해 설치한다:
-  `curl -fsSL https://opencode.ai/install | bash -s -- --version 2.0.32 --no-modify-path` → 설치 위치 `$HOME/.opencode/bin`.
+- 워크플로는 공식 **V2** 설치 스크립트를 **버전 고정**해 설치한다:
+  `curl -fsSL https://opencode.ai/v2/install | bash -s -- --version 2.0.32 --no-modify-path` → 설치 위치 `$HOME/.opencode/bin`.
   설치 단계를 지난 뒤 실행할 수 있도록 `$HOME/.opencode/bin`을 `GITHUB_PATH`에 추가한다.
+  **V1 설치 스크립트(`https://opencode.ai/install`)는 쓰지 않는다** — V2 버전 번호를 주면
+  `OpenCode 2.0.32 is not an OpenCode 1 release`로 거부되고 잡이 실패한다(설치 단계에서 발행 전에 중단).
 - `YOROI_OPENCODE_TARGET: v2`로 두면 앱이 `opencode models --standalone`(V2, 자체 서버 경로)을 호출한다.
   V1 기본값이면 백그라운드 서비스를 쓰므로 러너에서 목록이 비어 있을 수 있다.
 - **새 러너에는 OpenCode 설정·인증이 없다**(설정 파일·자격정보 없음). `opencode models --standalone`은

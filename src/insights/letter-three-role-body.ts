@@ -2,6 +2,8 @@
  *  기존 2역할 블록(오케스트레이터·리뷰어 Top7 / 워커·메신저 Top7)을 잘라내고 그 자리에 3역할 블록을 넣는다.
  *  제목·표시 안내·Free·댓글 3개 계약은 건드리지 않는다. */
 
+import { replaceLetterGuide } from './letter-three-role-legend.js';
+
 export interface ThreeRoleSections {
   readonly orchestrator: string;
   readonly reviewer: string;
@@ -23,13 +25,14 @@ export function hasLegacyRoleBlocks(text: string): boolean {
   return lines.some(line => line.startsWith(LEGACY_ORCHESTRATOR) || line.startsWith(LEGACY_WORKER));
 }
 
-/** 기존 2역할 블록을 3역할 블록으로 대체한다. 블록이 없으면 끝에 덧붙인다(중복 없음). */
+/** 기존 2역할 블록을 3역할 블록으로 대체한다. 블록이 없으면 끝에 덧붙인다(중복 없음).
+ *  본문에 2역할 안내가 있으면 3역할 안내로 함께 교체한다(산출 공식·출처는 보존). */
 export function replaceLegacyRoleBlocks(text: string, sections: ThreeRoleSections): string {
   const lines = text.split('\n');
   const oIdx = lines.findIndex(line => line.startsWith(LEGACY_ORCHESTRATOR));
   const wIdx = lines.findIndex(line => line.startsWith(LEGACY_WORKER));
-  if (oIdx < 0 || wIdx < 0) return [...lines, '', ...threeRoleBlock(sections), ''].join('\n');
+  if (oIdx < 0 || wIdx < 0) return replaceLetterGuide([...lines, '', ...threeRoleBlock(sections), ''].join('\n'));
   let end = wIdx + 1;
   while (end < lines.length && !lines[end]!.startsWith('## ')) end++;
-  return [...lines.slice(0, oIdx), ...threeRoleBlock(sections), '', ...lines.slice(end)].join('\n');
+  return replaceLetterGuide([...lines.slice(0, oIdx), ...threeRoleBlock(sections), '', ...lines.slice(end)].join('\n'));
 }

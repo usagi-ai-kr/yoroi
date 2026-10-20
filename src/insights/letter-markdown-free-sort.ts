@@ -3,10 +3,13 @@ import { effortCell } from './letter-markdown-tables.js';
 
 /** p75 B: Free 한 표의 행 모델과 정렬. 오케·워커 두 목록을 모델 기준으로 합친다. */
 export interface FreeCell { readonly score: string; readonly passed: boolean }
+/** 리뷰어 근거 1건. 점수는 완전한 근거가 있을 때만 들어오고, 렌더는 값을 만들지 않는다. */
+export interface FreeReviewerEntry { readonly modelId: string; readonly score: string; readonly passed: boolean; readonly isPareto?: boolean }
 export interface FreeRow {
   readonly modelId: string;
   readonly plans: readonly string[];
   readonly orchestrator?: FreeCell | undefined;
+  readonly reviewer?: FreeCell | undefined;
   readonly worker?: FreeCell | undefined;
   readonly pareto: boolean;
   readonly effort?: string | undefined;
@@ -25,10 +28,11 @@ const starsOf = (entries: readonly RoleEntry[]): ReadonlySet<string> => {
   return new Set(values.filter(([id, value]) => value !== undefined &&
     !values.some(([other, ov]) => other !== id && ov !== undefined && ov > value)).map(([id]) => id));
 };
-interface Builder { plans: readonly string[]; orchestrator?: FreeCell; worker?: FreeCell; pareto?: boolean; effort?: string; indexText?: string; unmeasured?: boolean }
+interface Builder { plans: readonly string[]; orchestrator?: FreeCell; reviewer?: FreeCell; worker?: FreeCell; pareto?: boolean; effort?: string; indexText?: string; unmeasured?: boolean }
 /** 두 역할의 랭크 행(limit 밖 포함)과 미측정 행을 모델 기준으로 합친다(같은 모델은 한 행).
  *  p78 2a: 랭크된 모델은 limit과 무관하게 행이 되고, 한 역할에만 랭크된 모델의 반대 칸은 근거가 있으므로 ✗다. */
-export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRow[], limit: number): FreeRow[] {
+export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRow[], limit: number,
+  reviewer: readonly FreeReviewerEntry[] = []): FreeRow[] {
   const rows = new Map<string, Builder>();
   const at = (modelId: string, plans: readonly string[]): Builder =>
     rows.get(modelId) ?? (rows.set(modelId, { plans }).get(modelId) as Builder);
@@ -48,6 +52,15 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
     row.plans = item.plans;
     row.unmeasured = true;
   }
+  for (const entry of reviewer) {
+    // ranked·미측정 verified Free 행에만 병합한다. 모르는 id로 새 행을 만들지 않는다.
+    // 행 키는 base형·-free형이 섞이므로 정확히 먼저, 없으면 -free를 뗀 키로 합친다.
+    // reviewer-only 근거는 미측정 verified Free 행에 결합할 수 있다.
+    const row = rows.get(entry.modelId) ?? rows.get(entry.modelId.replace(/-free$/, ''));
+    if (!row) continue;
+    row.reviewer = { score: entry.score, passed: entry.passed };
+    if (entry.isPareto === true) row.pareto = true;
+  }
   const missing: FreeCell = { score: '-', passed: false }; // 근거는 있는데 이 역할 목록에 없는 경우(하한 탈락 등)
   for (const row of rows.values()) {
     if (row.unmeasured === true) continue;
@@ -55,7 +68,8 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
     row.worker ??= missing;
   }
   return freeRowOrder([...rows].map(([modelId, row]) => ({ modelId, plans: row.plans,
-    ...(row.orchestrator && { orchestrator: row.orchestrator }), ...(row.worker && { worker: row.worker }),
+    ...(row.orchestrator && { orchestrator: row.orchestrator }), ...(row.reviewer && { reviewer: row.reviewer }),
+    ...(row.worker && { worker: row.worker }),
     pareto: row.pareto === true, ...(row.effort && { effort: row.effort }),
     ...(row.indexText !== undefined && { indexText: row.indexText }), unmeasured: row.unmeasured === true })));
 }

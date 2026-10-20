@@ -1,5 +1,6 @@
 import { PARETO_MARK } from './letter-top10-legend.js';
-import { roleFitNote, roleFitLegend, type RoleFitRole } from './model-role-fit.js';
+import { roleFitNote, type RoleFitRole } from './model-role-fit.js';
+import { THREE_ROLE_LEGEND } from './letter-three-role-legend.js';
 
 /** #195 단위3: 세 역할(오케스트레이터·리뷰어·워커) 목록의 독립 Markdown 렌더러.
  *  기본 꺼짐(default-off) — 기존 레터 출력·렌더러·CLI·발행에 연결하지 않는다. */
@@ -30,12 +31,7 @@ export interface ThreeRoleRenderInput {
 export const THREE_ROLE_ORDER: readonly ThreeRoleKey[] = ['orchestrator', 'reviewer', 'worker'];
 export const THREE_ROLE_TITLES: Record<ThreeRoleKey, string> = {
   orchestrator: '🧭 오케스트레이터', reviewer: '🔍 리뷰어', worker: '🛠️ 워커·메신저' };
-export const THREE_ROLE_LEGEND: readonly string[] = [
-  '## 📖 표시 안내',
-  '- 👍 파레토 최적',
-  '- 스코어·effort 는 전달된 값 그대로(가중치·점수를 새로 계산하지 않는다) · 빈 값은 "-"',
-  ...roleFitLegend(),
-];
+export { THREE_ROLE_LEGEND } from './letter-three-role-legend.js';
 
 /** control/bidi 문자 제거 + 자격정보 마스킹 — 기존 레터 렌더러(letter-top10-render.ts)의 clean 규칙과 동일.
  *  해당 헬퍼는 비공개여서 규칙만 재현했고 비밀값은 담지 않는다. */

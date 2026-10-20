@@ -20,6 +20,12 @@ export const MODEL_ALIAS_RULES: readonly ModelAliasRule[] = [
     checkedOn: '2026-10-16', sourceUrl: 'https://ollama.com/library/muse-spark-open/tags' },
   { from: 'minimax-m3-1-flash-free', to: 'minimax-m3-1-flash', basis: 'OpenCode Go 모델 id와 AA 정규화 id의 접미 -free 차이',
     checkedOn: '2026-10-20', sourceUrl: 'https://opencode.ai/v2/docs/console/go' },
+  { from: 'deepseek-v4-1-flash-free', to: 'deepseek-v4-1-flash', basis: '공식 Free 목록 등재 + AA intel id 일치(2026-10-20 확인)',
+    checkedOn: '2026-10-20', sourceUrl: 'https://opencode.ai/v2/docs/console/models' },
+  { from: 'glm-5-3-flash-free', to: 'glm-5-3-flash', basis: '공식 Free 목록 등재 + AA intel id 일치(2026-10-20 확인)',
+    checkedOn: '2026-10-20', sourceUrl: 'https://opencode.ai/v2/docs/console/models' },
+  { from: 'mimo-v2-6-flash-free', to: 'mimo-v2-6-flash', basis: '공식 Free 목록 등재 + AA intel id 일치(2026-10-20 확인)',
+    checkedOn: '2026-10-20', sourceUrl: 'https://opencode.ai/v2/docs/console/models' },
 ];
 
 /** A1(p28): AA modelAlias의 괄호부(예: "(High)")를 떼어 normalize한 보조 키 → AA canonical.

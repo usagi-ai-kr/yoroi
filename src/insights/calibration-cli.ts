@@ -3,10 +3,9 @@ import type { ProcessRunner } from '../infra/process-port.js';
 import { CALIBRATION_EVALUATOR_VERSION, type CalibrationStore } from './calibration-store.js';
 import { buildCalibrationRunRecord } from './calibration-record.js';
 import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
-import { runCalibration, type CalibrationRunResult } from './calibration-runner.js';
+import { runCalibration, CalibrationLaunchError, type CalibrationRunResult } from './calibration-runner.js';
 import { collectOpenCodeFreeModels, type OpenCodeFreeModel } from './opencode-free-models.js';
 import { normalizeModelName } from './letter-top10-rank.js';
-import { SANDBOX_CAPS } from './calibration-sandbox.js';
 
 export interface CalibrationCliArgs {
   readonly model: string;
@@ -59,13 +58,23 @@ export async function runCalibrationCli(argv: readonly string[], deps: Calibrati
   if (!found) { err(`calibration: unverified or unlisted Free model: ${reqModel}`); return 1; }
 
   log(`[모델 선택] ${found.originalId} (정규화: ${normalizeModelName(found.modelId)})`);
-  log(`[실행 계획] ${runs}회 실행 (예상 과제: ${runs * 4}건, 턴: ${SANDBOX_CAPS.MAX_TURNS}, 토큰: ${SANDBOX_CAPS.MAX_OUTPUT_TOKENS}, 타임아웃: 5분)`);
+  log(`[실행 계획] ${runs}회 실행 (예상 과제: ${runs * 4}건, 타임아웃: 5분, 턴·토큰 상한은 미강제(v2 CLI 미지원))`);
   log(`[쿼터 안내] 쿼터 불명 (수치 한도 미공개 또는 클라이언트 세션 한정)`);
-  log(`[강제 수준] Enforced: timeouts/turns/tokens/isolation/no-retry; Detect-and-flag: network/git`);
+  log(`[강제 수준] Enforced: timeouts/isolation/no-retry; Best-effort: turns/tokens (v2 CLI 미지원); Detect-and-flag: network/git`);
   if (!yes) { err('calibration: pre-run confirmation required (--yes)'); return 1; }
 
   const runResults: CalibrationRunResult[] = [];
-  for (let i = 0; i < runs; i++) runResults.push(await runCalibration({ runner: deps.runner, modelOriginalId: found.originalId }));
+  for (let i = 0; i < runs; i++) {
+    try {
+      runResults.push(await runCalibration({ runner: deps.runner, modelOriginalId: found.originalId }));
+    } catch (e) {
+      if (e instanceof CalibrationLaunchError) {
+        err(`calibration: launch failed (${e.taskId}, exit ${e.exitCode}, ${e.reason}); measurement insufficient, no scores recorded`);
+        return 1;
+      }
+      throw e;
+    }
+  }
 
   // 집계·표본 근거·CLI 출력은 모두 같은 레코드에서 나온다(3회 집계와 1회 tasks 혼용 금지).
   const { record, evaluation } = buildCalibrationRunRecord({

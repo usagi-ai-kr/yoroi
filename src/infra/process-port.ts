@@ -11,6 +11,8 @@ export interface ProcessRequest {
   readonly envMode?: 'merge' | 'replace';
   readonly input?: string;
   readonly steps?: readonly ProcessStep[];
+  /** Optional child working directory. Omitted means inherit. No env broadening. */
+  readonly cwd?: string;
 }
 export interface ProcessOutput {
   readonly stdout: string;

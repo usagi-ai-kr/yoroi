@@ -86,5 +86,9 @@ test('#194 order 핫픽스: 3역할 후보는 최종 ranked entries 순서를 �
   assert.deepEqual(sel.worker.all.map(c => c.modelId), ranked.worker.entries.map(e => e.modelId), '워커 = ranked entries');
   assert.equal(sel.orchestrator.all[0]!.modelId, 'kimi-k3', '선두는 ranked 1위(본문 요약과 동일)');
   assert.notEqual(sel.orchestrator.all[0]!.modelId, records[0]!.modelId, 'records 순서를 따르지 않는다');
-  assert.equal(sel.orchestrator.all[0]!.score, ranked.orchestrator.entries[0]!.rawScore, 'score = rawScore');
+  // #194 score 배선: 3역할 표는 본문 요약과 같은 표시 보정 스코어(scoreText)를 쓴다.
+  const shown = Number(ranked.orchestrator.entries[0]!.scoreText);
+  assert.equal(sel.orchestrator.all[0]!.score, shown, 'score = 표시 보정 스코어(scoreText)');
+  assert.notEqual(sel.orchestrator.all[0]!.score, ranked.orchestrator.entries[0]!.rawScore, 'rawScore 가 아니다');
+  assert.equal(ranked.orchestrator.entries[0]!.scoreText, '56.7', '본문 표시 스코어와 3역할 표 스코어 일치');
 });

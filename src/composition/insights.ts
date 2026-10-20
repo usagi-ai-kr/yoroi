@@ -79,11 +79,10 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
       ...(options.refresh && { refresh: true }), ...(options.signal && { signal: options.signal }) }),
       options.processRunner ? collectOpenCodeFreeModels(options.processRunner,
         { ...(options.signal && { signal: options.signal }), target }) : Promise.resolve(undefined)]);
-    // #196: free 판정 권위는 공식 페이지(명시적 Free 표기)다. CLI 관측은 보조 근거(미검증)이고,
-    // 공식 조회는 CLI 관측 경로(processRunner 존재)에서만 수행한다. 조회 실패도 발행을 막지 않는다.
-    const official = options.processRunner
-      ? await collectOfficialFreeListing(options.http ?? new NodeHttpClient(), { ...(options.signal && { signal: options.signal }) })
-      : undefined;
+    // #196: free 판정 권위는 공식 페이지(명시적 Free 표기)다. CLI 관측은 보조 근거(미검증)이며,
+    // 공식 조회는 CLI 관측 경로(processRunner 존재)에서만 수행한다(조회 실패도 발행을 막지 않는다).
+    const official = options.processRunner ? await collectOfficialFreeListing(options.http ?? new NodeHttpClient(),
+      { ...(options.signal && { signal: options.signal }) }) : undefined;
     const freeCatalog = official ? buildOfficialFreeCatalog(freeModels ?? [], run.publicationDate, official.listing) : undefined;
     const freeNote = official === undefined ? undefined
       : official.pageFailed
@@ -94,7 +93,8 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
       ...(freeNote !== undefined && { warnings: [...(run.top10.warnings ?? []), freeNote] }) } : run.top10;
     const discoveryNotice = await runOnceDiscovery(options.discovery ??
       discoveryOptionsFrom(options.processRunner, options.env, target, options.signal)); // 기본 꺼짐·실패 무해(#168)
-    const threeRole = buildThreeRole(options.threeRole, run, letterThreeRoleConfig(options.env)); // 기본 꺼짐(#195)
+    // #194: 3역할 ranked 계산에 본문 렌더와 같은 enriched top10(freeCatalog·warnings)을 넘긴다. 기본 꺼짐(#195)
+    const threeRole = buildThreeRole(options.threeRole, top10 ? { ...run, top10 } : run, letterThreeRoleConfig(options.env));
     return { ...run, ...(top10 && { top10 }), ...(discoveryNotice && { discoveryNotice }), ...(threeRole && { threeRole }), storage };
   } finally { try { history.close?.(); } catch { /* close errors never change the result */ } }
 }

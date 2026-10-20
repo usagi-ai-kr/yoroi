@@ -25,9 +25,12 @@ export function buildThreeRole(
     try { return computeRoleTop10(run.top10.records, { ...run.top10 }); }
     catch { return undefined; }
   })();
-  const fromRanked = (list: RoleList | undefined) => list?.entries.map(e => ({
-    modelId: e.modelId, ...(e.rawScore !== undefined && { score: e.rawScore }),
-    effort: e.repEffort, isPareto: e.isPareto, rank: e.rank }));
+  // 3역할 표는 본문 요약과 같은 **표시 보정 스코어**(scoreText)를 쓴다(없으면 rawScore).
+  const fromRanked = (list: RoleList | undefined) => list?.entries.map(e => {
+    const shown = Number(e.scoreText);
+    const score = Number.isFinite(shown) ? shown : e.rawScore;
+    return { modelId: e.modelId, ...(score !== undefined && { score }),
+      effort: e.repEffort, isPareto: e.isPareto, rank: e.rank }; });
   // ranked 목록이 비어 있으면(카탈로그 접근 가능 후보 없음)만 원시 행으로 물러난다.
   const oRanked = ranked ? fromRanked(ranked.orchestrator) ?? [] : [];
   const wRanked = ranked ? fromRanked(ranked.worker) ?? [] : [];

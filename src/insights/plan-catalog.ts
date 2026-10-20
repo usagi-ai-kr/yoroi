@@ -76,10 +76,11 @@ export const PLAN_CATALOG: readonly PlanCatalogEntry[] = [
     { modelId: 'muse-spark-open', displayName: 'Muse Spark Open', sourceUrl: 'https://ollama.com/library/muse-spark-open', checkedOn: '2026-10-16', verified: true }] },
   { planId: 'opencode-go-plus', planName: 'OpenCode Go Plus', models: [
     { ...m('kimi-k3', 'Kimi K3', OPENCODE), usageLimit: { count: 440, period: '5h', note: 'Est. requests / 5h: 440 (Plus)', sourceUrl: OPENCODE, checkedOn: CHECKED_ON } },
-    ...['Kimi K2.7 Code|kimi-k2-7-code', 'Space Bunny|space-bunny', 'MiniMax M3|minimax-m3', 'Claude Haiku 5.5|claude-haiku-5-5',
+    { modelId: 'minimax-m3-1-flash-free', displayName: 'MiniMax M3.1 Flash Free', sourceUrl: OPENCODE_DOCS, checkedOn: '2026-10-20', verified: true, free: true, note: 'OpenCode Go/Go Plus · Free(limited time)' },
+    { ...m('space-bunny', 'Space Bunny', OPENCODE), note: 'MiniMax M3.1 Flash 초기 버전(별개 id 유지, 병합 아님)' },
+    ...['Kimi K2.7 Code|kimi-k2-7-code', 'MiniMax M3|minimax-m3', 'Claude Haiku 5.5|claude-haiku-5-5',
     'GPT 6 Luna|gpt-6-luna', 'Qwen3.7 Plus|qwen3-7-plus', 'GLM-5.3-Flash|glm-5-3-flash', 'DeepSeek V4.1 Flash|deepseek-v4-1-flash',
-    'MiMo-V2.6-Flash|mimo-v2-6-flash', 'Muse Spark 1.3 Contributor|muse-spark-1-3']
-    .map(s => m(s.split('|')[1]!, s.split('|')[0]!, OPENCODE)),
+    'MiMo-V2.6-Flash|mimo-v2-6-flash', 'Muse Spark 1.3 Contributor|muse-spark-1-3'].map(s => m(s.split('|')[1]!, s.split('|')[0]!, OPENCODE)),
     ...['GPT 5.6 Luna|gpt-5-6-luna', 'GLM-5.3|glm-5-3', 'GLM-5.2|glm-5-2', 'Kimi K2.6|kimi-k2-6', 'LongCat-2.0|longcat-2-0',
     'MiMo-V2.6-Pro|mimo-v2-6-pro', 'MiMo-V2.5|mimo-v2-5', 'MiMo-V2.5-Pro|mimo-v2-5-pro', 'MiniMax M2.7|minimax-m2-7',
     'Muse Spark 1.2 Contributor|muse-spark-1-2', 'Qwen3.8 Max|qwen3-8-max', 'Qwen3.8 Flash|qwen3-8-flash',

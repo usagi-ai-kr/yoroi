@@ -10,7 +10,7 @@ test('plan catalog entries all carry an https sourceUrl, checkedOn and a verifie
   assert.ok(plansForModel('gemini-3-8-flash').includes('Antigravity'));
   for (const plan of PLAN_CATALOG) for (const model of plan.models) {
     assert.match(model.sourceUrl, /^https:\/\//, `${plan.planId}:${model.modelId}`);
-    assert.ok(['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16'].includes(model.checkedOn), `${model.modelId} checkedOn`);
+    assert.ok(['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-20'].includes(model.checkedOn), `${model.modelId} checkedOn`);
     assert.equal(typeof model.verified, 'boolean');
   }
 });
@@ -44,7 +44,7 @@ test('plansForModel resolves the Go console docs models to OpenCode Go Plus', ()
 test('each plan keeps its expected model count and no duplicate modelId', () => {
   const counts: Record<string, number> = {
     'chatgpt-plus': 8, 'claude-pro': 3, 'google-ai-pro': 2,
-    'ollama-cloud-pro': 19, 'opencode-go-plus': 30, 'antigravity': 10, 'cursor': 3,
+    'ollama-cloud-pro': 19, 'opencode-go-plus': 31, 'antigravity': 10, 'cursor': 3,
     'supergrok': 1,
   };
   assert.deepEqual(Object.fromEntries(PLAN_CATALOG.map(p => [p.planId, p.models.length])), counts);
@@ -78,8 +78,8 @@ test('verified=false models are dropped from the accessible candidate pool', () 
     ['glm-5-3', 'muse-spark-1-3']);
 });
 
-test('static free plans are gone, so freeOnlyModelIds is empty until codex injects a live freeCatalog', () => {
+test('verified free:true entry is listed as free-only; static free-tier plans still gone', () => {
   assert.equal(PLAN_CATALOG.filter(p => p.tier === 'free').length, 0);
-  assert.deepEqual(freeOnlyModelIds(), []);
+  assert.deepEqual(freeOnlyModelIds(), ['minimax-m3-1-flash-free']);
   assert.ok(!plansForModel('step-5').some(p => p.includes('(Free)')));
 });

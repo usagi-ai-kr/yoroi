@@ -93,6 +93,7 @@
 - [완료] roster에 리뷰 전담 r(w18:p5) 추가(coord status가 r 해석 확인). r 모델은 배정 직전 live 출력 기준.
 - [완료] 5원인 수용기준·DELTA 요소식 메시지 규칙을 하네스 최소 반영(규칙 1곳·참조 2곳·샘플 1·호스트 1줄). r 최종리뷰 패킷 전송 후 r PASS 시 로컬 커밋(push 없음).
 
-## v1.4.0 발행 (2026-10-20, 완료)
+## v1.4.0·v1.5.0 발행 (2026-10-20, 완료)
 
 - [완료] PR #191 머지(main `ff831c6`, 02:09:13Z)·main CI success(run `39357397662`)·tag `v1.4.0`·[Release](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.4.0)(02:12:27Z) 발행·전역 CLI 1.4.0. #180 open 유지, #168/#190 런타임 미구현 유지.
+- [완료] v1.5.0: PR #197 머지(main `77e8f72`)·main CI success(run `39380162687`)·tag `v1.5.0`·[Release](https://github.com/usagi-ai-kr/yoroi/releases/tag/v1.5.0)(06:26:21Z)·전역 CLI 1.5.0. #168/#190/#194/#195 open 유지.

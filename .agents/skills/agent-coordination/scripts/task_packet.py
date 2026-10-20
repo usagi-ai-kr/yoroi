@@ -48,7 +48,7 @@ def make_packet(task_id: str, pane: str, files: list[str], crit: list[str],
     return {
         "task_id": task_id, "target_pane": pane, "timeout_minutes": 10,
         "owned_files": files, "completion_criteria": crit,
-        "report_path": report_path or f"/tmp/{task_id}-report.json",
+        "report_path": report_path or f"tmp/{task_id}-report.json",
         "report_format": "{task_id, modified_files:[str], verification_results:[str], provenance:{worker_actions:str|[str]}}",
         "on_stop": "새 작업 중지, 실행 중 외부 쓰기는 완료만 확인, 변경 보존 후 보고",
         "forbidden_actions": [

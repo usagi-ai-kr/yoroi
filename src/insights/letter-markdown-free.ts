@@ -9,7 +9,7 @@ import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
 import type { CalibrationRunRecord } from './calibration-store.js';
 import { SqliteCalibrationStore } from './calibration-store-sqlite.js';
 import { normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { freeCompactRows, freeMarkdownRows, FREE_TABLE_HEADER, withCalibration } from './letter-markdown-free-table.js';
+import { freeCompactRows, freeMarkdownRows, freeTableHeader, hasMeaningfulWorkability, withCalibration } from './letter-markdown-free-table.js';
 import { freeRowsFrom } from './letter-markdown-free-sort.js';
 export { barePlan, freeOnlyModelIds, shortPlan } from './letter-top10-plans.js';
 
@@ -17,6 +17,7 @@ export const FREE_HEADING = '## 🆓 Free 티어';
 export const FREE_EMPTY_NOTE = 'Free 목록 수집 실패(opencode models)';
 /** 티어별 한도·조건(Zen Free·Go Free 2줄). */
 export const FREE_LIMIT_NOTES: readonly string[] = [
+  '- Zen = OpenCode Zen Free · Go = OpenCode Go Free (✓ 는 확인된 경로, 빈 칸은 이 화면에서 확인되지 않음 · 사용 불가 확정이 아님).',
   '- OpenCode Zen Free: 기간 한정 무료(수치 한도 미공개), 수집 데이터가 모델 개선에 쓰일 수 있다(일부 zero-retention).',
   '- OpenCode Go Free: Unlimited·기간 한정, OpenCode 클라이언트 세션에서만 사용 가능.',
 ];
@@ -66,7 +67,8 @@ export function renderFreeSectionMarkdown(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], _limit = 5, calibration?: CalibrationLookup): string[] {
   if (!lists) return [FREE_HEADING, '', FREE_EMPTY_NOTE];
   const rows = withCalibration(freeRowsFrom(lists, unmeasured, Infinity), calibration ?? lazyCalibrationLookup());
-  return [FREE_HEADING, '', FREE_TABLE_HEADER, ...freeMarkdownRows(rows), '', ...FREE_LIMIT_NOTES];
+  const showWorkability = hasMeaningfulWorkability(rows);
+  return [FREE_HEADING, '', freeTableHeader(showWorkability), ...freeMarkdownRows(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
 }
 export function renderFreeSectionCompact(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], limit = 3): string[] {

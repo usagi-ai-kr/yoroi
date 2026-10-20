@@ -18,7 +18,8 @@ __pycache__/
 build/
 dist/
 coverage/
-tmp/
+tmp/*
+!tmp/.gitkeep
 scratch/
 *.log
 gen-lang*

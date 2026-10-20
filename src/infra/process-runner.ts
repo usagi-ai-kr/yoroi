@@ -1,13 +1,14 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { SourceError } from '../app/usage-source.js';
 import type { ProcessOutput, ProcessRequest, ProcessRunner } from './process-port.js';
 import { terminateProcess } from './process-control.js';
 
 type Spawn = (executable: string, args: readonly string[],
-  env: Readonly<Record<string, string | undefined>>) => ChildProcessWithoutNullStreams;
+  env: Readonly<Record<string, string | undefined>>, cwd?: string) => ChildProcessWithoutNullStreams;
 export class NodeProcessRunner implements ProcessRunner {
-  constructor(private readonly start: Spawn = (exe, args, env) =>
-    spawn(exe, args, { env, shell: false, stdio: 'pipe', detached: process.platform !== 'win32' }),
+  constructor(private readonly start: Spawn = (exe, args, env, cwd) =>
+    spawn(exe, args, { env, cwd, shell: false, stdio: 'pipe', detached: process.platform !== 'win32' }),
     private readonly terminationGraceMs = 250) {}
   run(request: ProcessRequest, signal?: AbortSignal): Promise<ProcessOutput> {
     if (signal?.aborted) return Promise.reject(new SourceError('cancelled'));
@@ -18,7 +19,7 @@ export class NodeProcessRunner implements ProcessRunner {
       let child: ChildProcessWithoutNullStreams;
       // replace 모드에서는 process.env를 전혀 합치지 않는다(호스트 비밀·설정 차단).
       const env = request.envMode === 'replace' ? { ...request.env } : { ...process.env, ...request.env };
-      try { child = this.start(request.executable, request.args, env); }
+      try { child = this.start(request.executable, request.args, env, request.cwd); }
       catch { reject(new SourceError('unavailable')); return; }
       child.stdout.setEncoding('utf8');
       child.stderr.setEncoding('utf8');
@@ -51,7 +52,9 @@ export class NodeProcessRunner implements ProcessRunner {
       signal?.addEventListener('abort', abort, { once: true });
       child.on('error', (error: NodeJS.ErrnoException) => {
         if (failure) return;
-        failure = new SourceError(error.code === 'ENOENT' ? 'not-installed' : 'unavailable');
+        // cwd가 사라진 경우와 실행 파일이 없는 경우를 구분한다(둘 다 ENOENT로 보고된다).
+        const cwdGone = request.cwd !== undefined && error.code === 'ENOENT' && !existsSync(request.cwd);
+        failure = new SourceError(cwdGone ? 'unavailable' : (error.code === 'ENOENT' ? 'not-installed' : 'unavailable'));
         finish(null);
       });
       child.on('close', finish);

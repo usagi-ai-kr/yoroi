@@ -4,7 +4,7 @@ import type { ProcessOutput, ProcessRequest, ProcessRunner } from '../src/infra/
 import { publishInsightsLetter } from '../src/composition/insights-publish.js';
 import { freeSectionProblem } from '../src/insights/letter-free-guard.js';
 import { FREE_EMPTY_NOTE, FREE_HEADING } from '../src/insights/letter-markdown-free.js';
-import { FREE_TABLE_HEADER } from '../src/insights/letter-markdown-free-table.js';
+import { FREE_TABLE_HEADER, freeTableHeader } from '../src/insights/letter-markdown-free-table.js';
 import type { LetterParts } from '../src/insights/letter-markdown.js';
 
 /** 1.2.0 발행 계약: render는 LetterParts{body, comments:[c1,c2,c3]}를 반환하고 Free 가드는 comments[2](댓글 3)에 적용된다. */
@@ -21,7 +21,9 @@ function harness(outputs: ProcessOutput[], parts: () => Promise<LetterParts>, no
   return { runner, stdout, stderr, env, run: (dryRun = false) => publishInsightsLetter({ runner, render: parts, clock: () => now, ghBin: 'gh-test', ...(dryRun && { dryRun }) }, env) };
 }
 const BODY = '# letter\n\n## 🧭 오케스트레이터·리뷰어 Top7\n| 순위 | 모델 |\n| --- | --- |\n| 1 | a |\n';
-const FREE_VALID = `${FREE_HEADING}\n\n${FREE_TABLE_HEADER}\n| step-5 | - | - | 43.7 | OpenCode Zen Free | 근거 없음 |\n`;
+// #196: Free 표는 Zen/Go 체크 열 + 조건부 작업 가능성 열을 쓴다(경로 문자열 열 없음).
+const FREE_VALID = `${FREE_HEADING}\n\n${freeTableHeader(true)}\n| step-5 | - | - | 43.7 | ✓ |  | 근거 없음 | 작업 가능 · 84/100 |\n`;
+const FREE_VALID_PLAIN = `${FREE_HEADING}\n\n${freeTableHeader(false)}\n| step-5 | - | - | 43.7 | ✓ |  | 근거 없음 |\n`;
 const FREE_INVALID = `${FREE_HEADING}\n\n${FREE_EMPTY_NOTE}\n`;
 const validBody = `# letter\n\n${FREE_VALID}`, invalidBody = `# letter\n\n${FREE_INVALID}`;
 const withFree = (free: string): LetterParts => ({ body: BODY, comments: ['## 🧭 오케스트레이터·리뷰어 Top15\n', '## 🛠 워커·메신저 Top15\n', free] });
@@ -31,6 +33,11 @@ test('free section guard accepts data rows and reports each empty/free-list fail
   assert.equal(freeSectionProblem(`# letter\n\n## 📖 표시 안내\n`), 'free section missing');
   assert.equal(freeSectionProblem(invalidBody), 'free collection failed');
   assert.equal(freeSectionProblem(`# letter\n\n${FREE_HEADING}\n\n${FREE_TABLE_HEADER}\n`), 'free table has no data rows');
+});
+
+test('#196: 작업 가능성 열은 조건부라 가드는 두 헤더를 모두 인정한다', () => {
+  assert.equal(freeSectionProblem(`# letter\n\n${FREE_VALID_PLAIN}`), undefined, '작업 가능성 열 없이도 유효');
+  assert.equal(freeSectionProblem(`# letter\n\n${FREE_VALID}`), undefined, '작업 가능성 열 있어도 유효');
 });
 
 test('publish fails before issue create when comments[2] free section is empty', async () => {

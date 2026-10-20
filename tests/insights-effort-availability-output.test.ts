@@ -59,9 +59,12 @@ test('previousRanks도 같은 프로필을 쓴다: cap 유무로 순위가 바�
 test('Free 표도 같은 가용성 표기를 쓴다', () => {
   const records = [aa('muse-spark-1-3-xhigh', 40), aa('muse-spark-1-3-max', 41), aa('claude-sonnet-5-5-max', 45)];
   const lists = computeRoleTop10(records, { catalog: catalogOf(['muse-spark-1-3', 'claude-sonnet-5-5']), effortAvailability: av });
-  const text = freeMarkdownRows(freeRowsFrom(lists, [], 15)).join('\n');
-  assert.match(text, /effort xhigh\(상한\)·벤치마크 max/);
-  assert.match(text, /effort max\(미확인\)/, '미검증·미목록 모델도 Free에서 같은 표기를 쓴다');
+  const rows = freeRowsFrom(lists, [], 15);
+  const text = freeMarkdownRows(rows).join('\n');
+  assert.match(text, /effort xhigh\(상한\)·벤치마크 max/, '확인된 상한은 그대로 보여준다');
+  // #196: 미확인 effort 표기는 Free 화면에서 숨기되 내부 근거는 유지한다.
+  assert.doesNotMatch(text, /\(미확인\)/, 'Free 화면에 미확인 effort 표기를 반복하지 않는다');
+  assert.ok(rows.some(row => (row.effort ?? '').includes('(미확인)')), '내부 근거(미확인 effort)는 유지한다');
 });
 
 test('benchmarkEffort는 같은 점수 정책의 cap 없는 대표다(AA 최고 관측값이 아니다)', () => {

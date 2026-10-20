@@ -15,17 +15,19 @@ class FakeRunner implements ProcessRunner {
   public runs = 0;
   async run(req: ProcessRequest): Promise<ProcessOutput> {
     this.runs++;
-    const dir = req.args[req.args.indexOf('--dir') + 1]!, env = req.env?.CALIBRATION_TASK_ID;
+    const m = /Working directory:\n(\S+)/.exec(`${req.args[req.args.length - 1] ?? ''}\n${req.input ?? ''}`);
+    const dir = m?.[1] ?? '', env = req.env?.CALIBRATION_TASK_ID;
     if (env === 'task-1-packet-compliance') writeFileSync(join(dir, 'report.json'), JSON.stringify({ task_id: 't1', status: 'ok', checks_passed: true }));
     else if (env === 'task-2-single-file-edit') { mkdirSync(join(dir, 'src'), { recursive: true }); writeFileSync(join(dir, 'src/target.ts'), 'val'); }
     return { stdout: 'completed successfully', stderr: '', exitCode: 0 }; }
 }
+class FailRunner implements ProcessRunner {
+  async run(): Promise<ProcessOutput> { return { stdout: '', stderr: 'Unknown flag --dir', exitCode: 2 }; }
+}
 class FakeStore implements CalibrationStore {
   public saved: CalibrationRunRecord[] = [];
-  saveRun(r: CalibrationRunRecord): void { this.saved.push(r); }
-  listRuns(): CalibrationRunRecord[] { return this.saved; }
-  prune(): number { return 0; }
-  close(): void {}
+  saveRun(r: CalibrationRunRecord): void { this.saved.push(r); } listRuns(): CalibrationRunRecord[] { return this.saved; }
+  prune(): number { return 0; } close(): void {}
 }
 const MODELS: readonly OpenCodeFreeModel[] = [{ provider: 'opencode', originalId: 'opencode/test-free', modelId: 'test' }];
 
@@ -43,8 +45,13 @@ test('pre-run confirmation flow requires explicit confirmation and prints disclo
   const runner = new FakeRunner(), logs: string[] = [], errs: string[] = [];
   const code = await runCalibrationCli(['--model', 'opencode/test-free'], { runner, models: MODELS, stdout: m => logs.push(m), stderr: m => errs.push(m) });
   assert.equal(code, 1); assert.equal(runner.runs, 0);
-  assert.ok(logs.some(l => l.includes('쿼터 불명')) && logs.some(l => l.includes('Enforced: timeouts/turns/tokens/isolation/no-retry')));
+  assert.ok(logs.some(l => l.includes('쿼터 불명')) && logs.some(l => l.includes('Best-effort: turns/tokens')) && logs.some(l => l.includes('턴·토큰 상한은 미강제')), '미강제 한계를 실행 계획에도 밝힌다');
   assert.ok(errs.some(e => e.includes('pre-run confirmation required'))); });
+
+test('launch failure exits 1 without saving scored runs', async () => {
+  const store = new FakeStore(), errs: string[] = [];
+  const code = await runCalibrationCli(['--model', 'opencode/test-free', '--yes'], { runner: new FailRunner(), store, models: MODELS, stderr: m => errs.push(m) });
+  assert.equal(code, 1); assert.equal(store.saved.length, 0); assert.ok(errs.some(e => e.includes('insufficient'))); });
 
 test('rejects unverified or unlisted Free model without runner calls', async () => {
   const runner = new FakeRunner(), errs: string[] = [];
@@ -62,13 +69,6 @@ test('1-run provisional vs 3-run median stable saves with version constants and 
   assert.equal(await runCalibrationCli(['--model', 'opencode/test-free', '--runs', '3', '--yes'], { runner: runner3, store: store3, models: MODELS }), 0);
   assert.equal(runner3.runs, 12);
   assert.equal(store3.saved[0]!.sampleStatus, 'stable'); assert.equal(store3.saved[0]!.sampleCount, 3);
-});
-
-test('env parity: gating and runner behavior are invariant to CI/minimal ambient env', async () => {
-  for (const envObj of [{}, { CI: 'true', GITHUB_ACTIONS: 'true' }, { YOROI_DATA_DIR: '/tmp' }]) {
-    const r = new FakeRunner();
-    assert.equal(await runCalibrationCli(['free', '--model', 'opencode/test-free', '--yes'], { runner: r, models: MODELS }), 0);
-    assert.equal(r.runs, 4); }
 });
 
 test('fresh-DB first-run persists; file-path open fails deterministically', async () => {

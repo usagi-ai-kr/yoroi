@@ -25,7 +25,7 @@
 
 - 메시지 형식(coordination-rules 9항): 전달=요소식, 회신=요소식. 아래는 실제 적용 샘플이다.
   - 전달(o→워커): `task: #190 파서 단위` / `files: src/insights/arena-coding-{types,parser}.ts` /
-    `constraints: 100줄·기존 파일 비파괴·실모델 금지` / `done: 집중 7/7·typecheck 0` / `report: /tmp/<task>-report.json`
+    `constraints: 100줄·기존 파일 비파괴·실모델 금지` / `done: 집중 7/7·typecheck 0` / `report: tmp/<task>-report.json`
   - 회신(워커→o): `status: 완료` / `evidence: 집중 7/7 exit 0, typecheck exit 0` / `result: 산출물 2파일` / `next: 리뷰 요청`
 - 워커는 진행 중 주요 내용을 docs에 남기고 최종 의견·분석은 허가된 issue에 남긴다.
   원격이 없거나 외부 기록이 허가되지 않았으면 호스트의 로컬 작업 기록을 사용한다.

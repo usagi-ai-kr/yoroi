@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { joinLetterParts, renderLetterPartsFromRecords, renderTop10MarkdownFromRecords } from '../src/insights/letter-markdown.js';
-import { freeListsFrom, renderFreeSectionMarkdown } from '../src/insights/letter-markdown-free.js';
-import type { CalibrationRunRecord } from '../src/insights/calibration-store.js';
 import { renderTop10FromRecords } from '../src/insights/letter-top10-render.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 
@@ -21,14 +19,18 @@ const RECORDS = [{ modelId: 'step-5', value: 90, metric: INTEL, priceInput: 1, p
 test('the free section renders one merged table with notes limited to Zen/Go Free', () => {
   const section = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG }).comments[2];
   assert.ok(!section.includes('### 오케스트레이터') && !section.includes('### 워커'), '한 표로 합쳐 소제목을 두지 않는다');
-  assert.ok(section.includes('| 모델 | 오케 | 워커 | AA 지수 | Free 경로 | 비고 | 작업 가능성 |'));
+  assert.ok(section.includes('| 모델 | 오케 | 워커 | AA 지수 | Zen | Go | 비고 |'), 'Zen/Go 체크 열로 분리');
+  assert.ok(!section.includes('Free 경로'), 'Free 경로 문자열 열은 제거');
   const rows = section.split('\n').filter(line => line.startsWith('| ') && !line.startsWith('| 모델') && !line.startsWith('| ---'));
   assert.ok(rows.length >= 3 && rows.some(line => /^\| [^|]+ \| ✓ [\d.]+ \| /.test(line)), '오케 통과 행은 ✓ 스코어를 쓴다');
-  assert.ok(rows.every(line => /^\| [^|]+ \| (✓ [\d.]+|✗|-) \| (✓ [\d.]+|✗|-) \| (-|[\d.]+) \| .+ \| .+ \| .+ \|$/.test(line)), section);
+  assert.ok(rows.every(line => /^\| [^|]+ \| (✓ [\d.]+|✗|-) \| (✓ [\d.]+|✗|-) \| (-|[\d.]+) \| (✓|) \| (✓|) \| .+ \|$/.test(line)), section);
   // 표시 점수는 Free 포함 모집단 정규 순위: step-5 워커 43.3(raw 30.0). AA 지수는 indexText 90.0.
   assert.ok(rows.some(line => /^\| step-5 \| ✓ [\d.]+ \| ✓ 43\.3 \| 90\.0 \| /.test(line)), '표시 보정: step-5 워커 43.3');
   assert.ok(rows.filter(line => /^\| [^|]+ \| - \| - \| /.test(line)).every(line => line.includes('근거 없음')), '두 역할 -는 근거 없음 행에만');
-  assert.ok(rows.some(line => /\| 90\.0 \|/.test(line)) && rows.some(line => /\| 80\.0 \|/.test(line)));  assert.ok(section.includes('OpenCode Go Free') && section.includes('OpenCode Zen Free+OpenCode Go Free'), 'Go Free path keeps the plain plan label');
+  assert.ok(rows.some(line => /\| 90\.0 \|/.test(line)) && rows.some(line => /\| 80\.0 \|/.test(line)));
+  assert.ok(rows.some(line => /\| ✓ \| ✓ \|/.test(line)), 'Zen·Go 모두 확인된 행은 양쪽 ✓');
+  assert.ok(rows.some(line => /\| ✓ \| +\|/.test(line)), 'Zen만 확인된 행은 Go 빈 칸');
+  assert.ok(section.includes('Zen = OpenCode Zen Free · Go = OpenCode Go Free'), '범례는 짧게');
   assert.ok(!section.includes('x-opencode-session'), '세션 헤더 문구는 발행본에 나타나지 않는다');
   assert.ok(section.includes('- OpenCode Zen Free: 기간 한정 무료') && section.includes('- OpenCode Go Free: Unlimited·기간 한정'));
   assert.ok(!section.includes('↔') && !section.includes('⭐') && !section.includes('Antigravity Free'));
@@ -82,19 +84,10 @@ test('a verified Free path alone is access evidence, not price evidence; unmeasu
   const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
   const section = parts.comments[2], md = joinLetterParts(parts);
   for (const id of ['big-pickle', 'mimo-v2-5']) {
-    assert.ok(section.includes(`| ${id} | ✗ | ✗ | - | OpenCode Zen Free | `),
+    assert.ok(section.includes(`| ${id} | ✗ | ✗ | - | ✓ |  |`),
       `${id}: Free 접근 근거만으로는 두 영역 다 통과하지 못한다(✗)`);
   }
   assert.ok(!section.includes('근거 없음') && !md.includes('- AA 미측정(순위 제외)'), '이 픽스처에는 스코어를 못 내는 미측정 행이 없다');
   const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
-  assert.ok(text.includes('big-pickle · 오케 ✗ · 워커 ✗ · OpenCode Zen Free · '), text);
-});
-test('capability supplement shows verdicts and falls back without a store (#180 unit 5)', () => {
-  const cap = (modelId: string, verdict: CalibrationRunRecord['verdict'], totalScore: number, sampleStatus: CalibrationRunRecord['sampleStatus'], sampleCount: number): CalibrationRunRecord => ({ runId: `r-${modelId}`, modelId, taskSetVersion: 'v1', evaluatorVersion: 'v1', runAt: '2026-10-20T00:00:00.000Z', tasks: [], violationClasses: [], totalScore, verdict, sampleStatus, sampleCount });
-  const byId = (m: Record<string, CalibrationRunRecord[]>) => (id: string) => m[id];
-  const lists = freeListsFrom(RECORDS, FREE_CATALOG, {})!;
-  const text = renderFreeSectionMarkdown(lists, [], 5, byId({ 'step-5': [cap('step-5', 'capable', 84, 'stable', 3)], 'big-pickle': [cap('big-pickle', 'assistant', 72, 'stable', 3)], 'mimo-v2-5': [cap('mimo-v2-5', 'not_recommended', 40, 'stable', 3)], 'ling-3-0-flash-fin': [cap('ling-3-0-flash-fin', 'capable', 90, 'provisional', 1)] })).join('\n');
-  for (const s of ['작업 가능 · 84/100 · 3회 · task-set v1 · 2026-10-20', '보조 가능 · 72/100 · 3회 · task-set v1 · 2026-10-20', '권장하지 않음', '측정 부족 · 잠정 · 1회 · 2026-10-20']) assert.ok(text.includes(s), s);
-  const none = renderFreeSectionMarkdown(lists, [], 5, () => undefined).join('\n');
-  assert.ok(none.includes('| 미검증 |') && !none.includes('작업 가능 ·') && !none.includes('측정 부족'));
+  assert.ok(text.includes('big-pickle · 오케 ✗ · 워커 ✗ · Zen ✓ · '), text);
 });

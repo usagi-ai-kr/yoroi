@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
+import { UNCONSTRAINED_AVAILABILITY } from '../src/insights/letter-effort-availability.js';
 
 const MODELS = ['gpt-6-sol', 'gpt-6-1-sol'] as const;
 const METRICS = ['artificial_analysis_intelligence_index', 'artificial_analysis_coding_index'];
@@ -13,7 +14,7 @@ test('effort-suffixed DeepSeek successor keeps its successor annotation', () => 
     { modelId: 'deepseek-v4.1-flash-high', metric: METRICS[1]!, value: 92, priceInput: 0.3, priceOutput: 1.2, successorOf: 'deepseek-v4-flash' },
     { modelId: 'claude-opus-5-5', metric: METRICS[0]!, value: 80, priceInput: 1.5, priceOutput: 7 },
     { modelId: 'claude-opus-5-5', metric: METRICS[1]!, value: 90, priceInput: 1.5, priceOutput: 7 }];
-  const lists = computeRoleTop10(rows);
+  const lists = computeRoleTop10(rows, { effortAvailability: UNCONSTRAINED_AVAILABILITY });
   assert.equal(lists.orchestrator.entries.find(e => e.modelId === 'deepseek-v4-1-flash')?.successorOf, 'deepseek-v4-flash');
   assert.equal(lists.worker.entries.find(e => e.modelId === 'deepseek-v4-1-flash')?.successorOf, 'deepseek-v4-flash');
 });
@@ -26,7 +27,7 @@ for (const successor of MODELS) for (const modelEffort of ['', '-high']) for (co
       metric, value: 90,
       ...(modelId === successor && { successorOf: `${predecessor}${predecessorEffort}` }),
     })));
-    const lists = computeRoleTop10(records);
+    const lists = computeRoleTop10(records, { effortAvailability: UNCONSTRAINED_AVAILABILITY });
     for (const list of [lists.orchestrator, lists.worker]) {
       assert.deepEqual(list.entries.map(e => e.modelId).sort(), [...MODELS].sort());
       assert.ok(list.entries.every(e => e.successorOf === undefined));

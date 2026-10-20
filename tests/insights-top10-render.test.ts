@@ -90,10 +90,11 @@ test('partial sources are reported instead of claiming all sources are normal', 
   const both = renderTop10Letter({ ...data, failedSources: ['opencode-data'] }); assert.ok(both.includes('수집 실패 소스: opencode-data') && both.includes('부분 수집 소스: cognition'));
   assert.ok(!both.includes('전 소스 정상 수집'));
 });
-test('compact effort marking stays visible with short markers and a single legend line (#188)', () => {
+test('compact effort 는 plain 이고 마커·범례를 남기지 않는다 (#194)', () => {
   const base = fakeLists('mark', true).orchestrator.entries[0]!, lists: RoleLists = { orchestrator: { entries: [{ ...base, repEffort: 'xhigh', effortAvailability: 'capped', benchmarkEffort: 'max' }], exits: [] },
     worker: { entries: [{ ...base, repEffort: 'max', effortAvailability: 'unlisted' }], exits: [] } };
   const text = renderTop10Letter({ publicationDate: '2026-10-12', lists });
-  for (const s of ['effort xhigh▲→max', 'effort max?', 'effort 표기: ▲=관측 상한 적용, ?=가용성 미확인(이론값)']) assert.ok(text.includes(s), s);
-  assert.equal(text.split('effort 표기:').length - 1, 1, '안내는 한 번만');
+  for (const s of ['effort xhigh', 'effort max']) assert.ok(text.includes(s), s);
+  assert.doesNotMatch(text, /effort \w+[▲?]/, 'effort 마커 없음');
+  for (const gone of ['effort 표기:', '(미확인)', '(상한)']) assert.ok(!text.includes(gone), `남으면 안 됨: ${gone}`);
 });

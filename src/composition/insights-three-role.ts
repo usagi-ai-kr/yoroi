@@ -58,7 +58,7 @@ export function buildThreeRole(
   }
 
   const revOutcome = buildReviewerCandidates(run?.top10);
-  const r = revOutcome.candidates;
+  const r = revOutcome.reviewer;
   const reviewerPolicy = isObj && opt.options?.reviewerPolicy
     ? opt.options.reviewerPolicy
     : { weights: revOutcome.weights };

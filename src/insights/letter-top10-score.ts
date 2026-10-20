@@ -26,13 +26,13 @@ const minMax = (values: readonly (number | undefined)[], low = false): (number |
 export function scoreRoleCandidatesFromSources(pool: readonly Top10RecordInput[], role: OptimalZoneRole, opts?: Top10Options): ScoredGroup[] {
   const collected = collect(pool, role), has = (b: string) => { const r = collected.get(b); return !!r && hasEvidence(r); };
   const superseded = new Set(MODEL_SUCCESSORS.filter(m => has(normalizeModelName(m.successor))).map(m => normalizeModelName(m.predecessor)));
-  const evidenced = ([base, r]: [string, Raw]) => hasEvidence(r) && !superseded.has(base) ||
-    (role === 'worker' && !superseded.has(base) && (!!r.aaCptE?.size || !!r.aaTotalE?.size));
-  const bases = [...collected].filter(evidenced).map(([base]) => base), capOf = (i: number) => capOfModel(bases[i]!, opts?.effortAvailability);
+  const evidenced = ([base, r]: [string, Raw]) => hasEvidence(r) && !superseded.has(base) || (role === 'worker' && !superseded.has(base) && (!!r.aaCptE?.size || !!r.aaTotalE?.size));
+  const bases = [...collected].filter(evidenced).map(([base]) => base);
+  // 활성 프로필이 있으면 cap 없는(unlisted) 모델은 default effort 만(상위 effort 추천·점수 제외).
+  const profileActive = opts?.effortAvailability?.activeProfile !== undefined, capOf = (i: number) => capOfModel(bases[i]!, opts?.effortAvailability) ?? (profileActive ? 'default' : undefined);
   const raws = [...collected].filter(evidenced).map(([, r], i) => role === 'worker' ? capWorkerPerf(r, capOf(i)) : r);
   const parts = PARTS.filter(p => ROLE_SOURCES[role][p.dim].includes(p.src) && (p.role ?? role) === role), w = ROLE_DIMENSION_WEIGHTS[role], floor = PERFORMANCE_FLOOR[role];
   const stdOf = (rs: readonly Raw[], p: typeof PARTS[number]) => minMax(rs.map(r => { const v = r[p.key] as number | undefined; return v === undefined ? undefined : p.log ? p.log(v) : v; }), p.low);
-  // 워커: 성능 소스(동점 AA)의 최고 effort 하나. 오케(p58 정정): 관측 effort 변형마다 그 effort 값을 고른 행을 만들어 전 변형 풀로 표준화한다.
   const [perfAa, perfCog] = role === 'worker' ? [PARTS[0]!, PARTS[1]!].map(p => stdOf(raws, p)) : [];
   const rows = raws.flatMap((r, i) => role === 'orchestrator'
     ? orchestratorVariants(r, capOf(i)).map(effort => { const c = { ...r }; pickEffortValues(c, effort, role, capOf(i)); return { r: c, base: bases[i]!, effort }; })

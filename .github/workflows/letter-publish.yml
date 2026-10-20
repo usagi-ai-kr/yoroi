@@ -12,6 +12,10 @@ on:
         type: boolean
         required: false
         default: true
+      not_before:
+        description: '수동 발행 시 KST HH:MM 게이트 override(예: 00:00). 비우면 기본 08:00.'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -57,7 +61,21 @@ jobs:
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
       - name: Dry run (no GitHub writes)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
-        run: node dist/src/main.js insights publish --dry-run
+        env:
+          NOT_BEFORE: ${{ inputs.not_before }}
+        run: |
+          if [ -n "$NOT_BEFORE" ]; then
+            node dist/src/main.js insights publish --dry-run --not-before "$NOT_BEFORE"
+          else
+            node dist/src/main.js insights publish --dry-run
+          fi
       - name: Publish letter (08:00 KST gate, --not-before override 가능)
         if: github.event_name == 'schedule' || inputs.dry_run != true
-        run: node dist/src/main.js insights publish
+        env:
+          NOT_BEFORE: ${{ inputs.not_before }}
+        run: |
+          if [ -n "$NOT_BEFORE" ]; then
+            node dist/src/main.js insights publish --not-before "$NOT_BEFORE"
+          else
+            node dist/src/main.js insights publish
+          fi

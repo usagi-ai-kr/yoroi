@@ -74,8 +74,11 @@ test('7. env on enables threeRole through the production compose path', async ()
       assert.equal(await program.run(['insights', 'once']), 0);
       return out.join('\n');
     };
-    assert.ok((await run({ YOROI_LETTER_THREE_ROLE: 'on' })).includes('3역할 후보'));
-    assert.ok(!(await run({})).includes('3역할 후보'));
+    const on = await run({ YOROI_LETTER_THREE_ROLE: 'on' });
+    assert.ok(!on.includes('3역할 후보'), '발행 본문에는 내부용 머리글을 남기지 않는다');
+    for (const heading of ['🧭 오케스트레이터 Top7', '🔍 리뷰어 Top7', '🛠️ 워커·메신저 Top7']) {
+      assert.equal(on.split(heading).length - 1, 1, `${heading} 는 1회`); }
+    assert.ok(!(await run({})).includes('🔍 리뷰어 Top7'), '기본 off는 3역할 섹션이 없고 기존 2역할 블록 유지');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

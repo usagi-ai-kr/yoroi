@@ -20,7 +20,7 @@ export const FREE_LIMIT_NOTES: readonly string[] = [
   '- Zen = OpenCode Zen Free · Go = OpenCode Go Free (✓ 는 확인된 경로, 빈 칸은 이 화면에서 확인되지 않음 · 사용 불가 확정이 아님).',
   '- OpenCode Zen Free: 기간 한정 무료(수치 한도 미공개), 수집 데이터가 모델 개선에 쓰일 수 있다(일부 zero-retention).',
   '- OpenCode Go Free: Unlimited·기간 한정, OpenCode 클라이언트 세션에서만 사용 가능.',
-  '- 정렬: 오케 통과 → 워커 통과 → 나머지, 각 점수 내림차순 · 동점 모델명.',
+  '- 정렬: 역할 점수 보유 수↓ → 최고 점수↓ → 모델명.',
 ];
 
 /** Free 섹션 목록은 렌더 입력의 freeCatalog(codex의 `opencode models` 실시간 수집)로만 만든다.

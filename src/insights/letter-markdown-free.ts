@@ -20,6 +20,7 @@ export const FREE_LIMIT_NOTES: readonly string[] = [
   '- Zen = OpenCode Zen Free · Go = OpenCode Go Free (✓ 는 확인된 경로, 빈 칸은 이 화면에서 확인되지 않음 · 사용 불가 확정이 아님).',
   '- OpenCode Zen Free: 기간 한정 무료(수치 한도 미공개), 수집 데이터가 모델 개선에 쓰일 수 있다(일부 zero-retention).',
   '- OpenCode Go Free: Unlimited·기간 한정, OpenCode 클라이언트 세션에서만 사용 가능.',
+  '- 정렬: 오케 통과 → 워커 통과 → 메신저 통과 → 나머지, 각 점수 내림차순 · 동점 모델명.',
 ];
 
 /** Free 섹션 목록은 렌더 입력의 freeCatalog(codex의 `opencode models` 실시간 수집)로만 만든다.
@@ -63,11 +64,19 @@ const lazyCalibrationLookup = (): CalibrationLookup | undefined => {
     } catch { return undefined; }
   };
 };
+/** #233: Free 표에서 jev 접두 모델을 제외한다. Top7/15 원본 목록은 건드리지 않고 복사본만 쓴다. */
+const withoutJev = (
+  lists: RoleLists | undefined, unmeasured: readonly UnmeasuredFree[],
+): [RoleLists | undefined, readonly UnmeasuredFree[]] => [lists === undefined ? lists
+  : { orchestrator: { ...lists.orchestrator, entries: lists.orchestrator.entries.filter(e => !e.modelId.startsWith('jev')) },
+    worker: { ...lists.worker, entries: lists.worker.entries.filter(e => !e.modelId.startsWith('jev')) } },
+  unmeasured.filter(u => !u.modelId.startsWith('jev'))];
 export function renderFreeSectionMarkdown(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], _limit = 5, calibration?: CalibrationLookup,
   freeReviewer?: readonly FreeReviewerEntry[], freeMessenger?: readonly FreeReviewerEntry[]): string[] {
   if (!lists) return [FREE_HEADING, '', FREE_EMPTY_NOTE];
-  const rows = withCalibration(freeRowsFrom(lists, unmeasured, Infinity, freeReviewer ?? [], freeMessenger ?? []), calibration ?? lazyCalibrationLookup());
+  const [ranked, measured] = withoutJev(lists, unmeasured);
+  const rows = withCalibration(freeRowsFrom(ranked!, measured, Infinity, freeReviewer ?? [], freeMessenger ?? []), calibration ?? lazyCalibrationLookup());
   const showWorkability = hasMeaningfulWorkability(rows);
   if (freeMessenger !== undefined) {
     return [FREE_HEADING, '', freeMessengerTableHeader(showWorkability), ...freeMarkdownRowsWithMessenger(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
@@ -80,5 +89,6 @@ export function renderFreeSectionMarkdown(lists: RoleLists | undefined,
 export function renderFreeSectionCompact(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], limit = 3): string[] {
   if (!lists) return [FREE_HEADING, FREE_EMPTY_NOTE];
-  return [FREE_HEADING, ...freeCompactRows(freeRowsFrom(lists, unmeasured, limit)), ...FREE_LIMIT_NOTES];
+  const [ranked, measured] = withoutJev(lists, unmeasured);
+  return [FREE_HEADING, ...freeCompactRows(freeRowsFrom(ranked!, measured, limit)), ...FREE_LIMIT_NOTES];
 }

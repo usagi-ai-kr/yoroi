@@ -13,12 +13,12 @@ test('1. default-off returns no output when enabled is false or omitted', () => 
 
 test('2. reviewer weights applied only to reviewer; orchestrator & worker unchanged', () => {
   const o = [{ modelId: 'o1', performance: 100, speed: 100, price: 100 }];
-  const r = [{ modelId: 'r1', performance: 80, speed: 90, price: 70 }];
+  const r = [{ modelId: 'r1', performance: 0.80, speed: 0.90, price: 0.70 }];
   const w = [{ modelId: 'w1', performance: 100, speed: 100, price: 100 }];
   const res = runThreeRolePipeline({ orchestrator: o, reviewer: r, worker: w, options: { enabled: true } });
   assert.strictEqual(res.enabled, true);
-  // 80 * 0.50 + 90 * 0.20 + 70 * 0.30 = 40 + 18 + 21 = 79
-  assert.strictEqual(res.selection?.reviewer.top7[0]?.score, 79);
+  // 0.80 * 0.50 + 0.90 * 0.20 + 0.70 * 0.30 = 0.79 → 0~100 통일 79.0
+  assert.strictEqual(res.selection?.reviewer.top7[0]?.score, 79.0);
   assert.strictEqual(res.selection?.orchestrator.top7[0]?.score, undefined);
   assert.strictEqual(res.selection?.worker.top7[0]?.score, undefined);
 });

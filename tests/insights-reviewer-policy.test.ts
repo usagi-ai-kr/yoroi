@@ -16,9 +16,10 @@ import {
 test('1. reviewer policy is confirmed and uses 50/20/30 defaults', () => {
   assert.equal(REVIEWER_POLICY_STATUS, 'confirmed');
   assert.equal(REVIEWER_POLICY_CONFIRMED, true);
-  const cand = { modelId: 'r1', performance: 80, speed: 90, price: 70 };
-  // 80*0.5 + 90*0.2 + 70*0.3 = 40 + 18 + 21 = 79
-  assert.equal(computeReviewerScore(cand), 79);
+  const cand = { modelId: 'r1', performance: 0.80, speed: 0.90, price: 0.70 };
+  // 0.80*0.5 + 0.90*0.2 + 0.70*0.3 = 0.79 → 0~100 통일 79.0
+  assert.equal(computeReviewerScore(cand), 79.0);
+  assert.equal(computeReviewerScore({ modelId: 'r2', performance: 0.815, speed: 0.90, price: 0.70 }), 79.8);
 });
 
 test('2. weight override changes score and alters ranking order', () => {
@@ -34,10 +35,10 @@ test('2. weight override changes score and alters ranking order', () => {
 
 test('3. evidence recalculates reviewer score and fixes candidate score precedence bug', () => {
   // Candidate has prior orchestrator score: 99
-  const cand = { modelId: 'r1', score: 99, performance: 80, speed: 90, price: 70 };
+  const cand = { modelId: 'r1', score: 99, performance: 0.80, speed: 0.90, price: 0.70 };
   const res = applyReviewerPolicy([cand]);
-  // Reviewer weights recompute to 79 rather than silently keeping 99
-  assert.equal(res[0]?.score, 79);
+  // Reviewer weights recompute to 79.0 rather than silently keeping 99
+  assert.equal(res[0]?.score, 79.0);
 });
 
 test('4. pre-existing score preserved when evidence is missing without fabrication', () => {

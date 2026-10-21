@@ -5,7 +5,8 @@ import { resolve } from 'node:path';
 import { packageRootFrom } from '../config/env-file.js';
 import { normalizeModelName } from './model-id.js';
 
-export const ROLE_FIT_ROLES = ['orchestrator', 'reviewer', 'worker'] as const;
+/** #232: messenger 키는 추가하되 관찰이 없으면 비어 둔다(워커 표식 빌려오지 않음). */
+export const ROLE_FIT_ROLES = ['orchestrator', 'reviewer', 'worker', 'messenger'] as const;
 export type RoleFitRole = typeof ROLE_FIT_ROLES[number];
 
 export interface RoleFitEntry { readonly fit: string; readonly note: string }
@@ -50,6 +51,14 @@ export function roleFitNote(modelId: string, role: RoleFitRole, file?: ModelRole
   const fit = entry.fit?.trim(), note = entry.note?.trim();
   if (!fit && !note) return undefined;
   return `usagi ${fit ?? ''}${note ? ` · ${note}` : ''}`.trim();
+}
+
+/** 역할 적합 표식만(◎/○/△/×). 관찰 없음 undefined — 숫자 매핑·점수 환산 없음(표시 전용).
+ *  id 정규화는 roleFitNote 와 동일(roleFitBaseId). */
+export function roleFitMark(modelId: string, role: RoleFitRole, file?: ModelRoleFitFile): string | undefined {
+  const source = file ?? loadModelRoleFit();
+  const fit = source?.models?.[roleFitBaseId(modelId)]?.[role]?.fit?.trim();
+  return fit ? fit : undefined;
 }
 
 /** 범례 문구(점수 아님을 명시). */

@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { loadModelRoleFit, roleFitBaseId, roleFitNote, roleFitLegend } from '../src/insights/model-role-fit.js';
+import { loadModelRoleFit, roleFitBaseId, roleFitMark, roleFitNote, roleFitLegend } from '../src/insights/model-role-fit.js';
 import { renderThreeRoleSection } from '../src/insights/letter-three-role-render.js';
 
 /** #194: usagi 정성 역할 적합성(점수 아님) 표기 계약. */
@@ -22,15 +22,13 @@ const section = (modelId: string, score: number, effort = 'default', role: 'work
 
 test('알려진 모델·역할은 usagi 정성 노트를 준다', () => {
   const note = roleFitNote('glm-5-3-flash', 'reviewer', FIT_FILE)!;
-  assert.ok(note.startsWith('usagi ◎ · ') && note.includes('독립적으로 보는 리뷰'), note);
-});
+  assert.ok(note.startsWith('usagi ◎ · ') && note.includes('독립적으로 보는 리뷰'), note); });
 
 test('역할이 다르면 다른 노트, 다른 역할은 표시되지 않는다', () => {
   const worker = roleFitNote('glm-5-3-flash', 'worker', FIT_FILE)!;
   assert.ok(worker.includes('지시 이행'), worker);
   assert.notEqual(worker, roleFitNote('glm-5-3-flash', 'reviewer', FIT_FILE));
-  assert.equal(roleFitNote('glm-5-3-flash', 'orchestrator', FIT_FILE), undefined, '관찰 없는 역할은 undefined');
-});
+  assert.equal(roleFitNote('glm-5-3-flash', 'orchestrator', FIT_FILE), undefined, '관찰 없는 역할은 undefined'); });
 
 test('unknown 모델·effort 접미사·설정 부재는 안전하게 미표기', () => {
   assert.equal(roleFitNote('unknown-model', 'reviewer', FIT_FILE), undefined);
@@ -50,8 +48,7 @@ test('설정 파일이 깨져도 예외 없이 미표기', () => {
 test('범례는 점수 아님을 명시하고 출처 URL 을 남긴다', () => {
   const legend = roleFitLegend(FIT_FILE);
   assert.ok((legend[0] ?? '').includes('2026-10-20') && (legend[0] ?? '').includes('점수 아님'), legend[0] ?? '');
-  assert.ok(legend.some(l => l.includes('a43d31a')), legend.join(' | '));
-});
+  assert.ok(legend.some(l => l.includes('a43d31a')), legend.join(' | ')); });
 
 test('Free 접미 id 를 base 로 정규화한다', () => {
   const cases: readonly (readonly [string, string])[] = [['deepseek-v4-1-flash-free', 'deepseek-v4-1-flash'],
@@ -64,9 +61,7 @@ test('Free id 로 온 워커·오케 항목에 정성 각주가 붙는다', () =
   for (const id of ['deepseek-v4-1-flash-free', 'glm-5-3-flash-free', 'mimo-v2-6-flash-free', 'minimax-m3-1-flash-free']) {
     const worker = roleFitNote(id, 'worker', FREE_FIT_FILE), orchestrator = roleFitNote(id, 'orchestrator', FREE_FIT_FILE);
     assert.ok(worker?.startsWith('usagi '), `${id} 워커 각주: ${worker ?? '없음'}`);
-    assert.ok(orchestrator?.startsWith('usagi '), `${id} 오케 각주: ${orchestrator ?? '없음'}`);
-  }
-});
+    assert.ok(orchestrator?.startsWith('usagi '), `${id} 오케 각주: ${orchestrator ?? '없음'}`); } });
 
 test('미확인 Free id 에는 각주를 만들지 않는다', () => {
   assert.equal(roleFitNote('unknown-model-free', 'worker', FREE_FIT_FILE), undefined);
@@ -84,11 +79,16 @@ test('렌더: Free id 항목에도 표 아래 각주가 표시되고 점수 칸�
  *  따라서 병합하지 않는다 — glm-5-3 행에는 각주가 없고 glm-5-3-flash 계열만 각주를 갖는다. */
 test('glm-5-3 은 glm-5-3-flash 의 약칭이 아니라 별개 모델로 각주가 비어 있다', () => {
   assert.equal(roleFitNote('glm-5-3', 'worker'), undefined, '관찰 없는 glm-5-3 은 각주 없음');
-  assert.equal(roleFitNote('glm-5-3', 'orchestrator'), undefined);
   assert.ok(roleFitNote('glm-5-3-flash', 'worker')?.startsWith('usagi '), 'glm-5-3-flash 각주 유지');
   assert.ok(roleFitNote('glm-5-3-flash-free', 'worker')?.startsWith('usagi '), 'Free id 도 동일 각주');
   assert.ok(!hasNote(section('glm-5-3', 53.2, 'max')), 'glm-5-3 각주 없음');
-  assert.ok(section('glm-5-3-flash', 49.4).split('\n').some(l => l.startsWith('> glm-5-3-flash: usagi ')), 'glm-5-3-flash 각주 표시');
+});
+
+test('#232: roleFitMark 은 정성 표식만 돌려주고 관찰 없음은 undefined', () => {
+  assert.equal(roleFitMark('glm-5-3-flash', 'worker', FIT_FILE), '◎', '역할별 표식 그대로');
+  assert.equal(roleFitMark('glm-5-3-flash-free', 'worker', FIT_FILE), '◎', 'Free id 정규화 동일');
+  assert.equal(roleFitMark('unknown-model', 'worker', FIT_FILE), undefined, '관찰 없음 undefined');
+  assert.equal(roleFitMark('glm-5-3-flash', 'messenger', FIT_FILE), undefined, '메신저는 워커 표식 빌려오지 않음');
 });
 
 test('렌더 전용: 정성 노트는 점수·순위 칸에 영향을 주지 않는다', () => {

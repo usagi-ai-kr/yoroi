@@ -38,7 +38,7 @@ test('4. candidate.score never overrides the blend (regression)', () => {
   const { candidates } = toReviewerCandidates([v('x', 80, 80, 8)]);
   const withScore = [{ ...candidates[0]!, score: 99 }];
   const expected = 0.5 * candidates[0]!.performance + 0.2 * candidates[0]!.speed + 0.3 * candidates[0]!.price;
-  assert.equal(computeReviewerScore(withScore[0]!, { ...W }), Number(expected.toFixed(2)));
+  assert.equal(computeReviewerScore(withScore[0]!, { ...W }), Number((expected * 100).toFixed(1)));
 });
 
 test('5. missing evidence excluded, never fabricated', () => {

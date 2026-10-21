@@ -49,7 +49,7 @@
 | 항목 | 결과 |
 | --- | --- |
 | focused 테스트 | **80/80 통과** ✓ (letter-parts·reviewer-comment-contract·three-role-output·publish-comments·publish-recovery·recovery-boundary·free-section·free-reviewer·three-role 렌더/본문·composition) |
-| `pnpm run check` | **단위 1440/1440 · BDD 45 시나리오/635 스텝 · typecheck·build 통과(EXIT=0)** ✓ 로그 `tmp/yoroi-227-messenger-u3b-check.log` |
+| `pnpm run check` | **단위 1442/1442 · BDD 45 시나리오/635 스텝 · typecheck·build 통과(EXIT=0)** ✓ 로그 `tmp/yoroi-227-messenger-u3b-check.log` |
 | `pnpm run typecheck` | 오류 0건 ✓ |
 | `python3 scripts/validate-repo.py` | 위반 0건 ✓ (각 파일 ≤100줄 ✓) |
 | `git diff --check` | clean ✓ |

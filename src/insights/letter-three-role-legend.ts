@@ -7,6 +7,9 @@ export const THREE_ROLE_LEGEND: readonly string[] = [
   LEGEND_HEADING,
   '- 👍 파레토 최적',
   '- 스코어·effort 는 표시된 값 그대로(effort=추천 추론 강도, -=근거 없음)',
+  '- 리뷰어 스코어 = 0~100 가중합(성능 50%·속도 20%·가격 30%)',
+  // #232: 실사용 컬럼 안내 — 정성 표식이며 점수·순위·가중치에 쓰지 않는다.
+  '- 실사용 = usagi 정성 관찰 표식(점수 아님, 순위·가중치에 미사용)',
   ...roleFitLegend(),
 ];
 

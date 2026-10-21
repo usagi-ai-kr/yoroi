@@ -47,7 +47,8 @@ export function computeReviewerScore<T extends RoleCandidate = RoleCandidate>(
   const spd = extractDim(candidate, 'speed');
   const prc = extractDim(candidate, 'price');
   if (perf !== undefined && spd !== undefined && prc !== undefined) {
-    return Number((perf * weights.performance + spd * weights.speed + prc * weights.price).toFixed(2));
+    // #233: 0~1 정규 근거 → 0~100(소수 1자리)로 통일한다. 가중치·정렬·파레토 기준 불변.
+    return Number(((perf * weights.performance + spd * weights.speed + prc * weights.price) * 100).toFixed(1));
   }
   if (typeof candidate.score === 'number' && Number.isFinite(candidate.score)) return candidate.score;
   return undefined;

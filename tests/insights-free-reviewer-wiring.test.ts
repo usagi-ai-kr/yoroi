@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { freeBaseIds, freeReviewerEntries, freeReviewerFor } from '../src/composition/insights-free-reviewer.js';
+import { freeBaseIds, freeMessengerEntries, freeMessengerFor, freeReviewerEntries, freeReviewerFor } from '../src/composition/insights-free-reviewer.js';
 import type { PlanCatalogEntry } from '../src/insights/plan-catalog.js';
 import { renderFreeSectionMarkdown } from '../src/insights/letter-markdown-free.js';
 import type { RoleLists } from '../src/insights/letter-top10-unified.js';
@@ -50,4 +50,25 @@ test('활성 + 주입이면 Free 3역할 표에 리뷰어 점수가 보인다', 
   const lines = renderFreeSectionMarkdown(lists(['minimax-m3-1-flash-free']), [{ modelId: 'minimax-m3-1-flash-free', plans: ['p'] }], 5, undefined, injected);
   assert.ok(lines.some(l => l.includes('| 오케 | 리뷰어 | 워커 |')), '3역할 머리');
   assert.ok(lines.some(l => l.includes('0.81')), '리뷰어 점수 표시');
+});
+
+test('freeMessenger도 verified·exact·점수 원칙을 따른다', () => {
+  assert.deepEqual(freeMessengerEntries([
+    { modelId: 'minimax-m3-1-flash', score: 70 },
+    { modelId: 'glm-5-3-flash', score: 60.5, isPareto: true },
+    { modelId: 'paid-model', score: 90 },
+    { modelId: 'unknown-model', score: 70 },
+    { modelId: 'minimax-m3-1-flash' }], FREE_CATALOG).map(e => [e.modelId, e.score]),
+    [['minimax-m3-1-flash-free', '70.00'], ['glm-5-3-flash-free', '60.50']], '미검증·미지·무점수 제외');
+});
+
+test('messengerPool 없으면 undefined, 있으면 exact Free ID로 섹션에 보인다', () => {
+  assert.equal(freeMessengerFor(undefined, { freeCatalog: [...FREE_CATALOG] }), undefined);
+  assert.equal(freeMessengerFor({ enabled: true } as never, { freeCatalog: [...FREE_CATALOG] }), undefined);
+  const injected = freeMessengerFor({ enabled: true, messengerPool: [{ modelId: 'minimax-m3-1-flash', score: 70 }] } as never,
+    { freeCatalog: [...FREE_CATALOG] })!;
+  assert.equal(injected[0]!.modelId, 'minimax-m3-1-flash-free');
+  const lines = renderFreeSectionMarkdown(lists(['minimax-m3-1-flash-free']), [{ modelId: 'minimax-m3-1-flash-free', plans: ['p'] }], 5, undefined, undefined, injected);
+  assert.ok(lines.some(l => l.includes('| 오케 | 리뷰어 | 워커 | 메신저 |')), '4역할 머리');
+  assert.ok(lines.some(l => l.includes('70.00')), '메신저 점수 표시');
 });

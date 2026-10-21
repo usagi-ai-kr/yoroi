@@ -26,17 +26,21 @@ export interface InsightsCliOptions {
   readonly clock?: () => number;
   readonly sourceOptions?: Omit<InsightPortOptions, 'now'>;
   readonly openHistory?: () => InsightHistoryPort & { close(): void };
-  readonly createPorts?: (client: HttpClient, lookup: (name: string) => string | undefined,
-    options: InsightPortOptions) => readonly InsightSourcePort[];
+  readonly createPorts?: (client: HttpClient, lookup: (name: string) => string | undefined, options: InsightPortOptions) => readonly InsightSourcePort[];
 }
 
 export function composeThreeRoleComments(parts: LetterParts, threeRole: ThreeRolePipelineOutput): LetterParts['comments'] {
   const t = threeRole.selection?.top15; if (!t) return parts.comments;
-  return [renderThreeRoleSection('orchestrator', t.orchestrator, 15), renderThreeRoleSection('reviewer', t.reviewer, 15) + (t.reviewer.length === 0 && threeRole.emptyCause ? `\n\n- 제외 사유: ${threeRole.emptyCause}` : ''), `${renderThreeRoleSection('worker', t.worker, 15)}\n\n${parts.comments[2]}`];
+  const o = renderThreeRoleSection('orchestrator', t.orchestrator, 15);
+  const r = renderThreeRoleSection('reviewer', t.reviewer, 15) + (t.reviewer.length === 0 && threeRole.emptyCause ? `\n\n- 제외 사유: ${threeRole.emptyCause}` : '');
+  const w = renderThreeRoleSection('worker', t.worker, 15);
+  const free = parts.freeSection ?? parts.comments[2] ?? '';
+  // U3b: 메신저가 있을 때만 4댓글(o15/r15/w15/m15+Free), 없으면 기존 3댓글(o15/r15/w15+Free)로 폴백한다.
+  if (!t.messenger || t.messenger.length === 0) return [o, r, `${w}\n\n${free}`];
+  return [o, r, w, `${renderThreeRoleSection('messenger', t.messenger, 15)}\n\n${free}`];
 }
 /** env opt-in → runInsights threeRole 입력. off면 빈 객체다. */
-export const threeRoleInputFromEnv = (configEnv: Readonly<Record<string, string | undefined>>): { threeRole: true } | Record<string, never> =>
-  letterThreeRoleConfig(configEnv).enabled ? { threeRole: true as const } : {};
+export const threeRoleInputFromEnv = (configEnv: Readonly<Record<string, string | undefined>>): { threeRole: true } | Record<string, never> => letterThreeRoleConfig(configEnv).enabled ? { threeRole: true as const } : {};
 
 /** Wires `yoroi insights once` to the existing internal run (O1). Opens and closes one history per run;
  * output, exit codes and abort handling stay in the ui command. No delivery, scheduling or LLM here. */
@@ -57,16 +61,14 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
       ...(ctx.configEnv.YOROI_GH_BIN && { ghBin: ctx.configEnv.YOROI_GH_BIN }), ...(opts?.clock && { clock: opts.clock }),
       signal: controller.signal, render: async () => {
         const outcome = await runInsights({ env: ctx.configEnv, dataEnv: ctx.dataEnv, processRunner: runner,
-          ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }),
-          ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
+          ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }), ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
           ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
           signal: controller.signal, ...threeRoleInputFromEnv(ctx.configEnv) });
         if (outcome.exitCode !== 0) throw new Error('insights run failed');
         const top10 = outcome.top10 ?? { records: [], openrouterRecords: [], previousRanks: [], failedSources: [] };
         const warnings = (top10 as { warnings?: readonly string[] }).warnings;
         const partialSources = outcome.sources.filter(s => s.partial === true).map(s => s.source);
-        const parts = renderLetterPartsFromRecords({ publicationDate: outcome.publicationDate, ...top10,
-          ...(warnings?.length && { notes: warnings }), ...(partialSources.length && { partialSources }) });
+        const parts = renderLetterPartsFromRecords({ publicationDate: outcome.publicationDate, ...top10, ...(warnings?.length && { notes: warnings }), ...(partialSources.length && { partialSources }) });
         const threeRole = outcome.threeRole;
         if (!threeRole?.sections || !threeRole.selection) return parts;
         return { body: replaceLegacyRoleBlocks(parts.body, threeRole.sections),
@@ -76,10 +78,8 @@ export function runInsightsCli(parsed: Extract<InsightsParsedArgs, { kind: 'insi
   const deps: InsightsCommandDeps = {
     subscribeSignals: ctx.subscribeSignals,
     run: async ({ refresh, signal }) => {
-      const outcome = await runInsights({ env: ctx.configEnv, dataEnv: ctx.dataEnv,
-        ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }),
-        processRunner: runner,
-        ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
+      const outcome = await runInsights({ env: ctx.configEnv, dataEnv: ctx.dataEnv, processRunner: runner,
+        ...(opts?.http && { http: opts.http }), ...(opts?.clock && { clock: opts.clock }), ...(opts?.sourceOptions && { sourceOptions: opts.sourceOptions }),
         ...(opts?.openHistory && { openHistory: opts.openHistory }), ...(opts?.createPorts && { createPorts: opts.createPorts }),
         ...(refresh && { refresh: true }), ...(signal && { signal }), ...threeRoleInputFromEnv(ctx.configEnv) });
       const letter: InsightLetterView = outcome.letter;

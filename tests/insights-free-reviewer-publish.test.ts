@@ -49,3 +49,20 @@ test('3역할 비활성이면 근거 없이 기존 2역할 출력이 유지된�
   const freeReviewer = (out.top10 as { freeReviewer?: readonly unknown[] } | undefined)?.freeReviewer;
   assert.equal(freeReviewer, undefined, '비활성이면 근거 없음');
 });
+
+test('3역할 활성 시 Free 표에 메신저 근거가 실려 4역할 표가 된다', async () => {
+  const out = await runOnce(true);
+  const freeMessenger = (out.top10 as { freeMessenger?: readonly { modelId: string; score: string }[] } | undefined)?.freeMessenger;
+  assert.ok(freeMessenger && freeMessenger.length > 0, '메신저 근거가 top10 에 실린다');
+  const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-20', ...(out.top10 as object) } as never);
+  assert.ok(parts.comments[2]!.includes('| 오케 | 리뷰어 | 워커 | 메신저 |'), 'Free 4역할 표 머리');
+  assert.ok(parts.comments[2]!.includes(freeMessenger[0]!.score), '메신저 점수 표시(생성 없음)');
+});
+
+test('3역할 비활성이면 메신저 근거 없이 기존 2역할 출력이 유지된다', async () => {
+  const out = await runOnce(false);
+  assert.equal((out.top10 as { freeMessenger?: readonly unknown[] } | undefined)?.freeMessenger, undefined);
+  const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-20', ...(out.top10 as object) } as never);
+  assert.ok(parts.comments[2]!.includes('| 모델 | 오케 | 워커 |'), '2역할 머리 유지');
+  assert.ok(!parts.comments[2]!.includes('메신저'), '메신저 열 없음');
+});

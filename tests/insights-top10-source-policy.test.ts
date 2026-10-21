@@ -19,7 +19,8 @@ const orch = (opts: Parameters<typeof computeRoleTop10>[1], records: Parameters<
 test('role weights are exported, sum to 1 per role, and differ by role', () => {
   for (const w of Object.values(ROLE_DIMENSION_WEIGHTS)) assert.equal(Math.round(SCORE_DIMENSIONS.reduce((s, d) => s + (w[d] ?? 0), 0) * 1e9), 1e9);
   assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.75, usage: 0, speed: 0.10, price: 0.15 },
-    worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } });
+    worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 },
+    messenger: { performance: 0.20, usage: 0.10, speed: 0.30, price: 0.40 } });
   assert.equal(WORKER_PERFORMANCE_FLOOR, 0.7);
   assert.deepEqual([ROLE_SOURCES.orchestrator.usage, ROLE_SOURCES.orchestrator.speed, ROLE_SOURCES.orchestrator.price,
     ROLE_SOURCES.worker.speed, ROLE_SOURCES.worker.price], [['openrouter', 'opencode'], ['aa', 'cognition'], ['aa', 'cognition'], ['aa'], ['aa']]);

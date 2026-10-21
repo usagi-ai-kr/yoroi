@@ -63,10 +63,13 @@ test('7. worker independence from orchestrator and reviewer', () => {
   const o = [{ modelId: 'shared', weightOpen: false }];
   const r = [{ modelId: 'shared', weightOpen: false }];
   const w = [{ modelId: 'shared', weightOpen: false }];
-  const res = runThreeRolePipeline({ orchestrator: o, reviewer: r, worker: w, options: { enabled: true } });
+  const m = [{ modelId: 'shared', weightOpen: false }];
+  const res = runThreeRolePipeline({ orchestrator: o, reviewer: r, worker: w, messenger: m, options: { enabled: true } });
   assert.strictEqual(res.selection?.orchestrator.top7[0]?.modelId, 'shared');
   assert.strictEqual(res.selection?.reviewer.top7.length, 0);
   assert.strictEqual(res.selection?.worker.top7[0]?.modelId, 'shared');
+  assert.strictEqual(res.selection?.messenger?.top7[0]?.modelId, 'shared', '메신저는 MECE 밖 독립(워커와 겹침 허용)');
+  assert.deepStrictEqual(res.messengerPool?.map(x => x.modelId), ['shared'], '컷 전 전체 eligible 보존');
 });
 
 test('8. renderer integration renders 3 role sections with depth and legend', () => {
@@ -80,7 +83,7 @@ test('8. renderer integration renders 3 role sections with depth and legend', ()
   assert.ok(md.includes('# 3역할 리포트 (2026-10-20)'));
   assert.ok(md.includes('## 🧭 오케스트레이터 Top7'));
   assert.ok(md.includes('## 🔍 리뷰어 Top7'));
-  assert.ok(md.includes('## 🛠️ 워커·메신저 Top7'));
+  assert.ok(md.includes('## 🛠️ 워커 Top7'));
   assert.ok(md.includes('## 📖 표시 안내'));
 });
 

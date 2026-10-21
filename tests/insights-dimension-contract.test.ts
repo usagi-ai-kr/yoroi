@@ -53,7 +53,7 @@ test('오케 I=0·가격결측·Free 접근만 근거는 가성비 0, 관측 가
   const cog=run([row('a',IQ,50),row('b',COST,0)],['a','b']); assert.ok(cog.byId.get('b')!.scoreComponents!.cost > 0,'Cog USD/task도 가성비 소스');
 });
 test('역할별 가중치는 사용자 확정(오케 75/0/10/15·워커 30/20/10/40+가산)이며 워커 가격은 cpt·total 평균이다', () => {
-  assert.deepEqual(scoreModule.ROLE_DIMENSION_WEIGHTS,{orchestrator:{performance:.75,usage:0,speed:.10,price:.15},worker:ROLE_WEIGHTS.worker});
+  assert.deepEqual(scoreModule.ROLE_DIMENSION_WEIGHTS,{orchestrator:{performance:.75,usage:0,speed:.10,price:.15},worker:ROLE_WEIGHTS.worker,messenger:{performance:.20,usage:.10,speed:.30,price:.40}});
   assert.deepEqual(ROLE_WEIGHTS.worker,{performance:.30,usage:.20,speed:.10,price:.40});
   const rows=[row('wa',IQ,70),row('wa',CODE,80,[1,5]),row('wb',IQ,60),row('wb',CODE,80,[.1,.4]),row('wc',IQ,50),row('wc',CODE,80),row('wc',COST,0),row('wc',DUR,1),row('wa',TPS,100),row('wc',OR,1e8)];
   const { byId,refBy }=run(rows,['wa','wb','wc'],[],'worker'); assert.equal(byId.get('wc')!.scoreComponents!.cost,PRICE_MISSING);

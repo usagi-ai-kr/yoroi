@@ -5,6 +5,7 @@ import type { CliEnvironment } from '../ui/cli/bootstrap.js';
 import type { ProcessRunner } from '../infra/process-port.js';
 import { insightPublicationDate } from '../insights/history-port.js';
 import { freeSectionProblem } from '../insights/letter-free-guard.js';
+import { FREE_HEADING } from '../insights/letter-markdown-free.js';
 import type { LetterParts } from '../insights/letter-markdown.js';
 import { closePreviousLetters, DEFAULT_REPO, extractIssueUrlAndNumber, gh, isCanonicalOrRedirectRepo, listIssues, sanitizeLogOutput } from './insights-publish-target.js';
 import { fetchIssueCommentCount, recoverMissingLetterComments } from './insights-publish-recovery.js';
@@ -47,13 +48,16 @@ export async function publishInsightsLetter(options: PublishLetterOptions, env: 
   let parts: LetterParts;
   try { parts = await options.render(); } catch { return fail(env, 'collection or rendering failed'); }
   const body = parts?.body, comments = parts?.comments;
-  if (!body?.trim() || !Array.isArray(comments) || comments.length !== 3 || comments.some(c => !c?.trim())) return fail(env, 'collection or rendering failed');
-  const freeProblem = isRenderedLetter(body) ? freeSectionProblem(comments[2]!) : undefined;
+  // U3b: 댓글은 2역할 3개 · 3/4역할 4개를 허용한다.
+  if (!body?.trim() || !Array.isArray(comments) || (comments.length !== 3 && comments.length !== 4) || comments.some(c => !c?.trim())) return fail(env, 'collection or rendering failed');
+  // Free 가드는 고정 인덱스가 아니라 Free 헤딩을 담은 댓글을 동적으로 찾는다(댓글 3/4 공통). 없으면 발행 차단.
+  const freeComment = comments.find(c => typeof c === 'string' && c.includes(FREE_HEADING));
+  const freeProblem = isRenderedLetter(body) ? freeSectionProblem(freeComment ?? '') : undefined;
   if (freeProblem) return fail(env, `free section invalid: ${freeProblem}`);
   if (options.dryRun) {
     const open = await listIssues(options.runner, bin, 'open', undefined, options.signal);
     if (!open) return fail(env, 'open letter query failed');
-    env.stdout(`dry-run: title="${title}" duplicate=${existing ? 'yes' : 'no'} closed_same_title=${closedSameTitle ? `#${closedSameTitle.number}` : 'none'} close=${open.map(x => `#${x.number}`).join(',') || 'none'} comments=3\n`);
+    env.stdout(`dry-run: title="${title}" duplicate=${existing ? 'yes' : 'no'} closed_same_title=${closedSameTitle ? `#${closedSameTitle.number}` : 'none'} close=${open.map(x => `#${x.number}`).join(',') || 'none'} comments=${comments.length}\n`);
     return 0;
   }
   const dir = mkdtempSync(join(tmpdir(), 'yoroi-letter-publish-')), bodyFile = join(dir, 'body.md');

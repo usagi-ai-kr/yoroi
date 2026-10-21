@@ -17,20 +17,22 @@ export interface ThreeRoleEntry {
   readonly [key: string]: unknown;
 }
 
-export type ThreeRoleKey = 'orchestrator' | 'reviewer' | 'worker';
+export type ThreeRoleKey = 'orchestrator' | 'reviewer' | 'worker' | 'messenger';
 
 export interface ThreeRoleRenderInput {
   readonly orchestrator?: readonly ThreeRoleEntry[];
   readonly reviewer?: readonly ThreeRoleEntry[];
   readonly worker?: readonly ThreeRoleEntry[];
+  readonly messenger?: readonly ThreeRoleEntry[];
   /** 7(기본) 또는 15 — 섹션 제목의 Top7/Top15와 표시 행 수를 정한다. */
   readonly depth?: number;
   readonly publicationDate?: string;
 }
 
-export const THREE_ROLE_ORDER: readonly ThreeRoleKey[] = ['orchestrator', 'reviewer', 'worker'];
+export const THREE_ROLE_ORDER: readonly ThreeRoleKey[] = ['orchestrator', 'reviewer', 'worker', 'messenger'];
 export const THREE_ROLE_TITLES: Record<ThreeRoleKey, string> = {
-  orchestrator: '🧭 오케스트레이터', reviewer: '🔍 리뷰어', worker: '🛠️ 워커·메신저' };
+  orchestrator: '🧭 오케스트레이터', reviewer: '🔍 리뷰어', worker: '🛠️ 워커',
+  messenger: '✉️ 메신저' };
 export { THREE_ROLE_LEGEND } from './letter-three-role-legend.js';
 
 /** control/bidi 문자 제거 + 자격정보 마스킹 — 기존 레터 렌더러(letter-top10-render.ts)의 clean 규칙과 동일.
@@ -80,8 +82,10 @@ export function renderThreeRoleSection(key: ThreeRoleKey, entries: readonly Thre
 export function renderThreeRoleMarkdown(input: ThreeRoleRenderInput): string {
   const depth = input.depth === 15 ? 15 : 7;
   const lists: Record<ThreeRoleKey, readonly ThreeRoleEntry[]> = {
-    orchestrator: input.orchestrator ?? [], reviewer: input.reviewer ?? [], worker: input.worker ?? [] };
-  const sections = THREE_ROLE_ORDER.map(key => renderThreeRoleSection(key, lists[key], depth));
+    orchestrator: input.orchestrator ?? [], reviewer: input.reviewer ?? [], worker: input.worker ?? [],
+    messenger: input.messenger ?? [] };
+  const sections = THREE_ROLE_ORDER.filter(key => key !== 'messenger' || lists.messenger.length > 0)
+    .map(key => renderThreeRoleSection(key, lists[key], depth));
   const date = input.publicationDate ? ` (${clean(input.publicationDate, 10)})` : '';
   return [`# 3역할 리포트${date}`, '', ...sections.flatMap(section => [section, '']), ...THREE_ROLE_LEGEND].join('\n');
 }

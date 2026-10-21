@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { packageRootFrom } from '../config/env-file.js';
 import { PLAN_CATALOG, type PlanCatalogEntry } from './plan-catalog.js';
-import { WORKER_HELD_PLAN_IDS_DEFAULT, WORKER_HELD_PRICE_QUANTILE, WORKER_MIXED_PRICE_CAP_USD_PER_M } from './letter-top10-score-policy.js';
+import { isWorkerLike, WORKER_HELD_PLAN_IDS_DEFAULT, WORKER_HELD_PRICE_QUANTILE, WORKER_MIXED_PRICE_CAP_USD_PER_M } from './letter-top10-score-policy.js';
 
 export const WORKER_HELD_PLAN_IDS_PATH = resolve(packageRootFrom(import.meta.url), 'config/held-plans.json');
 /** 파일이 없으면 패키지 기본값, 있으면 계약 검증 뒤 파일 값을 쓴다. */
@@ -31,10 +31,11 @@ export function upliftHeldPlanPriceDimensions(modelIds: readonly string[], dimen
   return dimensions.map((value, i) => Number.isFinite(value) && heldModels.has(modelIds[i]!) ? Math.max(value!, floor) : value);
 }
 
-/** score 경로의 blendedCost(활성 off-peak 덮어쓰기 포함)가 cap 초과면 below-zone 처리한다. */
-export function applyMixedPriceCap<T extends { readonly belowZone: boolean }>(role: 'worker' | 'orchestrator',
+/** score 경로의 blendedCost(활성 off-peak 덮어쓰기 포함)가 cap 초과면 below-zone 처리한다.
+ *  U2: 메신저는 워커와 같은 cap 경로를 쓴다. 오케 동작은 불변이다. */
+export function applyMixedPriceCap<T extends { readonly belowZone: boolean }>(role: 'worker' | 'orchestrator' | 'messenger',
   candidates: readonly T[], mixedUsdPerM: readonly (number | undefined)[]): T[] {
   if (candidates.length !== mixedUsdPerM.length) throw new Error('candidate and mixed-price arrays must have equal length');
-  return candidates.map((candidate, i) => role === 'worker' && Number.isFinite(mixedUsdPerM[i]) &&
+  return candidates.map((candidate, i) => isWorkerLike(role) && Number.isFinite(mixedUsdPerM[i]) &&
     mixedUsdPerM[i]! > WORKER_MIXED_PRICE_CAP_USD_PER_M ? { ...candidate, belowZone: true } : candidate);
 }

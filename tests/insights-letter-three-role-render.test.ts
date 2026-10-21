@@ -82,3 +82,18 @@ test('메신저가 있을 때 본문에 워커·메신저 제목이 남지 않�
   assert.ok(md.includes('## ✉️ 메신저 Top7'));
   assert.ok(!md.includes('워커·메신저'), '구 제목 잔재 없음');
 });
+
+test('#232: 실사용 컬럼은 정성 표식 그대로 — 관찰 없음·메신저는 "-"', () => {
+  const md = renderThreeRoleSection('reviewer', [entry('muse-spark-1-3', { rank: 1, score: 0.81, effort: 'xhigh' }),
+    entry('unknown-model', { rank: 2, score: 0.5, effort: 'default' })], 7);
+  assert.ok(md.includes('| 순위 | 파레토 | 모델 | 스코어 | effort | 실사용 |'), '6열 머리');
+  assert.ok(md.includes('| 1 | 👍 | muse-spark-1-3 | 0.81 | xhigh | ○ |'), '관찰 표식 그대로');
+  assert.ok(md.includes('| 2 | 👍 | unknown-model | 0.5 | default | - |'), '미확인은 -');
+  const m = renderThreeRoleSection('messenger', [entry('muse-spark-1-3', { rank: 1, score: 50 })], 7);
+  assert.ok(m.includes('| 1 | 👍 | muse-spark-1-3 | 50 | medium | - |'), '메신저는 워커 표식 빌려오지 않음');
+});
+
+test('#232: 실사용 컬럼이 있어도 스코어·순위·파레토는 불변', () => {
+  const md = renderThreeRoleSection('worker', [entry('m1', { rank: 1, score: 57.6, effort: 'default' })], 7);
+  assert.ok(md.includes('| 1 | 👍 | m1 | 57.6 | default |'), '순위·파레토·스코어·effort 동일');
+});

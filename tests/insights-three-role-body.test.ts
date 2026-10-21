@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { hasLegacyRoleBlocks, replaceLegacyRoleBlocks } from '../src/insights/letter-three-role-body.js';
+import { renderLetterPartsFromRecords } from '../src/insights/letter-markdown.js';
 import { buildThreeRole } from '../src/composition/insights-three-role.js';
 import type { InsightRunResult } from '../src/insights/run-once.js';
 
@@ -83,4 +84,14 @@ test('U3c: 레거시 제목·2역할 외 본문은 손대지 않는다', () => {
   const keep = replaceLegacyRoleBlocks('# t\n\n## 🛠️ 워커·메신저 Top7\n\nb', sections);
   assert.ok(keep.includes('## 🛠️ 워커·메신저 Top7'), '레거시 제목 유지');
   assert.equal(hasLegacyRoleBlocks(keep), true);
+});
+
+test('#232: 2역할 레거시 표는 실사용 컬럼 없이 그대로, 3역할 표에는 있다', () => {
+  const legacy = renderLetterPartsFromRecords({ publicationDate: '2026-10-21', records: [
+    { modelId: 'm1', metric: 'artificial_analysis_intelligence_index', value: 90, priceInput: 1, priceOutput: 2 }] });
+  assert.ok(!legacy.body.includes('| effort | 실사용 |'), '2역할 표 머리에는 실사용 컬럼 없음');
+  assert.ok(!legacy.comments.some(c => c.includes('| effort | 실사용 |')), '2역할 댓글에도 없음');
+  const out = replaceLegacyRoleBlocks(legacy.body, { ...sections, messenger: '## ✉️ 메신저 Top7' });
+  assert.ok(out.includes('- 실사용 = usagi 정성 관찰 표식'), '3역할 안내에 실사용 설명');
+  assert.ok(!out.includes('| effort | 실사용 |'), '레거시 표 머리에는 실사용 컬럼이 붙지 않음(3역할 표는 별도 렌더)');
 });

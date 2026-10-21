@@ -1,5 +1,5 @@
 import { PARETO_MARK } from './letter-top10-legend.js';
-import { roleFitNote, type RoleFitRole } from './model-role-fit.js';
+import { roleFitMark, roleFitNote, type RoleFitRole } from './model-role-fit.js';
 import { THREE_ROLE_LEGEND } from './letter-three-role-legend.js';
 
 /** #195 단위3: 세 역할(오케스트레이터·리뷰어·워커) 목록의 독립 Markdown 렌더러.
@@ -52,9 +52,11 @@ const modelCell = (entry: ThreeRoleEntry): string => {
   const base = typeof entry.baseModelId === 'string' && entry.baseModelId.trim() ? entry.baseModelId : entry.modelId;
   return textCell(typeof base === 'string' ? base.replace(/-(?:free|minimal|low|medium|high|xhigh|max)$/, '') : base);
 };
-const rowFor = (entry: ThreeRoleEntry, index: number): string =>
-  `| ${rankCell(entry, index)} | ${entry.isPareto === true ? PARETO_MARK : ''} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} |`;
-const tableHead = '| 순위 | 파레토 | 모델 | 스코어 | effort |\n| --- | --- | --- | --- | --- |';
+/** #232: 실사용 표식(usagi 정성 관찰). 관찰 없음 '-'. 숫자 매핑·점수 환산 없음. */
+const markCell = (entry: ThreeRoleEntry, role: RoleFitRole): string => roleFitMark(entry.modelId, role) ?? '-';
+const rowFor = (entry: ThreeRoleEntry, index: number, role: RoleFitRole): string =>
+  `| ${rankCell(entry, index)} | ${entry.isPareto === true ? PARETO_MARK : ''} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} | ${markCell(entry, role)} |`;
+const tableHead = '| 순위 | 파레토 | 모델 | 스코어 | effort | 실사용 |\n| --- | --- | --- | --- | --- | --- |';
 /** 표 바로 아래 의견 주석: 표시된 모델만 모델당 1회·표 순서 유지. 의견 없으면 생략. */
 const footnotesFor = (rows: readonly ThreeRoleEntry[], role: RoleFitRole): readonly string[] => {
   const seen = new Set<string>(), out: string[] = [];
@@ -74,7 +76,7 @@ export function renderThreeRoleSection(key: ThreeRoleKey, entries: readonly Thre
   const rows = entries.slice(0, depth);
   if (!rows.length) return `${heading}\n\n- (목록 없음)`;
   const notes = footnotesFor(rows, key as RoleFitRole);
-  return [heading, '', tableHead, ...rows.map((entry, index) => rowFor(entry, index)),
+  return [heading, '', tableHead, ...rows.map((entry, index) => rowFor(entry, index, key as RoleFitRole)),
     ...(notes.length ? ['', ...notes] : [])].join('\n');
 }
 

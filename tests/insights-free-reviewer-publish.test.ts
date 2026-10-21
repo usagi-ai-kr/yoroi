@@ -64,5 +64,5 @@ test('3역할 비활성이면 메신저 근거 없이 기존 2역할 출력이 �
   assert.equal((out.top10 as { freeMessenger?: readonly unknown[] } | undefined)?.freeMessenger, undefined);
   const parts = renderLetterPartsFromRecords({ publicationDate: '2026-10-20', ...(out.top10 as object) } as never);
   assert.ok(parts.comments[2]!.includes('| 모델 | 오케 | 워커 |'), '2역할 머리 유지');
-  assert.ok(!parts.comments[2]!.includes('메신저'), '메신저 열 없음');
+  assert.ok(!parts.comments[2]!.includes('| 메신저 |'), '메신저 열 없음');
 });

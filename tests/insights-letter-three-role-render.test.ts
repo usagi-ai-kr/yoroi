@@ -65,21 +65,21 @@ test('#232: 실사용 컬럼은 정성 표식 그대로 — 관찰 없음은 "-"
     entry('unknown-model', { rank: 2, score: 0.5, effort: 'default' })], 7);
   assert.ok(md.includes('| 순위 | 모델 | 스코어 | effort | 실사용 |'), 'Top7 5열 머리');
   assert.ok(md.includes('| 1 | muse-spark-1-3 | 0.81 | xhigh | ○ |'), '관찰 표식 그대로');
-  assert.ok(md.includes('| 2 | unknown-model | 0.5 | default | - |'), '미확인은 -');
+  assert.ok(md.includes('| 2 | unknown-model | 0.50 | default | - |'), '미확인은 -');
   // #242: 3역할(오케·리뷰어·워커) 모두 표식을 표시하고, 워커 표식을 다른 역할로 빌려오지 않는다.
   assert.ok(renderThreeRoleSection('orchestrator', [entry('muse-spark-1-3', { rank: 1, score: 70 })], 7)
-    .includes('| 1 | muse-spark-1-3 | 70 | medium | △ |'), '오케 표식');
+    .includes('| 1 | muse-spark-1-3 | 70.00 | medium | △ |'), '오케 표식');
   assert.ok(renderThreeRoleSection('worker', [entry('muse-spark-1-3', { rank: 1, score: 57.6 })], 7)
-    .includes('| 1 | muse-spark-1-3 | 57.6 | medium | ◎ |'), '워커 표식');
+    .includes('| 1 | muse-spark-1-3 | 57.60 | medium | ◎ |'), '워커 표식');
 });
 
 test('#232: 실사용 컬럼이 있어도 스코어·순위·파레토는 불변', () => {
   const md = renderThreeRoleSection('worker', [entry('m1', { rank: 1, score: 57.6, effort: 'default' })], 7);
-  assert.ok(md.includes('| 1 | m1 | 57.6 | default |'), '순위·스코어·effort 동일(파레토 열 제외)');
+  assert.ok(md.includes('| 1 | m1 | 57.60 | default |'), '순위·스코어·effort 동일(파레토 열 제외)');
 });
 
 test('Top15는 파레토 열을 유지한다', () => {
   const md = renderThreeRoleSection('worker', lists(2), 15);
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 스코어 | effort | 실사용 |'), '6열 머리');
-  assert.ok(md.includes('| 1 | 👍 | model-1 | 100 | medium |'), '파레토 셀 유지');
+  assert.ok(md.includes('| 1 | 👍 | model-1 | 100.00 | medium |'), '파레토 셀 유지');
 });

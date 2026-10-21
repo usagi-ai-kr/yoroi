@@ -69,3 +69,12 @@ test('동률은 모델명 오름차순, 점수 없는 행은 아래', () => {
     row('c', { orchestrator: { score: '-', passed: false } })]);
   assert.deepEqual(rows.map(r => r.modelId), ['a', 'b', 'c']);
 });
+
+test('80.46/80.54는 표시 그대로·둘 다 파레토·id 순서를 유지한다', () => {
+  const e = (modelId: string, scoreText: string) => ({ modelId, rank: 1, scoreText, indexText: '-', plans: [] as string[],
+    repEffort: 'default', blendedCostText: '-', change: '유지' as const, isPareto: false, both: false, scoreKey: 80.5 });
+  const L = { orchestrator: { entries: [e('m-a', '80.46'), e('m-b', '80.54')], exits: [] }, worker: { entries: [], exits: [] } };
+  const rows = freeRowsFrom(L, [], Infinity);
+  assert.deepEqual(rows.map(r => [r.modelId, r.orchestrator?.score]), [['m-a', '80.46'], ['m-b', '80.54']]);
+  assert.ok(rows.every(r => r.pareto), '1자리 동점이라 둘 다 파레토');
+});

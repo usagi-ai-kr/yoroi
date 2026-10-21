@@ -16,6 +16,7 @@
 | `w18:p2` | w1 | 워커 |
 | `w18:p3` | w2 | 워커 |
 | `w18:p4` | w3 | 워커 |
+| `w18:p9` | w4 | 워커 (Beam Free) |
 | `w18:p7` | r | 리뷰 전담(독립 판정·최종 리뷰) |
 
 리뷰는 구현자가 아닌 워커가 맡는다. 모델·세션 변경은 사용자 결정이다.
@@ -86,7 +87,6 @@ python3 .agents/skills/agent-coordination/scripts/coord.py watch w2 w3 \
 - 분배·전송·감사는 `coord.py`를 우선한다. `herdr agent list`·화면 읽기 등 읽기 전용 조회는 직접 해도 된다.
 - o 질의·인계 메시지는 요소식(전달=task/files/constraints/done/report, 회신=status/evidence/result/next)으로 주고받으며 인사·산문·문맥 반복을 넣지 않는다. 규칙 근거는 [coordination-rules](../.agents/skills/coordination-rules/SKILL.md) 9항.
 - 키 입력·세션 조작은 메신저(코테츠)에게 요청한다. 로스터 표는 1열 백틱 pane·2열 라벨 계약을 유지한다.
-
 ## 배운 점 (기존 운영 기록)
 
 - 상태 문서 갱신에서 버전 줄·재번호·이동 이력이 누락됐다(2026-10-11·12). 머지 전 버전과 삭제 줄을 대조한다. watch_workers.sh의 LIMIT·BLOCKED는 패킷 문구나 순간 상태로 오탐할 수 있다. `agent get`과 visible 화면으로 확인하고, 반복 오탐 시 보고서 생성만 기다린다. 보고서 생성은 전체 작업 종료와 구분한다.

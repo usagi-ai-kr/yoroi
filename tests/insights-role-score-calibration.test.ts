@@ -28,7 +28,7 @@ test('scoreText is the normal-rank 50-centered value; raw score stays in rawScor
   const sorted = [...shown].sort((a, b) => a - b);
   assert.ok(Math.abs(sorted[Math.floor(sorted.length / 2)]! - NORMAL_SCORE_MEAN) < 6, `중앙 50 근처, got ${sorted}`);
   // 표시 numeric과 scoreText 문자열 일치.
-  for (const e of orchestrator.entries) assert.equal(Number(e.scoreText).toFixed(1), e.scoreText!);
+  for (const e of orchestrator.entries) assert.equal(Number(e.scoreText).toFixed(2), e.scoreText!);
 });
 
 test('rank order is preserved: calibrated stays monotone with raw (no re-sort by calibration)', () => {

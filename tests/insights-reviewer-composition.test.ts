@@ -4,20 +4,17 @@ import { buildReviewerCandidates } from '../src/composition/insights-reviewer-ca
 import { buildThreeRole } from '../src/composition/insights-three-role.js';
 import { selectThreeRoles } from '../src/insights/letter-three-role.js';
 import type { Top10RecordInput } from '../src/insights/letter-top10-rank.js';
-
 const M = 'artificial_analysis_intelligence_index';
 const row = (id: string, intel: number, spd?: number, pIn?: number, pOut?: number): Top10RecordInput[] => [
   { modelId: id, metric: M, value: intel, ...(pIn !== undefined && { priceInput: pIn }), ...(pOut !== undefined && { priceOutput: pOut }) },
   ...(spd !== undefined ? [{ modelId: id, metric: 'median_output_tokens_per_second', value: spd }] : []),
 ];
-
 test('1. returns empty lists and emptyCause when input records are empty', () => {
   const res = buildReviewerCandidates({ records: [] });
   assert.equal(res.variants.length, 0); assert.equal(res.reviewer.length, 0);
   assert.ok(res.emptyCause && res.emptyCause.length > 0);
   assert.deepEqual(res.weights, { performance: 0.5, speed: 0.2, price: 0.3 });
 });
-
 test('2. full-pool (>15 variants) is preserved without top10 truncation', () => {
   const ids = ['gpt-6-1-sol', 'gpt-6-sol', 'gpt-6-luna', 'gpt-5-6-sol', 'gpt-5-6-terra', 'gpt-5-6-luna', 'gpt-5-thinking-mini', 'claude-opus-5-5', 'claude-sonnet-5-5', 'gemini-3-1-pro', 'gemini-3-pro', 'deepseek-v4-1-flash', 'deepseek-v4-pro', 'gemma4', 'glm-5-3', 'glm-5-3-flash', 'glm-5-2', 'gpt-oss-120b', 'gpt-oss-20b', 'kimi-k3'];
   const records = ids.flatMap((id, i) => row(id, 60 + i, 50 + (i % 10) * 5, 2 + (i % 3), 4 + (i % 3)));
@@ -27,7 +24,6 @@ test('2. full-pool (>15 variants) is preserved without top10 truncation', () => 
   assert.ok(res.excluded.every(e => e.reason === 'inaccessible-catalog'));
   assert.ok(res.excluded.some(e => e.modelId === 'gpt-5-6-sol'), 'superseded old-gen excluded with reason');
 });
-
 test('3. integration: weight override flips reviewer ranking across perf, price, and speed', () => {
   const records = [...row('claude-opus-5-5', 98, 40, 20, 40), ...row('gemini-3-1-pro', 75, 50, 0.1, 0.1), ...row('kimi-k3', 80, 150, 5, 10)];
   const p = buildReviewerCandidates({ records }, { weights: { performance: 0.8, speed: 0.1, price: 0.1 } });
@@ -35,14 +31,12 @@ test('3. integration: weight override flips reviewer ranking across perf, price,
   const s = buildReviewerCandidates({ records }, { weights: { performance: 0.1, speed: 0.8, price: 0.1 } });
   assert.equal(p.reviewer[0]!.modelId, 'claude-opus-5-5'); assert.equal(c.reviewer[0]!.modelId, 'gemini-3-1-pro'); assert.equal(s.reviewer[0]!.modelId, 'kimi-k3');
 });
-
 test('4. missing dimensions are excluded with reasons, never fabricated or passed through', () => {
   const records = [...row('glm-5-3', 85, 90, 2, 4), { modelId: 'gemma4', metric: M, value: 80, priceInput: 2, priceOutput: 4 }, { modelId: 'gpt-oss-120b', metric: M, value: 80 }];
   const res = buildReviewerCandidates({ records });
   assert.equal(res.candidates.length, 1); assert.equal(res.reviewer[0]!.modelId, 'glm-5-3'); assert.equal(res.excluded.length, 2);
   assert.ok(res.excluded.some(e => e.reason.includes('speed')) && res.excluded.some(e => e.reason.includes('price')));
 });
-
 test('5. buildThreeRole integrates reviewer full-pool, config override, and emptyCause', () => {
   const records = [...row('gpt-6-sol', 100, 50, 10, 20), ...row('claude-sonnet-5-5', 90, 40, 20, 40), ...row('gemini-3-1-pro', 75, 50, 0.5, 1.5)];
   const mockRun = { exitCode: 0 as const, publicationDate: '2026-10-20', letter: { ok: true as const, sections: [] }, sources: [], pruned: 0,
@@ -53,6 +47,13 @@ test('5. buildThreeRole integrates reviewer full-pool, config override, and empt
   assert.equal(perfFirst?.selection?.top15.reviewer[0]?.modelId, 'claude-sonnet-5-5', 'override flips reviewer winner');
   assert.equal(def?.selection?.top15.orchestrator[0]?.modelId, 'gpt-6-sol');
   assert.equal(perfFirst?.selection?.top15.orchestrator[0]?.modelId, 'gpt-6-sol');
+  // #194 C: reviewer 파레토가 후보에서 계산되어 전달된다(점수·순위 불변).
+  const ids = ['gpt-6-sol', 'claude-sonnet-5-5', 'gemini-3-1-pro'];
+  const models = ids.map(id => ({ modelId: id, displayName: id, sourceUrl: 'https://x.test', checkedOn: '2026-10-20', verified: true }));
+  const opt = { top10Options: { catalog: [{ planId: 'p', planName: 'P', models }] } };
+  const pareto = buildReviewerCandidates({ records }, opt);
+  assert.ok(pareto.reviewer.some(r => r.isPareto === true), '비지배 reviewer 후보가 표시된다');
+  assert.ok(pareto.reviewer.some(r => r.isPareto === false), '지배된 후보는 표시되지 않는다');
 
   // Missing evidence: empty reviewer + emptyCause + excluded; no fallback to orchestrator score
   const emptyRun = { exitCode: 0 as const, publicationDate: '2026-10-20', letter: { ok: true as const, sections: [] }, sources: [], pruned: 0,

@@ -9,8 +9,8 @@ import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
 import type { CalibrationRunRecord } from './calibration-store.js';
 import { SqliteCalibrationStore } from './calibration-store-sqlite.js';
 import { normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { freeCompactRows, freeMarkdownRows, freeTableHeader, hasMeaningfulWorkability, withCalibration } from './letter-markdown-free-table.js';
-import { freeRowsFrom } from './letter-markdown-free-sort.js';
+import { freeCompactRows, freeMarkdownRows, freeMarkdownRowsWithReviewer, freeReviewerTableHeader, freeTableHeader, hasMeaningfulWorkability, withCalibration } from './letter-markdown-free-table.js';
+import { freeRowsFrom, type FreeReviewerEntry } from './letter-markdown-free-sort.js';
 export { barePlan, freeOnlyModelIds, shortPlan } from './letter-top10-plans.js';
 
 export const FREE_HEADING = '## 🆓 Free 티어';
@@ -64,11 +64,15 @@ const lazyCalibrationLookup = (): CalibrationLookup | undefined => {
   };
 };
 export function renderFreeSectionMarkdown(lists: RoleLists | undefined,
-  unmeasured: readonly UnmeasuredFree[] = [], _limit = 5, calibration?: CalibrationLookup): string[] {
+  unmeasured: readonly UnmeasuredFree[] = [], _limit = 5, calibration?: CalibrationLookup,
+  freeReviewer?: readonly FreeReviewerEntry[]): string[] {
   if (!lists) return [FREE_HEADING, '', FREE_EMPTY_NOTE];
-  const rows = withCalibration(freeRowsFrom(lists, unmeasured, Infinity), calibration ?? lazyCalibrationLookup());
+  const rows = withCalibration(freeRowsFrom(lists, unmeasured, Infinity, freeReviewer ?? []), calibration ?? lazyCalibrationLookup());
   const showWorkability = hasMeaningfulWorkability(rows);
-  return [FREE_HEADING, '', freeTableHeader(showWorkability), ...freeMarkdownRows(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
+  if (freeReviewer === undefined) {
+    return [FREE_HEADING, '', freeTableHeader(showWorkability), ...freeMarkdownRows(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
+  }
+  return [FREE_HEADING, '', freeReviewerTableHeader(showWorkability), ...freeMarkdownRowsWithReviewer(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
 }
 export function renderFreeSectionCompact(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], limit = 3): string[] {

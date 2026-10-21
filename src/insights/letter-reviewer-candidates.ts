@@ -12,6 +12,8 @@ export interface ReviewerCandidate {
   readonly performance: number;
   readonly speed: number;
   readonly price: number;
+  /** 대표 variant 의 원시 비용(effectiveCost ?? blendedCost). 파레토 비교는 이 값만 쓴다(정규 price 는 역방향). */
+  readonly cost: number;
   readonly [key: string]: unknown;
 }
 
@@ -59,7 +61,7 @@ export function toReviewerCandidates(variants: readonly ModelVariant[]): Reviewe
     // 날짜 snapshot suffix(-1017 등)를 포함한 AA id를 base canonical로 정규화해
     // 같은 모델의 dated variant가 별도 행으로 갈라지지 않게 한다.
     return { modelId: normalizeModelName(v.modelId), baseModelId: normalizeModelName(v.baseModelId),
-      effort: v.effort, value: r.performance!, performance: perf[k]!, speed: spd[k]!, price: prc[k]! };
+      effort: v.effort, value: r.performance!, performance: perf[k]!, speed: spd[k]!, price: prc[k]!, cost: r.price! };
   });
   return candidates.length === 0 ? { candidates, excluded, emptyCause: 'unreachable' } : { candidates, excluded };
 }

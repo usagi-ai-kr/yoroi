@@ -10,6 +10,7 @@ import { openInsightsHistory } from '../infra/sqlite/insights-store.js';
 import { opencodeTarget } from '../config/load-config.js';
 import { buildOfficialFreeCatalog, collectOfficialFreeListing, collectOpenCodeFreeModels, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
 import { runOnceDiscovery, type OnceDiscoveryNotice, type OnceDiscoveryOptions } from '../insights/model-discovery-once.js';
+import { freeReviewerFor } from './insights-free-reviewer.js';
 import { FileModelRegistrySnapshotStore } from '../insights/model-discovery-file-store.js';
 import { resolveDiscoveryBaseDir } from '../insights/model-discovery-config.js';
 import { activeLetterModelLists, type LetterModelLists } from '../insights/letter-model-lists.js';
@@ -81,20 +82,18 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
         { ...(options.signal && { signal: options.signal }), target }) : Promise.resolve(undefined)]);
     // #196: free 판정 권위는 공식 페이지(명시적 Free 표기)다. CLI 관측은 보조 근거(미검증)이며,
     // 공식 조회는 CLI 관측 경로(processRunner 존재)에서만 수행한다(조회 실패도 발행을 막지 않는다).
-    const official = options.processRunner ? await collectOfficialFreeListing(options.http ?? new NodeHttpClient(),
-      { ...(options.signal && { signal: options.signal }) }) : undefined;
+    const official = options.processRunner ? await collectOfficialFreeListing(options.http ?? new NodeHttpClient(), { ...(options.signal && { signal: options.signal }) }) : undefined;
     const freeCatalog = official ? buildOfficialFreeCatalog(freeModels ?? [], run.publicationDate, official.listing) : undefined;
-    const freeNote = official === undefined ? undefined
-      : official.pageFailed
-        ? `Free 목록 출처: 공식 페이지 조회 실패 → last-good 공식 스냅샷(${official.listing.checkedOn}) 사용`
-        : `Free 목록 출처: 공식 페이지 Free 표기 확인(${official.listing.status}, ${official.listing.checkedOn})` +
-          `${official.apiFailed ? ' · 공개 모델 API 조회 실패(무료 판정에는 미사용)' : ''}`;
-    const top10 = run.top10 ? { ...run.top10, ...(freeCatalog && { freeCatalog: freeCatalog.plans }),
-      ...(freeNote !== undefined && { warnings: [...(run.top10.warnings ?? []), freeNote] }) } : run.top10;
+    const freeNote = official === undefined ? undefined : official.pageFailed
+      ? `Free 목록 출처: 공식 페이지 조회 실패 → last-good 공식 스냅샷(${official.listing.checkedOn}) 사용` : `Free 목록 출처: 공식 페이지 Free 표기 확인(${official.listing.status}, ${official.listing.checkedOn})` + `${official.apiFailed ? ' · 공개 모델 API 조회 실패(무료 판정에는 미사용)' : ''}`;
+    const base = run.top10 ? { ...run.top10, ...(freeCatalog && { freeCatalog: freeCatalog.plans }), ...(freeNote !== undefined && { warnings: [...(run.top10.warnings ?? []), freeNote] }) } : run.top10;
     const discoveryNotice = await runOnceDiscovery(options.discovery ??
       discoveryOptionsFrom(options.processRunner, options.env, target, options.signal)); // 기본 꺼짐·실패 무해(#168)
     // #194: 3역할 ranked 계산에 본문 렌더와 같은 enriched top10(freeCatalog·warnings)을 넘긴다. 기본 꺼짐(#195)
-    const threeRole = buildThreeRole(options.threeRole, top10 ? { ...run, top10 } : run, letterThreeRoleConfig(options.env));
+    const threeRole = buildThreeRole(options.threeRole, base ? { ...run, top10: base } : run, letterThreeRoleConfig(options.env));
+    // #194 D: 3역할 활성 때만 Free 표 리뷰어 근거를 실어 보낸다(비활성은 undefined → 2역할 출력 유지).
+    const freeReviewer = freeReviewerFor(threeRole, freeCatalog ? { freeCatalog: freeCatalog.plans } : undefined);
+    const top10 = base ? { ...base, ...(freeReviewer !== undefined && { freeReviewer }) } : base;
     return { ...run, ...(top10 && { top10 }), ...(discoveryNotice && { discoveryNotice }), ...(threeRole && { threeRole }), storage };
   } finally { try { history.close?.(); } catch { /* close errors never change the result */ } }
 }

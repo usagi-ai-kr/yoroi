@@ -9,6 +9,8 @@ import { applyReviewerPolicy } from '../insights/letter-reviewer-policy.js';
 import { loadReviewerPolicy, type ReviewerDimensionWeights } from '../config/reviewer-policy.js';
 import { capOfModel, effortWithinCap } from '../insights/letter-effort-availability.js';
 import { normalizeModelName } from '../insights/letter-top10-rank.js';
+import { markReviewerPareto } from '../insights/letter-reviewer-pareto.js';
+import { resolveFreeModelId } from './insights-free-reviewer.js';
 import type { EffortAvailability } from '../insights/letter-effort-availability.js';
 
 export const DEFAULT_REVIEWER_METRIC = 'artificial_analysis_intelligence_index';
@@ -54,14 +56,16 @@ export function buildReviewerCandidates(
   }
   const top10Opts = options?.top10Options ?? top10OptionsFrom(input ?? {});
   const variants = buildVariants(records, metric, top10Opts);
-  // 접근 가능 카탈로그 제한: top10Opts의 catalog + freeCatalog을 모두 쓰고 evidence도 전달한다.
-  // 보유 플랜에 없는 AA 전용 모델 등을 제외한다.
+  // 접근 가능 카탈로그 제한: top10Opts의 catalog + freeCatalog을 모두 쓰고 evidence도 전달해 AA 전용 모델을 제외한다.
   const poolBase = top10Opts.catalog ?? PLAN_CATALOG;
   const poolCatalog = [...poolBase, ...(top10Opts.freeCatalog ?? []).filter(f => !poolBase.some(p => p.planId === f.planId))];
   const poolEvidence = [...(top10Opts.openrouterRecords ?? []), ...(top10Opts.opencodeDataRecords ?? []), ...(top10Opts.cognitionRecords ?? [])];
   const poolLists = top10Opts.letterModelLists ?? activeLetterModelLists();
-  const accessible = new Set(buildCandidatePool(records, poolCatalog, poolEvidence, poolLists).accessibleRecords.map(r => normalizeModelName(r.modelId)));
-  const reachable = variants.filter(v => accessible.has(normalizeModelName(v.modelId)) || accessible.has(normalizeModelName(v.baseModelId)));
+  // #194 D 교정: accessibleRecords(catalog '-free' id)와 variants base(AA 원형)를 **동일 resolver** 로 canonical 비교한다.
+  const accessible = new Set(buildCandidatePool(records, poolCatalog, poolEvidence, poolLists).accessibleRecords
+    .map(r => resolveFreeModelId(normalizeModelName(r.modelId))));
+  const reachable = variants.filter(v => accessible.has(resolveFreeModelId(normalizeModelName(v.modelId)))
+    || accessible.has(resolveFreeModelId(normalizeModelName(v.baseModelId))));
   const gone = variants.filter(v => !reachable.includes(v))
     .map(v => ({ modelId: v.modelId, missing: [] as const, reason: 'inaccessible-catalog' }));
   const set = toReviewerCandidates(reachable);
@@ -83,10 +87,12 @@ export function buildReviewerCandidates(
     if (!prev || (r.score ?? -1) > (prev.score ?? -1)) seen.set(k, r);
   }
   const deduped = [...seen.values()].sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+  // #194 C: cap·base dedupe 후 전체 적격 reviewer 후보에서 파레토를 계산해 전달한다(컷 전).
+  const pareto = markReviewerPareto(deduped);
   return {
     variants,
     candidates: set.candidates,
-    reviewer: deduped,
+    reviewer: pareto,
     excluded: [...set.excluded, ...cappedOut],
     ...(set.emptyCause !== undefined && { emptyCause: set.emptyCause }),
     weights,

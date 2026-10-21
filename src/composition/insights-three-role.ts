@@ -58,7 +58,7 @@ export function buildThreeRole(
   }
 
   const revOutcome = buildReviewerCandidates(run?.top10);
-  const r = revOutcome.reviewer;
+  const r = revOutcome.reviewer; // #194 D: 컷 전 전체 eligible reviewer(Free 점수 근거로 사용)
   const reviewerPolicy = isObj && opt.options?.reviewerPolicy
     ? opt.options.reviewerPolicy
     : { weights: revOutcome.weights };
@@ -80,5 +80,7 @@ export function buildThreeRole(
     ...pipelineOutput,
     ...(revOutcome.emptyCause !== undefined && { emptyCause: revOutcome.emptyCause }),
     ...(revOutcome.excluded.length > 0 && { excluded: revOutcome.excluded }),
+    // #194 D: 컷 전 전체 eligible reviewer(Free 리뷰어 점수 근거). selection(할당·절단본)이 아니다.
+    ...(revOutcome.reviewer.length > 0 && { reviewerPool: revOutcome.reviewer }),
   };
 }

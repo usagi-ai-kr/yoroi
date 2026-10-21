@@ -58,9 +58,13 @@ def assess(agents, panes, reports, now=None):
         return {"decision": "REPORT_READY", "detail": " ".join(s["report"] for s in states), "poll_seconds": None}
     stale = next((s for s in states if s["state"] == "stale"), None)
     if stale: return {"decision": "STALE_REPORT", "detail": f"{stale['report']} {stale['detail']}", "poll_seconds": None}
-    missing = [s for s in states if s["state"] == "missing"]
-    if missing and terminal:
-        return {"decision": "REPORT_MISSING", "detail": f"{' '.join(terminal)} done/idle; report absent", "poll_seconds": None}
+    # pane-report 1:1 대조: terminal pane 자신의 보고서가 missing일 때만 즉시 보고한다.
+    # working 중인 pane의 보고서 부재는 POLL 유지(전역 결합 오탐 방지).
+    by_pane = dict(zip(panes, states))
+    terminal_missing = [p for p in terminal
+                        if p not in by_pane or by_pane[p]["state"] == "missing"]
+    if terminal_missing:
+        return {"decision": "REPORT_MISSING", "detail": f"{' '.join(terminal_missing)} done/idle; report absent", "poll_seconds": None}
     if poll_seconds is not None and poll_seconds <= 0:
         return {"decision": "WATCH_DEADLINE", "detail": f"budget {WATCH_BUDGET_S:.0f}s since first turn_started", "poll_seconds": 0.0}
     return {"decision": "POLL", "detail": "", "poll_seconds": poll_seconds}

@@ -37,6 +37,8 @@ export interface ThreeRolePipelineInput<T extends RoleCandidate = RoleCandidate>
 export interface ThreeRolePipelineOutput<T extends RoleCandidate = RoleCandidate> {
   readonly enabled: boolean;
   readonly selection?: ThreeRoleSelectionOutput<T & { score?: number }>;
+  /** #194 D: 컷·MECE 할당 전 전체 eligible reviewer(가중치 적용 후). Free 리뷰어 점수의 producer 값. */
+  readonly reviewerPool?: readonly (T & { score?: number })[];
   readonly markdown?: string;
   readonly sections?: ThreeRoleSections;
   readonly emptyCause?: string;
@@ -82,6 +84,7 @@ export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(
   return {
     enabled: true,
     selection,
+    ...(reviewer.length > 0 && { reviewerPool: reviewer }),
     markdown,
     sections,
   };

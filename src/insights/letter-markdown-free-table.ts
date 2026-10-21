@@ -20,9 +20,14 @@ export const hasMeaningfulWorkability = (rows: readonly FreeRow[]): boolean => {
 };
 const WORKABILITY_HEADER = '| 모델 | 오케 | 워커 | AA 지수 | Zen | Go | 비고 | 작업 가능성 |\n| --- | --- | --- | --- | --- | --- | --- | --- |';
 const PLAIN_HEADER = '| 모델 | 오케 | 워커 | AA 지수 | Zen | Go | 비고 |\n| --- | --- | --- | --- | --- | --- | --- |';
+const REVIEWER_WORKABILITY_HEADER = '| 모델 | 오케 | 리뷰어 | 워커 | AA 지수 | Zen | Go | 비고 | 작업 가능성 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+const REVIEWER_PLAIN_HEADER = '| 모델 | 오케 | 리뷰어 | 워커 | AA 지수 | Zen | Go | 비고 |\n| --- | --- | --- | --- | --- | --- | --- | --- |';
 export const FREE_TABLE_HEADER = WORKABILITY_HEADER;
 export const freeTableHeader = (withWorkability: boolean): string => withWorkability ? WORKABILITY_HEADER : PLAIN_HEADER;
-export const FREE_TABLE_HEADERS: readonly string[] = [WORKABILITY_HEADER, PLAIN_HEADER];
+export const FREE_TABLE_HEADERS: readonly string[] = [WORKABILITY_HEADER, PLAIN_HEADER,
+  REVIEWER_WORKABILITY_HEADER, REVIEWER_PLAIN_HEADER];
+export const freeReviewerTableHeader = (withWorkability: boolean): string =>
+  withWorkability ? REVIEWER_WORKABILITY_HEADER : REVIEWER_PLAIN_HEADER;
 /** 영역 칸: 자격 통과 `✓ 스코어`, 근거는 있고 미달 `✗`, 근거 없음 `-`. */
 export const freeCell = (cell?: FreeCell): string => cell === undefined ? '-' : cell.passed ? `✓ ${cell.score}` : '✗';
 /** #196: 비고에는 확인된 실질 정보만(파레토·검증된 상한). 미확인 effort 표기는 화면에서 숨기되 내부 값은 유지한다. */
@@ -60,6 +65,9 @@ export const workabilityCell = (row: FreeRow): string => {
 export const freeDisplayId = (modelId: string): string => modelId.replace(/-free$/, '');
 export const freeMarkdownRows = (rows: readonly FreeRow[], withWorkability = hasMeaningfulWorkability(rows)): string[] => rows.map(row =>
   `| ${freeDisplayId(row.modelId)} | ${freeCell(row.orchestrator)} | ${freeCell(row.worker)} | ${row.indexText ?? '-'} | ${freePlanCheck(row.plans, FREE_ZEN)} | ${freePlanCheck(row.plans, FREE_GO)} | ${freeNote(row)}${withWorkability ? ` | ${workabilityCell(row)}` : ''} |`);
+/** 3역할 표 행: 리뷰어 열을 오케·워커 사이에 둔다. 리뷰어 근거 없음은 '-'. */
+export const freeMarkdownRowsWithReviewer = (rows: readonly FreeRow[], withWorkability = hasMeaningfulWorkability(rows)): string[] => rows.map(row =>
+  `| ${freeDisplayId(row.modelId)} | ${freeCell(row.orchestrator)} | ${freeCell(row.reviewer)} | ${freeCell(row.worker)} | ${row.indexText ?? '-'} | ${freePlanCheck(row.plans, FREE_ZEN)} | ${freePlanCheck(row.plans, FREE_GO)} | ${freeNote(row)}${withWorkability ? ` | ${workabilityCell(row)}` : ''} |`);
 /** #196: compact는 확인된 플랜만 짧게(Zen ✓ / Go ✓). */
 export const freePlanChecksShort = (plans: readonly string[]): string =>
   [freePlanCheck(plans, FREE_ZEN) ? `Zen ✓` : '', freePlanCheck(plans, FREE_GO) ? `Go ✓` : ''].filter(Boolean).join(' ');

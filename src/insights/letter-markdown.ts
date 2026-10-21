@@ -6,6 +6,7 @@ import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, st
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { LEGEND_LINES, ROLE_HEADINGS_TOP15, ROLE_HEADINGS_TOP7, ZONE_TEXT } from './letter-top10-legend.js';
 import { freeListsFrom, renderFreeSectionMarkdown, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js';
+import type { FreeReviewerEntry } from './letter-markdown-free-sort.js';
 import { renderRoleTable, summarizeLists } from './letter-markdown-tables.js';
 import { joinLetterParts, type LetterParts } from './letter-parts.js';
 import type { PlanCatalogEntry } from './plan-catalog.js';
@@ -18,6 +19,7 @@ export { joinLetterParts, type LetterParts } from './letter-parts.js';
 export interface MarkdownLetterData {
   readonly publicationDate: string; readonly lists: RoleLists; readonly free?: RoleLists | undefined;
   readonly freeUnmeasured?: readonly UnmeasuredFree[];
+  readonly freeReviewer?: readonly FreeReviewerEntry[];
   readonly failedSources?: readonly string[]; readonly partialSources?: readonly string[]; readonly notes?: readonly string[];
 }
 /** 본문 Top7 + 댓글 Top15·Top15·Free 분리. 본문 요약·변동은 Top7 기준, 퇴장은 댓글에만 둔다. */
@@ -54,7 +56,7 @@ export function renderLetterParts(data: MarkdownLetterData): LetterParts {
   const [commentOke, commentWorker, commentFree] = ([
     renderRoleTable('orchestrator', data.lists.orchestrator, ROLE_HEADINGS_TOP15.orchestrator),
     renderRoleTable('worker', data.lists.worker, ROLE_HEADINGS_TOP15.worker),
-    renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? []).join('\n'),
+    renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? [], undefined, undefined, data.freeReviewer).join('\n'),
   ]).map(part => truncateAtRowBoundary(part));
   const comments: [string, string, string] = [commentOke!, commentWorker!, commentFree!];
   return { body, comments };
@@ -71,6 +73,7 @@ export interface MarkdownLetterInput {
   readonly previousRanks?: readonly Top10RecordInput[]; readonly failedSources?: readonly string[];
   readonly notes?: readonly string[]; readonly partialSources?: readonly string[];
   readonly catalog?: readonly PlanCatalogEntry[]; readonly freeCatalog?: readonly PlanCatalogEntry[];
+  readonly freeReviewer?: readonly FreeReviewerEntry[];
   /** #188: run-once 가용성 스냅샷(없으면 computeRoleTop10이 env 게이트로 기본 해석). */
   readonly effortAvailability?: EffortAvailability;
 }
@@ -82,6 +85,7 @@ export function renderLetterPartsFromRecords(input: MarkdownLetterInput): Letter
     lists: computeRoleTop10(input.records, opts),
     free,
     freeUnmeasured: unmeasuredFreeEntries(input.freeCatalog, input.records, free),
+    ...(input.freeReviewer !== undefined && { freeReviewer: input.freeReviewer }),
     ...(input.failedSources && { failedSources: input.failedSources }),
     ...(input.partialSources && { partialSources: input.partialSources }),
     ...(input.notes && { notes: input.notes }),

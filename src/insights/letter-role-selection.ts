@@ -36,7 +36,8 @@ export function resolveIdentityKey(candidate: RoleCandidate): string {
   return normalizeModelName(raw).trim().replace(/^:+|:+$/g, '').trim();
 }
 
-function selectWorker<T extends RoleCandidate>(candidates: readonly T[], depth: number, unconfirmed: Set<string>): SelectedRoleCandidate<T>[] {
+/** #252: 역할별 독립 선발. 상대 역할과 무관하게 각 목록에서 identityKey 중복만 제거한다. */
+function selectRole<T extends RoleCandidate>(candidates: readonly T[], depth: number, unconfirmed: Set<string>): SelectedRoleCandidate<T>[] {
   const selected: SelectedRoleCandidate<T>[] = [], seen = new Set<string>();
   for (let i = 0; i < candidates.length && selected.length < depth; i++) {
     const c = candidates[i]!, key = resolveIdentityKey(c);
@@ -51,47 +52,11 @@ function selectWorker<T extends RoleCandidate>(candidates: readonly T[], depth: 
 
 export function selectRolesAlternating<T extends RoleCandidate>(input: RoleSelectionInput<T>): RoleSelectionResult<T> {
   const depth = typeof input.depth === 'number' && input.depth > 0 ? input.depth : 15;
-  const oList = input.orchestrator ?? [], rList = input.reviewer ?? [];
-  const oSelected: SelectedRoleCandidate<T>[] = [], rSelected: SelectedRoleCandidate<T>[] = [];
-  const oKeys = new Set<string>(), rKeys = new Set<string>(), oClosed = new Set<string>(), rClosed = new Set<string>();
   const unconfirmed = new Set<string>();
-  let oIdx = 0, rIdx = 0;
-
-  while (oSelected.length < depth || rSelected.length < depth) {
-    let progressed = false;
-    if (oSelected.length < depth) {
-      while (oIdx < oList.length) {
-        const c = oList[oIdx++]!, key = resolveIdentityKey(c);
-        if (!key || oKeys.has(key)) continue;
-        const weight = resolveWeightClassification(c);
-        if (rKeys.has(key) && (weight.isClosed || rClosed.has(key))) continue;
-        if (weight.unconfirmed) unconfirmed.add(c.modelId);
-        oKeys.add(key);
-        if (weight.isClosed) oClosed.add(key);
-        oSelected.push({ ...c, rank: oSelected.length + 1, originalRank: oIdx, identityKey: key, ...weight });
-        progressed = true;
-        break;
-      }
-    }
-    if (rSelected.length < depth) {
-      while (rIdx < rList.length) {
-        const c = rList[rIdx++]!, key = resolveIdentityKey(c);
-        if (!key || rKeys.has(key)) continue;
-        const weight = resolveWeightClassification(c);
-        if (oKeys.has(key) && (weight.isClosed || oClosed.has(key))) continue;
-        if (weight.unconfirmed) unconfirmed.add(c.modelId);
-        rKeys.add(key);
-        if (weight.isClosed) rClosed.add(key);
-        rSelected.push({ ...c, rank: rSelected.length + 1, originalRank: rIdx, identityKey: key, ...weight });
-        progressed = true;
-        break;
-      }
-    }
-    if (!progressed) break;
-  }
   return {
-    orchestrator: oSelected, reviewer: rSelected,
-    worker: selectWorker(input.worker ?? [], depth, unconfirmed), depth,
+    orchestrator: selectRole(input.orchestrator ?? [], depth, unconfirmed),
+    reviewer: selectRole(input.reviewer ?? [], depth, unconfirmed),
+    worker: selectRole(input.worker ?? [], depth, unconfirmed), depth,
     unconfirmedModels: [...unconfirmed],
   };
 }

@@ -1,0 +1,12 @@
+{
+  "note": "오픈 웨이트 근거 — 근거 URL·확인일이 있는 항목만 등록(#253, docs/insights/open-weight-evidence-20261021.md). 브랜드 일괄 판정 금지 · 미확인 모델 제외.",
+  "checkedOn": "2026-10-21",
+  "models": [
+    { "modelId": "deepseek-v4-1-flash", "canonicalBase": "deepseek-ai/DeepSeek-V4.1-Flash", "openWeights": true, "evidenceUrl": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash", "checkedOn": "2026-10-21", "license": "MIT", "version": "DeepSeek-V4.1-Flash", "note": "가중치 공개. legacy V4 Flash는 V4.1-Flash로 청구" },
+    { "modelId": "glm-5-3-flash", "canonicalBase": "zai-org/GLM-5.3-Flash", "openWeights": true, "evidenceUrl": "https://huggingface.co/zai-org/GLM-5.3-Flash", "checkedOn": "2026-10-21", "license": "MIT", "version": "GLM-5.3-Flash", "note": "가중치 공개" },
+    { "modelId": "glm-5-3", "canonicalBase": "zai-org/GLM-5.3", "openWeights": true, "evidenceUrl": "https://huggingface.co/zai-org/GLM-5.3", "checkedOn": "2026-10-21", "license": "GLM-5.3 License", "version": "GLM-5.3", "note": "$10B MaaS 보안 심사 조건" },
+    { "modelId": "mimo-v2-6-pro", "canonicalBase": "XiaomiMiMo/MiMo-V2.6-Pro-RL", "openWeights": true, "evidenceUrl": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL", "checkedOn": "2026-10-21", "license": "MIT", "version": "MiMo-V2.6-Pro-RL", "note": "가중치 공개" },
+    { "modelId": "mimo-v2-6-flash", "canonicalBase": "XiaomiMiMo/MiMo-V2.6-Flash-RL", "openWeights": true, "evidenceUrl": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL", "checkedOn": "2026-10-21", "license": "MIT", "version": "MiMo-V2.6-Flash-RL", "note": "가중치 공개" },
+    { "modelId": "kimi-k3", "canonicalBase": "moonshotai/Kimi-K3", "openWeights": true, "evidenceUrl": "https://huggingface.co/moonshotai/Kimi-K3", "checkedOn": "2026-10-21", "license": "Kimi K3 License", "version": "Kimi-K3", "note": "$20M MaaS/표시 조건" }
+  ]
+}

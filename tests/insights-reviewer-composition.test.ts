@@ -43,8 +43,8 @@ test('5. buildThreeRole integrates reviewer full-pool, config override, and empt
     top10: { records, openrouterRecords: [], failedSources: [], previousRanks: [] } };
   const def = buildThreeRole(true, mockRun);
   const perfFirst = buildThreeRole({ options: { reviewerPolicy: { weights: { performance: 0.8, speed: 0.1, price: 0.1 } } } }, mockRun);
-  assert.equal(def?.selection?.top15.reviewer[0]?.modelId, 'gemini-3-1-pro', 'MECE excludes orch winner from reviewer');
-  assert.equal(perfFirst?.selection?.top15.reviewer[0]?.modelId, 'claude-sonnet-5-5', 'override flips reviewer winner');
+  assert.equal(def?.selection?.top15.reviewer[0]?.modelId, 'gpt-6-sol', '독립 선발: orch 1위와 공유');
+  assert.deepEqual(perfFirst?.selection?.top15.reviewer.map(c => c.modelId), ['gpt-6-sol', 'claude-sonnet-5-5', 'gemini-3-1-pro'], 'override는 2/3위 순서를 바꾼다');
   assert.equal(def?.selection?.top15.orchestrator[0]?.modelId, 'gpt-6-sol');
   assert.equal(perfFirst?.selection?.top15.orchestrator[0]?.modelId, 'gpt-6-sol');
   // #194 C: reviewer 파레토가 후보에서 계산되어 전달된다(점수·순위 불변).
@@ -90,10 +90,10 @@ test('8. effort caps enforced under active profile, open otherwise', () => {
   assert.equal(buildReviewerCandidates({ records: recs }).reviewer.length, 2, 'no profile means no cap filtering');
 });
 
-test('9. comment Top15 may overlap while body Top7 stays MECE', () => {
+test('9. comment Top15 shares independent winners with body Top7', () => {
   const shared = { modelId: 'glm-5-3', score: 90 };
   const sel = selectThreeRoles({ orchestrator: [shared, { modelId: 'o2', score: 80 }],
     reviewer: [shared, { modelId: 'r2', score: 70 }], worker: [{ modelId: 'w1', score: 60 }] });
   assert.ok(sel.top15.orchestrator.some(c => c.modelId === 'glm-5-3') && sel.top15.reviewer.some(c => c.modelId === 'glm-5-3'), 'Top15 overlap allowed');
-  assert.ok(!(sel.top7.orchestrator.some(c => c.modelId === 'glm-5-3') && sel.top7.reviewer.some(c => c.modelId === 'glm-5-3')), 'body Top7 stays MECE');
+  assert.deepEqual([sel.top7.orchestrator[0]?.modelId, sel.top7.reviewer[0]?.modelId], ['glm-5-3', 'glm-5-3'], 'body Top7 양쪽 1위 공유');
 });

@@ -8,6 +8,8 @@ export interface ThreeRoleSections {
   readonly orchestrator: string;
   readonly reviewer: string;
   readonly worker: string;
+  /** #253: 권장 조합 Mermaid(워커 섹션 뒤·표시 안내 앞). */
+  readonly combinations?: readonly string[];
 }
 
 const LEGACY_ORCHESTRATOR = '## 🧭 오케스트레이터·리뷰어';
@@ -19,7 +21,8 @@ export const THREE_ROLE_HEADING = '## 🧭 3역할 후보 (opt-in)';
 
 /** 발행 본문에는 역할 섹션만 연속해서 넣는다(중간 머리글·빈 단락 없음). */
 const threeRoleBlock = (sections: ThreeRoleSections): string[] =>
-  [sections.orchestrator, '', sections.reviewer, '', sections.worker];
+  [sections.orchestrator, '', sections.reviewer, '', sections.worker,
+    ...(sections.combinations?.length ? ['', '## 🧩 권장 조합', '', ...sections.combinations.flatMap(block => [block, ''])] : [])];
 
 /** 기존 2역할 블록이 남아 있는지(테스트의 이중출력 단언용). */
 export function hasLegacyRoleBlocks(text: string): boolean {

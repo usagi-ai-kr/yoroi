@@ -1,22 +1,16 @@
 import type { RoleCandidate } from './letter-role-selection.js';
-import {
-  selectThreeRoles,
-  type ThreeRoleSelectionOutput,
-  type WeightClassifier,
-} from './letter-three-role.js';
-import {
-  renderThreeRoleMarkdown,
-  renderThreeRoleSection,
-} from './letter-three-role-render.js';
-import {
-  applyReviewerPolicy,
-  type ReviewerPolicyConfig,
-} from './letter-reviewer-policy.js';
+import { selectThreeRoles, type ThreeRoleSelectionOutput, type WeightClassifier } from './letter-three-role.js';
+import { renderThreeRoleMarkdown, renderThreeRoleSection } from './letter-three-role-render.js';
+import { applyReviewerPolicy, type ReviewerPolicyConfig } from './letter-reviewer-policy.js';
+import { buildTeamCombinations, loadOpenWeightKeys } from './letter-team-combinations.js';
+import { renderTeamMermaid } from './letter-mermaid.js';
 
 export interface ThreeRoleSections {
   readonly orchestrator: string;
   readonly reviewer: string;
   readonly worker: string;
+  /** #253: 권장 조합 4개 Mermaid(워커 섹션 뒤·표시 안내 앞). 본문 전용. */
+  readonly combinations?: readonly string[];
 }
 
 export interface ThreeRolePipelineOptions<T extends RoleCandidate = RoleCandidate> {
@@ -67,10 +61,16 @@ export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(
     depth,
   });
 
+  // #253: 역할별 Top7 로 권장 조합 4개를 계산해 본문 전용 Mermaid 블록으로 만든다(선발·점수 무변경).
+  const combinations = buildTeamCombinations({ top7: {
+    orchestrator: selection.orchestrator.top7, reviewer: selection.reviewer.top7, worker: selection.worker.top7 },
+    openWeightKeys: loadOpenWeightKeys() })
+    .map(combination => `**${combination.label}**\n\n${renderTeamMermaid(combination)}`);
   const sections: ThreeRoleSections = {
     orchestrator: renderThreeRoleSection('orchestrator', selection.orchestrator.all, renderDepth),
     reviewer: renderThreeRoleSection('reviewer', selection.reviewer.all, renderDepth),
     worker: renderThreeRoleSection('worker', selection.worker.all, renderDepth),
+    ...(combinations.length > 0 && { combinations }),
   };
 
   const markdown = renderThreeRoleMarkdown({

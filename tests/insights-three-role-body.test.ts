@@ -63,3 +63,11 @@ test('#232: 2역할 레거시 표는 실사용 컬럼 없이 그대로, 3역할 
   assert.ok(out.includes('- 실사용 = usagi 정성 관찰 표식'), '3역할 안내에 실사용 설명');
   assert.ok(!out.includes('| effort | 실사용 |'), '레거시 표 머리에는 실사용 컬럼이 붙지 않음(3역할 표는 별도 렌더)');
 });
+
+test('#253: 조합 블록은 워커 섹션 뒤·표시 안내 앞에 삽입된다', () => {
+  const out = replaceLegacyRoleBlocks(body, { ...sections, combinations: ['**가장 최선**\n\n```mermaid\nflowchart TB\n```'] });
+  const at = (needle: string) => out.indexOf(needle);
+  assert.ok(at('## W') < at('## 🧩 권장 조합'), '워커 섹션 뒤');
+  assert.ok(at('## 🧩 권장 조합') < at('## 📖 표시 안내'), '표시 안내 앞');
+  assert.ok(out.includes('```mermaid'), 'Mermaid 코드 펜스');
+});

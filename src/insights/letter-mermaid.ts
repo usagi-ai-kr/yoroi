@@ -1,0 +1,30 @@
+/** #253: Mermaid 렌더 — 고정 노드 ID · 라벨 이스케이프 · 코드 펜스 주입 방지.
+ *  모델명은 라벨로만 쓰며(노드 ID 아님) 펜스·문법 주입을 막는다. */
+import type { TeamCombination, TeamRole } from './letter-team-combinations.js';
+
+const ROLE_LABEL: Record<TeamRole, string> = { orchestrator: '오케스트레이터', reviewer: '리뷰어', worker: '워커' };
+const NODE_ID: Record<TeamRole, string> = { orchestrator: 'O', reviewer: 'R', worker: 'W' };
+
+/** Mermaid 라벨 안전 처리: 펜스·따옴표·대괄호·중괄호·해석 특수문자를 제거하고 한 줄로 제한한다. */
+export const escapeMermaidLabel = (text: string): string =>
+  text.replace(/[`"'\\{}[\]<>|#;]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+
+/** ```mermaid 펜스 — 라벨이 펜스를 깨뜨리지 못하도록 본문은 고정 문자열로만 감싼다. */
+export const mermaidFence = (lines: readonly string[]): string => ['```mermaid', ...lines, '```'].join('\n');
+
+/** 조합 1개를 Mermaid 다이어그램으로 그린다. 구성 불가면 사유를 표시한다(가짜 모델 없음). */
+export const renderTeamMermaid = (combination: TeamCombination): string => {
+  if (!combination.feasible || !combination.slots.length) {
+    return mermaidFence(['flowchart TB', `  NA["조합 구성 불가: ${escapeMermaidLabel(combination.reason ?? '후보 부족')}"]`]);
+  }
+  const nodes: string[] = [], edges: string[] = [];
+  let workerNo = 0;
+  for (const slot of combination.slots) {
+    const isWorker = slot.role === 'worker';
+    const id = isWorker ? `${NODE_ID.worker}${++workerNo}` : NODE_ID[slot.role];
+    const roleLabel = isWorker ? `${ROLE_LABEL.worker} ${workerNo}` : ROLE_LABEL[slot.role];
+    nodes.push(`  ${id}["${escapeMermaidLabel(`${roleLabel} · ${slot.modelId}`)}"]`);
+    if (slot.role !== 'orchestrator') edges.push(`  ${NODE_ID.orchestrator} --> ${id}`);
+  }
+  return mermaidFence(['flowchart TB', ...nodes, ...edges]);
+};

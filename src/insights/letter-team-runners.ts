@@ -1,6 +1,7 @@
 /** #257: 조합 차선(runners-up) — 같은 정책 풀에서 조합에 없는 역할별 최고 후보. */
 import { resolveIdentityKey, type RoleCandidate } from './letter-role-selection.js';
 import { canonicalModelId } from './model-display.js';
+import { isCommonBanned } from './letter-model-lists.js';
 
 export interface TeamPlan {
   readonly o: readonly RoleCandidate[]; readonly r: readonly RoleCandidate[]; readonly w: readonly RoleCandidate[];
@@ -29,13 +30,24 @@ export function runnersUp(pool: TeamPlan, picked: ReadonlySet<string>, roles?: r
     ...(r !== undefined && { reviewer: r }), ...(w !== undefined && { worker: w }) };
 }
 
-export interface RolePools { readonly o: readonly RoleCandidate[]; readonly r: readonly RoleCandidate[]; readonly w: readonly RoleCandidate[]; }
-/** #261: Free 정책 후보 풀 — verified Free catalog 모델(Beam 포함)만, 역할별 측정 점수가 있으면 붙인다(없으면 미측정).
- *  Free catalog id(-free) 와 역할 목록 id(AA base) 는 canonical id 로 매칭하고, canonical 이 같으면 한 실체로 dedupe 한다.
- *  **미측정 Free 는 워커 fallback 으로만** 허용한다(오케·리뷰어 풀에는 측정 점수 있는 후보만). */
-export function freePolicyPool(freeModelIds: readonly string[], lists: RolePools): TeamPlan {
+export interface RolePools { readonly o: readonly RoleCandidate[]; readonly r: readonly RoleCandidate[]; readonly w: readonly RoleCandidate[] }
+/** #266-DELTA: verified Free 자격 — fallback 표시(free) 또는 canonical 키 매칭. */
+export function isFreeCandidate(c: RoleCandidate, keys: ReadonlySet<string>): boolean { return ((c as { readonly free?: unknown }).free === true) || keys.has(canonicalModelId(c.modelId)) || keys.has(keyOf(c)); }
+/** #266-DELTA: 워커 Free 쿼터. 키 없거나 비면 미적용. 측정 Free 우선, 없으면 미측정 fallback 허용(점수 생성 없음). */
+export function freeWorkerNeed(pool: TeamPlan, keys?: ReadonlySet<string>): ((c: RoleCandidate) => boolean) | undefined {
+  if (!keys?.size) return undefined;
+  const frees = pool.w.filter(c => isFreeCandidate(c, keys));
+  if (!frees.length) return () => false;
+  const hasMeasured = frees.some(c => c.score !== undefined);
+  return (c) => isFreeCandidate(c, keys) && (!hasMeasured || c.score !== undefined);
+}
+/** #266: 두 번째 정책 후보 풀 = **오픈 웨이트(레지스트리) ∪ verified Free**(Beam 포함) 합집합.
+ *  canonical id 로 역할 목록의 측정 점수를 매칭하고, canonical 이 같으면 한 실체로 dedupe 한다.
+ *  오케·리뷰어 풀에는 **측정 점수가 있는 후보만**(미측정은 워커 슬롯 전용). */
+export function unionPool(modelIds: readonly string[], lists: RolePools, bannedKeys?: ReadonlySet<string>): TeamPlan {
   const unique: string[] = [], seen = new Set<string>();
-  for (const id of freeModelIds) {
+  for (const id of modelIds) {
+    if (bannedKeys?.size && isCommonBanned(id, bannedKeys)) continue; // 공통 blacklist: 풀 진입 차단
     const key = canonicalModelId(id);
     if (seen.has(key)) continue;
     seen.add(key); unique.push(id);
@@ -44,10 +56,9 @@ export function freePolicyPool(freeModelIds: readonly string[], lists: RolePools
     const byKey = new Map(list.map(c => [canonicalModelId(c.modelId), c] as const));
     return unique.map(id => {
       const key = canonicalModelId(id), measured = byKey.get(key);
-      return measured ? { ...measured, modelId: id, identityKey: key, free: true } : { modelId: id, identityKey: key, free: true };
+      return measured ? { ...measured, modelId: id, identityKey: key } : { modelId: id, identityKey: key };
     });
   };
   const measuredOnly = (list: readonly RoleCandidate[]): RoleCandidate[] => list.filter(c => c.score !== undefined);
-  const o = sorted(measuredOnly(pick(lists.o))), r = sorted(measuredOnly(pick(lists.r))), w = sorted(pick(lists.w));
-  return { o, r, w };
+  return { o: sorted(measuredOnly(pick(lists.o))), r: sorted(measuredOnly(pick(lists.r))), w: sorted(pick(lists.w)) };
 }

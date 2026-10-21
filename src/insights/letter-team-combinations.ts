@@ -3,15 +3,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { packageRootFrom } from '../config/env-file.js';
 import type { RoleCandidate } from './letter-role-selection.js';
-import { keyOf, runnersUp, sorted, type RoleRunnersUp, type TeamPlan } from './letter-team-runners.js';
+import { freeWorkerNeed, keyOf, runnersUp, sorted, type RoleRunnersUp, type TeamPlan } from './letter-team-runners.js';
+import { isCommonBanned } from './letter-model-lists.js';
 
 export type TeamRole = 'orchestrator' | 'reviewer' | 'worker';
-export type TeamCombinationKey = 'best-1+1+3' | 'best-1+2' | 'free-1+1+3' | 'free-1+2';
+export type TeamCombinationKey = 'best-1+1+3' | 'best-1+2' | 'open-1+1+3' | 'open-1+2';
 export interface TeamSlot { readonly role: TeamRole; readonly modelId: string; readonly score?: number; readonly effort?: string; readonly free?: boolean }
 export interface TeamCombination {
-  readonly key: TeamCombinationKey;
-  readonly label: string;
-  readonly slots: readonly TeamSlot[];
+  readonly key: TeamCombinationKey; readonly label: string; readonly slots: readonly TeamSlot[];
   readonly runnersUp: RoleRunnersUp;
   readonly totalScore: number;
   /** 측정된 슬롯만 합산한 totalScore에 들어가지 못한 미측정 슬롯 */
@@ -20,20 +19,19 @@ export interface TeamCombination {
   readonly reason?: string;
 }
 export interface TeamCombinationInput {
-  readonly top15: {
-    readonly orchestrator: readonly RoleCandidate[];
-    readonly reviewer: readonly RoleCandidate[];
-    readonly worker: readonly RoleCandidate[];
-  };
-  /** #261: Free 정책 후보 풀(verified Free catalog + 역할별 측정 점수). 없으면 Free 조합은 구성 불가. */
-  readonly freePool?: TeamPlan;
-  /** 점수 없는 Free 워커 fallback({ modelId, free: true }). 점수 후보가 부족할 때만 채운다. */
+  readonly top15: { readonly orchestrator: readonly RoleCandidate[]; readonly reviewer: readonly RoleCandidate[]; readonly worker: readonly RoleCandidate[] };
+  /** #266: 두 번째 정책 후보 풀(오픈 웨이트 ∪ verified Free + 역할별 측정 점수). 없으면 구성 불가. */
+  readonly unionPool?: TeamPlan;
+  /** #266-DELTA: verified Free canonical 키. 주면 4조합 모두 워커 ≥1 Free 보장(빈 집합은 미적용). */
+  readonly verifiedFreeKeys?: ReadonlySet<string>;
+  /** 공통 blacklist canonical 키. 주면 top15·풀·fallback에서 제외한다. */
+  readonly bannedKeys?: ReadonlySet<string>;
+  /** 점수 없는 Free 워커 fallback({ modelId, free: true }) — 점수 후보가 부족할 때만 채운다. */
   readonly freeWorkerFallback?: readonly RoleCandidate[];
 }
 export interface SlotCounts { readonly orchestrator: number; readonly reviewer: number; readonly worker: number; }
 
-const COUNTS: Record<'1+1+3' | '1+2', SlotCounts> = {
-  '1+1+3': { orchestrator: 1, reviewer: 1, worker: 3 }, '1+2': { orchestrator: 1, reviewer: 0, worker: 2 } };
+const COUNTS: Record<'1+1+3' | '1+2', SlotCounts> = { '1+1+3': { orchestrator: 1, reviewer: 1, worker: 3 }, '1+2': { orchestrator: 1, reviewer: 0, worker: 2 } };
 export const OPEN_WEIGHT_PATH = resolve(packageRootFrom(import.meta.url), 'config/open-weight-models.json');
 const effortOf = (c: RoleCandidate): string | undefined => (typeof c.effort === 'string' ? c.effort : undefined);
 const slot = (role: TeamRole, c: RoleCandidate): TeamSlot => {
@@ -57,10 +55,10 @@ export const loadOpenWeightKeys = (path: string = OPEN_WEIGHT_PATH): ReadonlySet
 };
 
 /** 전수 탐색 최대 배정(그리디 방지·동점 선착). 비교: 측정 총점 desc → unmeasured asc → 선착. */
-const bestPlan = (plan: TeamPlan, counts: SlotCounts): { readonly slots: readonly TeamSlot[]; readonly total: number; readonly unmeasured: number; readonly picked: ReadonlySet<string> } | undefined => {
+const bestPlan = (plan: TeamPlan, counts: SlotCounts, need?: (c: RoleCandidate) => boolean): { readonly slots: readonly TeamSlot[]; readonly total: number; readonly unmeasured: number; readonly picked: ReadonlySet<string> } | undefined => {
   let best: { readonly slots: readonly TeamSlot[]; readonly total: number; readonly unmeasured: number; readonly picked: ReadonlySet<string> } | undefined;
   for (const os of choose(plan.o, counts.orchestrator)) for (const rs of choose(plan.r, counts.reviewer))
-    for (const ws of choose(plan.w, counts.worker)) {
+    for (const ws of choose(plan.w, counts.worker)) { if (need !== undefined && !ws.some(need)) continue; // DELTA: 워커 Free ≥1
       const picked = [...os, ...rs, ...ws], keys = picked.map(keyOf);
       if (new Set(keys).size !== keys.length) continue; // 조합 내 동일 실체 1회만
       const slots = [...os.map(c => slot('orchestrator', c)), ...rs.map(c => slot('reviewer', c)), ...ws.map(c => slot('worker', c))];
@@ -78,21 +76,25 @@ const shortage = (plan: TeamPlan, counts: SlotCounts): string | undefined => {
   return missing.length ? missing.join(' · ') : undefined;
 };
 
-const buildOne = (key: TeamCombinationKey, label: string, plan: TeamPlan, shape: '1+1+3' | '1+2'): TeamCombination => {
-  const counts = COUNTS[shape], best = bestPlan(plan, counts);
+const buildOne = (key: TeamCombinationKey, label: string, plan: TeamPlan, shape: '1+1+3' | '1+2', need?: (c: RoleCandidate) => boolean): TeamCombination => {
+  const counts = COUNTS[shape], best = bestPlan(plan, counts, need);
   if (best) return { key, label, slots: best.slots,
     runnersUp: runnersUp(plan, best.picked, best.slots.map(s => s.role)), totalScore: best.total, unmeasured: best.unmeasured, feasible: true };
-  return { key, label, slots: [], runnersUp: {}, totalScore: 0, unmeasured: 0, feasible: false, reason: shortage(plan, counts) ?? '유효 조합 없음' };
+  return { key, label, slots: [], runnersUp: {}, totalScore: 0, unmeasured: 0, feasible: false, reason: (need !== undefined && !plan.w.some(need) ? 'Free 워커 후보 없음' : shortage(plan, counts)) ?? '유효 조합 없음' };
 };
 
-/** 권장 조합 4개(최선·오픈·Free × 1+1+3·1+2). */
+/** 권장 조합 4개(최선·오픈 × 1+1+3·1+2) + 워커 Free ≥1 쿼터(#266-DELTA). */
 export const buildTeamCombinations = (input: TeamCombinationInput): readonly TeamCombination[] => {
-  const free = input.freeWorkerFallback ?? [];
+  const banned = input.bannedKeys, clean = (list: readonly RoleCandidate[]): readonly RoleCandidate[] => !banned?.size ? list : list.filter(c => !isCommonBanned(c.modelId, banned));
+  const free = clean(input.freeWorkerFallback ?? []);
   const freshFree = (list: readonly RoleCandidate[]): readonly RoleCandidate[] => free.filter(f => !list.some(c => keyOf(c) === keyOf(f)));
-  const sw = sorted(input.top15.worker), base: TeamPlan = { o: sorted(input.top15.orchestrator), r: sorted(input.top15.reviewer), w: [...sw, ...freshFree(sw)] };
-  const freePlan: TeamPlan = input.freePool ?? { o: [], r: [], w: [] };
+  const sw = sorted(input.top15.worker);
+  const base: TeamPlan = { o: clean(sorted(input.top15.orchestrator)), r: clean(sorted(input.top15.reviewer)), w: [...clean(sw), ...freshFree(sw)] };
+  const rawUnion: TeamPlan = input.unionPool ?? { o: [], r: [], w: [] };
+  const unionPlan: TeamPlan = { o: clean(rawUnion.o), r: clean(rawUnion.r), w: clean(rawUnion.w) };
+  const needBase = freeWorkerNeed(base, input.verifiedFreeKeys), needUnion = freeWorkerNeed(unionPlan, input.verifiedFreeKeys);
   return [
-    buildOne('best-1+1+3', '가장 최선 · 오케 1 + 리뷰 1 + 워커 3', base, '1+1+3'), buildOne('best-1+2', '가장 최선 · 오케 1 + 워커 2', base, '1+2'),
-    buildOne('free-1+1+3', 'Free · 오케 1 + 리뷰 1 + 워커 3', freePlan, '1+1+3'), buildOne('free-1+2', 'Free · 오케 1 + 워커 2', freePlan, '1+2'),
+    buildOne('best-1+1+3', '가장 최선 · 오케 1 + 리뷰 1 + 워커 3', base, '1+1+3', needBase), buildOne('best-1+2', '가장 최선 · 오케 1 + 워커 2', base, '1+2', needBase),
+    buildOne('open-1+1+3', '오픈 웨이트·Free · 오케 1 + 리뷰 1 + 워커 3', unionPlan, '1+1+3', needUnion), buildOne('open-1+2', '오픈 웨이트·Free · 오케 1 + 워커 2', unionPlan, '1+2', needUnion),
   ];
 };

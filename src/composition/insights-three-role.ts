@@ -1,6 +1,7 @@
 import type { InsightRunResult } from '../insights/run-once.js';
 import { runThreeRolePipeline, type ThreeRolePipelineInput, type ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
 import { buildReviewerCandidates } from './insights-reviewer-candidates.js';
+import { commonBanSet, isCommonBanned } from '../insights/letter-model-lists.js';
 import { computeRoleTop10, type RoleList } from '../insights/letter-top10-unified.js';
 import { resolveFreeModelId } from './insights-free-reviewer.js';
 import type { PlanCatalogEntry } from '../insights/plan-catalog.js';
@@ -36,19 +37,20 @@ export function buildThreeRole(
   // ranked 목록이 비어 있으면(카탈로그 접근 가능 후보 없음)만 원시 행으로 물러난다.
   const oRanked = ranked ? fromRanked(ranked.orchestrator) ?? [] : [];
   const wRanked = ranked ? fromRanked(ranked.worker) ?? [] : [];
-  const o = isObj && opt.orchestrator ? opt.orchestrator : (oRanked.length ? oRanked : (recs?.map(toCand) ?? []));
-  const w = isObj && opt.worker ? opt.worker : (wRanked.length ? wRanked : o);
+  const banned = commonBanSet();
+  const o = (isObj && opt.orchestrator ? opt.orchestrator : (oRanked.length ? oRanked : (recs?.map(toCand) ?? []))).filter(c => !isCommonBanned(c.modelId, banned));
+  const w = (isObj && opt.worker ? opt.worker : (wRanked.length ? wRanked : o)).filter(c => !isCommonBanned(c.modelId, banned));
   // #257: verified Free 카탈로그 모델을 워커 fallback 후보로 전달한다(점수 없음·free 표시).
   const freeCatalog = (run?.top10 as { readonly freeCatalog?: readonly PlanCatalogEntry[] } | undefined)?.freeCatalog ?? [];
-  const freeModels = freeCatalog.filter(p => p.tier === 'free').flatMap(p => p.models.filter(m => m.verified));
+  const freeModels = freeCatalog.filter(p => p.tier === 'free').flatMap(p => p.models.filter(m => m.verified && !isCommonBanned(m.modelId, banned)));
   const freeFallback = freeModels.map(m => ({ modelId: resolveFreeModelId(m.modelId), free: true }));
-  // #261: Free 조합 후보 = verified Free catalog(Beam 포함) 모델 id.
+  // #266: 두 번째 정책 합집합에 verified Free catalog(Beam 포함) id 를 넣는다.
   const freeCatalogModelIds = freeModels.map(m => m.modelId);
 
   if (isObj && opt.reviewer) {
     const out = runThreeRolePipeline({
       orchestrator: o,
-      reviewer: opt.reviewer,
+      reviewer: opt.reviewer.filter(c => !isCommonBanned(c.modelId, banned)),
       worker: w,
       freeWorkerFallback: freeFallback, freeCatalogModelIds,
       options: {
@@ -66,8 +68,9 @@ export function buildThreeRole(
       : 'no reviewer candidate assigned after orchestrator/reviewer alternation and reviewer policy' };
   }
 
+  // #194 D: 컷 전 전체 eligible reviewer(Free 점수 근거). 공통 blacklist 제외 후 전달한다.
   const revOutcome = buildReviewerCandidates(run?.top10);
-  const r = revOutcome.reviewer; // #194 D: 컷 전 전체 eligible reviewer(Free 점수 근거로 사용)
+  const r = revOutcome.reviewer.filter(c => !isCommonBanned(c.modelId, banned)); // 공통 blacklist: 리뷰어도 제외
   const reviewerPolicy = isObj && opt.options?.reviewerPolicy
     ? opt.options.reviewerPolicy
     : { weights: revOutcome.weights };
@@ -90,7 +93,7 @@ export function buildThreeRole(
     ...pipelineOutput,
     ...(revOutcome.emptyCause !== undefined && { emptyCause: revOutcome.emptyCause }),
     ...(revOutcome.excluded.length > 0 && { excluded: revOutcome.excluded }),
-    // #194 D: 컷 전 전체 eligible reviewer(Free 리뷰어 점수 근거). selection(할당·절단본)이 아니다.
-    ...(revOutcome.reviewer.length > 0 && { reviewerPool: revOutcome.reviewer }),
+    // #194 D: 컷 전 전체 eligible reviewer(Free 리뷰어 점수 근거). 공통 blacklist 제외.
+    ...(r.length > 0 && { reviewerPool: r }),
   };
 }

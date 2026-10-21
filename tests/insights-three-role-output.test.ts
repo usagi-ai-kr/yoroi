@@ -70,16 +70,16 @@ test('opt-in: 기존 2역할 블록을 대체해 3역할이 한 번만 나오고
 test('#194 order 핫픽스: 3역할 후보는 최종 ranked entries 순서를 따른다', () => {
   const records = [
     { modelId: 'space-bunny', metric: 'artificial_analysis_intelligence_index', value: 10 },
-    { modelId: 'kimi-k3', metric: 'artificial_analysis_intelligence_index', value: 90 },
+    { modelId: 'grok-4-7', metric: 'artificial_analysis_intelligence_index', value: 90 },
     { modelId: 'space-bunny', metric: 'artificial_analysis_coding_index', value: 20 },
-    { modelId: 'kimi-k3', metric: 'artificial_analysis_coding_index', value: 95 }];
+    { modelId: 'grok-4-7', metric: 'artificial_analysis_coding_index', value: 95 }];
   const ranked = computeRoleTop10(records, {});
   const run = { top10: { records, openrouterRecords: [], failedSources: [], previousRanks: [] } } as unknown as InsightRunResult;
   const out = buildThreeRole(true, run);
   const sel = out!.selection!;
   assert.deepEqual(sel.orchestrator.all.map(c => c.modelId), ranked.orchestrator.entries.map(e => e.modelId), '오케스트레이터 = ranked entries');
   assert.deepEqual(sel.worker.all.map(c => c.modelId), ranked.worker.entries.map(e => e.modelId), '워커 = ranked entries');
-  assert.equal(sel.orchestrator.all[0]!.modelId, 'kimi-k3', '선두는 ranked 1위(본문 요약과 동일)'); assert.notEqual(sel.orchestrator.all[0]!.modelId, records[0]!.modelId, 'records 순서를 따르지 않는다');
+  assert.equal(sel.orchestrator.all[0]!.modelId, 'grok-4-7', '선두는 ranked 1위(본문 요약과 동일)'); assert.notEqual(sel.orchestrator.all[0]!.modelId, records[0]!.modelId, 'records 순서를 따르지 않는다');
   // #194 score 배선: 3역할 표는 본문 요약과 같은 표시 보정 스코어(scoreText)를 쓴다.
   const shown = Number(ranked.orchestrator.entries[0]!.scoreText);
   assert.equal(sel.orchestrator.all[0]!.score, shown, 'score = 표시 보정 스코어(scoreText)'); assert.notEqual(sel.orchestrator.all[0]!.score, ranked.orchestrator.entries[0]!.rawScore, 'rawScore 가 아니다');

@@ -40,7 +40,7 @@ test('4. missing evidence does not fabricate scores ("-" in table)', () => {
   const r = [{ modelId: 'r-partial', performance: 80 }];
   const res = runThreeRolePipeline({ reviewer: r, options: { enabled: true } });
   assert.strictEqual(res.selection?.reviewer.top7[0]?.score, undefined);
-  assert.ok(res.markdown?.includes('| 1 |  | r-partial | - | - |'));
+  assert.ok(res.markdown?.includes('| 1 | r-partial | - | - | - |'));
 });
 
 test('5. MECE closed duplicate exclusion across orchestrator and reviewer', () => {

@@ -29,10 +29,14 @@ test('body holds 7 rows per role, comments hold the full Top15', () => {
 
 test('body 1-7위와 댓글 앞 7행이 모델·순위·점수까지 같다', () => {
   const { body, comments } = parts();
-  const bodyModels = tableRows(body).map(line => line.split('|').map(cell => cell.trim()));
-  const commentModels = tableRows(comments[0]!).map(line => line.split('|').map(cell => cell.trim()));
-  assert.deepEqual(bodyModels.slice(0, 7).map(cells => [cells[1], cells[3]]),
-    commentModels.slice(0, 7).map(cells => [cells[1], cells[3]]));
+  // 본문 Top7(파레토 열 없음)과 댓글 Top15(파레토 열 유지)는 열 구성이 다르므로 머리 기준으로 비교한다.
+  const keyOf = (table: string, line: string): readonly [string, string, string] => {
+    const head = (table.split('\n').find(l => l.startsWith('| 순위 |')) ?? '').split('|').map(c => c.trim());
+    const cells = line.split('|').map(cell => cell.trim());
+    return [cells[1]!.replace(/^▽ /, ''), cells[head.indexOf('모델')]!, cells[head.indexOf('스코어')]!];
+  };
+  assert.deepEqual(tableRows(body).slice(0, 7).map(l => keyOf(body, l)),
+    tableRows(comments[0]!).slice(0, 7).map(l => keyOf(comments[0]!, l)));
 });
 
 test('joinLetterParts는 구분자로 body+댓글 3개를 순서대로 붙인다', () => {

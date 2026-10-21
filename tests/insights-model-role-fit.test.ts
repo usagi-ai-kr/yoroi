@@ -16,7 +16,7 @@ const FREE_FIT_FILE = { models: {
   'glm-5-3-flash': { orchestrator: { fit: '○', note: '단위 조정.' }, worker: { fit: '◎', note: '코드·테스트 확인 성실.' } },
   'mimo-v2-6-flash': { orchestrator: { fit: '×', note: '세션 불안정.' }, worker: { fit: '△', note: '문서 작성.' } },
   'minimax-m3-1-flash': { orchestrator: { fit: '×', note: '오래 이어지는 작업 어려움.' }, worker: { fit: '○', note: '한글 문서 적합.' } } } };
-const scoreCell = (t: string) => (t.split('\n').find(l => l.startsWith('| 1 |')) ?? '').split('|')[4]?.trim() ?? '';
+const scoreCell = (t: string) => (t.split('\n').find(l => l.startsWith('| 1 |')) ?? '').split('|')[3]?.trim() ?? '';
 const hasNote = (t: string) => t.split('\n').some(l => l.startsWith('> '));
 const section = (modelId: string, score: number, effort = 'default', role: 'worker' | 'reviewer' = 'worker') => renderThreeRoleSection(role, [{ modelId, rank: 1, score, effort }], 7);
 

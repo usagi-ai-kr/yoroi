@@ -93,8 +93,3 @@ test('a verified Free path alone is access evidence, not price evidence; unmeasu
   const text = renderTop10FromRecords({ publicationDate: '2026-10-13', records: sparse, freeCatalog: FREE_CATALOG });
   assert.ok(text.includes('big-pickle · 오케 ✗ · 워커 ✗ · Zen ✓ · '), text);
 });
-test('freeMessenger 있으면 4역할 머리', () => {
-  const section = renderLetterPartsFromRecords({ publicationDate: '2026-10-13', records: RECORDS, freeCatalog: FREE_CATALOG,
-    freeReviewer: [{ modelId: 'step-5', score: '0.80', passed: true }], freeMessenger: [{ modelId: 'step-5', score: '70.00', passed: true }] }).comments[2];
-  assert.ok(section.includes('| 오케 | 리뷰어 | 워커 | 메신저 |'), '4역할 머리');
-});

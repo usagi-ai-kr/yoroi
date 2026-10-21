@@ -40,7 +40,7 @@ test('composition compact path covers the unified AA top ten, unified previous c
     insights: { clock: () => NOW, openHistory: () => history, createPorts: () => [aaPort] } });
   assert.equal(await program.run(['insights', 'once']), 0); const text = stdout.join('');
   assert.ok(text.length <= 3600, `length=${text.length}`);
-  assert.equal((text.match(/^## (🧭 오케스트레이터·리뷰어|🛠️ 워커·메신저) Top10/gm) ?? []).length, 2);
+  assert.equal((text.match(/^## (🧭 오케스트레이터·리뷰어|🛠️ 워커) Top10/gm) ?? []).length, 2);
   assert.match(text, /claude-opus-5-5 .*➖/, 'per-role previous cohort keeps the leader at rank 1');
   assert.match(text, /mistral-large-4/, 'orchestrator list must keep the mid-ranked model');
   const orch = text.slice(text.indexOf('## 🧭 오케스트레이터'), text.indexOf('## 🛠️ 워커'));

@@ -2,7 +2,7 @@ import { computeRoleTop10, type RoleList, type RoleLists } from './letter-top10-
 import type { Top10RecordInput } from './letter-top10-rank.js';
 import { top10OptionsFrom } from './letter-top10-render-options.js';
 import type { EffortAvailability } from './letter-effort-availability.js';
-import { SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
+import { ARENA_REFERENCE_LINE, SOURCE_LINES, SCORE_FORMULA_LINES, escapeShields, sourceStatusLines, statusBadge, truncateAtRowBoundary } from './letter-markdown-format.js';
 import { EXCLUSION_NOTE } from './top10-policy.js';
 import { LEGEND_LINES, ROLE_HEADINGS_TOP15, ROLE_HEADINGS_TOP7, ZONE_TEXT } from './letter-top10-legend.js';
 import { freeListsFrom, renderFreeSectionMarkdown, unmeasuredFreeEntries, type UnmeasuredFree } from './letter-markdown-free.js';
@@ -20,7 +20,6 @@ export interface MarkdownLetterData {
   readonly publicationDate: string; readonly lists: RoleLists; readonly free?: RoleLists | undefined;
   readonly freeUnmeasured?: readonly UnmeasuredFree[];
   readonly freeReviewer?: readonly FreeReviewerEntry[];
-  readonly freeMessenger?: readonly FreeReviewerEntry[];
   readonly failedSources?: readonly string[]; readonly partialSources?: readonly string[]; readonly notes?: readonly string[];
 }
 /** 본문 Top7 + 댓글 Top15·Top15·Free 분리. 본문 요약·변동은 Top7 기준, 퇴장은 댓글에만 둔다. */
@@ -41,7 +40,7 @@ export function renderLetterParts(data: MarkdownLetterData): LetterParts {
   const warnings = notes.length ? `\n\n### 경고\n` + notes.map(n => `- ⚠️ ${n}`).join('\n') : '';
   const details = `<details><summary>출처 및 산출 공식</summary>\n\n### 산출 공식 및 정책\n` +
     `${formulas}\n\n### 실패 소스 안내\n${sourceStatusLines(failed, partial).join('\n')}${warnings}\n\n### 출처\n` +
-    `${SOURCE_LINES.join('\n')}\n</details>`;
+    `${SOURCE_LINES.join('\n')}\n\n### 참고\n${ARENA_REFERENCE_LINE}\n</details>`;
 
   const top7 = (list: RoleList): RoleList => ({ entries: list.entries.slice(0, 7), exits: [] });
   const bodyLists: RoleLists = { orchestrator: top7(data.lists.orchestrator), worker: top7(data.lists.worker) };
@@ -57,7 +56,7 @@ export function renderLetterParts(data: MarkdownLetterData): LetterParts {
   const [commentOke, commentWorker, commentFree] = ([
     renderRoleTable('orchestrator', data.lists.orchestrator, ROLE_HEADINGS_TOP15.orchestrator),
     renderRoleTable('worker', data.lists.worker, ROLE_HEADINGS_TOP15.worker),
-    renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? [], undefined, undefined, data.freeReviewer, data.freeMessenger).join('\n'),
+    renderFreeSectionMarkdown(data.free, data.freeUnmeasured ?? [], undefined, undefined, data.freeReviewer).join('\n'),
   ]).map(part => truncateAtRowBoundary(part));
   const comments: LetterComments = [commentOke!, commentWorker!, commentFree!];
   // U3b: Free 섹션을 별도 노출해 3/4역할 조립이 마지막 댓글에 붙일 수 있게 한다(2역할 comments[2] 는 동일 문자열).
@@ -74,7 +73,6 @@ export interface MarkdownLetterInput {
   readonly notes?: readonly string[]; readonly partialSources?: readonly string[];
   readonly catalog?: readonly PlanCatalogEntry[]; readonly freeCatalog?: readonly PlanCatalogEntry[];
   readonly freeReviewer?: readonly FreeReviewerEntry[];
-  readonly freeMessenger?: readonly FreeReviewerEntry[];
   /** #188: run-once 가용성 스냅샷(없으면 computeRoleTop10이 env 게이트로 기본 해석). */
   readonly effortAvailability?: EffortAvailability;
 }
@@ -87,7 +85,6 @@ export function renderLetterPartsFromRecords(input: MarkdownLetterInput): Letter
     free,
     freeUnmeasured: unmeasuredFreeEntries(input.freeCatalog, input.records, free),
     ...(input.freeReviewer !== undefined && { freeReviewer: input.freeReviewer }),
-    ...(input.freeMessenger !== undefined && { freeMessenger: input.freeMessenger }),
     ...(input.failedSources && { failedSources: input.failedSources }),
     ...(input.partialSources && { partialSources: input.partialSources }),
     ...(input.notes && { notes: input.notes }),

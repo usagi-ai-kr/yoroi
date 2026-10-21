@@ -1,5 +1,5 @@
-/** 레터 본문·댓글 분리 발행 단위: 본문 1개 + 순서 고정 댓글(2역할 3개 · 3/4역할 4개). */
-export type LetterComments = readonly [string, string, string] | readonly [string, string, string, string];
+/** 레터 본문·댓글 분리 발행 단위: 본문 1개 + 순서 고정 댓글 3개(오케 Top15·워커 Top15·Free). */
+export type LetterComments = readonly [string, string, string];
 export interface LetterParts {
   readonly body: string;
   readonly comments: LetterComments;

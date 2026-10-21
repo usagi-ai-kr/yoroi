@@ -30,8 +30,7 @@ test('formatChange maps every role change to one fixed emoji', () => {
 
 test('changeNote uses 🌱 for the first cohort and 🚪 for exits', () => {
   assert.equal(changeNote('오케스트레이터', lists.orchestrator), '오케스트레이터 상위권 4개 중 2개 순위·진입 변동 (🆕 1개), 🚪 1개');
-  assert.equal(changeNote('워커', { entries: [entry({ rank: 1, modelId: 'x', indexText: '1', change: '신규' })], exits: [] }),
-    '🌱 워커 첫 집계: 전일 기록 없음');
+  assert.equal(changeNote('워커', { entries: [entry({ rank: 1, modelId: 'x', indexText: '1', change: '신규' })], exits: [] }), '🌱 워커 첫 집계: 전일 기록 없음');
 });
 
 test('the guide section lists every marker with one meaning', () => {
@@ -73,12 +72,17 @@ test('markdown worker table adds a 가산 column and * marker; orchestrator show
   assert.ok(compact.includes('· 90/-/60/80* 가산 +3.7 · $1.50 ·'), compact);
 });
 
+test('#226: details 에 참고 링크가 1줄 있고 출처 목록은 불변', () => {
+  const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists, failedSources: [] });
+  assert.ok(md.includes('### 참고') && md.includes('https://arena.ai/leaderboard/agent'), '참고 링크');
+  assert.ok(md.includes('자동 수집·점수 미반영'), '미반영 명시');
+  assert.ok(!md.slice(md.indexOf('### 출처'), md.indexOf('### 참고')).includes('Agent Arena'), '수집 출처에 없음'); });
+
 test('both renderers place the guide under the two tables, outside the details block', () => {
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists, failedSources: [] });
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists });
   for (const text of [md, compact]) {
-    assert.ok(text.includes(LEGEND_HEADING));
-    assert.ok(text.indexOf('## 🛠️ 워커') < text.indexOf(LEGEND_HEADING));
+    assert.ok(text.includes(LEGEND_HEADING) && text.indexOf('## 🛠️ 워커') < text.indexOf(LEGEND_HEADING));
     assert.ok(!text.includes('★'));
   }
   assert.ok(md.indexOf(LEGEND_HEADING) < md.indexOf('<details>'));

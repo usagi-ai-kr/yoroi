@@ -11,7 +11,6 @@ export interface FreeRow {
   readonly orchestrator?: FreeCell | undefined;
   readonly reviewer?: FreeCell | undefined;
   readonly worker?: FreeCell | undefined;
-  readonly messenger?: FreeCell | undefined;
   readonly pareto: boolean;
   readonly effort?: string | undefined;
   readonly indexText?: string | undefined;
@@ -29,11 +28,11 @@ const starsOf = (entries: readonly RoleEntry[]): ReadonlySet<string> => {
   return new Set(values.filter(([id, value]) => value !== undefined &&
     !values.some(([other, ov]) => other !== id && ov !== undefined && ov > value)).map(([id]) => id));
 };
-interface Builder { plans: readonly string[]; orchestrator?: FreeCell; reviewer?: FreeCell; worker?: FreeCell; messenger?: FreeCell; pareto?: boolean; effort?: string; indexText?: string; unmeasured?: boolean }
+interface Builder { plans: readonly string[]; orchestrator?: FreeCell; reviewer?: FreeCell; worker?: FreeCell; pareto?: boolean; effort?: string; indexText?: string; unmeasured?: boolean }
 /** 두 역할의 랭크 행(limit 밖 포함)과 미측정 행을 모델 기준으로 합친다(같은 모델은 한 행).
  *  p78 2a: 랭크된 모델은 limit과 무관하게 행이 되고, 한 역할에만 랭크된 모델의 반대 칸은 근거가 있으므로 ✗다. */
 export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRow[], limit: number,
-  reviewer: readonly FreeReviewerEntry[] = [], messenger: readonly FreeReviewerEntry[] = []): FreeRow[] {
+  reviewer: readonly FreeReviewerEntry[] = []): FreeRow[] {
   const rows = new Map<string, Builder>();
   const at = (modelId: string, plans: readonly string[]): Builder =>
     rows.get(modelId) ?? (rows.set(modelId, { plans }).get(modelId) as Builder);
@@ -62,13 +61,6 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
     row.reviewer = { score: entry.score, passed: entry.passed };
     if (entry.isPareto === true) row.pareto = true;
   }
-  for (const entry of messenger) {
-    // reviewer와 같은 원칙: 기존 행에만 병합(새 행 금지), 점수 생성 없음.
-    const row = rows.get(entry.modelId) ?? rows.get(entry.modelId.replace(/-free$/, ''));
-    if (!row) continue;
-    row.messenger = { score: entry.score, passed: entry.passed };
-    if (entry.isPareto === true) row.pareto = true;
-  }
   const missing: FreeCell = { score: '-', passed: false }; // 근거는 있는데 이 역할 목록에 없는 경우(하한 탈락 등)
   for (const row of rows.values()) {
     if (row.unmeasured === true) continue;
@@ -77,13 +69,13 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
   }
   return freeRowOrder([...rows].map(([modelId, row]) => ({ modelId, plans: row.plans,
     ...(row.orchestrator && { orchestrator: row.orchestrator }), ...(row.reviewer && { reviewer: row.reviewer }),
-    ...(row.worker && { worker: row.worker }), ...(row.messenger && { messenger: row.messenger }),
+    ...(row.worker && { worker: row.worker }),
     pareto: row.pareto === true, ...(row.effort && { effort: row.effort }),
     ...(row.indexText !== undefined && { indexText: row.indexText }), unmeasured: row.unmeasured === true })));
 }
-const tier = (row: FreeRow): number => row.orchestrator?.passed ? 0 : row.worker?.passed ? 1 : row.messenger?.passed ? 2 : 3;
+const tier = (row: FreeRow): number => row.orchestrator?.passed ? 0 : row.worker?.passed ? 1 : 2;
 const scoreNum = (cell?: FreeCell): number => cell?.passed && Number.isFinite(Number(cell.score)) ? Number(cell.score) : -Infinity;
-/** 정렬: 오케 통과 → 워커 통과 → 메신저 통과 → 나머지, 각각 오케 스코어↓ → 워커 스코어↓ → 메신저 스코어↓ → 모델명. */
+/** 정렬: 오케 통과 → 워커 통과 → 나머지, 각각 오케 스코어↓ → 워커 스코어↓ → 모델명. */
 export const freeRowOrder = (rows: readonly FreeRow[]): FreeRow[] => [...rows].sort((a, b) =>
   tier(a) - tier(b) || scoreNum(b.orchestrator) - scoreNum(a.orchestrator) || scoreNum(b.worker) - scoreNum(a.worker) ||
-  scoreNum(b.messenger) - scoreNum(a.messenger) || a.modelId.localeCompare(b.modelId));
+  a.modelId.localeCompare(b.modelId));

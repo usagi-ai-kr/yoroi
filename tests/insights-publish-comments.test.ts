@@ -56,33 +56,3 @@ test('댓글 실패 시 이전 레터 close를 하지 않고 실패 코드로 �
   assert.ok(!h.runner.requests.some(r => r.args[1] === 'close'), '실패 시 close 없음');
   assert.ok(!h.stdout.some(line => line.startsWith('published')), '성공 출력 없음');
 });
-
-test('U3b: 4댓글이면 Free 를 마지막 댓글에서 찾아 4개 모두 게시한다', async () => {
-  const h = harness([ok('[]'), ok('https://github.com/qus0in/yoroi/issues/132'), ok(), ok(), ok(), ok(), ok('[]')],
-    async () => withFree(['c1', 'c2', 'c3', FREE_OK]));
-  assert.equal(await h.run(), 0);
-  assert.equal(posted(h).length, 4, '댓글 4개 게시');
-  assert.ok(h.bodies.at(-1)!.includes(FREE_HEADING), 'Free 는 마지막 댓글');
-});
-
-test('U3b: 어떤 댓글에도 Free 가 없으면 발행이 차단된다', async () => {
-  const h = harness([ok('[]')], async () => withFree(['c1', 'c2', 'c3', 'c4']));
-  assert.equal(await h.run(), 1);
-  assert.equal(h.runner.requests.length, 1, '이슈 생성 전에 차단');
-  assert.ok(h.stderr[0]!.includes('free section invalid'), h.stderr[0]!);
-});
-
-test('U3b: 댓글 5개 같은 개수는 거부한다', async () => {
-  const h = harness([ok('[]')], async () => withFree(['c1', 'c2', 'c3', 'c4', FREE_OK]));
-  assert.equal(await h.run(), 1);
-  assert.ok(h.stderr[0]!.includes('collection or rendering failed'), h.stderr[0]!);
-});
-
-test('U3b: dry-run 은 실제 댓글 개수를 표기한다', async () => {
-  const h = harness([ok('[]'), ok('[]')], async () => withFree(['c1', 'c2', 'c3', FREE_OK]));
-  const env = { stdout: (s: string) => h.stdout.push(s), stderr: (s: string) => h.stderr.push(s) };
-  const code = await publishInsightsLetter({ runner: h.runner, render: async () => withFree(['c1', 'c2', 'c3', FREE_OK]),
-    dryRun: true, clock: () => Date.UTC(2026, 9, 13), ghBin: 'gh-test' }, env);
-  assert.equal(code, 0);
-  assert.ok(h.stdout.join('').includes('comments=4'), h.stdout.join(''));
-});

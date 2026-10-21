@@ -47,36 +47,3 @@ test('#195 리뷰 F3: 명시적 reviewer 경로도 리뷰어가 비면 사유를
   assert.equal(taken?.selection?.reviewer.all.length, 0, '교대 배정 후 리뷰어 목록이 빈다');
   assert.ok(taken?.emptyCause, 'MECE 배정 후 비어도 사유가 남는다');
 });
-
-/** U3b: 메신저가 있으면 4댓글(o15/r15/w15/m15+Free), 없으면 기존 3댓글로 폴백한다. */
-const withMessenger = (reviewer: ReturnType<typeof cand>[], messenger: ReturnType<typeof cand>[]): ThreeRoleSelectionOutput => ({
-  orchestrator: slices([cand('o1', 90)]), reviewer: slices(reviewer), worker: slices([cand('w1', 85)]),
-  messenger: slices(messenger),
-  top7: { orchestrator: [], reviewer: [], worker: [] },
-  top15: { orchestrator: [cand('o1', 90)], reviewer, worker: [cand('w1', 85)], messenger },
-  unconfirmedModels: [] });
-const freeParts = (): LetterParts => ({ body: 'b', comments: ['C1', 'C2', 'FREE'], freeSection: 'FREE' });
-
-test('U3b: 메신저가 있으면 4댓글(o15/r15/w15/m15+Free) 순서로 조립된다', () => {
-  const threeRole: ThreeRolePipelineOutput = { enabled: true, selection: withMessenger([cand('r1', 80)], [cand('m1', 70)]) };
-  const comments = composeThreeRoleComments(freeParts(), threeRole);
-  assert.equal(comments.length, 4, '댓글 4개');
-  assert.ok(comments[0]!.includes('o1') && comments[1]!.includes('r1'), 'c1 오케 · c2 리뷰어');
-  assert.ok(comments[2]!.includes('w1') && !comments[2]!.includes('FREE'), 'c3 워커만(Free 는 마지막 댓글)');
-  assert.ok(comments[3]!.includes('m1') && comments[3]!.endsWith('FREE'), 'c4 메신저 + Free');
-});
-
-test('U3b: 4역할 댓글 제목이 워커·메신저로 분리되고 워커·메신저 제목이 남지 않는다', () => {
-  const threeRole: ThreeRolePipelineOutput = { enabled: true, selection: withMessenger([cand('r1', 80)], [cand('m1', 70)]) };
-  const comments = composeThreeRoleComments(freeParts(), threeRole);
-  assert.ok(comments[2]!.includes('🛠️ 워커 Top15'), '워커 제목');
-  assert.ok(comments[3]!.includes('✉️ 메신저 Top15'), '메신저 제목');
-  assert.ok(!comments.some(c => c.includes('워커·메신저')), '워커·메신저 합성 제목 없음');
-});
-
-test('U3b: 메신저가 없으면 기존 3댓글(o15/r15/w15+Free)로 폴백한다', () => {
-  const threeRole: ThreeRolePipelineOutput = { enabled: true, selection: withMessenger([cand('r1', 80)], []) };
-  const comments = composeThreeRoleComments(freeParts(), threeRole);
-  assert.equal(comments.length, 3, '댓글 3개 폴백');
-  assert.ok(comments[2]!.includes('w1') && comments[2]!.endsWith('FREE'), 'c3 워커 Top15 + Free 원문');
-});

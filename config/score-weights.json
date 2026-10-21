@@ -1,6 +1,5 @@
 {
   "orchestrator": { "performance": 0.75, "usage": 0, "speed": 0.10, "price": 0.15 },
   "worker": { "performance": 0.30, "usage": 0.20, "speed": 0.10, "price": 0.40 },
-  "messenger": { "performance": 0.20, "usage": 0.10, "speed": 0.30, "price": 0.40 },
   "workerBonusCap": 5
 }

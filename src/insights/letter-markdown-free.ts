@@ -9,7 +9,7 @@ import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
 import type { CalibrationRunRecord } from './calibration-store.js';
 import { SqliteCalibrationStore } from './calibration-store-sqlite.js';
 import { normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { freeCompactRows, freeMarkdownRows, freeMarkdownRowsWithMessenger, freeMarkdownRowsWithReviewer, freeMessengerTableHeader, freeReviewerTableHeader, freeTableHeader, hasMeaningfulWorkability, withCalibration } from './letter-markdown-free-table.js';
+import { freeCompactRows, freeMarkdownRows, freeMarkdownRowsWithReviewer, freeReviewerTableHeader, freeTableHeader, hasMeaningfulWorkability, withCalibration } from './letter-markdown-free-table.js';
 import { freeRowsFrom, type FreeReviewerEntry } from './letter-markdown-free-sort.js';
 export { barePlan, freeOnlyModelIds, shortPlan } from './letter-top10-plans.js';
 
@@ -20,7 +20,7 @@ export const FREE_LIMIT_NOTES: readonly string[] = [
   '- Zen = OpenCode Zen Free · Go = OpenCode Go Free (✓ 는 확인된 경로, 빈 칸은 이 화면에서 확인되지 않음 · 사용 불가 확정이 아님).',
   '- OpenCode Zen Free: 기간 한정 무료(수치 한도 미공개), 수집 데이터가 모델 개선에 쓰일 수 있다(일부 zero-retention).',
   '- OpenCode Go Free: Unlimited·기간 한정, OpenCode 클라이언트 세션에서만 사용 가능.',
-  '- 정렬: 오케 통과 → 워커 통과 → 메신저 통과 → 나머지, 각 점수 내림차순 · 동점 모델명.',
+  '- 정렬: 오케 통과 → 워커 통과 → 나머지, 각 점수 내림차순 · 동점 모델명.',
 ];
 
 /** Free 섹션 목록은 렌더 입력의 freeCatalog(codex의 `opencode models` 실시간 수집)로만 만든다.
@@ -73,14 +73,11 @@ const withoutJev = (
   unmeasured.filter(u => !u.modelId.startsWith('jev'))];
 export function renderFreeSectionMarkdown(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], _limit = 5, calibration?: CalibrationLookup,
-  freeReviewer?: readonly FreeReviewerEntry[], freeMessenger?: readonly FreeReviewerEntry[]): string[] {
+  freeReviewer?: readonly FreeReviewerEntry[]): string[] {
   if (!lists) return [FREE_HEADING, '', FREE_EMPTY_NOTE];
   const [ranked, measured] = withoutJev(lists, unmeasured);
-  const rows = withCalibration(freeRowsFrom(ranked!, measured, Infinity, freeReviewer ?? [], freeMessenger ?? []), calibration ?? lazyCalibrationLookup());
+  const rows = withCalibration(freeRowsFrom(ranked!, measured, Infinity, freeReviewer ?? []), calibration ?? lazyCalibrationLookup());
   const showWorkability = hasMeaningfulWorkability(rows);
-  if (freeMessenger !== undefined) {
-    return [FREE_HEADING, '', freeMessengerTableHeader(showWorkability), ...freeMarkdownRowsWithMessenger(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
-  }
   if (freeReviewer === undefined) {
     return [FREE_HEADING, '', freeTableHeader(showWorkability), ...freeMarkdownRows(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
   }

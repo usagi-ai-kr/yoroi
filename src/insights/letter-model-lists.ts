@@ -82,10 +82,9 @@ export function activeLetterModelLists(env?: NodeJS.ProcessEnv): LetterModelList
   }
   return cached;
 }
-/** 밴 집합: 정규화된 공통 ∪ 역할. Top10 선발·▽ 보충에서만 쓴다.
- *  U2: 메신저는 워커와 같은 밴을 쓴다. 오케·워커 동작은 불변이다. */
-export function banSetFor(lists: LetterModelLists, role: 'orchestrator' | 'worker' | 'messenger'): ReadonlySet<string> {
-  return new Set([...lists.ban.common, ...lists.ban[role === 'messenger' ? 'worker' : role]].map(listKeyOf));
+/** 밴 집합: 정규화된 공통 ∪ 역할. Top10 선발·▽ 보충에서만 쓴다. */
+export function banSetFor(lists: LetterModelLists, role: 'orchestrator' | 'worker'): ReadonlySet<string> {
+  return new Set([...lists.ban.common, ...lists.ban[role]].map(listKeyOf));
 }
 /** 화이트리스트 쌍: 목록 모델이 한쪽에 있으면 세대·후속 분리를 건너뛴다(하드코딩 쌍 대체). */
 export function isProtectedPair(a: string, b: string,

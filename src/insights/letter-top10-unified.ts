@@ -11,7 +11,7 @@ import { PLAN_CATALOG, type PlanCatalogEntry } from './plan-catalog.js';
 import { loadEffortAvailability, resolveAvailability, UNCONSTRAINED_AVAILABILITY, type AvailabilityMode } from './letter-effort-availability.js';
 
 export const TOP_N = 15;
-export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = { orchestrator: '## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)', worker: '## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)' };
+export const SECTION_HEADINGS: Readonly<Record<OptimalZoneRole, string>> = { orchestrator: '## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)', worker: '## 🛠️ 워커 Top10 (실행·코딩·전달)' };
 export type RoleChange = '유지' | `▲${number}` | `▼${number}` | '진입' | '신규';
 export interface RoleEntry {
   readonly rank: number; readonly modelId: string; readonly indexText: string; readonly repEffort: string;
@@ -28,7 +28,7 @@ export interface RoleList { readonly entries: readonly RoleEntry[]; readonly exi
 export interface RoleLists { readonly orchestrator: RoleList; readonly worker: RoleList }
 
 const costTextOf = (cost?: number): string => cost === undefined ? '단가 -' : cost === 0 ? '무료' : `$${cost.toFixed(2)}/1M`;
-export function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole | 'messenger', opts: Top10Options, catalog: readonly PlanCatalogEntry[], excluded: ReadonlySet<string>,
+function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, opts: Top10Options, catalog: readonly PlanCatalogEntry[], excluded: ReadonlySet<string>,
   scored: readonly ScoredGroup[], cal: ReadonlyMap<ScoredGroup, number>, allowOlder: readonly string[], benchmark?: ReadonlyMap<string, string>): RoleList {
   const successors = new Map<string, string>();
   for (const r of records) if (r.successorOf !== undefined && !separateGptSolModels(splitBaseAndEffort(r.modelId).base, splitBaseAndEffort(r.successorOf).base, allowOlder))

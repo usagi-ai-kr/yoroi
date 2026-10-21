@@ -6,7 +6,6 @@ import test from 'node:test';
 import { ROLE_DIMENSION_WEIGHTS } from '../src/insights/letter-top10-score.js';
 import { loadScoreWeights, loadWorkerBonusCap, SCORE_WEIGHTS, SCORE_WEIGHTS_DEFAULTS, SCORE_WEIGHTS_PATH,
   validateScoreWeights, WORKER_BONUS_CAP, WORKER_BONUS_CAP_DEFAULT } from '../src/insights/letter-top10-score-weights.js';
-import { isWorkerLike, MESSENGER_THRESHOLD, PRICE_MISSING_VALUE, WORKER_INTEL_FLOOR } from '../src/insights/letter-top10-score-policy.js';
 
 /** p65 계약(docs/insights/score-weights.md): 파일 값=기본값 고정, 파일 없으면 기본값, 잘못된 값은 예외. p85: 워커 가산 상한도 고정. */
 
@@ -55,19 +54,4 @@ test('파일 로더도 같은 예외를 내고, 올바른 파일은 통과한다
   writeFileSync(bad, JSON.stringify({ ...SCORE_WEIGHTS_DEFAULTS, worker: { ...SCORE_WEIGHTS_DEFAULTS.worker, usage: 0.5 } }));
   assert.deepEqual(loadScoreWeights(good), SCORE_WEIGHTS_DEFAULTS);
   assert.throws(() => loadScoreWeights(bad), /Invalid score weights/);
-});
-
-test('U1: 메신저 가중치 .20/.10/.30/.40 합=1, 파일·기본값 일치', () => {
-  const m = SCORE_WEIGHTS_DEFAULTS.messenger;
-  assert.deepEqual(m, { performance: 0.20, usage: 0.10, speed: 0.30, price: 0.40 });
-  assert.ok(Math.abs(m.performance + m.usage + m.speed + m.price - 1) < 1e-9);
-  assert.deepEqual(SCORE_WEIGHTS.messenger, m);
-  assert.throws(() => validateScoreWeights({ ...SCORE_WEIGHTS_DEFAULTS, messenger: { ...m, price: 0.6 } }), /Invalid score weights/);
-});
-
-test('U1: isWorkerLike 묶음 + 메신저 임계·공유 상수', () => {
-  assert.equal(isWorkerLike('worker'), true); assert.equal(isWorkerLike('messenger'), true);
-  assert.equal(isWorkerLike('orchestrator'), false); assert.equal(isWorkerLike('reviewer'), false);
-  assert.equal(MESSENGER_THRESHOLD, 0.60);
-  assert.equal(PRICE_MISSING_VALUE, 0.99); assert.equal(WORKER_INTEL_FLOOR, 33);
 });

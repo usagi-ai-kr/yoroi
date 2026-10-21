@@ -2,7 +2,6 @@ import type { InsightRunResult } from '../insights/run-once.js';
 import { runThreeRolePipeline, type ThreeRolePipelineInput, type ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
 import { buildReviewerCandidates } from './insights-reviewer-candidates.js';
 import { computeRoleTop10, type RoleList } from '../insights/letter-top10-unified.js';
-import { computeRoleList } from '../insights/letter-top10-messenger.js';
 
 /** InsightRunResult의 전체 풀 근거를 활용하여 3역할(오케스트레이터·리뷰어·워커) 파이프라인을 합성한다.
  *  리뷰어 후보는 toReviewerCandidates를 통해 3차원 정규 증거가 완비된 후보만 선별하며,
@@ -37,20 +36,12 @@ export function buildThreeRole(
   const wRanked = ranked ? fromRanked(ranked.worker) ?? [] : [];
   const o = isObj && opt.orchestrator ? opt.orchestrator : (oRanked.length ? oRanked : (recs?.map(toCand) ?? []));
   const w = isObj && opt.worker ? opt.worker : (wRanked.length ? wRanked : o);
-  // U3a: 메신저 목록은 computeRoleList로 만들고 명시적 입력을 우선한다. 후보가 없으면 생략한다.
-  const mRanked = ((): readonly { modelId: string; score?: number }[] => {
-    if (!run?.top10) return [];
-    try { return fromRanked(computeRoleList(run.top10.records, 'messenger', { ...run.top10 })) ?? []; }
-    catch { return []; }
-  })();
-  const m = isObj && opt.messenger ? opt.messenger : mRanked;
 
   if (isObj && opt.reviewer) {
     const out = runThreeRolePipeline({
       orchestrator: o,
       reviewer: opt.reviewer,
       worker: w,
-      messenger: m,
       options: {
         enabled: true,
         ...(run?.publicationDate !== undefined && { publicationDate: run.publicationDate }),
@@ -76,7 +67,6 @@ export function buildThreeRole(
     orchestrator: o,
     reviewer: r,
     worker: w,
-    messenger: m,
     options: {
       enabled: true,
       ...(run?.publicationDate !== undefined && { publicationDate: run.publicationDate }),

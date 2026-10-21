@@ -4,7 +4,7 @@ import type { ProcessOutput, ProcessRequest, ProcessRunner } from '../src/infra/
 import { publishInsightsLetter } from '../src/composition/insights-publish.js';
 import { freeSectionProblem } from '../src/insights/letter-free-guard.js';
 import { FREE_EMPTY_NOTE, FREE_HEADING } from '../src/insights/letter-markdown-free.js';
-import { FREE_TABLE_HEADER, freeMessengerTableHeader, freeTableHeader } from '../src/insights/letter-markdown-free-table.js';
+import { FREE_TABLE_HEADER, freeTableHeader } from '../src/insights/letter-markdown-free-table.js';
 import type { LetterParts } from '../src/insights/letter-markdown.js';
 
 /** 1.2.0 발행 계약: render는 LetterParts{body, comments:[c1,c2,c3]}를 반환하고 Free 가드는 comments[2](댓글 3)에 적용된다. */
@@ -26,7 +26,7 @@ const FREE_VALID = `${FREE_HEADING}\n\n${freeTableHeader(true)}\n| step-5 | - | 
 const FREE_VALID_PLAIN = `${FREE_HEADING}\n\n${freeTableHeader(false)}\n| step-5 | - | - | 43.7 | ✓ |  | 근거 없음 |\n`;
 const FREE_INVALID = `${FREE_HEADING}\n\n${FREE_EMPTY_NOTE}\n`;
 const validBody = `# letter\n\n${FREE_VALID}`, invalidBody = `# letter\n\n${FREE_INVALID}`;
-const withFree = (free: string): LetterParts => ({ body: BODY, comments: ['## 🧭 오케스트레이터·리뷰어 Top15\n', '## 🛠 워커·메신저 Top15\n', free] });
+const withFree = (free: string): LetterParts => ({ body: BODY, comments: ['## 🧭 오케스트레이터·리뷰어 Top15\n', '## 🛠 워커 Top15\n', free] });
 
 test('free section guard accepts data rows and reports each empty/free-list failure distinctly', () => {
   assert.equal(freeSectionProblem(validBody), undefined);
@@ -61,11 +61,4 @@ test('publish dry-run continues with a valid free comment and reports comments=3
   assert.equal(h.runner.requests.length, 2);
   assert.ok(!h.runner.requests.some(r => r.args[1] === 'create'));
   assert.ok(h.stdout.some(line => line.includes('comments=3')));
-});
-
-test('U3a-ii: 4역할 Free 표 머리도 허용하고 잘못된 열은 거부한다', () => {
-  const good = `# letter\n\n${FREE_HEADING}\n\n${freeMessengerTableHeader(false)}\n| m1 | - | - | - | - | - |  |  | - |\n`;
-  assert.equal(freeSectionProblem(good), undefined, '4역할 머리 허용');
-  assert.equal(freeSectionProblem(`# letter\n\n${FREE_HEADING}\n\n| 모델 | 오케 | 워커 | 메신저 |\n| m1 | - | - | - |\n`),
-    'free table header missing', '잘못된 열 거부');
 });

@@ -41,9 +41,9 @@ test('#195 리뷰 F3: 명시적 reviewer 경로도 리뷰어가 비면 사유를
   const none = buildThreeRole({ reviewer: [], orchestrator: [{ modelId: 'o1', score: 90 }], options: { enabled: true } });
   assert.equal(none?.selection?.reviewer.all.length, 0);
   assert.ok(none?.emptyCause, '명시 reviewer 비면 사유가 남는다');
-  // 교대 배정(MECE)로 오케가 이미 집은 모델만 리뷰어 후보면 목록이 빈다 → 역시 사유를 남긴다.
+  // 독립 선발: 명시 reviewer 후보는 오케와 겹쳐도 유지된다.
   const taken = buildThreeRole({ reviewer: [{ modelId: 'shared', score: 80 }],
     orchestrator: [{ modelId: 'shared', score: 90 }], options: { enabled: true } });
-  assert.equal(taken?.selection?.reviewer.all.length, 0, '교대 배정 후 리뷰어 목록이 빈다');
-  assert.ok(taken?.emptyCause, 'MECE 배정 후 비어도 사유가 남는다');
+  assert.deepEqual(taken?.selection?.reviewer.all.map(c => c.modelId), ['shared'], '독립 선발 후 리뷰어 목록 유지');
+  assert.equal(taken?.emptyCause, undefined, '비어 있지 않으면 사유 없음');
 });

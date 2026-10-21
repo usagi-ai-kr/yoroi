@@ -43,15 +43,15 @@ test('4. missing evidence does not fabricate scores ("-" in table)', () => {
   assert.ok(res.markdown?.includes('| 1 | r-partial | - | - | - |'));
 });
 
-test('5. MECE closed duplicate exclusion across orchestrator and reviewer', () => {
+test('5. closed duplicate shared across orchestrator and reviewer', () => {
   const o = [{ modelId: 'shared-c', weightOpen: false }, { modelId: 'o-only', weightOpen: false }];
   const r = [{ modelId: 'shared-c', weightOpen: false }, { modelId: 'r-only', weightOpen: false }];
   const res = runThreeRolePipeline({ orchestrator: o, reviewer: r, options: { enabled: true } });
   assert.deepStrictEqual(res.selection?.orchestrator.top7.map(x => x.modelId), ['shared-c', 'o-only']);
-  assert.deepStrictEqual(res.selection?.reviewer.top7.map(x => x.modelId), ['r-only']);
+  assert.deepStrictEqual(res.selection?.reviewer.top7.map(x => x.modelId), ['shared-c', 'r-only']);
 });
 
-test('6. MECE open-weight duplicate allowed across orchestrator and reviewer', () => {
+test('6. open-weight duplicate shared across orchestrator and reviewer', () => {
   const o = [{ modelId: 'shared-o', weightOpen: true }];
   const r = [{ modelId: 'shared-o', weightOpen: true }];
   const res = runThreeRolePipeline({ orchestrator: o, reviewer: r, options: { enabled: true } });
@@ -65,7 +65,7 @@ test('7. worker independence from orchestrator and reviewer', () => {
   const w = [{ modelId: 'shared', weightOpen: false }];
   const res = runThreeRolePipeline({ orchestrator: o, reviewer: r, worker: w, options: { enabled: true } });
   assert.strictEqual(res.selection?.orchestrator.top7[0]?.modelId, 'shared');
-  assert.strictEqual(res.selection?.reviewer.top7.length, 0);
+  assert.strictEqual(res.selection?.reviewer.top7[0]?.modelId, 'shared');
   assert.strictEqual(res.selection?.worker.top7[0]?.modelId, 'shared');
 });
 
@@ -90,8 +90,10 @@ test('9. deterministic repeat across multiple runs', () => {
     reviewer: [{ modelId: 'r1', performance: 80, speed: 70, price: 90 }],
     options: { enabled: true },
   };
-  const r1 = runThreeRolePipeline(input);
-  const r2 = runThreeRolePipeline(input);
-  assert.strictEqual(r1.markdown, r2.markdown);
-  assert.deepStrictEqual(r1.selection, r2.selection);
+  const r1 = runThreeRolePipeline(input), r2 = runThreeRolePipeline(input);
+  assert.strictEqual(r1.markdown, r2.markdown); assert.deepStrictEqual(r1.selection, r2.selection);
 });
+
+test('10. #253 권장 조합 4개가 섹션에 붙는다(Top7 기준)', () => {
+  const res = runThreeRolePipeline({ orchestrator: [{ modelId: 'o1', score: 90 }], reviewer: [{ modelId: 'r1', score: 80 }], worker: [{ modelId: 'w1', score: 70 }], options: { enabled: true } });
+  assert.equal(res.sections?.combinations?.length, 4); assert.ok(res.sections?.combinations?.[0]?.includes('```mermaid')); });

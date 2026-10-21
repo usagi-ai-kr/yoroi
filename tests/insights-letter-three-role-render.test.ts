@@ -83,3 +83,10 @@ test('Top15는 파레토 열을 유지한다', () => {
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 스코어 | effort | 실사용 |'), '6열 머리');
   assert.ok(md.includes('| 1 | 👍 | model-1 | 100.00 | medium |'), '파레토 셀 유지');
 });
+
+test('#260: 3역할 모델 셀은 표시 정규화(effort·free 접미 제거)', () => {
+  const md = renderThreeRoleSection('reviewer', [{ modelId: 'deepseek-v4-1-flash-free', baseModelId: 'deepseek-v4-1-flash-free',
+    rank: 1, score: 74.2, effort: 'max' }], 7);
+  assert.ok(md.includes('| deepseek-v4-1-flash |'), md);
+  assert.ok(!md.includes('-free |'), 'free 접미 제거');
+});

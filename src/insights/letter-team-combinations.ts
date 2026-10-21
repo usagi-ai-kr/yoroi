@@ -6,7 +6,7 @@ import type { RoleCandidate } from './letter-role-selection.js';
 import { keyOf, runnersUp, sorted, type RoleRunnersUp, type TeamPlan } from './letter-team-runners.js';
 
 export type TeamRole = 'orchestrator' | 'reviewer' | 'worker';
-export type TeamCombinationKey = 'best-1+1+3' | 'best-1+2' | 'open-1+1+3' | 'open-1+2';
+export type TeamCombinationKey = 'best-1+1+3' | 'best-1+2' | 'free-1+1+3' | 'free-1+2';
 export interface TeamSlot { readonly role: TeamRole; readonly modelId: string; readonly score?: number; readonly effort?: string; readonly free?: boolean }
 export interface TeamCombination {
   readonly key: TeamCombinationKey;
@@ -25,8 +25,8 @@ export interface TeamCombinationInput {
     readonly reviewer: readonly RoleCandidate[];
     readonly worker: readonly RoleCandidate[];
   };
-  /** 검증된 오픈 웨이트 base id 집합(비어 있으면 오픈 조합은 구성 불가 — 브랜드명 자동 판정 금지). */
-  readonly openWeightKeys?: ReadonlySet<string>;
+  /** #261: Free 정책 후보 풀(verified Free catalog + 역할별 측정 점수). 없으면 Free 조합은 구성 불가. */
+  readonly freePool?: TeamPlan;
   /** 점수 없는 Free 워커 fallback({ modelId, free: true }). 점수 후보가 부족할 때만 채운다. */
   readonly freeWorkerFallback?: readonly RoleCandidate[];
 }
@@ -90,11 +90,9 @@ export const buildTeamCombinations = (input: TeamCombinationInput): readonly Tea
   const free = input.freeWorkerFallback ?? [];
   const freshFree = (list: readonly RoleCandidate[]): readonly RoleCandidate[] => free.filter(f => !list.some(c => keyOf(c) === keyOf(f)));
   const sw = sorted(input.top15.worker), base: TeamPlan = { o: sorted(input.top15.orchestrator), r: sorted(input.top15.reviewer), w: [...sw, ...freshFree(sw)] };
-  const open = input.openWeightKeys ?? new Set<string>();
-  const only = (list: readonly RoleCandidate[]): readonly RoleCandidate[] => list.filter(c => open.has(keyOf(c)));
-  const ow = only(base.w), openPlan: TeamPlan = { o: only(base.o), r: only(base.r), w: [...ow, ...freshFree(ow)] };
+  const freePlan: TeamPlan = input.freePool ?? { o: [], r: [], w: [] };
   return [
     buildOne('best-1+1+3', '가장 최선 · 오케 1 + 리뷰 1 + 워커 3', base, '1+1+3'), buildOne('best-1+2', '가장 최선 · 오케 1 + 워커 2', base, '1+2'),
-    buildOne('open-1+1+3', '오픈 웨이트·Free · 오케 1 + 리뷰 1 + 워커 3', openPlan, '1+1+3'), buildOne('open-1+2', '오픈 웨이트·Free · 오케 1 + 워커 2', openPlan, '1+2'),
+    buildOne('free-1+1+3', 'Free · 오케 1 + 리뷰 1 + 워커 3', freePlan, '1+1+3'), buildOne('free-1+2', 'Free · 오케 1 + 워커 2', freePlan, '1+2'),
   ];
 };

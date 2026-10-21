@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderFreeSectionMarkdown } from '../src/insights/letter-markdown-free.js';
 import { freeRowsFrom, freeRowOrder, type FreeRow } from '../src/insights/letter-markdown-free-sort.js';
+import { freeDisplayId } from '../src/insights/letter-markdown-free-table.js';
 import type { RoleLists } from '../src/insights/letter-top10-unified.js';
 
 const entry = (modelId: string) => ({ modelId, rank: 1, scoreText: '70.0', indexText: '70.0', plans: [] as string[],
@@ -77,4 +78,10 @@ test('80.46/80.54는 표시 그대로·둘 다 파레토·id 순서를 유지한
   const rows = freeRowsFrom(L, [], Infinity);
   assert.deepEqual(rows.map(r => [r.modelId, r.orchestrator?.score]), [['m-a', '80.46'], ['m-b', '80.54']]);
   assert.ok(rows.every(r => r.pareto), '1자리 동점이라 둘 다 파레토');
+});
+
+test('#260: Free 표 표시명도 같은 규칙으로 정규화된다', () => {
+  assert.equal(freeDisplayId('deepseek-v4-1-flash-free'), 'deepseek-v4-1-flash');
+  assert.equal(freeDisplayId('beam-free'), 'beam');
+  assert.equal(freeDisplayId('muse-spark-1-3-xhigh'), 'muse-spark-1-3');
 });

@@ -1,6 +1,7 @@
 import { PARETO_MARK } from './letter-top10-legend.js';
 import type { CalibrationRunRecord } from './calibration-store.js';
 import type { FreeCell, FreeRow } from './letter-markdown-free-sort.js';
+import { displayModelId } from './model-display.js';
 
 /** #196: Free 경로 문자열 열은 제거하고 플랜별 체크 열로 바꾼다(확인된 플랜명 기준). */
 const PATH: Readonly<Record<string, string>> = {
@@ -62,7 +63,7 @@ export const workabilityCell = (row: FreeRow): string => {
   return cell === '미검증' ? '' : cell;
 };
 /** #194: Free 표의 모델 열은 표시용으로만 '-free' 접미사를 뗀다(내부 id 는 유지). */
-export const freeDisplayId = (modelId: string): string => modelId.replace(/-free$/, '');
+export const freeDisplayId = (modelId: string): string => displayModelId(modelId);
 export const freeMarkdownRows = (rows: readonly FreeRow[], withWorkability = hasMeaningfulWorkability(rows)): string[] => rows.map(row =>
   `| ${freeDisplayId(row.modelId)} | ${freeCell(row.orchestrator)} | ${freeCell(row.worker)} | ${row.indexText ?? '-'} | ${freePlanCheck(row.plans, FREE_ZEN)} | ${freePlanCheck(row.plans, FREE_GO)} | ${freeNote(row)}${withWorkability ? ` | ${workabilityCell(row)}` : ''} |`);
 /** 3역할 표 행: 리뷰어 열을 오케·워커 사이에 둔다. 리뷰어 근거 없음은 '-'. */

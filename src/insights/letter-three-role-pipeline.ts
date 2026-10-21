@@ -2,8 +2,9 @@ import type { RoleCandidate } from './letter-role-selection.js';
 import { selectThreeRoles, type ThreeRoleSelectionOutput, type WeightClassifier } from './letter-three-role.js';
 import { renderThreeRoleMarkdown, renderThreeRoleSection } from './letter-three-role-render.js';
 import { applyReviewerPolicy, type ReviewerPolicyConfig } from './letter-reviewer-policy.js';
-import { buildTeamCombinations, loadOpenWeightKeys } from './letter-team-combinations.js';
-import { renderTeamMermaid, runnersUpCaption } from './letter-mermaid.js';
+import { buildTeamCombinations } from './letter-team-combinations.js';
+import { freePolicyPool } from './letter-team-runners.js';
+import { combinationBadges, renderTeamMermaid, runnersUpCaption } from './letter-mermaid.js';
 
 export interface ThreeRoleSections {
   readonly orchestrator: string;
@@ -27,6 +28,8 @@ export interface ThreeRolePipelineInput<T extends RoleCandidate = RoleCandidate>
   readonly worker?: readonly T[];
   /** 점수 없는 Free 워커 fallback({ modelId, free: true }). */
   readonly freeWorkerFallback?: readonly T[];
+  /** #261: verified Free catalog 모델 id(무료 조합 후보 — Beam 포함). */
+  readonly freeCatalogModelIds?: readonly string[];
   readonly options?: ThreeRolePipelineOptions<T>;
 }
 
@@ -64,10 +67,13 @@ export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(
   });
 
   // #253: 역할별 Top15 로 권장 조합 4개를 계산해 본문 전용 Mermaid 블록으로 만든다(선발·점수 무변경).
+  // #261: Free 정책 풀 = verified Free catalog(Beam 포함) + 역할별 측정 점수(canonical id 매칭).
+  const freePool = freePolicyPool(input.freeCatalogModelIds ?? [], { o: selection.orchestrator.top15,
+    r: selection.reviewer.top15, w: selection.worker.top15 });
   const combinations = buildTeamCombinations({ top15: {
     orchestrator: selection.orchestrator.top15, reviewer: selection.reviewer.top15, worker: selection.worker.top15 },
-    openWeightKeys: loadOpenWeightKeys(), ...(input.freeWorkerFallback !== undefined && { freeWorkerFallback: input.freeWorkerFallback }) })
-    .map(combination => `**${combination.label}**\n\n${renderTeamMermaid(combination)}\n\n${runnersUpCaption(combination.runnersUp)}`);
+    ...(input.freeWorkerFallback !== undefined && { freeWorkerFallback: input.freeWorkerFallback }), freePool })
+    .map(combination => `**${combination.label}** ${combinationBadges(combination)}\n\n${renderTeamMermaid(combination)}\n\n${runnersUpCaption(combination.runnersUp)}`);
   const sections: ThreeRoleSections = {
     orchestrator: renderThreeRoleSection('orchestrator', selection.orchestrator.all, renderDepth),
     reviewer: renderThreeRoleSection('reviewer', selection.reviewer.all, renderDepth),

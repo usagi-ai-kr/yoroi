@@ -15,9 +15,9 @@ test('노드 ID 는 고정(O/R/W1..)이고 라벨에 모델명만 담는다', ()
     slot('worker', 'w-a', 70), slot('worker', 'w-b', 60), slot('worker', 'w-c', 50)]));
   assert.ok(md.startsWith('```mermaid\n'), 'mermaid 펜스');
   assert.ok(md.trimEnd().endsWith('```'), '펜스 닫기');
-  assert.ok(md.includes('  O["오케스트레이터 · o-a"]'), 'O 노드');
-  assert.ok(md.includes('  R["리뷰어 · r-a"]'), 'R 노드');
-  assert.ok(md.includes('  W1["워커 1 · w-a"]') && md.includes('  W3["워커 3 · w-c"]'), 'W1..W3 고정 ID');
+  assert.ok(md.includes('  O["🧭 오케스트레이터 · o-a"]'), 'O 노드');
+  assert.ok(md.includes('  R["🔍 리뷰어 · r-a"]'), 'R 노드');
+  assert.ok(md.includes('  W1["🛠️ 워커 1 · w-a"]') && md.includes('  W3["🛠️ 워커 3 · w-c"]'), 'W1..W3 고정 ID');
   assert.ok(md.includes('O --> R') && md.includes('O --> W1'), '오케 → 나머지 간선');
   assert.ok(!md.includes('effort'), 'effort 미표시(#253 요구 3)');
 });
@@ -49,8 +49,8 @@ const cand = (modelId: string, score?: number, free?: boolean) =>
 test('차선은 조합 밖 최고 후보이며 1+2 에는 리뷰어 차선이 없다', () => {
   const top = { orchestrator: [cand('o1', 90), cand('o2', 80)], reviewer: [cand('r1', 85)], worker: [cand('w1', 70), cand('w2', 60), cand('w3', 50)] };
   const [best, small] = [buildTeamCombinations({ top15: top })[0]!, buildTeamCombinations({ top15: top })[1]!];
-  assert.equal(runnersUpCaption(best.runnersUp), '- 차선: 오케스트레이터 o2 · 리뷰어 - · 워커 -', '1+1+3 은 3역할 차선·후보 없으면 -');
-  assert.equal(runnersUpCaption(small.runnersUp), '- 차선: 오케스트레이터 o2 · 워커 w3', '1+2 는 리뷰어 차선 없음');
+  assert.equal(runnersUpCaption(best.runnersUp), '**🥈 차선**\n- 🧭 오케스트레이터: o2\n- 🔍 리뷰어: -\n- 🛠️ 워커: -', '1+1+3 은 3역할 차선·후보 없으면 -');
+  assert.equal(runnersUpCaption(small.runnersUp), '**🥈 차선**\n- 🧭 오케스트레이터: o2\n- 🛠️ 워커: w3', '1+2 는 리뷰어 차선 없음');
   assert.ok(!runnersUpCaption(small.runnersUp).includes('리뷰어'), '1+2 캡션에 리뷰어 없음');
   assert.ok(!runnersUpCaption(best.runnersUp).includes('```'), '캡션은 fence 밖 문자열');
 });
@@ -61,26 +61,34 @@ test('Free 후보 노드·캡션에 Free 표시, 총점·unmeasured 분리', () 
   const combo = buildTeamCombinations({ top15: top, freeWorkerFallback: free })[0]!;
   assert.equal(combo.feasible, true);
   assert.deepEqual([combo.totalScore, combo.unmeasured], [90 + 80 + 70, 2], '측정만 합산·미측정 수 노출');
-  assert.ok(renderTeamMermaid(combo).includes('beam-x · Free'), '노드 Free 표시');
-  assert.ok(runnersUpCaption(combo.runnersUp).includes('beam-z (Free)'), '캡션 Free 표시');
+  assert.ok(renderTeamMermaid(combo).includes('beam-x 🆓'), '노드 Free 표시');
+  assert.ok(runnersUpCaption(combo.runnersUp).includes('beam-z 🆓'), '캡션 Free 표시');
   assert.ok(combo.slots.every(s => s.score !== undefined || s.free === true), '점수 없음은 free 표시뿐');
 });
 
 test('구성 불가 조합의 차선 캡션은 - 이다(가짜 후보 없음)', () => {
   assert.equal(runnersUpCaption({}), '-');
   const top = { orchestrator: [cand('o1', 90)], reviewer: [cand('r1', 80)], worker: [cand('w1', 70)] };
-  const combos = buildTeamCombinations({ top15: top, openWeightKeys: new Set(['w1']) });
+  const combos = buildTeamCombinations({ top15: top, freePool: { o: [], r: [], w: [cand('w1', 70)] } });
   assert.equal(combos[2]!.feasible, false);
   assert.equal(runnersUpCaption(combos[2]!.runnersUp), '-', '구성 불가는 -');
 });
 
 test('차선 캡션 모델 id를 이스케이프한다', () => {
-  assert.equal(runnersUpCaption({ orchestrator: { modelId: 'm`x\ny' } }), '- 차선: 오케스트레이터 m x y');
+  assert.equal(runnersUpCaption({ orchestrator: { modelId: 'm`x\ny' } }), '**🥈 차선**\n- 🧭 오케스트레이터: m x y');
 });
 
-test('오픈 1+2 도 리뷰어 차선이 없다', () => {
+test('free 1+2 도 리뷰어 차선이 없다', () => {
   const top = { orchestrator: [cand('o1', 90), cand('o2', 80)], reviewer: [cand('r1', 85)], worker: [cand('w1', 70), cand('w2', 60)] };
-  const combos = buildTeamCombinations({ top15: top, openWeightKeys: new Set(['o1', 'o2', 'r1', 'r2', 'w1', 'w2']) });
+  const combos = buildTeamCombinations({ top15: top, freePool: { o: [cand('o1', 90), cand('o2', 80)],
+    r: [cand('r1', 85), cand('r2', 75)], w: [cand('w1', 70), cand('w2', 60)] } });
   assert.equal(combos[3]!.feasible, true, '오픈 1+2 구성 가능');
-  assert.ok(!runnersUpCaption(combos[3]!.runnersUp).includes('리뷰어'), '오픈 1+2 에도 리뷰어 차선 없음');
+  assert.ok(!runnersUpCaption(combos[3]!.runnersUp).includes('리뷰어'), 'free 1+2 에도 리뷰어 차선 없음');
+});
+
+test('#260: Mermaid 라벨·차선 캡션은 표시 정규화된 모델 id를 쓴다', () => {
+  const combo = { key: 'best-1+1+3' as const, label: 'x', slots: [{ role: 'orchestrator' as const, modelId: 'deepseek-v4-1-flash-free', score: 90 }],
+    totalScore: 0, feasible: true, unmeasured: 0, runnersUp: { roles: ['orchestrator' as const], orchestrator: { modelId: 'beam-free' } } };
+  assert.ok(renderTeamMermaid(combo).includes('O["🧭 오케스트레이터 · deepseek-v4-1-flash"]'), '노드 라벨 정규화');
+  assert.equal(runnersUpCaption(combo.runnersUp), '**🥈 차선**\n- 🧭 오케스트레이터: beam', '캡션 정규화');
 });

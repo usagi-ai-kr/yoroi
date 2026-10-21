@@ -32,18 +32,17 @@
 
 ## 무료 초과 판별과 재시도
 
-- 권장 조건: 연결한 공급자 `opencode` + `error.name === "APIError"` + 무료 초과 전용 표식. HTTP 429나 `isRetryable`만으로 판별하지 않는다.
-- 강한 표식: `error.data.responseBody`를 제한된 크기로 JSON 해석하여 `error.type === "FreeUsageLimitError"` 확인. 원문은 저장·전달하지 않는다.
-- 서버 소스는 이 오류를 HTTP **429**, `{ type: "error", error: { type, message }, metadata }`로 직렬화하고 값이 있으면 `retry-after` 헤더(초)를 붙인다.
-- 호환 메시지 조건: `data.message`의 `Free usage exceeded` 표식. #72의 `Free usage exceeded, retrying in 11h`는 예시이며 이 설치본의 실제 수신 문구는 **관측됨(2026-10-12, zen-free-observations.md)**: "Rate limit exceeded. Please try again later."였고 언어별 전체 목록은 미확인이다.
+- V1 판정: 공급자 `opencode` + `error.name === "APIError"` + 무료 초과 전용 표식만(429·isRetryable 단독 판별 금지, 원문은 저장·전달하지 않음).
+- V2 판정(`yoroi/signals.js`): `error.type`이 usage/limit 표식, `message`가 `Free usage exceeded` 표식, 또는 free 세션에서 확인된 `Rate limit exceeded` 문구일 때만 **기록**한다. **표식이 없는 429(예 `Upstream request failed: Endpoint is unavailable.`)는 기록하지 않는다** — 일시 upstream 장애가 무료 락을 만들지 않는다.
+- 기록하는 429는 두 형태뿐이다: 명시적 quota 표식, 그리고 `http.response` 429 + **유효한 `retry-after`/`retry-after-ms`**(존재·범위 유효). retry-after가 없거나 범위를 벗어나면 미확인으로 두고 락을 만들지 않는다.
+- 서버 소스는 이 오류를 HTTP **429**, `{ type: "error", error: { type, message }, metadata }`로 직렬화하고 값이 있으면 `retry-after` 헤더(초)를 붙인다. 호환 메시지 조건은 `data.message`의 `Free usage exceeded` 표식이며, 이 설치본의 실제 수신 문구는 **관측됨(2026-10-12, zen-free-observations.md)**: "Rate limit exceeded. Please try again later."다(언어별 전체 목록 미확인).
 - `ProviderAuthError`, 네트워크 오류, 일반 `RateLimitError`, `GoUsageLimitError`, `BlackUsageLimitError`, 다른 공급자 오류는 무료 초과로 처리하지 않는다.
-- `session.error`는 재시도 종료 후 발생할 수 있다. **즉시 한도 감지**가 필요하면 `session.status`의 `properties.status.type === "retry"`도 고려한다.
-- 1.18.34 소스의 `status.action.reason === "free_tier_limit"`, `status.action.provider === "opencode"`는 추가 표식이다. 로컬 1.18.29 타입에는 `action`이 없어 런타임 가드가 필요하다.
+- `session.error`는 재시도 종료 후 발생할 수 있다. **즉시 한도 감지**가 필요하면 `session.status`의 `properties.status.type === "retry"`도 고려한다. 1.18.34 소스의 `status.action.reason === "free_tier_limit"`, `status.action.provider === "opencode"`는 추가 표식이다.
 - CLI는 무료 오류 body 표식을 재시도 안내 `Free usage exceeded, subscribe to Go`로 바꿀 수 있다. `retrying in 11h`만 기다리면 감지를 놓칠 수 있다.
-- 재시도 시간은 `error.data.responseHeaders["retry-after"]`의 유효한 초/HTTP 날짜 또는 `retry-after-ms`에서 추출 가능하다. 없는 값·잘못된 값은 **미확인**으로 둔다.
-- 문구 호환 파서는 `retrying in` 뒤의 숫자와 `h/m/s`를 엄격히 해석한다(합성 `11h` → 39600초). 실제 해당 문구 추출은 **관측됨(2026-10-12, zen-free-observations.md)**(retry_at=관측+30분; 문구/헤더 경로는 미구분).
+- 재시도 시간은 `error.data.responseHeaders["retry-after"]`의 유효한 초/HTTP 날짜 또는 `retry-after-ms`에서 추출 가능하다. 없는 값·잘못된 값은 **미확인**으로 둔다. 문구 호환 파서는 `retrying in` 뒤의 숫자와 `h/m/s`를 엄격히 해석한다(합성 `11h` → 39600초). 실제 해당 문구 추출은 **관측됨(2026-10-12, zen-free-observations.md)**(retry_at=관측+30분; 문구/헤더 경로는 미구분).
 - `status.next`는 다음 재시도 시각이며 해제를 보장하지 않는다. 서버 retryAt은 2026-10-15 사용자 지시로 pretty Reset 열에 `~KST` 추정 표기하되 관측 불일치(잠금 유지)가 있어 자동 해제 근거로 쓰지 않는다.
-근거: [서버 오류 응답](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/console/app/src/routes/zen/util/handler.ts#L505), [재시도 정책](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/retry.ts), [상태 스키마](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/schema/src/session-status-event.ts).
+- `retryAt`이 지나도 **자동 해제하지 않는다**(표시만 `retry passed (unverified)`). 해제는 실제 성공 완료 보고(`--ok`)로만 이뤄진다.
+근거: [서버 오류 응답](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/console/app/src/routes/zen/util/handler.ts#L505) · [재시도 정책](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/retry.ts) · [상태 스키마](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/schema/src/session-status-event.ts).
 
 ## 정상 응답 완료와 1회 해제
 
@@ -51,12 +50,13 @@
 - 보수적 완료 조건은 `info.finish === "stop"`이다. `tool-calls`·`unknown`·`content-filter`·`error`·완료 전 갱신은 제외한다. 다른 finish의 정상 취급은 **미확인**이다.
 - processor는 오류·중단에도 `time.completed`를 기록한다. prompt가 이후 content-filter/구조화 출력 오류를 붙일 수도 있어 완료 시각 하나만으로 해제하면 안 된다.
 - 더 엄격한 처리는 세션별 최신 메시지를 유지하고 idle 시점에 후보가 계속 오류 없이 완료인지 재확인한다. `session.idle` 단독은 오류 후에도 발생하므로 성공 증거가 아니다.
+- V2 해제(`yoroi/release.js`): 후보 등록 후 `ctx.session.wait()`를 15초 기다리고, **타임아웃·예외가 나면 후보를 버리지 않고 `ctx.session.context()`로 마지막 assistant를 재확인**한다. `time.completed` 숫자 + `finish === 'stop'` + 모델 일치를 모두 만족할 때만 `report --ok`를 세션당 1회 발행한다(재시도 후 재확인).
 - 무료 모델은 읽기 전용 카탈로그의 provider `opencode` 모델 비용(input/output 0)으로 확인한다. `-free` 접미사만 쓰면 무료 `big-pickle`·`grok-code`를 놓친다(로컬 공개 모델 캐시에서 확인).
 - 가격 0 메타데이터는 카탈로그 기준이며 미래 가격·계정별 무료 자격은 **미확인**이다. 미등록 모델은 무료로 추측하지 않는다.
 - #72 요구: 초기 `unlockPending=true`; 초과 관측 시 true; 첫 정상 완료 보고 성공 후 false. 보고 진행 중 중복 호출을 막고 실패 시 재시도 가능하게 유지한다.
 - Zen Free 한도 범위(전역/모델별) UNVERIFIED, 현재는 전역 해제.
 - 한 인스턴스의 여러 세션 이벤트가 겹칠 수 있으므로 메모리 갱신·외부 보고를 직렬화한다. 프로세스 간 멱등성은 yoroi 저장소가 담당한다.
-근거: [완료 정리](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/processor.ts#L609), [완료 후 오류 처리](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/prompt.ts#L1295), [idle 발행](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/status.ts), [무료 모델 선택](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/provider/provider.ts#L221).
+근거: [완료 정리](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/processor.ts#L609) · [완료 후 오류 처리](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/prompt.ts#L1295) · [idle 발행](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/session/status.ts) · [무료 모델 선택](https://github.com/anomalyco/opencode/blob/v1.18.34/packages/opencode/src/provider/provider.ts#L221).
 
 ## 전역 경로·로드·런타임·외부 명령
 

@@ -38,9 +38,12 @@ yoroi zen-free report --ok
 ### OpenCode V2 플러그인과 자동 관리
 
 OpenCode V2 플러그인(`integrations/opencode-v2/`)은 세션 응답을 감시해 잠금과 해제를 자동 보고합니다.
-- **판정 범위**: V2 model 객체(id·providerID)와 `error.type` 기준 quota를 정규화하며, 429 판정을 opencode 제공자의 Free 모델(`-free` 접미사 및 `big-pickle`, `grok-code`)로 한정합니다. 일반 'Rate limit exceeded' 문구는 free 확인 세션에 한해 수용해 타 공급자 오탐을 방지합니다(`yoroi/signals.js`).
+- **판정 범위**: 명시적 quota 표식(`usage/limit` 유형, `Free usage exceeded` 문구)은 모델과 무관하게 기록하고, 일반 'Rate limit exceeded' 문구는 free 확인 세션(`-free` 접미사 및 `big-pickle`, `grok-code`)에 한해 기록해 타 공급자 오탐을 막습니다(`yoroi/signals.js`).
+- **일시 429 오탐 방지**: `Upstream request failed: Endpoint is unavailable.` 처럼 **quota 표식이 없는 429는 락으로 기록하지 않습니다.** `http.response` 429는 유효한 `retry-after`/`retry-after-ms`가 있을 때만 기록하고, 없으면 기록하지 않습니다. 일시적인 upstream 장애가 사용 가능한 모델을 잠그지 않습니다.
 - **성공 완료 후 해제**: HTTP 2xx 응답이 primary Free 모델 세션일 때 후보 등록 후 `ctx.session.wait()` 완료를 확인합니다. 마지막 assistant 메시지가 `time.completed` 숫자, `finish === 'stop'`, 모델 일치를 만족할 때만 `report --ok`를 세션당 1회 발행합니다(`yoroi/release.js`).
-- **플러그인 설치**: 갱신된 V2 플러그인을 적용하려면 `node scripts/opencode-hook.mjs install`을 실행합니다(`yoroi/` 하위 모듈 포함 설치 및 검증).
+- **해제 대기 지연**: `ctx.session.wait()`가 15초를 넘겨 타임아웃되어도 후보를 버리지 않고 `ctx.session.context()`로 마지막 assistant를 다시 확인합니다. 이미 idle이거나 실행이 긴 세션에서도 정상 완료가 확인되면 `report --ok`가 발행됩니다.
+- **표시와 해제의 차이**: `retryAt`이 지나도 자동 해제하지 않고 `retry passed (unverified)`로만 알려줍니다. 상태 표시는 실제 해제를 뜻하지 않으며, 해제는 실제 성공 완료 보고로만 이뤄집니다.
+- **플러그인 설치**: 갱신된 V2 플러그인을 적용하려면 `node scripts/opencode-hook.mjs install`을 실행합니다(`yoroi/` 하위 모듈 포함 설치 및 검증). 설치본이 저장소보다 오래된 경우 위 판정·해제 동작이 반영되지 않을 수 있습니다.
 
 저장소 오류나 `--json` 오류 계약은 [체크와 문제 해결](Checks-and-Troubleshooting)을 확인하세요.
 

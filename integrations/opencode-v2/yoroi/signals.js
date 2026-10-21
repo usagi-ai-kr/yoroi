@@ -18,6 +18,5 @@ export function limitError(error, freeConfirmed = false) {
 
 // 429 단독 기록은 opencode free 세션 한정 — 미등록·유료·타 공급자 모델의 429는 무기록(리뷰 (a)).
 export function shouldRecord(model, error) {
-  if (limitError(error, freeScope(model))) return true;
-  return error?.status === 429 && freeScope(model);
+  return limitError(error, freeScope(model));
 }

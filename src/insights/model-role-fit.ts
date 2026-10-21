@@ -5,8 +5,7 @@ import { resolve } from 'node:path';
 import { packageRootFrom } from '../config/env-file.js';
 import { normalizeModelName } from './model-id.js';
 
-/** #232: messenger 키는 추가하되 관찰이 없으면 비어 둔다(워커 표식 빌려오지 않음). */
-export const ROLE_FIT_ROLES = ['orchestrator', 'reviewer', 'worker', 'messenger'] as const;
+export const ROLE_FIT_ROLES = ['orchestrator', 'reviewer', 'worker'] as const;
 export type RoleFitRole = typeof ROLE_FIT_ROLES[number];
 
 export interface RoleFitEntry { readonly fit: string; readonly note: string }

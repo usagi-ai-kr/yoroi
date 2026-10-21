@@ -14,14 +14,14 @@ export function formatChange(change: RoleChange): string {
   return change;
 }
 export const exitLine = (modelId: string, previousRank: number): string => `🚪 이탈: ${modelId} (전일 ${previousRank}위)`;
-/** 오케·리뷰어 차원은 성능/속도/가성비, 워커·메신저는 성능/속도/가격+사용량 가산. */
+/** 오케·리뷰어 차원은 성능/속도/가성비, 워커는 성능/속도/가격+사용량 가산. */
 export const ROLE_HEADINGS = SECTION_HEADINGS;
 export const ROLE_HEADINGS_TOP7 = { orchestrator: '## 🧭 오케스트레이터·리뷰어 Top7 (판단·계획·검토)',
-  worker: '## 🛠️ 워커·메신저 Top7 (실행·코딩·전달)' } as const;
+  worker: '## 🛠️ 워커 Top7 (실행·코딩·전달)' } as const;
 export const ROLE_HEADINGS_TOP15 = { orchestrator: '## 🧭 오케스트레이터·리뷰어 Top15 (판단·계획·검토)',
-  worker: '## 🛠️ 워커·메신저 Top15 (실행·코딩·전달)' } as const;
-export const ROLE_LABELS = { orchestrator: '오케스트레이터·리뷰어', worker: '워커·메신저' } as const;
-export const ZONE_TEXT = `스코어 ≥ 후보 최고 스코어 × ${OPTIMAL_ZONE_THRESHOLDS.orchestrator * 100}%(오케스트레이터·리뷰어)/${OPTIMAL_ZONE_THRESHOLDS.worker * 100}%(워커·메신저)`;
+  worker: '## 🛠️ 워커 Top15 (실행·코딩·전달)' } as const;
+export const ROLE_LABELS = { orchestrator: '오케스트레이터·리뷰어', worker: '워커' } as const;
+export const ZONE_TEXT = `스코어 ≥ 후보 최고 스코어 × ${OPTIMAL_ZONE_THRESHOLDS.orchestrator * 100}%(오케스트레이터·리뷰어)/${OPTIMAL_ZONE_THRESHOLDS.worker * 100}%(워커)`;
 const SOURCE_LABELS = { aa: 'AA', cognition: 'Cog', openrouter: 'OR', opencode: 'OCD' } as const;
 const sourceText = (role: OptimalZoneRole, dimension: ScoreDimension): string =>
   ROLE_SOURCES[role][dimension].map(source => SOURCE_LABELS[source]).join('·') || '—';

@@ -15,7 +15,7 @@ test('composition-injected compact renderer is used by default and stays under t
   const rendered = renderInsights(view, { compact });
   assert.equal(rendered.exitCode, 0);
   assert.match(rendered.stdout, /## 🧭 오케스트레이터·리뷰어 Top10/);
-  assert.match(rendered.stdout, /## 🛠️ 워커·메신저 Top10/);
+  assert.match(rendered.stdout, /## 🛠️ 워커 Top10/);
   assert.ok(rendered.stdout.length <= 3600, `length=${rendered.stdout.length}`);
   assert.match(rendered.stdout, /^## 요약$/m);
   assert.match(rendered.stdout, /출처: OpenRouter \(CC-BY-4\.0\)/); assert.match(rendered.stdout, /출처: Artificial Analysis \(라이선스 미상\)/); assert.match(rendered.stdout, /출처: OpenCode Data \(내부 참조 · 약관상 자동 추출 제한\) \(라이선스 미상\)/);

@@ -35,9 +35,7 @@ export function composeThreeRoleComments(parts: LetterParts, threeRole: ThreeRol
   const r = renderThreeRoleSection('reviewer', t.reviewer, 15) + (t.reviewer.length === 0 && threeRole.emptyCause ? `\n\n- 제외 사유: ${threeRole.emptyCause}` : '');
   const w = renderThreeRoleSection('worker', t.worker, 15);
   const free = parts.freeSection ?? parts.comments[2] ?? '';
-  // U3b: 메신저가 있을 때만 4댓글(o15/r15/w15/m15+Free), 없으면 기존 3댓글(o15/r15/w15+Free)로 폴백한다.
-  if (!t.messenger || t.messenger.length === 0) return [o, r, `${w}\n\n${free}`];
-  return [o, r, w, `${renderThreeRoleSection('messenger', t.messenger, 15)}\n\n${free}`];
+  return [o, r, `${w}\n\n${free}`];
 }
 /** env opt-in → runInsights threeRole 입력. off면 빈 객체다. */
 export const threeRoleInputFromEnv = (configEnv: Readonly<Record<string, string | undefined>>): { threeRole: true } | Record<string, never> => letterThreeRoleConfig(configEnv).enabled ? { threeRole: true as const } : {};

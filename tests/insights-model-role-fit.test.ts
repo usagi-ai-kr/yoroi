@@ -88,7 +88,7 @@ test('#232: roleFitMark 은 정성 표식만 돌려주고 관찰 없음은 undef
   assert.equal(roleFitMark('glm-5-3-flash', 'worker', FIT_FILE), '◎', '역할별 표식 그대로');
   assert.equal(roleFitMark('glm-5-3-flash-free', 'worker', FIT_FILE), '◎', 'Free id 정규화 동일');
   assert.equal(roleFitMark('unknown-model', 'worker', FIT_FILE), undefined, '관찰 없음 undefined');
-  assert.equal(roleFitMark('glm-5-3-flash', 'messenger', FIT_FILE), undefined, '메신저는 워커 표식 빌려오지 않음');
+  assert.equal(roleFitMark('glm-5-3-flash', 'orchestrator', FIT_FILE), undefined, '관찰 없는 역할은 undefined');
 });
 
 test('렌더 전용: 정성 노트는 점수·순위 칸에 영향을 주지 않는다', () => {

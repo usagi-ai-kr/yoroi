@@ -4,26 +4,23 @@ import { packageRootFrom } from '../config/env-file.js';
 
 /** p65: 역할별 차원 가중치를 `config/score-weights.json`에서 읽는다(계약: docs/insights/score-weights.md).
  *  파일이 없으면 저장소 기본값을 쓴다. 값 오류(모르는 키·누락·숫자 아님·음수·합≠1)는 예외로 멈춘다. */
-export const SCORE_WEIGHT_ROLES = ['orchestrator', 'worker', 'messenger'] as const;
+export const SCORE_WEIGHT_ROLES = ['orchestrator', 'worker'] as const;
 export const SCORE_WEIGHT_DIMENSIONS = ['performance', 'usage', 'speed', 'price'] as const;
 export type ScoreWeightRole = typeof SCORE_WEIGHT_ROLES[number];
 export type ScoreWeightDimension = typeof SCORE_WEIGHT_DIMENSIONS[number];
-/** p75: 오케·리뷰어는 가성비(price)를 쓰지 않아 세 차원만 가진다. 워커·메신저는 네 차원이다.
+/** p75: 오케·리뷰어는 가성비(price)를 쓰지 않아 세 차원만 가진다. 워커는 네 차원이다.
  *  R(1.0.2): 오케 가성비 복구로 네 차원이다. */
 export const ROLE_WEIGHT_DIMENSIONS: Readonly<Record<ScoreWeightRole, readonly ScoreWeightDimension[]>> = {
-  orchestrator: ['performance', 'usage', 'speed', 'price'], worker: SCORE_WEIGHT_DIMENSIONS, messenger: SCORE_WEIGHT_DIMENSIONS };
+  orchestrator: ['performance', 'usage', 'speed', 'price'], worker: SCORE_WEIGHT_DIMENSIONS };
 export type ScoreWeights = Readonly<Record<ScoreWeightRole, Readonly<Partial<Record<ScoreWeightDimension, number>>>>>;
 export const SCORE_WEIGHTS_PATH = resolve(packageRootFrom(import.meta.url), 'config/score-weights.json');
 /** 저장소 기본값. 사용자가 파일로 바꾸기 전까지 이 숫자를 코드에서 바꾸지 않는다.
  *  2026-10-15 사용자 확정: 워커 성능/사용량/속도/가격 .30/.20/.10/.40(존 임계 .60, priceMissing .99 유지 —
  *  시뮬레이션 근거 scratch/reports/yoroi-worker-tune-cap2.md·yoroi-worker-tune-final-review.md).
- *  R(1.2.1): 오케 성능/사용량/속도/가격 .75/0/.10/.15.
- *  U1(2026-10-21): 메신저 .20/.10/.30/.40 추가(권고값, 임계 .60·priceMissing .99는 워커와 공유).
- *  파이프라인 배선은 후속 단위에서 수행하며, 본 단위에서 기존 역할 출력은 바뀌지 않는다. */
+ *  R(1.2.1): 오케 성능/사용량/속도/가격 .75/0/.10/.15. */
 export const SCORE_WEIGHTS_DEFAULTS: ScoreWeights = {
   orchestrator: { performance: 0.75, usage: 0, speed: 0.10, price: 0.15 },
-  worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 },
-  messenger: { performance: 0.20, usage: 0.10, speed: 0.30, price: 0.40 } };
+  worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } };
 /** p85: 워커 가산 상한(점). 기본 점수에 더하는 가산(bonus) 최대값이다. */
 export const WORKER_BONUS_CAP_DEFAULT = 5;
 

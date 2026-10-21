@@ -43,11 +43,8 @@ test('4. worker independence', () => {
   const res = selectThreeRoles({
     orchestrator: [c('c1', false)], reviewer: [c('c2', false)],
     worker: [c('c1', false), c('c2', false)],
-    messenger: [{ ...c('c2', false), score: 1 }, { ...c('c1', false), score: 9 }],
   });
   assert.deepEqual(res.worker.all.map(x => x.modelId), ['c1', 'c2']);
-  assert.deepEqual(res.messenger?.all.map(x => x.modelId), ['c1', 'c2'], '메신저 점수 내림차순·워커 겹침 허용');
-  assert.deepEqual(res.messenger?.top7.map(x => x.modelId), ['c1', 'c2']);
 });
 
 test('5. empty/short lists handling', () => {

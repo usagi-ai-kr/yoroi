@@ -20,7 +20,7 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   const data: Top10LetterInput = { publicationDate: '2026-10-12', lists: fakeLists('unified', true), failedSources: ['cognition'] };
   const rendered = renderTop10Letter(data);
   assert.ok(rendered.includes('[AI 인사이트 데일리: 2026-10-12 KST (내부 전용)]'));
-  assert.ok(rendered.includes('두 목록 Top10: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커·메신저) 통과 모델, 보유 요금제 접근 가능만'));
+  assert.ok(rendered.includes('두 목록 Top10: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커) 통과 모델, 보유 요금제 접근 가능만'));
   assert.ok(rendered.includes('정렬: 스코어 내림차순(동점 시 모델명)'));
   assert.ok(rendered.includes('스코어 = 100 × Σ(가중치 × 차원값)'));
   assert.ok(rendered.includes('- 오케 전변형 P1(동점 낮은 effort)') && rendered.includes('워커는 AA intel ≥33만'));
@@ -36,8 +36,8 @@ test('renderTop10Letter renders both role sections, header phrase, pareto star a
   assert.ok(rendered.includes('off-peak·파레토, score 원 API'));
   assert.ok(!rendered.includes('가중치 재정규화'));
   assert.ok(rendered.includes('## 🧭 오케스트레이터·리뷰어 Top10 (판단·계획·검토)'));
-  assert.ok(rendered.includes('## 🛠️ 워커·메신저 Top10 (실행·코딩·전달)'));
-  assert.ok(rendered.includes('- 선두: 오케스트레이터·리뷰어 unified-model-1 (스코어 90.0) · 워커·메신저 unified-model-1 (스코어 90.0)'));
+  assert.ok(rendered.includes('## 🛠️ 워커 Top10 (실행·코딩·전달)'));
+  assert.ok(rendered.includes('- 선두: 오케스트레이터·리뷰어 unified-model-1 (스코어 90.0) · 워커 unified-model-1 (스코어 90.0)'));
   assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(rendered.includes('1. unified-model-1 · effort high · 스코어 90.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus') && rendered.includes('3. unified-model-3 · effort high · 스코어 84.0 · 100/40/50/75 · $2.00/1M · 접근 ChatGPT Plus'));
   assert.ok(!rendered.includes('가성비 1위 · 접근'));
@@ -76,11 +76,11 @@ test('renderTop10Letter summarizes all-new, partial-new, and no-new cohorts per 
       openrouterRankText: 'OpenRouter -', isPareto: false, both: false, change })), exits: [] },
     worker: { entries: [], exits: [] } });
   const allNew = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['신규', '신규']) });
-  assert.ok(allNew.includes('- 변동: 🌱 오케스트레이터·리뷰어 첫 집계: 전일 기록 없음 · 워커·메신저 자료 부족'));
+  assert.ok(allNew.includes('- 변동: 🌱 오케스트레이터·리뷰어 첫 집계: 전일 기록 없음 · 워커 자료 부족'));
   const partialNew = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['유지', '▲1', '진입']) });
-  assert.ok(partialNew.includes('- 변동: 오케스트레이터·리뷰어 상위권 3개 중 2개 순위·진입 변동 (🆕 1개), 🚪 0개 · 워커·메신저 자료 부족'));
+  assert.ok(partialNew.includes('- 변동: 오케스트레이터·리뷰어 상위권 3개 중 2개 순위·진입 변동 (🆕 1개), 🚪 0개 · 워커 자료 부족'));
   const regular = renderTop10Letter({ publicationDate: '2026-10-12', lists: mkLists(['유지', '▲1', '유지']) });
-  assert.ok(regular.includes('- 변동: 오케스트레이터·리뷰어 상위권 3개 중 1개 순위·진입 변동, 🚪 0개 · 워커·메신저 자료 부족'));
+  assert.ok(regular.includes('- 변동: 오케스트레이터·리뷰어 상위권 3개 중 1개 순위·진입 변동, 🚪 0개 · 워커 자료 부족'));
 });
 
 test('partial sources are reported instead of claiming all sources are normal', () => {

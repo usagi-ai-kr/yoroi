@@ -7,6 +7,8 @@ export const MARKDOWN_LIMIT = 65536;
 export const OMISSION_MARK = '(이하 생략 — 전체는 `--full`)';
 /** Attribution lines follow the source registry so a new source (e.g. OpenCode Data) cannot be missed. */
 export const SOURCE_LINES: readonly string[] = SOURCE_ATTRIBUTIONS;
+/** #226: Agent Arena 참고 링크(링크-only). **수집 출처가 아니므로** 배지·출처 목록에 넣지 않는다. */
+export const ARENA_REFERENCE_LINE = '참고: Agent Arena 비용·Net Improvement — https://arena.ai/leaderboard/agent (자동 수집·점수 미반영, 2026-10-21 확인)';
 
 export function escapeShields(text: string): string {
   return encodeURIComponent(text.replace(/_/g, '__').replace(/-/g, '--')).replace(/%20/g, '_');
@@ -54,7 +56,7 @@ const compactDimensionNames = (): string => displayDimensions('orchestrator')
   .map(d => d === 'price' ? `${ROLE_DIMENSION_LABELS.orchestrator.price}/${ROLE_DIMENSION_LABELS.worker.price}` : ROLE_DIMENSION_LABELS.orchestrator[d]).join('·');
 export const SCORE_FORMULA_LINES: readonly string[] = [
   `- 스코어 = 100 × Σ(가중치 × 차원값), 결측 0점(재분배 없음), 동점 모델명`,
-  `- 가중치: 오케·리뷰어 ${weightsText('orchestrator')} / 워커·메신저 ${weightsText('worker')}`,
+  `- 가중치: 오케·리뷰어 ${weightsText('orchestrator')} / 워커 ${weightsText('worker')}`,
   '- 성능: 오케 AA Int·Cog, 워커 AA Int; 사용량: OR/OCD는 워커 가산 전용; 속도: 오케 AA·Cog, 워커 AA 우선·오케 Cog 대체',
   '- 가성비: 오케 max(AA I/(P+.01)·USD/1M 정방향, Cog USD/task 역방향) 소스별 log min-max, 결측 0',
   `- 워커 가격 = cost_per_task·total_cost log 역방향 min-max 평균(없으면 혼합 단가 \`*\`); 가산 = ${WORKER_BONUS_CAP}×평균(Cog 정답률·사용량, 있는 것만)`,

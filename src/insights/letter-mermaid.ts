@@ -1,6 +1,8 @@
 /** #253: Mermaid 렌더 — 고정 노드 ID · 라벨 이스케이프 · 코드 펜스 주입 방지.
  *  모델명은 라벨로만 쓰며(노드 ID 아님) 펜스·문법 주입을 막는다. */
 import type { TeamCombination, TeamRole } from './letter-team-combinations.js';
+import type { RoleCandidate } from './letter-role-selection.js';
+import type { RoleRunnersUp } from './letter-team-runners.js';
 
 const ROLE_LABEL: Record<TeamRole, string> = { orchestrator: '오케스트레이터', reviewer: '리뷰어', worker: '워커' };
 const NODE_ID: Record<TeamRole, string> = { orchestrator: 'O', reviewer: 'R', worker: 'W' };
@@ -23,8 +25,26 @@ export const renderTeamMermaid = (combination: TeamCombination): string => {
     const isWorker = slot.role === 'worker';
     const id = isWorker ? `${NODE_ID.worker}${++workerNo}` : NODE_ID[slot.role];
     const roleLabel = isWorker ? `${ROLE_LABEL.worker} ${workerNo}` : ROLE_LABEL[slot.role];
-    nodes.push(`  ${id}["${escapeMermaidLabel(`${roleLabel} · ${slot.modelId}`)}"]`);
+    const free = (slot as { readonly free?: unknown }).free === true ? ' · Free' : '';
+    nodes.push(`  ${id}["${escapeMermaidLabel(`${roleLabel} · ${slot.modelId}${free}`)}"]`);
     if (slot.role !== 'orchestrator') edges.push(`  ${NODE_ID.orchestrator} --> ${id}`);
   }
   return mermaidFence(['flowchart TB', ...nodes, ...edges]);
+}
+
+/** 캡션 모델명 안전 처리: 줄바꿈·백틱·연속 공백을 한 칸으로. Free 표기는 호출자가 붙인다. */
+const escapeCaptionId = (text: string): string => text.replace(/[`\r\n]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+
+/** 차선 캡션(펜스 밖): 같은 풀에서 조합에 없는 역할별 최고 후보. 없으면 '-'. */
+export function runnersUpCaption(runners: RoleRunnersUp): string {
+  const name = (c: RoleCandidate | undefined): string => {
+    if (c === undefined) return '-';
+    const free = (c as { readonly free?: unknown }).free === true ? ' (Free)' : '';
+    return `${escapeCaptionId(c.modelId)}${free}`;
+  };
+  // 캡션 차선은 **조합에 실제로 있는 역할만**(1+2 는 리뷰어 차선 없음). 후보가 없으면 '-'.
+  const roles = [...new Set(runners.roles ?? (['orchestrator', 'reviewer', 'worker'] as const).filter(role => runners[role] !== undefined))];
+  const label: Record<string, string> = { orchestrator: '오케스트레이터', reviewer: '리뷰어', worker: '워커' };
+  const lanes = roles.map(role => `${label[role] ?? role} ${name(runners[role])}`);
+  return lanes.length ? `- 차선: ${lanes.join(' · ')}` : '-';
 };

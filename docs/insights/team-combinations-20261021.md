@@ -10,10 +10,10 @@
 | --- | --- |
 | `src/insights/letter-team-combinations.ts` (99줄, 신규) | 조합 API — `buildTeamCombinations` · 슬롯 구성(1+1+3 / 1+2) · 조합 내 identityKey 유일 · 역할 합산 점수 최대(전수 탐색) · 결정론적 tie-break · 부족 시 구성 불가 + 사유 · `loadOpenWeightKeys` |
 | `src/insights/letter-mermaid.ts` (30줄, 신규) | Mermaid 렌더 — 고정 노드 ID(O/R/W1..W3) · 라벨 이스케이프(따옴표·대괄호·백틱·특수문자) · 코드 펜스 주입 방지 · 구성 불가 표시 |
-| `config/open-weight-models.json` (신규) | **검증된 6개만 등록** (evidenceUrl·checkedOn·license·version·note 포함) — deepseek-v4-1-flash·glm-5-3-flash·glm-5-3·mimo-v2-6-pro·mimo-v2-6-flash·kimi-k3 ✓ (Muse Spark 1.3·MiniMax M3.1 Flash·Gemini·GPT·Claude·Grok 제외 ✓ · 브랜드 일괄 판정 0 ✓) |
+| `config/open-weight-models.json` (신규) | **검증된 8개 등록** (evidenceUrl·checkedOn·license·version·note 포함) — deepseek-v4-1-flash·glm-5-3-flash·glm-5-3·mimo-v2-6-pro·mimo-v2-6-flash·kimi-k3·muse-spark-1-3·minimax-m3-1-flash ✓ (Muse·MiniMax는 사용자 확인으로 포함 ✓ · Gemini·GPT·Claude·Grok 제외 ✓ · 브랜드 일괄 판정 0 ✓) |
 | `src/insights/letter-three-role-pipeline.ts` (91줄) | `selection.top7` 로 조합 4개를 계산해 `sections.combinations`(Mermaid 블록 문자열 배열)에 첨부 ✓ |
 | `src/insights/letter-three-role-body.ts` (43줄) | `threeRoleBlock` — 워커 섹션 뒤·안내 앞에 `## 🧩 권장 조합` + 블록 삽입 ✓ |
-| `tests/insights-team-combinations.test.ts` (76줄, 신규) | 7건 — 4조합·슬롯 수(5/3)·조합 내 유일성·**합산 최적(그리디 막힘 사례)**·부족 후보·동점 결정론·오픈 필터·registry 6개/제외 |
+| `tests/insights-team-combinations.test.ts` (76줄, 신규) | 8건 — 4조합·슬롯 수(5/3)·조합 내 유일성·**합산 최적(그리디 막힘 사례)**·부족 후보·동점 결정론·오픈 필터·registry 8개/제외·오픈 실구성 |
 | `tests/insights-mermaid.test.ts` (43줄, 신규) | 4건 — 고정 ID·간선·effort 미표시·특수문자/펜스 주입 방지·구성 불가 표기·펜스 2개 |
 | `tests/insights-letter-three-role-pipeline.test.ts` (99줄) | 조합 4개가 섹션에 붙는 회귀 추가 ✓ |
 | `tests/insights-three-role-body.test.ts` (74줄) | 삽입 순서(워커 뒤·안내 앞) 회귀 추가 ✓ |
@@ -49,7 +49,7 @@
 
 ## 5. 남은 위험·재발행 확인
 
-1. **오픈 웨이트 조합의 후보 부족** — 레터의 Top7 에 검증 6개 중 few 만 있으면 '구성 불가' 로 표시될 수 있음 ✓ (실제 데이터 확인 필요 ✓).
+1. **오픈 웨이트 조합의 후보 부족** — 레터의 Top7 에 검증 8개 중 few 만 있으면 '구성 불가' 로 표시될 수 있음 ✓ (실제 데이터 확인 필요 ✓).
 2. **합산 점수의 스케일** — 역할별 점수는 모두 0~100 ✓ → 합산 비교 가능 ✓ (단, 역할별 중요도 차는 미반영 ✓ → 조합은 '대안' ✓).
 3. **본문 길이** — 4블록 추가(≈1.5–2KB) ✓ → `MARKDOWN_LIMIT` 근접 시 details(산출 공식)부터 잘림 ✓ · 조합은 앞쪽 배치 ✓.
 4. **재발행 확인 항목** ✓ — 본문 순서(조합이 안내 위 ✓) · 4개 펜스 ✓ · 5/3슬롯 ✓ · 조합 내 모델 중복 0 ✓ · 오픈 조합에 비검증 모델 0 ✓ · Top7 순위·점수 불변 ✓ · 댓글 3개·Free 8열·실사용 열 불변 ✓.

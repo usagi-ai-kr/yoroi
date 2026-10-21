@@ -12,8 +12,8 @@
 | mimo-v2-6-pro | XiaomiMiMo/MiMo-V2.6-Pro-RL | yes | MIT | 2026-09-22 | https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL | 가중치 공개 |
 | mimo-v2-6-flash | XiaomiMiMo/MiMo-V2.6-Flash-RL | yes | MIT | 2026-09-22 | https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL | 가중치 공개 |
 | kimi-k3 | moonshotai/Kimi-K3 | yes | Kimi K3 License | 2026-07-27 | https://huggingface.co/moonshotai/Kimi-K3 | $20M MaaS/표시 조건 |
-| muse-spark-1-3 | Muse Spark 1.3 (Meta) | no | closed API | n/a | https://models.dev/labs/meta/ | 공개 가중치 없음. Muse Spark Open은 별도 모델 |
-| minimax-m3-1-flash | MiniMax M3.1 Flash | no | 미공개(추후) | n/a | https://www.minimax.io/blog/minimax-m31f | weights later. MiniMax M3 base는 별개 |
+| muse-spark-1-3 | Muse Spark 1.3 (Meta) | yes (사용자 확인) | 미확인(별도 검토) | 2026-10-21 확인 | https://models.dev/labs/meta/ | 사용자 확인(2026-10-21)으로 판정. 공식 페이지와 부분 불일치 가능. Muse Spark Open은 별도 모델 |
+| minimax-m3-1-flash | MiniMax M3.1 Flash | yes (사용자 확인) | 미확인(별도 검토) | 2026-10-21 확인 | https://www.minimax.io/blog/minimax-m31f | 사용자 확인(2026-10-21)으로 판정. 공식 페이지와 부분 불일치 가능. MiniMax M3 base는 별개 |
 | gemini-3-8-flash | Google Gemini | no | closed | n/a | - | 공개 가중치 없음 |
 | gpt-6-* / claude-* / grok-4-7 | OpenAI/Anthropic/xAI | no | closed | n/a | - | 공개 가중치 없음 |
 
@@ -27,12 +27,12 @@
 
 ## 다음 구현 패킷 초안
 
-- `config/open-weight-models.json`(또는 동등 config)에 검증된 6개만 등록.
-- 오픈 웨이트 조합은 registry 조회만 사용. Muse/MiniMax/Gemini/GPT/Claude/Grok 제외.
+- `config/open-weight-models.json`(또는 동등 config)에 검증된 8개만 등록.
+- 오픈 웨이트 조합은 registry 조회만 사용. Muse/MiniMax는 사용자 확인(2026-10-21)으로 포함. Gemini/GPT/Claude/Grok 제외.
 - Muse Spark Open을 쓰려면 별도 model id `muse-spark-open`으로 등록 후에만 사용.
 - 후보 부족 시 Mermaid에 가짜 모델 없이 "조합 구성 불가" 표시.
 - 테스트: 브랜드 자동 판정 금지, 미확인 제외, 조합 내 중복 금지.
 
 ## 권고
 
-오픈 웨이트 조합: DeepSeek·GLM·MiMo·Kimi만 사용. Muse Spark 1.3·MiniMax M3.1 Flash·Gemini·GPT·Claude·Grok 제외. 라이선스 조건(MaaS/표시)은 별도 검토.
+오픈 웨이트 조합: DeepSeek·GLM·MiMo·Kimi·Muse Spark 1.3·MiniMax M3.1 Flash 사용. Gemini·GPT·Claude·Grok 제외. 라이선스 조건(MaaS/표시)은 별도 검토.

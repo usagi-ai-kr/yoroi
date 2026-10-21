@@ -52,9 +52,12 @@ const modelCell = (entry: ThreeRoleEntry): string => {
 };
 /** #232: 실사용 표식(usagi 정성 관찰). 관찰 없음 '-'. 숫자 매핑·점수 환산 없음. */
 const markCell = (entry: ThreeRoleEntry, role: RoleFitRole): string => roleFitMark(entry.modelId, role) ?? '-';
-const rowFor = (entry: ThreeRoleEntry, index: number, role: RoleFitRole): string =>
-  `| ${rankCell(entry, index)} | ${entry.isPareto === true ? PARETO_MARK : ''} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} | ${markCell(entry, role)} |`;
-const tableHead = '| 순위 | 파레토 | 모델 | 스코어 | effort | 실사용 |\n| --- | --- | --- | --- | --- | --- |';
+const rowFor = (entry: ThreeRoleEntry, index: number, role: RoleFitRole, withPareto: boolean): string => withPareto
+  ? `| ${rankCell(entry, index)} | ${entry.isPareto === true ? PARETO_MARK : ''} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} | ${markCell(entry, role)} |`
+  : `| ${rankCell(entry, index)} | ${modelCell(entry)} | ${scoreCell(entry.score)} | ${textCell(entry.effort)} | ${markCell(entry, role)} |`;
+const tableHead = (withPareto: boolean): string => withPareto
+  ? '| 순위 | 파레토 | 모델 | 스코어 | effort | 실사용 |\n| --- | --- | --- | --- | --- | --- |'
+  : '| 순위 | 모델 | 스코어 | effort | 실사용 |\n| --- | --- | --- | --- | --- |';
 /** 표 바로 아래 의견 주석: 표시된 모델만 모델당 1회·표 순서 유지. 의견 없으면 생략. */
 const footnotesFor = (rows: readonly ThreeRoleEntry[], role: RoleFitRole): readonly string[] => {
   const seen = new Set<string>(), out: string[] = [];
@@ -74,7 +77,8 @@ export function renderThreeRoleSection(key: ThreeRoleKey, entries: readonly Thre
   const rows = entries.slice(0, depth);
   if (!rows.length) return `${heading}\n\n- (목록 없음)`;
   const notes = footnotesFor(rows, key as RoleFitRole);
-  return [heading, '', tableHead, ...rows.map((entry, index) => rowFor(entry, index, key as RoleFitRole)),
+  const withPareto = depth === 15;
+  return [heading, '', tableHead(withPareto), ...rows.map((entry, index) => rowFor(entry, index, key as RoleFitRole, withPareto)),
     ...(notes.length ? ['', ...notes] : [])].join('\n');
 }
 

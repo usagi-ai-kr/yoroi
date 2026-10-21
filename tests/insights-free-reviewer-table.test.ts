@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderFreeSectionMarkdown } from '../src/insights/letter-markdown-free.js';
+import { freeRowsFrom, freeRowOrder, type FreeRow } from '../src/insights/letter-markdown-free-sort.js';
 import type { RoleLists } from '../src/insights/letter-top10-unified.js';
 
 const entry = (modelId: string) => ({ modelId, rank: 1, scoreText: '70.0', indexText: '70.0', plans: [] as string[],
@@ -39,7 +40,7 @@ test('-free 리뷰어 근거는 base형 행에 합쳐진다', () => {
 
 test('Free 표 각주에 정렬 기준 1줄이 표시된다', () => {
   const lines = renderFreeSectionMarkdown(lists(['m1']), [{ modelId: 'm1', plans: ['p'] }], 5, undefined);
-  assert.ok(lines.some(l => l.includes('- 정렬: 오케 통과 → 워커 통과 → 나머지')), '정렬 각주');
+  assert.ok(lines.some(l => l.includes('- 정렬: 역할 점수 보유 수↓ → 최고 점수↓ → 모델명')), '정렬 각주');
 });
 
 test('jev 접두 모델은 Free 표 행에서 제외된다', () => {
@@ -48,4 +49,23 @@ test('jev 접두 모델은 Free 표 행에서 제외된다', () => {
     [{ modelId: 'jev-1-13', plans: ['p'] }, { modelId: 'm1', plans: ['p'] }], 5, undefined);
   assert.ok(!lines.some(l => l.startsWith('| jev-1-13 |')), 'jev 행 없음');
   assert.ok(lines.some(l => l.startsWith('| m1 |')), '다른 행 유지');
+});
+
+test('정렬: passed 수↓ → 최고 점수↓ → 미측정 아래 → 모델명', () => {
+  const e = (modelId: string, score: string) => ({ modelId, rank: 1, scoreText: score, indexText: score, plans: [] as string[],
+    repEffort: 'default', blendedCostText: '-', change: '유지' as const, isPareto: false, both: false });
+  const L = { orchestrator: { entries: [e('deepseek', '70.0'), e('minimax', '60.0'), e('glm', '66.1'), e('mimo', '59.8')], exits: [] },
+    worker: { entries: [e('deepseek', '70.0'), e('minimax', '60.0')], exits: [] } };
+  const rows = freeRowsFrom(L, [{ modelId: 'aaa-unmeasured', plans: ['p'] }], Infinity, [{ modelId: 'deepseek', score: '70.00', passed: true }]);
+  assert.deepEqual(rows.map(r => r.modelId), ['deepseek', 'minimax', 'glm', 'mimo', 'aaa-unmeasured']);
+});
+
+test('동률은 모델명 오름차순, 점수 없는 행은 아래', () => {
+  const row = (modelId: string, cells: Partial<FreeRow> = {}): FreeRow =>
+    ({ modelId, plans: [], pareto: false, unmeasured: false, ...cells });
+  const rows = freeRowOrder([
+    row('b', { orchestrator: { score: '60.0', passed: true } }),
+    row('a', { orchestrator: { score: '60.0', passed: true } }),
+    row('c', { orchestrator: { score: '-', passed: false } })]);
+  assert.deepEqual(rows.map(r => r.modelId), ['a', 'b', 'c']);
 });

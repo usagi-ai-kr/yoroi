@@ -73,9 +73,16 @@ export function freeRowsFrom(lists: RoleLists, unmeasured: readonly UnmeasuredRo
     pareto: row.pareto === true, ...(row.effort && { effort: row.effort }),
     ...(row.indexText !== undefined && { indexText: row.indexText }), unmeasured: row.unmeasured === true })));
 }
-const tier = (row: FreeRow): number => row.orchestrator?.passed ? 0 : row.worker?.passed ? 1 : 2;
-const scoreNum = (cell?: FreeCell): number => cell?.passed && Number.isFinite(Number(cell.score)) ? Number(cell.score) : -Infinity;
-/** 정렬: 오케 통과 → 워커 통과 → 나머지, 각각 오케 스코어↓ → 워커 스코어↓ → 모델명. */
+const roleCells = (row: FreeRow): readonly (FreeCell | undefined)[] => [row.orchestrator, row.reviewer, row.worker];
+/** #246: passed 역할 수. 모델명 하드코딩 없이 FreeCell만 쓴다. */
+const passedCount = (row: FreeRow): number => roleCells(row).filter(c => c?.passed === true).length;
+/** #246: passed 셀 중 최고 표시 점수. 없으면 -Infinity. */
+const bestScore = (row: FreeRow): number => {
+  const scores = roleCells(row).filter((c): c is FreeCell => c?.passed === true)
+    .map(c => Number(c.score)).filter(v => Number.isFinite(v));
+  return scores.length ? Math.max(...scores) : -Infinity;
+};
+/** 정렬: ① passed 역할 수↓ ② 최고 점수↓ ③ 점수 없는 미측정 행은 아래로 ④ 모델명↑. */
 export const freeRowOrder = (rows: readonly FreeRow[]): FreeRow[] => [...rows].sort((a, b) =>
-  tier(a) - tier(b) || scoreNum(b.orchestrator) - scoreNum(a.orchestrator) || scoreNum(b.worker) - scoreNum(a.worker) ||
-  a.modelId.localeCompare(b.modelId));
+  passedCount(b) - passedCount(a) || bestScore(b) - bestScore(a) ||
+  Number(a.unmeasured === true) - Number(b.unmeasured === true) || a.modelId.localeCompare(b.modelId));

@@ -28,21 +28,24 @@ test('setup이 --loaded --marker v2를 보고하고 정리 함수가 훅 3개를
   assert.deepEqual([...h.disposed].sort(), ['context', 'http.response', 'retry']);
 });
 
-test('free 모델 429: 명시 목록·-free 접미사 id 모두 --exceeded 기록 (리뷰 a)', () => {
+test('free 모델 429: quota 표식만 --exceeded 기록, 429 단독은 무기록 (issue #271)', () => {
   const h = harness();
   h.emit('context', { sessionID: 'ses_1', model: FREE });
   h.emit('retry', { sessionID: 'ses_1', model: FREE, error: { status: 429 } });
   h.emit('retry', { sessionID: 'ses_1', model: FREE2, error: { status: 429 } });
+  assert.equal(h.calls.length, 1);
+  h.emit('retry', { sessionID: 'ses_1', model: FREE, error: { status: 429, type: 'usage_limit', message: 'Free usage exceeded' } });
   assert.deepEqual(h.calls[1], ['--exceeded', '--model', 'grok-code', '--reason', 'free_usage_exceeded']);
+  h.emit('retry', { sessionID: 'ses_1', model: FREE2, error: { status: 429, message: 'Free usage exceeded' } });
   assert.deepEqual(h.calls[2], ['--exceeded', '--model', 'exo-free', '--reason', 'free_usage_exceeded']);
 });
 
-test('미등록·유료·타 공급자 429는 무기록 (리뷰 a): 429 단독은 free scope 한정', () => {
+test('upstream 429과 표식 없는 429는 무기록 (issue #271)', () => {
   const h = harness();
   h.emit('context', { sessionID: 'ses_2', model: PAID });
   h.emit('retry', { sessionID: 'ses_2', model: PAID, error: { status: 429 } });
-  h.emit('retry', { model: OTHER, error: { status: 429 } });
-  h.emit('retry', { error: { status: 429 } }); // 세션·모델 미상
+  h.emit('retry', { sessionID: 'ses_2', model: PAID, error: { status: 429, type: 'provider.rate-limit', message: 'Upstream request failed: Endpoint is unavailable.' } });
+  h.emit('retry', { sessionID: 'ses_2', model: PAID, error: { status: 429, message: 'Too many requests' } });
   h.emit('context', { sessionID: 'ses_3', model: PAID });
   h.emit('http.response', { sessionID: 'ses_3', response: response(429, { 'retry-after-ms': '60000' }) });
   assert.equal(h.calls.length, 1);
@@ -85,7 +88,7 @@ test('http.response: free 세션 429+retry-after-ms → --retry-at, 200·헤더 
 test('context LRU 256: 밀려난 세션은 무기록, 남은 free 세션은 id로 보고', () => {
   const h = harness();
   for (let i = 0; i < 257; i += 1) h.emit('context', { sessionID: `ses_${i}`, model: { ...FREE, id: `m-${i}-free` } });
-  h.emit('retry', { sessionID: 'ses_256', model: { ...FREE, id: 'm-256-free' }, error: { status: 429 } });
+  h.emit('retry', { sessionID: 'ses_256', model: { ...FREE, id: 'm-256-free' }, error: { status: 429, type: 'usage_limit', message: 'Free usage exceeded' } });
   h.emit('retry', { sessionID: 'ses_0', error: { status: 429 } }); // 밀려남·이벤트 모델 없음
   assert.equal(h.calls.length, 2);
   assert.deepEqual(h.calls[1], ['--exceeded', '--model', 'm-256-free', '--reason', 'free_usage_exceeded']);

@@ -37,17 +37,19 @@ export function createRelease({ report, ctx, timeoutMs = SETTLE_TIMEOUT_MS } = {
     settling.add(sessionID);
     try {
       await withTimeout(ctx.session.wait({ sessionID }), timeoutMs);
+    } catch { /* wait 타임아웃·예외 → context 재확인으로 no-clear 판정 */ }
+    try {
       const assistant = lastAssistant(await ctx.session.context({ sessionID }));
-      if (typeof assistant?.time?.completed !== 'number') return; // 미완료 메시지 no-clear
-      if (assistant.finish !== 'stop') return; // length·error 등 no-clear
+      if (typeof assistant?.time?.completed !== 'number') return;
+      if (assistant.finish !== 'stop') return;
       const model = assistant.model;
-      if (!freeScope(model) || model.id !== modelId) return; // 유료·타 공급자·불일치 no-clear
+      if (!freeScope(model) || model.id !== modelId) return;
       if (await report(['--ok', '--model', model.id])) {
         pending.delete(sessionID);
         settled.add(sessionID);
-        if (settled.size > MAX_SETTLED) settled.delete(settled.values().next().value); // FIFO 상한(메모리 상한, 동작 유지)
+        if (settled.size > MAX_SETTLED) settled.delete(settled.values().next().value);
       }
-    } catch { /* wait 타임아웃·조회 예외 → no-clear */ }
+    } catch { /* context 예외 → no-clear */ }
     finally { settling.delete(sessionID); }
   };
   return {

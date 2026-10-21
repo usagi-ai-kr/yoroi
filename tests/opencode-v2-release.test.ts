@@ -46,15 +46,13 @@ test('중복 방지: 같은 세션 반복 2xx는 ok 1회만 발행된다', async
   assert.equal(calls.length, 1);
 });
 
-test('wait 타임아웃·예외는 no-clear다', async () => {
-  const timed = harness({ wait: () => new Promise<void>(() => {}), timeoutMs: 5 });
-  timed.release.onResponse(event());
-  await flush(20);
-  assert.equal(timed.calls.length, 0);
-  const broken = harness({ wait: () => Promise.reject(new Error('boom')) });
-  broken.release.onResponse(event());
-  await flush();
-  assert.equal(broken.calls.length, 0);
+test('wait timeout/예외 후 context 재확인: completed면 --ok, 미완료면 no-clear (#271)', async () => {
+  const timedOk = harness({ wait: () => new Promise<void>(() => {}), timeoutMs: 5, context: () => Promise.resolve(messages(assistant())) });
+  timedOk.release.onResponse(event()); await flush(20); assert.equal(timedOk.calls.length, 1);
+  const brokenOk = harness({ wait: () => Promise.reject(new Error('boom')), context: () => Promise.resolve(messages(assistant())) });
+  brokenOk.release.onResponse(event()); await flush(); assert.equal(brokenOk.calls.length, 1);
+  const timedNo = harness({ wait: () => new Promise<void>(() => {}), timeoutMs: 5, context: () => Promise.resolve(messages(assistant({ time: { created: 1 } }))) });
+  timedNo.release.onResponse(event()); await flush(20); assert.equal(timedNo.calls.length, 0);
 });
 
 test('finish length/error·time.completed 부재는 no-clear다', async () => {

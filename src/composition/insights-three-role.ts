@@ -2,6 +2,8 @@ import type { InsightRunResult } from '../insights/run-once.js';
 import { runThreeRolePipeline, type ThreeRolePipelineInput, type ThreeRolePipelineOutput } from '../insights/letter-three-role-pipeline.js';
 import { buildReviewerCandidates } from './insights-reviewer-candidates.js';
 import { computeRoleTop10, type RoleList } from '../insights/letter-top10-unified.js';
+import { resolveFreeModelId } from './insights-free-reviewer.js';
+import type { PlanCatalogEntry } from '../insights/plan-catalog.js';
 
 /** InsightRunResult의 전체 풀 근거를 활용하여 3역할(오케스트레이터·리뷰어·워커) 파이프라인을 합성한다.
  *  리뷰어 후보는 toReviewerCandidates를 통해 3차원 정규 증거가 완비된 후보만 선별하며,
@@ -36,12 +38,17 @@ export function buildThreeRole(
   const wRanked = ranked ? fromRanked(ranked.worker) ?? [] : [];
   const o = isObj && opt.orchestrator ? opt.orchestrator : (oRanked.length ? oRanked : (recs?.map(toCand) ?? []));
   const w = isObj && opt.worker ? opt.worker : (wRanked.length ? wRanked : o);
+  // #257: verified Free 카탈로그 모델을 워커 fallback 후보로 전달한다(점수 없음·free 표시).
+  const freeCatalog = (run?.top10 as { readonly freeCatalog?: readonly PlanCatalogEntry[] } | undefined)?.freeCatalog ?? [];
+  const freeFallback = freeCatalog.filter(p => p.tier === 'free')
+    .flatMap(p => p.models.filter(m => m.verified).map(m => ({ modelId: resolveFreeModelId(m.modelId), free: true })));
 
   if (isObj && opt.reviewer) {
     const out = runThreeRolePipeline({
       orchestrator: o,
       reviewer: opt.reviewer,
       worker: w,
+      freeWorkerFallback: freeFallback,
       options: {
         enabled: true,
         ...(run?.publicationDate !== undefined && { publicationDate: run.publicationDate }),
@@ -67,6 +74,7 @@ export function buildThreeRole(
     orchestrator: o,
     reviewer: r,
     worker: w,
+    freeWorkerFallback: freeFallback,
     options: {
       enabled: true,
       ...(run?.publicationDate !== undefined && { publicationDate: run.publicationDate }),

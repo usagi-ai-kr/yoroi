@@ -3,7 +3,7 @@ import { selectThreeRoles, type ThreeRoleSelectionOutput, type WeightClassifier 
 import { renderThreeRoleMarkdown, renderThreeRoleSection } from './letter-three-role-render.js';
 import { applyReviewerPolicy, type ReviewerPolicyConfig } from './letter-reviewer-policy.js';
 import { buildTeamCombinations, loadOpenWeightKeys } from './letter-team-combinations.js';
-import { renderTeamMermaid } from './letter-mermaid.js';
+import { renderTeamMermaid, runnersUpCaption } from './letter-mermaid.js';
 
 export interface ThreeRoleSections {
   readonly orchestrator: string;
@@ -25,6 +25,8 @@ export interface ThreeRolePipelineInput<T extends RoleCandidate = RoleCandidate>
   readonly orchestrator?: readonly T[];
   readonly reviewer?: readonly T[];
   readonly worker?: readonly T[];
+  /** 점수 없는 Free 워커 fallback({ modelId, free: true }). */
+  readonly freeWorkerFallback?: readonly T[];
   readonly options?: ThreeRolePipelineOptions<T>;
 }
 
@@ -61,11 +63,11 @@ export function runThreeRolePipeline<T extends RoleCandidate = RoleCandidate>(
     depth,
   });
 
-  // #253: 역할별 Top7 로 권장 조합 4개를 계산해 본문 전용 Mermaid 블록으로 만든다(선발·점수 무변경).
-  const combinations = buildTeamCombinations({ top7: {
-    orchestrator: selection.orchestrator.top7, reviewer: selection.reviewer.top7, worker: selection.worker.top7 },
-    openWeightKeys: loadOpenWeightKeys() })
-    .map(combination => `**${combination.label}**\n\n${renderTeamMermaid(combination)}`);
+  // #253: 역할별 Top15 로 권장 조합 4개를 계산해 본문 전용 Mermaid 블록으로 만든다(선발·점수 무변경).
+  const combinations = buildTeamCombinations({ top15: {
+    orchestrator: selection.orchestrator.top15, reviewer: selection.reviewer.top15, worker: selection.worker.top15 },
+    openWeightKeys: loadOpenWeightKeys(), ...(input.freeWorkerFallback !== undefined && { freeWorkerFallback: input.freeWorkerFallback }) })
+    .map(combination => `**${combination.label}**\n\n${renderTeamMermaid(combination)}\n\n${runnersUpCaption(combination.runnersUp)}`);
   const sections: ThreeRoleSections = {
     orchestrator: renderThreeRoleSection('orchestrator', selection.orchestrator.all, renderDepth),
     reviewer: renderThreeRoleSection('reviewer', selection.reviewer.all, renderDepth),

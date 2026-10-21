@@ -1,10 +1,14 @@
 /** #253: Mermaid 렌더 — 고정 노드 ID · 라벨 이스케이프 · 코드 펜스 주입 방지.
  *  모델명은 라벨로만 쓰며(노드 ID 아님) 펜스·문법 주입을 막는다. */
 import type { TeamCombination, TeamRole } from './letter-team-combinations.js';
+import { displayModelId } from './model-display.js';
 import type { RoleCandidate } from './letter-role-selection.js';
 import type { RoleRunnersUp } from './letter-team-runners.js';
 
 const ROLE_LABEL: Record<TeamRole, string> = { orchestrator: '오케스트레이터', reviewer: '리뷰어', worker: '워커' };
+/** #261: 역할 이모지 + Free 표식(🆓). */
+const ROLE_EMOJI: Record<TeamRole, string> = { orchestrator: '🧭', reviewer: '🔍', worker: '🛠️' };
+const freeMark = (c: unknown): string => ((c as { readonly free?: unknown })?.free === true ? ' 🆓' : '');
 const NODE_ID: Record<TeamRole, string> = { orchestrator: 'O', reviewer: 'R', worker: 'W' };
 
 /** Mermaid 라벨 안전 처리: 펜스·따옴표·대괄호·중괄호·해석 특수문자를 제거하고 한 줄로 제한한다. */
@@ -24,9 +28,9 @@ export const renderTeamMermaid = (combination: TeamCombination): string => {
   for (const slot of combination.slots) {
     const isWorker = slot.role === 'worker';
     const id = isWorker ? `${NODE_ID.worker}${++workerNo}` : NODE_ID[slot.role];
-    const roleLabel = isWorker ? `${ROLE_LABEL.worker} ${workerNo}` : ROLE_LABEL[slot.role];
-    const free = (slot as { readonly free?: unknown }).free === true ? ' · Free' : '';
-    nodes.push(`  ${id}["${escapeMermaidLabel(`${roleLabel} · ${slot.modelId}${free}`)}"]`);
+    const roleLabel = `${ROLE_EMOJI[slot.role]} ${isWorker ? `${ROLE_LABEL.worker} ${workerNo}` : ROLE_LABEL[slot.role]}`;
+    const free = (slot as { readonly free?: unknown }).free === true ? ' 🆓' : '';
+    nodes.push(`  ${id}["${escapeMermaidLabel(`${roleLabel} · ${displayModelId(slot.modelId)}${free}`)}"]`);
     if (slot.role !== 'orchestrator') edges.push(`  ${NODE_ID.orchestrator} --> ${id}`);
   }
   return mermaidFence(['flowchart TB', ...nodes, ...edges]);
@@ -39,12 +43,19 @@ const escapeCaptionId = (text: string): string => text.replace(/[`\r\n]/g, ' ').
 export function runnersUpCaption(runners: RoleRunnersUp): string {
   const name = (c: RoleCandidate | undefined): string => {
     if (c === undefined) return '-';
-    const free = (c as { readonly free?: unknown }).free === true ? ' (Free)' : '';
-    return `${escapeCaptionId(c.modelId)}${free}`;
+    return `${escapeCaptionId(displayModelId(c.modelId))}${freeMark(c)}`;
   };
   // 캡션 차선은 **조합에 실제로 있는 역할만**(1+2 는 리뷰어 차선 없음). 후보가 없으면 '-'.
   const roles = [...new Set(runners.roles ?? (['orchestrator', 'reviewer', 'worker'] as const).filter(role => runners[role] !== undefined))];
   const label: Record<string, string> = { orchestrator: '오케스트레이터', reviewer: '리뷰어', worker: '워커' };
-  const lanes = roles.map(role => `${label[role] ?? role} ${name(runners[role])}`);
-  return lanes.length ? `- 차선: ${lanes.join(' · ')}` : '-';
+  const lanes = roles.map(role => `- ${ROLE_EMOJI[role]} ${label[role] ?? role}: ${name(runners[role])}`);
+  return lanes.length ? ['**🥈 차선**', ...lanes].join('\n') : '-';
 };
+
+/** #261: 조합 제목용 badge — 정책(가장 최선/Free) + 슬롯 구성 1개. */
+export function combinationBadges(combination: TeamCombination): string {
+  const free = combination.key.startsWith('free-');
+  const slots = combination.key.split('-')[1] ?? '';
+  const alt = free ? 'free' : 'best', text = free ? '🆓_Free' : '🥇_가장_최선', color = free ? '2ea44f' : 'blue';
+  return `![${alt}](https://img.shields.io/badge/${text}-${slots}-${color})`;
+}

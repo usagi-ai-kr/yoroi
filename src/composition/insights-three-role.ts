@@ -40,15 +40,17 @@ export function buildThreeRole(
   const w = isObj && opt.worker ? opt.worker : (wRanked.length ? wRanked : o);
   // #257: verified Free 카탈로그 모델을 워커 fallback 후보로 전달한다(점수 없음·free 표시).
   const freeCatalog = (run?.top10 as { readonly freeCatalog?: readonly PlanCatalogEntry[] } | undefined)?.freeCatalog ?? [];
-  const freeFallback = freeCatalog.filter(p => p.tier === 'free')
-    .flatMap(p => p.models.filter(m => m.verified).map(m => ({ modelId: resolveFreeModelId(m.modelId), free: true })));
+  const freeModels = freeCatalog.filter(p => p.tier === 'free').flatMap(p => p.models.filter(m => m.verified));
+  const freeFallback = freeModels.map(m => ({ modelId: resolveFreeModelId(m.modelId), free: true }));
+  // #261: Free 조합 후보 = verified Free catalog(Beam 포함) 모델 id.
+  const freeCatalogModelIds = freeModels.map(m => m.modelId);
 
   if (isObj && opt.reviewer) {
     const out = runThreeRolePipeline({
       orchestrator: o,
       reviewer: opt.reviewer,
       worker: w,
-      freeWorkerFallback: freeFallback,
+      freeWorkerFallback: freeFallback, freeCatalogModelIds,
       options: {
         enabled: true,
         ...(run?.publicationDate !== undefined && { publicationDate: run.publicationDate }),
@@ -74,7 +76,7 @@ export function buildThreeRole(
     orchestrator: o,
     reviewer: r,
     worker: w,
-    freeWorkerFallback: freeFallback,
+    freeWorkerFallback: freeFallback, freeCatalogModelIds,
     options: {
       enabled: true,
       ...(run?.publicationDate !== undefined && { publicationDate: run.publicationDate }),

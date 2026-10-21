@@ -95,5 +95,6 @@ test('10. #253 권장 조합 4개가 섹션에 붙는다(Top15 기준)', () => {
   const res = runThreeRolePipeline({ orchestrator: [{ modelId: 'o1', score: 90 }], reviewer: [{ modelId: 'r1', score: 80 }],
     worker: [{ modelId: 'w1', score: 70 }, { modelId: 'w2', score: 60 }, { modelId: 'w3', score: 50 }], options: { enabled: true } });
   assert.equal(res.sections?.combinations?.length, 4); assert.ok(res.sections?.combinations?.[0]?.includes('```mermaid'));
-  assert.ok(res.sections?.combinations?.some(b => b.includes('- 차선:')), '구성 가능 조합은 차선 캡션');
+  assert.ok(res.sections?.combinations?.some(b => b.includes('🥈 차선')), '구성 가능 조합은 차선 캡션');
+  assert.ok(res.sections?.combinations?.some(b => b.includes('img.shields.io/badge/')), '조합 제목 badge');
   assert.ok(res.sections?.combinations?.every(b => b.includes('```mermaid')), '조합마다 Mermaid 펜스'); });

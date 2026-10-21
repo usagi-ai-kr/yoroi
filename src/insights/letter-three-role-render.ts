@@ -1,5 +1,6 @@
 import { PARETO_MARK } from './letter-top10-legend.js';
 import { roleFitMark, roleFitNote, type RoleFitRole } from './model-role-fit.js';
+import { displayModelId } from './model-display.js';
 import { THREE_ROLE_LEGEND } from './letter-three-role-legend.js';
 
 /** #195 단위3: 세 역할(오케스트레이터·리뷰어·워커) 목록의 독립 Markdown 렌더러.
@@ -48,7 +49,7 @@ const rankCell = (entry: ThreeRoleEntry, index: number): string =>
 /** 모델 열은 base id 로(있다면 baseModelId) — effort 접미사('claude-sonnet-5-5-xhigh')를 숨긴다. */
 const modelCell = (entry: ThreeRoleEntry): string => {
   const base = typeof entry.baseModelId === 'string' && entry.baseModelId.trim() ? entry.baseModelId : entry.modelId;
-  return textCell(typeof base === 'string' ? base.replace(/-(?:free|minimal|low|medium|high|xhigh|max)$/, '') : base);
+  return textCell(typeof base === 'string' ? displayModelId(base) : base);
 };
 /** #232: 실사용 표식(usagi 정성 관찰). 관찰 없음 '-'. 숫자 매핑·점수 환산 없음. */
 const markCell = (entry: ThreeRoleEntry, role: RoleFitRole): string => roleFitMark(entry.modelId, role) ?? '-';

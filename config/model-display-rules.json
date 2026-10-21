@@ -1,0 +1,7 @@
+{
+  "note": "표시 전용 모델 id 정규화 규칙 — 위→아래 순서로 적용. 내부 id·점수·순위·후보·Free 값은 불변. 정규식 오류·파일 누락 시 raw id 표시.",
+  "rules": [
+    { "match": "-free$", "replace": "" },
+    { "match": "-(minimal|low|medium|high|xhigh|max)$", "replace": "" }
+  ]
+}

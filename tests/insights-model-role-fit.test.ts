@@ -72,7 +72,7 @@ test('미확인 Free id 에는 각주를 만들지 않는다', () => {
 test('렌더: Free id 항목에도 표 아래 각주가 표시되고 점수 칸은 불변', () => {
   const out = section('deepseek-v4-1-flash-free', 57.6, 'max');
   assert.ok(out.split('\n').some(l => l.startsWith('> deepseek-v4-1-flash: usagi ')), 'Free id 각주 표시');
-  assert.equal(scoreCell(out), '57.6', '점수 칸 불변');
+  assert.equal(scoreCell(out), '57.60', '점수 칸 불변');
 });
 
 /** #231: glm-5-3 과 glm-5-3-flash 는 별개 모델이다(공식 Free 목록·AA id·#229 실측).

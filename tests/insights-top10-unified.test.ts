@@ -37,7 +37,8 @@ test('one candidate pool feeds both lists: intersection appears twice, excluded/
   assert.ok(orchestrator.entries.every(e => e.plans.length > 0));
   assert.equal(orchestrator.entries[0]!.rank, 1);
   assert.equal(orchestrator.entries.find(e => e.modelId === 'claude-opus-5-5')!.indexText, '90.0', 'R에서 sol이 1위여도 opus 지수는 그대로다');
-  assert.match(orchestrator.entries[0]!.scoreText ?? '', /^\d+\.\d$/); assert.ok(orchestrator.entries[0]!.scoreComponents);
+  assert.match(orchestrator.entries[0]!.scoreText ?? '', /^\d+\.\d\d$/); assert.ok(orchestrator.entries[0]!.scoreComponents);
+  assert.ok(orchestrator.entries.every(e => e.scoreText === '-' || (e.scoreKey !== undefined && Number(e.scoreText).toFixed(1) === e.scoreKey.toFixed(1))), '비교 키는 표시의 1자리 반올림과 일치한다');
   assert.equal(worker.entries[0]!.indexText, '90.0');
 });
 test('missing OpenRouter rank never renders total tokens as a rank', () => {

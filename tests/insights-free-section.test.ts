@@ -26,8 +26,8 @@ test('the free section renders one merged table with notes limited to Zen/Go Fre
   assert.ok(rows.every(line => /^\| [^|]+ \| (✓ [\d.]+|✗|-) \| (✓ [\d.]+|✗|-) \| (-|[\d.]+) \| (✓|) \| (✓|) \| .+ \|$/.test(line)), section);
   // #194: Free 표의 모델 열은 표시용으로 '-free' 접미사를 뺀다(내부 id 는 유지).
   assert.ok(rows.every(line => !line.split('|')[1]!.includes('-free')), 'Free 표 모델 열에 -free 접미사가 없다');
-  // 표시 점수는 Free 포함 모집단 정규 순위: step-5 워커 43.3(raw 30.0). AA 지수는 indexText 90.0.
-  assert.ok(rows.some(line => /^\| step-5 \| ✓ [\d.]+ \| ✓ 43\.3 \| 90\.0 \| /.test(line)), '표시 보정: step-5 워커 43.3');
+  // 표시 점수는 Free 포함 모집단 정규 순위: step-5 워커 43.26(raw 30.0). AA 지수는 indexText 90.0.
+  assert.ok(rows.some(line => /^\| step-5 \| ✓ [\d.]+ \| ✓ 43\.26 \| 90\.0 \| /.test(line)), '표시 보정: step-5 워커 43.26');
   assert.ok(rows.filter(line => /^\| [^|]+ \| - \| - \| /.test(line)).every(line => line.includes('근거 없음')), '두 역할 -는 근거 없음 행에만');
   assert.ok(rows.some(line => /\| 90\.0 \|/.test(line)) && rows.some(line => /\| 80\.0 \|/.test(line)));
   assert.ok(rows.some(line => /\| ✓ \| ✓ \|/.test(line)), 'Zen·Go 모두 확인된 행은 양쪽 ✓');

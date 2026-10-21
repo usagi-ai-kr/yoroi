@@ -36,7 +36,7 @@ export const dimensionsText = (e: RoleEntry, role: OptimalZoneRole): string => {
 };
 /** 워커 가산(점): 마크다운은 `가산` 열, 압축 렌더는 행 끝 접미. 없거나 오케면 '-'/''. */
 export const bonusText = (e: RoleEntry, role: OptimalZoneRole): string =>
-  role === 'worker' && e.scoreComponents?.bonus !== undefined ? `+${e.scoreComponents.bonus.toFixed(1)}` : '-';
+  role === 'worker' && e.scoreComponents?.bonus !== undefined ? `+${e.scoreComponents.bonus.toFixed(2)}` : '-';
 export const bonusSuffix = (e: RoleEntry, role: OptimalZoneRole): string => bonusText(e, role) === '-' ? '' : ` 가산 ${bonusText(e, role)}`;
 export const leadText = (e?: RoleEntry): string => e ? `${e.modelId} (스코어 ${e.scoreText ?? '-'})` : '자료 부족';
 /** 파레토 최적 표지(👍). 마크다운은 독립 열, 압축 렌더는 행 끝 참고 표지로 쓴다. */

@@ -42,7 +42,7 @@ const clean = (value: string, limit = 120): string => value
   .replace(/\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|password|secret)\s*[:=]\s*[^\s&]+/gi, '[redacted]')
   .replace(/\b(?:sk-|sk_|hf_|gh[pousr]_)[A-Za-z0-9_-]{4,}/g, '[redacted]').slice(0, limit);
 const textCell = (value: unknown): string => typeof value === 'string' && value.trim() ? clean(value) : '-';
-const scoreCell = (value: unknown): string => typeof value === 'number' && Number.isFinite(value) ? String(value) : '-';
+const scoreCell = (value: unknown): string => typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '-';
 const rankCell = (entry: ThreeRoleEntry, index: number): string =>
   typeof entry.rank === 'number' && Number.isFinite(entry.rank) ? String(entry.rank) : String(index + 1);
 /** 모델 열은 base id 로(있다면 baseModelId) — effort 접미사('claude-sonnet-5-5-xhigh')를 숨긴다. */

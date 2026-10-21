@@ -56,8 +56,8 @@ test('dimension cells: orchestrator 성능/속도/가성비, worker 성능/사�
 test('worker bonus shows +N.N points only for the worker and only when present', () => {
   const sc = { index: 0.9, cost: 0.8, usage: 0.7, speed: 0.6, dimensionSources: { performance: 'aa', speed: 'aa', price: 'aa' } };
   const withBonus = { ...lists.worker.entries[0]!, scoreComponents: { ...sc, bonus: 3.74 } }, without = { ...lists.worker.entries[0]!, scoreComponents: sc };
-  assert.deepEqual([bonusText(withBonus, 'worker'), bonusText(without, 'worker'), bonusText(withBonus, 'orchestrator')], ['+3.7', '-', '-']);
-  assert.deepEqual([bonusSuffix(withBonus, 'worker'), bonusSuffix(without, 'worker'), bonusSuffix(withBonus, 'orchestrator')], [' 가산 +3.7', '', '']);
+  assert.deepEqual([bonusText(withBonus, 'worker'), bonusText(without, 'worker'), bonusText(withBonus, 'orchestrator')], ['+3.74', '-', '-']);
+  assert.deepEqual([bonusSuffix(withBonus, 'worker'), bonusSuffix(without, 'worker'), bonusSuffix(withBonus, 'orchestrator')], [' 가산 +3.74', '', '']);
 });
 
 test('markdown worker table adds a 가산 column and * marker; orchestrator shows 3 dims', () => {
@@ -66,10 +66,10 @@ test('markdown worker table adds a 가산 column and * marker; orchestrator show
   const md = renderTop10Markdown({ publicationDate: '2026-10-13', lists: custom, failedSources: [] });
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/사용량/속도/가격 | 가산 | AA 지수 | 혼합 단가 | 변동 |'));
   assert.ok(md.includes('| 순위 | 파레토 | 모델 | 추천 effort | 스코어 | 성능/속도/가성비 | AA 지수 | 혼합 단가 | 변동 |'));
-  assert.ok(md.includes('| work-a | high | 99.0 | 90/-/60/80* | +3.7 | 72.0 | $1.50 | ▼3 |'), md);
+  assert.ok(md.includes('| work-a | high | 99.0 | 90/-/60/80* | +3.74 | 72.0 | $1.50 | ▼3 |'), md);
   assert.ok(!md.includes('(미확인)') && !md.includes('(상한)'), 'effort 칸은 plain(미확인·상한 표기 없음)');
   const compact = renderTop10Letter({ publicationDate: '2026-10-13', lists: custom });
-  assert.ok(compact.includes('· 90/-/60/80* 가산 +3.7 · $1.50 ·'), compact);
+  assert.ok(compact.includes('· 90/-/60/80* 가산 +3.74 · $1.50 ·'), compact);
 });
 
 test('#226: details 에 참고 링크가 1줄 있고 출처 목록은 불변', () => {

@@ -18,6 +18,8 @@ export interface RoleEntry {
   /** #188: 가용성 모드(capped=관측 상한, unverified=근사 보고, unlisted=프로필 밖)와 cap 무시 벤치마크 최적 effort. */
   readonly effortAvailability?: AvailabilityMode; readonly benchmarkEffort?: string;
   readonly blendedCostText: string; readonly scoreText?: string; readonly rawScore?: number;
+  /** 비교 키: 표시 2자리와 분리된 기존 1자리 정밀도(파레토·정렬용). */
+  readonly scoreKey?: number | undefined;
   readonly scoreComponents?: ScoreComponents; readonly plans: readonly string[];
   readonly change: RoleChange; readonly isPareto: boolean; readonly both: boolean; readonly offPeak?: boolean;
   readonly belowZone?: boolean; readonly indexMissing?: boolean;
@@ -37,19 +39,17 @@ function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, 
   const entries = selected.map((s, i) => {
     const g = s.group, rep = g.repVariant, key = normalizeModelName(g.baseModelId), avail = resolveAvailability(g.baseModelId, opts?.effortAvailability);
     const or = (opts?.openrouterRecords ?? []).find(o => normalizeModelName(o.modelId) === key), orRank = or?.rank, bench = benchmark?.get(key);
-    const vs = g.variants.length > 1 ? g.variants.slice(0, 3).map(v => `${v.effort} ${v.value.toFixed(1)}`).join(' · ') +
-      (g.variants.length > 3 ? ` 외 ${g.variants.length - 3}개` : '') : undefined;
+    const vs = g.variants.length > 1 ? g.variants.slice(0, 3).map(v => `${v.effort} ${v.value.toFixed(1)}`).join(' · ') + (g.variants.length > 3 ? ` 외 ${g.variants.length - 3}개` : '') : undefined;
     const of = successors.get(key);
     return { rank: i + 1, modelId: g.baseModelId, indexText: rep.indexMissing ? '-' : rep.value.toFixed(1), repEffort: rep.effort,
       // p52: Free 경로도 원 API 단가(off-peak 포함)를 그대로 표시한다. 가격 결측 보정(0.99)은 단가 '-'로 둔다.
       blendedCostText: costTextOf(rep.effectiveCost ?? rep.blendedCost),
-      scoreText: Number.isFinite(cal.get(s)) ? cal.get(s)!.toFixed(1) : '-', rawScore: s.score, scoreComponents: s.components,
+      scoreText: Number.isFinite(cal.get(s)) ? cal.get(s)!.toFixed(2) : '-', rawScore: s.score, scoreComponents: s.components, scoreKey: Number.isFinite(cal.get(s)) ? Number(cal.get(s)!.toFixed(1)) : undefined,
       plans: plansForCatalogModel(g.baseModelId, catalog), isPareto: g.isPareto, both: false, effortAvailability: avail.mode,
       ...(bench !== undefined && bench !== rep.effort && { benchmarkEffort: bench }),
       ...(rep.indexMissing && { indexMissing: true }), ...(s.belowZone && { belowZone: true }),
       ...(rep.offPeak === true && { offPeak: true }),
-      ...(typeof orRank === 'number' && Number.isSafeInteger(orRank) && orRank > 0 &&
-        { openrouterRankText: `OpenRouter ${orRank}위` }),
+      ...(typeof orRank === 'number' && Number.isSafeInteger(orRank) && orRank > 0 && { openrouterRankText: `OpenRouter ${orRank}위` }),
       ...(vs !== undefined && { variantsText: vs }), ...(of !== undefined && { successorOf: of }) };
   });
   // 역할 행이 없는 전일 코호트(예: 전일 Cognition 누락으로 워커 보류)는 비교 불가로 보고 전부 진입 처리하지 않는다.

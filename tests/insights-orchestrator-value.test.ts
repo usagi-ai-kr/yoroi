@@ -20,12 +20,12 @@ test('valueForMoney is linear I/(P+.01): no square, guards for missing and non-p
   assert.equal(valueForMoney(10, -1), undefined);
 });
 
-test('display calibration: raw preserved, scoreText is normal-rank (n=1→50, n=2→56.7/43.3)', () => {
+test('display calibration: raw preserved, scoreText is normal-rank (n=1→50, n=2→56.74/43.26)', () => {
   const one = computeRoleTop10([{ modelId: 'solo', metric: 'artificial_analysis_intelligence_index', value: 80, priceInput: 1, priceOutput: 1 }], { catalog: catalogOf(['solo']), effortAvailability: UNCONSTRAINED_AVAILABILITY}).orchestrator.entries[0]!;
-  assert.deepEqual([one.rawScore?.toFixed(1), one.scoreText], ['90.0', '50.0'], 'n=1 → 표시 50, raw 유지(성능 75 + 가성비 15)');
+  assert.deepEqual([one.rawScore?.toFixed(1), one.scoreText], ['90.0', '50.00'], 'n=1 → 표시 50, raw 유지(성능 75 + 가성비 15)');
   const two = computeRoleTop10([{ modelId: 'hi', metric: 'artificial_analysis_intelligence_index', value: 90, priceInput: 1, priceOutput: 1 }, { modelId: 'lo', metric: 'artificial_analysis_intelligence_index', value: 50, priceInput: 1, priceOutput: 1 }], { catalog: catalogOf(['hi', 'lo']), effortAvailability: UNCONSTRAINED_AVAILABILITY}).orchestrator.entries;
   const by = (id: string) => two.find((e) => e.modelId === id)!;
-  assert.deepEqual([by('hi').rawScore?.toFixed(1), by('hi').scoreText, by('lo').rawScore?.toFixed(1), by('lo').scoreText], ['90.0', '56.7', '0.0', '43.3'], 'n=2 → 표시 56.7/43.3(정규 분위), raw 유지');
+  assert.deepEqual([by('hi').rawScore?.toFixed(1), by('hi').scoreText, by('lo').rawScore?.toFixed(1), by('lo').scoreText], ['90.0', '56.74', '0.0', '43.26'], 'n=2 → 표시 56.74/43.26(정규 분위), raw 유지');
 });
 
 test('orchestrator value follows the representative effort variant (p58 linkage)', () => {

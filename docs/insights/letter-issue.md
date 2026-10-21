@@ -10,6 +10,7 @@
   - 터미널용 텍스트는 `--pretty`, 기존 전량 상세 출력은 `--full` 플래그로 유지한다.
 - **이전 발행 주체**: 코테츠(Hermes)가 매일 cron 실행, 이슈 게시·중복 방지·전일 레터 close, 실패 알림 및 통보를 담당했다(2026-10-13 PM2로 이관).
 - **현행 발행 명령**: `yoroi insights publish [--dry-run] [--not-before HH:MM]`. PM2가 실행하며 본문은 `once --markdown`과 같은 renderer를 쓴다.
+- 수동·PM2 발행도 Actions와 같은 3역할 본문을 쓰려면 `YOROI_LETTER_THREE_ROLE=on`을 설정한다. 없으면 2역할 레거시 본문이 된다(2026-10-21 #268→#269).
 
 ## 발행 계약
 

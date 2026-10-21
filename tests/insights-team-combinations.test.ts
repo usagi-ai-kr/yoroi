@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { freePolicyPool } from '../src/insights/letter-team-runners.js';
+import { unionPool } from '../src/insights/letter-team-runners.js';
 import { buildTeamCombinations, loadOpenWeightKeys } from '../src/insights/letter-team-combinations.js';
 
 /** #253/#261: 권장 조합 — 슬롯 구성·유일성·합산 최적·부족·동점·Free 필터. */
@@ -14,7 +14,7 @@ const models = (slots: readonly { modelId: string }[]) => slots.map(s => s.model
 
 test('4조합 + 슬롯 수 1+1+3(5)·1+2(3)', () => {
   const combos = buildTeamCombinations({ top15: top7(2, 2, 3) });
-  assert.deepEqual([combos.length, combos.map(c => c.key)], [4, ['best-1+1+3', 'best-1+2', 'free-1+1+3', 'free-1+2']]);
+  assert.deepEqual([combos.length, combos.map(c => c.key)], [4, ['best-1+1+3', 'best-1+2', 'open-1+1+3', 'open-1+2']]);
   assert.deepEqual([[combos[0]!.slots.length, combos[1]!.slots.length], combos[1]!.slots.map(s => s.role)],
     [[5, 3], ['orchestrator', 'worker', 'worker']]);
 });
@@ -49,12 +49,12 @@ test('동점이라도 결정론적(입력 순서 무관)', () => {
   assert.equal(a[0]!.totalScore, b[0]!.totalScore);
 });
 
-test('free 조합은 Free 풀(verified catalog)의 base id 만 쓴다', () => {
+test('open 조합은 오픈 웨이트 풀의 base id 만 쓴다', () => {
   const few = { o: [cand('o1', 90)], r: [], w: [cand('w1', 70)] };
-  const combos = buildTeamCombinations({ top15: top7(2, 2, 3), freePool: few });
+  const combos = buildTeamCombinations({ top15: top7(2, 2, 3), unionPool: few });
   assert.equal(combos[2]!.feasible, false, '검증된 모델이 부족 → 구성 불가');
   assert.ok(combos[2]!.reason, '사유 표시');
-  const pool = top7(2, 2, 3), enough = buildTeamCombinations({ top15: pool, freePool: { o: pool.orchestrator, r: pool.reviewer, w: pool.worker } });
+  const pool = top7(2, 2, 3), enough = buildTeamCombinations({ top15: pool, unionPool: { o: pool.orchestrator, r: pool.reviewer, w: pool.worker } });
   assert.equal(enough[2]!.feasible, true);
   assert.equal(enough[2]!.slots.length, 5);
 });
@@ -83,16 +83,16 @@ test('점수 후보 부족 때만 Free fallback이 워커를 채운다', () => {
   assert.ok(enough.slots.every(s => s.free !== true), '점수 후보가 충분하면 fallback 미사용');
 });
 
-test('#261: Free 풀은 canonical dedupe·O/R 미측정 제외·W Beam fallback', () => {
+test('#266: 오픈 풀은 canonical dedupe·O/R 미측정 제외', () => {
   const ids = ['deepseek-v4-1-flash-free', 'minimax-m3-1-flash-free', 'glm-5-3-flash-free', 'mimo-v2-6-flash-free', 'beam-free', 'deepseek-v4-1-flash-free'];
   const lists = { o: [cand('deepseek-v4-1-flash', 62.9), cand('minimax-m3-1-flash', 56)],
     r: [cand('minimax-m3-1-flash', 0.68), cand('deepseek-v4-1-flash', 0.74)], w: [cand('minimax-m3-1-flash', 61.5), cand('mimo-v2-6-flash', 58), cand('glm-5-3-flash', 55)] };
-  const pool = freePolicyPool(ids, lists);
+  const pool = unionPool(ids, lists);
   assert.equal(pool.o.filter(c => c.modelId.startsWith('deepseek')).length, 1, 'free/base 중복 제거');
   assert.ok(!pool.o.some(c => c.modelId === 'beam-free') && !pool.r.some(c => c.modelId === 'beam-free'), 'O/R 미측정 Free 제외');
   assert.ok(pool.w.some(c => c.modelId === 'beam-free' && c.score === undefined), 'W Beam fallback');
-  const combos = buildTeamCombinations({ top15: { orchestrator: lists.o, reviewer: lists.r, worker: lists.w }, freePool: pool });
-  const free113 = combos.find(c => c.key === 'free-1+1+3')!;
+  const combos = buildTeamCombinations({ top15: { orchestrator: lists.o, reviewer: lists.r, worker: lists.w }, unionPool: pool });
+  const free113 = combos.find(c => c.key === 'open-1+1+3')!;
   assert.deepEqual(free113.slots.map(s => s.modelId), ['deepseek-v4-1-flash-free', 'minimax-m3-1-flash-free',
     'mimo-v2-6-flash-free', 'glm-5-3-flash-free', 'beam-free'], 'O deepseek → R minimax → W mimo/glm/beam');
   assert.equal(free113.unmeasured, 1, 'Beam 은 미측정');

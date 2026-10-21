@@ -30,6 +30,8 @@ pm2 logs yoroi-letter        # stdout=published #N url 시각, stderr=진단
 yoroi insights publish       # 수동 발행(가드 통과 시 같은 규칙)
 ```
 
+- 수동·PM2 발행도 3역할 형식을 쓰려면 `YOROI_LETTER_THREE_ROLE=on`을 설정한다. 없으면 2역할 레거시 본문이 된다(2026-10-21 #268→#269).
+
 ## 중지·해제
 
 ```bash

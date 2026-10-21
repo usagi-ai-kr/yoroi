@@ -85,8 +85,8 @@ test('fill order follows the score and the representative effort is the highest-
   }
 });
 
-test('Kimi K3 and Grok stay in both role lists after exclusion rollback', () => {
-  const ids = ['kimi-k3', 'kimi-k2-6', 'grok-4-6'];
+test('Kimi K4 and Grok stay in both role lists after exclusion rollback', () => {
+  const ids = ['kimi-k4', 'kimi-k2-6', 'grok-4-6'];
   const catalog = catalogFor(ids);
   const records = ids.flatMap(id => [row(id, INTEL, 100), row(id, CODE, 100)]);
   const lists = computeRoleTop10(records, { catalog, cognitionRecords: ids.map(id => ({ modelId: `${id}-max`, metric: COG, value: 0.5 })), effortAvailability: UNCONSTRAINED_AVAILABILITY});

@@ -54,8 +54,8 @@ export function runnersUpCaption(runners: RoleRunnersUp): string {
 
 /** #261: 조합 제목용 badge — 정책(가장 최선/Free) + 슬롯 구성 1개. */
 export function combinationBadges(combination: TeamCombination): string {
-  const free = combination.key.startsWith('free-');
+  const open = combination.key.startsWith('open-');
   const slots = combination.key.split('-')[1] ?? '';
-  const alt = free ? 'free' : 'best', text = free ? '🆓_Free' : '🥇_가장_최선', color = free ? '2ea44f' : 'blue';
+  const alt = open ? 'open' : 'best', text = open ? '오픈_웨이트·Free' : '🥇_가장_최선', color = open ? '8957e5' : 'blue';
   return `![${alt}](https://img.shields.io/badge/${text}-${slots}-${color})`;
 }

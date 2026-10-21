@@ -69,7 +69,7 @@ test('Free 후보 노드·캡션에 Free 표시, 총점·unmeasured 분리', () 
 test('구성 불가 조합의 차선 캡션은 - 이다(가짜 후보 없음)', () => {
   assert.equal(runnersUpCaption({}), '-');
   const top = { orchestrator: [cand('o1', 90)], reviewer: [cand('r1', 80)], worker: [cand('w1', 70)] };
-  const combos = buildTeamCombinations({ top15: top, freePool: { o: [], r: [], w: [cand('w1', 70)] } });
+  const combos = buildTeamCombinations({ top15: top, unionPool: { o: [], r: [], w: [cand('w1', 70)] } });
   assert.equal(combos[2]!.feasible, false);
   assert.equal(runnersUpCaption(combos[2]!.runnersUp), '-', '구성 불가는 -');
 });
@@ -80,7 +80,7 @@ test('차선 캡션 모델 id를 이스케이프한다', () => {
 
 test('free 1+2 도 리뷰어 차선이 없다', () => {
   const top = { orchestrator: [cand('o1', 90), cand('o2', 80)], reviewer: [cand('r1', 85)], worker: [cand('w1', 70), cand('w2', 60)] };
-  const combos = buildTeamCombinations({ top15: top, freePool: { o: [cand('o1', 90), cand('o2', 80)],
+  const combos = buildTeamCombinations({ top15: top, unionPool: { o: [cand('o1', 90), cand('o2', 80)],
     r: [cand('r1', 85), cand('r2', 75)], w: [cand('w1', 70), cand('w2', 60)] } });
   assert.equal(combos[3]!.feasible, true, '오픈 1+2 구성 가능');
   assert.ok(!runnersUpCaption(combos[3]!.runnersUp).includes('리뷰어'), 'free 1+2 에도 리뷰어 차선 없음');

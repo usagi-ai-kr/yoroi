@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { normalizeModelName } from './model-id.js';
-import { resolveModelId } from './model-aliases.js';
+import { normalizeModelName } from './model-id.js'; import { resolveModelId } from './model-aliases.js';
+import { splitBaseAndEffort } from './letter-top10-group.js';
 
 export interface LetterRoleLists { readonly common: string[]; readonly orchestrator: string[]; readonly worker: string[] }
 export interface LetterModelListsDiscovery { readonly autoEnroll?: boolean; readonly collect?: boolean }
@@ -14,9 +14,8 @@ export interface LetterModelLists {
   readonly discovery?: LetterModelListsDiscovery;
 }
 export const DEFAULT_LETTER_MODEL_LISTS: LetterModelLists = {
-  allowOlder: ['gpt-6-sol'],
-  excludePatterns: ['fable', 'astra'],
-  ban: { common: [], orchestrator: ['gpt-6-luna', 'claude-haiku-5-5'], worker: [] },
+  allowOlder: ['gpt-6-sol'], excludePatterns: ['fable', 'astra'],
+  ban: { common: ['glm-5-3', 'kimi-k3', 'mimo-v2-6-pro'], orchestrator: [], worker: [] },
 };
 const EMPTY_ALIASES = new Map<string, string>(), EMPTY_UNIVERSE = new Set<string>();
 /** 비교 키: 정규화 + 정적 별칭 해석. */
@@ -82,15 +81,20 @@ export function activeLetterModelLists(env?: NodeJS.ProcessEnv): LetterModelList
   }
   return cached;
 }
-/** 밴 집합: 정규화된 공통 ∪ 역할. Top10 선발·▽ 보충에서만 쓴다. */
+/** 공통 blacklist 집합(정규화). 역할별 밴과 합치려면 banSetFor를 쓴다. */
+export function commonBanSet(lists: LetterModelLists = activeLetterModelLists()): ReadonlySet<string> { return new Set(lists.ban.common.map(listKeyOf)); }
+/** 공통 blacklist 적중 — base·정규화·별칭 기준(effort·provider·free 접미 포함, flash 등 유사 id 제외). */
+export function isCommonBanned(modelId: string, banned: ReadonlySet<string> = commonBanSet()): boolean {
+  const base = splitBaseAndEffort(modelId).base;
+  const unfree = base.toLowerCase().endsWith('-free') ? base.slice(0, -'-free'.length) : base;
+  return banned.has(listKeyOf(splitBaseAndEffort(unfree).base));
+}
+/** 밴 집합: 정규화된 공통 ∪ 역할. Top10 선발·보충에서 쓴다. */
 export function banSetFor(lists: LetterModelLists, role: 'orchestrator' | 'worker'): ReadonlySet<string> {
   return new Set([...lists.ban.common, ...lists.ban[role]].map(listKeyOf));
 }
 /** 화이트리스트 쌍: 목록 모델이 한쪽에 있으면 세대·후속 분리를 건너뛴다(하드코딩 쌍 대체). */
-export function isProtectedPair(a: string, b: string,
-  allowOlder: readonly string[] = DEFAULT_LETTER_MODEL_LISTS.allowOlder): boolean {
-  const ids = [normalizeModelName(a), normalizeModelName(b)];
-  if (new Set(ids).size !== 2) return false;
-  const allow = new Set(allowOlder.map(normalizeModelName));
-  return ids.some(id => allow.has(id));
+export function isProtectedPair(a: string, b: string, allowOlder: readonly string[] = DEFAULT_LETTER_MODEL_LISTS.allowOlder): boolean {
+  const ids = [normalizeModelName(a), normalizeModelName(b)], allow = new Set(allowOlder.map(normalizeModelName));
+  return new Set(ids).size === 2 && ids.some(id => allow.has(id));
 }

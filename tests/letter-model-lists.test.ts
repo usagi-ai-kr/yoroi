@@ -3,7 +3,7 @@ import test from 'node:test';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DEFAULT_LETTER_MODEL_LISTS, banSetFor, loadLetterModelLists, type LetterModelLists }
+import { DEFAULT_LETTER_MODEL_LISTS, banSetFor, commonBanSet, isCommonBanned, loadLetterModelLists, type LetterModelLists }
   from '../src/insights/letter-model-lists.js';
 import { olderGenerationModelIds } from '../src/insights/letter-top10-filter.js';
 import { computeRoleTop10 } from '../src/insights/letter-top10-unified.js';
@@ -29,16 +29,23 @@ test('loadLetterModelLists: 없으면 기본값·누락 키는 기본값·파싱
   assert.deepEqual(merged.ban, DEFAULT_LETTER_MODEL_LISTS.ban);
   writeFileSync(file, JSON.stringify({ ban: { worker: ['step-5'] } }));
   assert.deepEqual(loadLetterModelLists(file).ban,
-    { common: [], orchestrator: DEFAULT_LETTER_MODEL_LISTS.ban.orchestrator, worker: ['step-5'] });
+    { common: [...DEFAULT_LETTER_MODEL_LISTS.ban.common], orchestrator: [], worker: ['step-5'] });
   writeFileSync(file, '{oops');
   assert.throws(() => loadLetterModelLists(file));
 });
 
 test('banSetFor: 정규화된 공통 ∪ 역할만 돌려준다', () => {
-  assert.deepEqual([...banSetFor(DEFAULT_LETTER_MODEL_LISTS, 'orchestrator')].sort(), ['claude-haiku-5-5', 'gpt-6-luna']);
+  assert.deepEqual([...banSetFor(DEFAULT_LETTER_MODEL_LISTS, 'orchestrator')].sort(), ['glm-5-3', 'kimi-k3', 'mimo-v2-6-pro']);
   const lists = listsWith({ ban: { common: ['LongCat-2.5'], orchestrator: ['grok-4-6'], worker: ['step-5'] } });
   assert.deepEqual([...banSetFor(lists, 'orchestrator')].sort(), ['grok-4-6', 'longcat-2-5']);
   assert.deepEqual([...banSetFor(lists, 'worker')].sort(), ['longcat-2-5', 'step-5']);
+});
+
+test('공통 blacklist: 3종 정확히, flash·유사·Luna/Haiku 유지', () => {
+  const banned = commonBanSet(listsWith({ ban: { common: ['glm-5-3', 'kimi-k3', 'mimo-v2-6-pro'], orchestrator: [], worker: [] } }));
+  assert.deepEqual([...banned].sort(), ['glm-5-3', 'kimi-k3', 'mimo-v2-6-pro']);
+  for (const id of ['glm-5-3', 'glm-5-3-high', 'glm-5-3-free', 'opencode/glm-5-3', 'kimi-k3', 'kimi-k3-free', 'Kimi-K3', 'mimo-v2-6-pro', 'mimo-v2-6-pro-max', 'opencode/mimo-v2-6-pro']) assert.equal(isCommonBanned(id, banned), true, id);
+  for (const id of ['glm-5-3-flash', 'glm-5-3-flash-free', 'mimo-v2-6-flash', 'kimi-k2-6', 'deepseek-v4-1-flash', 'beam-free', 'gpt-6-luna', 'claude-haiku-5-5']) assert.equal(isCommonBanned(id, banned), false, id);
 });
 
 test('allowOlder: gpt-6-sol만 기본 유지, grok-4-6은 자동 배제, 목록 제거 시 배제', () => {
@@ -55,8 +62,9 @@ test('allowOlder: gpt-6-sol만 기본 유지, grok-4-6은 자동 배제, 목록 
 test('successorOf 규칙도 allowOlder가 차단한다(세대 비교로는 배제되지 않는 쌍)', () => {
   const ids = ['kimi-k4', 'kimi-k3'];
   const records = [row('kimi-k4', 70, { successorOf: 'kimi-k3' }), row('kimi-k3', 60)];
-  const kept = computeRoleTop10(records, { catalog: catalogFor(ids), letterModelLists: listsWith({ allowOlder: ['kimi-k3'] }) });
-  const dropped = computeRoleTop10(records, { catalog: catalogFor(ids), letterModelLists: listsWith({}) });
+  const noBan = listsWith({ allowOlder: ['kimi-k3'], ban: { common: [], orchestrator: [], worker: [] } });
+  const kept = computeRoleTop10(records, { catalog: catalogFor(ids), letterModelLists: { ...noBan, allowOlder: ['kimi-k3'] } });
+  const dropped = computeRoleTop10(records, { catalog: catalogFor(ids), letterModelLists: { ...noBan, allowOlder: [] } });
   assert.ok(kept.orchestrator.entries.some(e => e.modelId === 'kimi-k3'), '목록에 있으면 후속 규칙을 건너뛴다');
   assert.ok(!dropped.orchestrator.entries.some(e => e.modelId === 'kimi-k3'), '목록에 없으면 후속 규칙으로 배제');
 });

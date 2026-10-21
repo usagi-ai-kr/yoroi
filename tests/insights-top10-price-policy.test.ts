@@ -18,11 +18,11 @@ test('a model with unknown cost is never marked pareto (star withheld)', () => {
 });
 test('the zone leads and fills from the remaining role candidates', () => {
   const models = ['claude-opus-5-5', 'gpt-6-1-sol', 'claude-haiku-5-5', 'gemini-3-1-pro', 'gemini-3-pro',
-    'mistral-large-4', 'minimax-m3', 'kimi-k3', 'gemma4', 'space-bunny', 'qwen3-7-plus'];
+    'mistral-large-4', 'minimax-m3', 'glm-5-3-flash', 'gemma4', 'space-bunny', 'qwen3-7-plus'];
   const records = models.map((m, i) => ({ modelId: m, value: 100 - i, priceInput: 1, priceOutput: 1, metric: 'artificial_analysis_intelligence_index' }));
   const entries = computeRoleTop10(records).orchestrator.entries;
-  assert.equal(entries.length, 9); // 1.2.1: haiku 오케 밴 제외로 9개(기존 10-1). kimi-k3 포함·opus 선두 유지.
-  assert.ok(entries.some(e => e.modelId === 'kimi-k3'));
+  assert.equal(entries.length, 10); // O 허용: haiku 복귀. flash 포함·opus 선두 유지.
+  assert.ok(entries.some(e => e.modelId === 'glm-5-3-flash'));
   assert.equal(entries[0]!.modelId, 'claude-opus-5-5');
 });
 test('previous ranks use the same composite-score and fill policy', () => {
@@ -32,22 +32,22 @@ test('previous ranks use the same composite-score and fill policy', () => {
     { modelId: 'claude-haiku-5-5', value: 60, metric: 'artificial_analysis_intelligence_index', priceInput: 1, priceOutput: 1 },
   ];
   const ranks = previousRanks(records).orchestrator;
-  assert.deepEqual([ranks.get('claude-opus-5-5'), ranks.get('gpt-6-1-sol'), ranks.get('claude-haiku-5-5')], [2, 1, undefined]);
-  // 1.2.1 R 75/0/10/15(사용량 제외): 성능 Opus 1위지만 가성비(sol 1 vs opus 0)가 뒤집어 sol 1위·opus 2위, haiku는 오케 밴으로 순위 없음.
+  assert.deepEqual([ranks.get('claude-opus-5-5'), ranks.get('gpt-6-1-sol'), ranks.get('claude-haiku-5-5')], [2, 1, 3]);
+  // R 75/0/10/15(사용량 제외): 성능 Opus 1위지만 가성비(sol 1 vs opus 0)가 뒤집어 sol 1위·opus 2위, O 허용으로 haiku 3위.
 });
 
-test('kimi-k3 at its official blended price remains eligible and Top10 fills normally', () => {
+test('expensive opus at its official blended price remains eligible and Top10 fills normally', () => {
   const metric = 'artificial_analysis_intelligence_index';
   const cheap = ['claude-haiku-5-5', 'deepseek-v4-1-flash', 'gemma4', 'glm-5-3-flash', 'kimi-k2-7-code',
     'minimax-m3', 'mistral-large-4', 'nemotron-3-super', 'qwen3-7-plus', 'space-bunny', 'hy3', 'grok-4-6'];
   const records: Top10RecordInput[] = [
-    { modelId: 'kimi-k3', value: 99, priceInput: 3, priceOutput: 15, metric }, // 혼합 $6.00
+    { modelId: 'claude-opus-5-5', value: 99, priceInput: 3, priceOutput: 15, metric }, // 혼합 $6.00
     ...cheap.map((modelId, i) => ({ modelId, value: 95 - i, priceInput: 0.5, priceOutput: 0.5, metric }))];
   const entries = computeRoleTop10(records).orchestrator.entries;
-  // 상한 없음: 비싼 kimi-k3도 후보다(오케 스코어는 가격과 무관하다. 작은 풀로도 확인).
-  assert.ok(computeRoleTop10(records.slice(0, 4)).orchestrator.entries.some(e => e.modelId === 'kimi-k3'), 'kimi-k3 공식 단가($3.00/$15.00, 혼합 $6)도 후보로 남는다');
-  assert.equal(entries.length, 12, 'Top15는 haiku 밴 제외 후보 12개를 모두 담는다');
-  assert.equal(entries.at(-1)!.rank, 12);
+  // 상한 없음: 비싼 opus도 후보다(오케 스코어는 가격과 무관하다. 작은 풀로도 확인).
+  assert.ok(computeRoleTop10(records.slice(0, 4)).orchestrator.entries.some(e => e.modelId === 'claude-opus-5-5'), 'opus 공식 단가($3.00/$15.00, 혼합 $6)도 후보로 남는다');
+  assert.equal(entries.length, 13, 'Top15는 haiku O 허용 후보 13개를 모두 담는다');
+  assert.equal(entries.at(-1)!.rank, 13);
 });
 
 test('high peak and adjusted off-peak prices both keep a candidate', () => {

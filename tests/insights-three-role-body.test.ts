@@ -61,3 +61,26 @@ test('명시적 messenger 입력이 계산 목록보다 우선하고, 비어 있
   assert.equal(buildThreeRole(false, run), undefined, '비활성은 undefined(2역할 출력 불변)');
   assert.equal(buildThreeRole(undefined, run), undefined);
 });
+
+const oldBody = ['# t', '', '## 요약', '- 선두: 오케스트레이터·리뷰어 a · 워커·메신저 b', '',
+  '## 🧭 오케스트레이터·리뷰어 Top7', '', 'a', '',
+  '## 🛠️ 워커·메신저 Top7', '', 'b', '',
+  '## 📖 표시 안내', '- 0~100 차원', '',
+  '- 자격: 스코어 ≥ 후보 최고 스코어 × 85%(오케스트레이터·리뷰어)/60%(워커·메신저) 통과',
+  '- 가중치: 오케·리뷰어 성능 75%·속도 10%·가성비 15% / 워커·메신저 성능 30%·사용량 20%·속도 10%·가격 40%', '', 'note'].join('\n');
+
+test('U3c: 4역할 본문에서 워커 라벨이 분리되고 메신저 가중치 줄이 생긴다', () => {
+  const out = replaceLegacyRoleBlocks(oldBody, { ...sections, messenger: '## ✉️ 메신저 Top7' });
+  assert.ok(!out.includes('워커·메신저'), '구 라벨 잔재 없음');
+  assert.ok(out.includes('## ✉️ 메신저 Top7'), '메신저 섹션');
+  assert.ok(out.includes('- 선두: 오케스트레이터·리뷰어 a · 워커 b'), '요약 라벨 분리');
+  assert.ok(out.includes('워커 성능 30%·사용량 20%·속도 10%·가격 40%'), '워커 가중치 유지');
+  assert.ok(out.includes('- 가중치: 메신저 성능 20%·사용량 10%·속도 30%·가격 40% (워커와 같은 배관, 가중치만 상이)'), '메신저 가중치 줄');
+  assert.ok(out.includes('60%(워커)/60%(메신저)'), '자격 메신저 병기');
+});
+
+test('U3c: 레거시 제목·2역할 외 본문은 손대지 않는다', () => {
+  const keep = replaceLegacyRoleBlocks('# t\n\n## 🛠️ 워커·메신저 Top7\n\nb', sections);
+  assert.ok(keep.includes('## 🛠️ 워커·메신저 Top7'), '레거시 제목 유지');
+  assert.equal(hasLegacyRoleBlocks(keep), true);
+});

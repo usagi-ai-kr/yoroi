@@ -10,7 +10,7 @@ import { openInsightsHistory } from '../infra/sqlite/insights-store.js';
 import { opencodeTarget } from '../config/load-config.js';
 import { buildOfficialFreeCatalog, collectOfficialFreeListing, collectOpenCodeFreeModels, type RuntimeFreePlan } from '../insights/opencode-free-models.js';
 import { runOnceDiscovery, type OnceDiscoveryNotice, type OnceDiscoveryOptions } from '../insights/model-discovery-once.js';
-import { freeReviewerFor } from './insights-free-reviewer.js';
+import { freeMessengerFor, freeReviewerFor } from './insights-free-reviewer.js';
 import { FileModelRegistrySnapshotStore } from '../insights/model-discovery-file-store.js';
 import { resolveDiscoveryBaseDir } from '../insights/model-discovery-config.js';
 import { activeLetterModelLists, type LetterModelLists } from '../insights/letter-model-lists.js';
@@ -92,8 +92,9 @@ export async function runInsights(options: InsightsRunOptions): Promise<Insights
     // #194: 3역할 ranked 계산에 본문 렌더와 같은 enriched top10(freeCatalog·warnings)을 넘긴다. 기본 꺼짐(#195)
     const threeRole = buildThreeRole(options.threeRole, base ? { ...run, top10: base } : run, letterThreeRoleConfig(options.env));
     // #194 D: 3역할 활성 때만 Free 표 리뷰어 근거를 실어 보낸다(비활성은 undefined → 2역할 출력 유지).
-    const freeReviewer = freeReviewerFor(threeRole, freeCatalog ? { freeCatalog: freeCatalog.plans } : undefined);
-    const top10 = base ? { ...base, ...(freeReviewer !== undefined && { freeReviewer }) } : base;
+    const freeCat = freeCatalog ? { freeCatalog: freeCatalog.plans } : undefined;
+    const freeReviewer = freeReviewerFor(threeRole, freeCat), freeMessenger = freeMessengerFor(threeRole, freeCat);
+    const top10 = base ? { ...base, ...(freeReviewer !== undefined && { freeReviewer }), ...(freeMessenger !== undefined && { freeMessenger }) } : base;
     return { ...run, ...(top10 && { top10 }), ...(discoveryNotice && { discoveryNotice }), ...(threeRole && { threeRole }), storage };
   } finally { try { history.close?.(); } catch { /* close errors never change the result */ } }
 }

@@ -8,6 +8,7 @@ export interface ThreeRoleSections {
   readonly orchestrator: string;
   readonly reviewer: string;
   readonly worker: string;
+  readonly messenger?: string;
 }
 
 const LEGACY_ORCHESTRATOR = '## 🧭 오케스트레이터·리뷰어';
@@ -15,9 +16,10 @@ const LEGACY_WORKER = '## 🛠️ 워커·메신저';
 /** 내부용 식별자(호환·테스트용). **발행 본문에는 출력하지 않는다**(사용자에게는 내부 구현이 보인다). */
 export const THREE_ROLE_HEADING = '## 🧭 3역할 후보 (opt-in)';
 
-/** 발행 본문에는 3역할 섹션만 연속해서 넣는다(중간 머리글·빈 단락 없음). */
+/** 발행 본문에는 역할 섹션만 연속해서 넣는다(중간 머리글·빈 단락 없음). 메신저가 없으면 3섹션만 둔다. */
 const threeRoleBlock = (sections: ThreeRoleSections): string[] =>
-  [sections.orchestrator, '', sections.reviewer, '', sections.worker];
+  [sections.orchestrator, '', sections.reviewer, '', sections.worker,
+    ...(sections.messenger !== undefined ? ['', sections.messenger] : [])];
 
 /** 기존 2역할 블록이 남아 있는지(테스트의 이중출력 단언용). */
 export function hasLegacyRoleBlocks(text: string): boolean {

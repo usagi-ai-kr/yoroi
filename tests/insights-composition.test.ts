@@ -94,7 +94,7 @@ test('threeRole flag-on produces three sections and expected Top7/15 shape', asy
   const res = await runInsights({ env: {}, dataEnv: {}, clock, createPorts: () => [],
     threeRole: { options: { depth: 7 }, orchestrator: [{ modelId: 'o1', score: 90 }], reviewer: [{ modelId: 'r1', performance: 80, speed: 70, price: 90 }], worker: [{ modelId: 'w1', score: 85 }] } });
   assert.equal(res.threeRole?.enabled, true);
-  assert.ok(res.threeRole?.markdown?.includes('## 🧭 오케스트레이터 Top7') && res.threeRole?.markdown?.includes('## 🔍 리뷰어 Top7') && res.threeRole?.markdown?.includes('## 🛠️ 워커·메신저 Top7'));
+  assert.ok(res.threeRole?.markdown?.includes('## 🧭 오케스트레이터 Top7') && res.threeRole?.markdown?.includes('## 🔍 리뷰어 Top7') && res.threeRole?.markdown?.includes('## 🛠️ 워커 Top7') && !res.threeRole?.markdown?.includes('✉️ 메신저'));
   assert.equal(res.threeRole?.selection?.top7.reviewer[0]?.modelId, 'r1');
   assert.ok(res.threeRole?.sections?.reviewer);
 });

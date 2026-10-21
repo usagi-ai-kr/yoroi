@@ -21,6 +21,18 @@ export const ROLE_SOURCES: Readonly<Record<OptimalZoneRole, Readonly<Record<Scor
 /** 가격 근거가 모두 없을 때의 가격 차원값(최저 관측가 1 다음). 풀 전체에 관측 가격이 없으면 0. 워커에만 적용. */
 export const PRICE_MISSING_VALUE = 0.99;
 export const PRICE_MISSING: Readonly<Record<OptimalZoneRole, number | undefined>> = { orchestrator: undefined, worker: PRICE_MISSING_VALUE };
+/** U1: 메신저는 워커와 같은 데이터 배관(cap·대표 effort·속도·가격·가산·intel 하한)을 쓴다.
+ *  `role === 'worker'` 분기를 묶는 공용 helper. 가중치·임계만 메신저 값을 쓴다.
+ *  U2: 전역 OptimalZoneRole 확장은 렌더러·언소유 타입 파급으로 보류한다.
+ *  소유 모듈은 RoleWithMessenger(orch|worker|messenger)로 메신저 경로를 처리하고,
+ *  언소유 호출에는 worker 매핑(srcRole)으로 전달해 기존 출력을 바이트 동일하게 보존한다. */
+export const isWorkerLike = (role: string): role is 'worker' | 'messenger' =>
+  role === 'worker' || role === 'messenger';
+/** U2: 소유 모듈 전용 메신저 포함 역할. 전역 OptimalZoneRole은 orch|worker로 둔다. */
+export type WorkerLikeRole = 'worker' | 'messenger';
+export type RoleWithMessenger = OptimalZoneRole | 'messenger';
+/** U1: 메신저 존 임계 0.60(워커와 동일). 가격 결측 0.99·intel 하한 33도 공유한다. */
+export const MESSENGER_THRESHOLD = 0.60;
 /** User-confirmed worker price rules: score-only held-plan uplift at p75, AA mixed USD/M cap. */
 export const WORKER_HELD_PRICE_QUANTILE = 0.75;
 export const WORKER_MIXED_PRICE_CAP_USD_PER_M = 5;

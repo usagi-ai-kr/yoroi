@@ -17,9 +17,7 @@ test('extractIssueUrlAndNumber: handles canonical and redirected repo URLs', () 
   assert.equal(c1?.repo, 'qus0in/yoroi');
 
   const c2 = extractIssueUrlAndNumber('https://github.com/usagi-ai-kr/yoroi/issues/192\n');
-  assert.equal(c2?.number, 192);
-  assert.equal(c2?.repo, 'usagi-ai-kr/yoroi');
-
+  assert.equal(c2?.number, 192); assert.equal(c2?.repo, 'usagi-ai-kr/yoroi');
   assert.equal(extractIssueUrlAndNumber('not a url'), undefined);
 });
 
@@ -36,7 +34,7 @@ test('publishInsightsLetter: recovers partial issue without extra CLI options', 
   const postedComments: string[] = [];
   const runner = new MockRunner(req => {
     const args = req.args;
-    if (args.includes('list') && args.includes('--search')) {
+    if (args.includes('list') && (args.includes('--search') || args.includes('open'))) {
       return { stdout: JSON.stringify([{ number: 192, title: '[letter] 2026-10-20 AI 인사이트 레터' }]), stderr: '', exitCode: 0 };
     }
     if (args.includes('view') && args.includes('192')) {
@@ -47,9 +45,6 @@ test('publishInsightsLetter: recovers partial issue without extra CLI options', 
       postedComments.push(args[args.indexOf('--body-file') + 1]!);
       return { stdout: 'ok', stderr: '', exitCode: 0 };
     }
-    if (args.includes('list') && args.includes('open')) {
-      return { stdout: JSON.stringify([{ number: 192, title: '[letter] 2026-10-20 AI 인사이트 레터' }]), stderr: '', exitCode: 0 };
-    }
     return { stdout: '', stderr: '', exitCode: 0 };
   });
 
@@ -57,12 +52,8 @@ test('publishInsightsLetter: recovers partial issue without extra CLI options', 
   const env = { stdout: (s: string) => out.push(s), stderr: (s: string) => err.push(s) };
   const parts: LetterParts = { body: '# letter', comments: ['comm1', 'comm2', 'comm3'] };
 
-  const code = await publishInsightsLetter({
-    runner,
-    render: async () => parts,
-    clock: () => new Date('2026-10-20T09:30:00+09:00').getTime(),
-  }, env);
-
+  const code = await publishInsightsLetter({ runner, render: async () => parts,
+    clock: () => new Date('2026-10-20T09:30:00+09:00').getTime() }, env);
   assert.equal(code, 0);
   assert.equal(postedComments.length, 3);
   assert.ok(out.some(line => line.includes('recovered #192')));
@@ -82,12 +73,26 @@ test('publishInsightsLetter: supports usagi-ai-kr canonical URL on creation', as
   const env = { stdout: (s: string) => out.push(s), stderr: (s: string) => err.push(s) };
   const parts: LetterParts = { body: '# letter', comments: ['c1', 'c2', 'c3'] };
 
-  const code = await publishInsightsLetter({
-    runner,
-    render: async () => parts,
-    clock: () => new Date('2026-10-20T09:30:00+09:00').getTime(),
-  }, env);
-
+  const code = await publishInsightsLetter({ runner, render: async () => parts,
+    clock: () => new Date('2026-10-20T09:30:00+09:00').getTime() }, env);
   assert.equal(code, 0);
   assert.ok(out.some(line => line.includes('published #193')));
+});
+
+test('U3b: 기존 OPEN 레터에 4댓글로 복구 — 없는 댓글만 게시한다', async () => {
+  const posted: string[] = [];
+  const title = '[letter] 2026-10-21 AI 인사이트 레터';
+  const runner = new MockRunner(req => {
+    const args = req.args;
+    if (args.includes('list')) return { stdout: JSON.stringify([{ number: 194, title }]), stderr: '', exitCode: 0 };
+    if (args.includes('body')) return { stdout: JSON.stringify({ body: '# letter' }), stderr: '', exitCode: 0 };
+    if (args.includes('comments')) return { stdout: JSON.stringify({ comments: [{ body: 'c1' }] }), stderr: '', exitCode: 0 };
+    if (args.includes('comment')) { posted.push(args[args.indexOf('--body-file') + 1]!); return { stdout: 'ok', stderr: '', exitCode: 0 }; }
+    return { stdout: '', stderr: '', exitCode: 0 };
+  });
+  const parts: LetterParts = { body: '# letter', comments: ['c1', 'c2', 'c3', 'c4'] };
+  const code = await publishInsightsLetter({ runner, render: async () => parts,
+    clock: () => new Date('2026-10-21T09:30:00+09:00').getTime() }, { stdout: () => undefined, stderr: () => undefined });
+  assert.equal(code, 0);
+  assert.equal(posted.length, 3, '이미 있는 c1 제외 · 나머지 3개 게시');
 });

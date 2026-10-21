@@ -32,9 +32,15 @@ export function loadModelRoleFit(path: string = MODEL_ROLE_FIT_PATH): ModelRoleF
   } catch { return undefined; }
 }
 
-/** effort 접미사(-xhigh 등)를 뗀 base id 로 정규화한다(관찰 표는 모델 단위). */
-export const roleFitBaseId = (modelId: string): string =>
-  normalizeModelName(modelId.replace(/-(?:minimal|low|medium|high|xhigh|max)$/, ''));
+/** effort 접미사(-xhigh 등)와 Free 접미사(-free)를 뗀 base id 로 정규화한다(관찰 표는 AA base 단위).
+ *  Free 목록 id('deepseek-v4-1-flash-free')도 같은 base 로 매칭돼야 각주가 표시된다(#230). */
+const ROLE_FIT_SUFFIX = /-(?:free|minimal|low|medium|high|xhigh|max)$/;
+export const roleFitBaseId = (modelId: string): string => {
+  let id = modelId;
+  // effort 와 Free 접미가 겹친 형태('…-free-high')도 있어 최대 두 번 제거한다.
+  for (let i = 0; i < 2 && ROLE_FIT_SUFFIX.test(id); i += 1) id = id.replace(ROLE_FIT_SUFFIX, '');
+  return normalizeModelName(id);
+};
 
 /** 해당 역할의 정성 노트를 만든다: 'usagi ◎ · 짧은 메모'. 모르는 모델·역할은 undefined. */
 export function roleFitNote(modelId: string, role: RoleFitRole, file?: ModelRoleFitFile): string | undefined {

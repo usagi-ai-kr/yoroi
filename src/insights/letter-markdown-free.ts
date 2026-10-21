@@ -9,7 +9,7 @@ import { CALIBRATION_TASK_SET_VERSION } from './calibration-task-set.js';
 import type { CalibrationRunRecord } from './calibration-store.js';
 import { SqliteCalibrationStore } from './calibration-store-sqlite.js';
 import { normalizeModelName, type Top10Options, type Top10RecordInput } from './letter-top10-rank.js';
-import { freeCompactRows, freeMarkdownRows, freeMarkdownRowsWithReviewer, freeReviewerTableHeader, freeTableHeader, hasMeaningfulWorkability, withCalibration } from './letter-markdown-free-table.js';
+import { freeCompactRows, freeMarkdownRows, freeMarkdownRowsWithMessenger, freeMarkdownRowsWithReviewer, freeMessengerTableHeader, freeReviewerTableHeader, freeTableHeader, hasMeaningfulWorkability, withCalibration } from './letter-markdown-free-table.js';
 import { freeRowsFrom, type FreeReviewerEntry } from './letter-markdown-free-sort.js';
 export { barePlan, freeOnlyModelIds, shortPlan } from './letter-top10-plans.js';
 
@@ -65,10 +65,13 @@ const lazyCalibrationLookup = (): CalibrationLookup | undefined => {
 };
 export function renderFreeSectionMarkdown(lists: RoleLists | undefined,
   unmeasured: readonly UnmeasuredFree[] = [], _limit = 5, calibration?: CalibrationLookup,
-  freeReviewer?: readonly FreeReviewerEntry[]): string[] {
+  freeReviewer?: readonly FreeReviewerEntry[], freeMessenger?: readonly FreeReviewerEntry[]): string[] {
   if (!lists) return [FREE_HEADING, '', FREE_EMPTY_NOTE];
-  const rows = withCalibration(freeRowsFrom(lists, unmeasured, Infinity, freeReviewer ?? []), calibration ?? lazyCalibrationLookup());
+  const rows = withCalibration(freeRowsFrom(lists, unmeasured, Infinity, freeReviewer ?? [], freeMessenger ?? []), calibration ?? lazyCalibrationLookup());
   const showWorkability = hasMeaningfulWorkability(rows);
+  if (freeMessenger !== undefined) {
+    return [FREE_HEADING, '', freeMessengerTableHeader(showWorkability), ...freeMarkdownRowsWithMessenger(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
+  }
   if (freeReviewer === undefined) {
     return [FREE_HEADING, '', freeTableHeader(showWorkability), ...freeMarkdownRows(rows, showWorkability), '', ...FREE_LIMIT_NOTES];
   }

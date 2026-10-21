@@ -28,7 +28,7 @@ export interface RoleList { readonly entries: readonly RoleEntry[]; readonly exi
 export interface RoleLists { readonly orchestrator: RoleList; readonly worker: RoleList }
 
 const costTextOf = (cost?: number): string => cost === undefined ? '단가 -' : cost === 0 ? '무료' : `$${cost.toFixed(2)}/1M`;
-function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole, opts: Top10Options, catalog: readonly PlanCatalogEntry[], excluded: ReadonlySet<string>,
+export function buildList(records: readonly Top10RecordInput[], role: OptimalZoneRole | 'messenger', opts: Top10Options, catalog: readonly PlanCatalogEntry[], excluded: ReadonlySet<string>,
   scored: readonly ScoredGroup[], cal: ReadonlyMap<ScoredGroup, number>, allowOlder: readonly string[], benchmark?: ReadonlyMap<string, string>): RoleList {
   const successors = new Map<string, string>();
   for (const r of records) if (r.successorOf !== undefined && !separateGptSolModels(splitBaseAndEffort(r.modelId).base, splitBaseAndEffort(r.successorOf).base, allowOlder))

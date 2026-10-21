@@ -41,3 +41,10 @@ test('joinLetterParts는 구분자로 body+댓글 3개를 순서대로 붙인다
   for (const n of [1, 2, 3]) assert.ok(joined.includes(`<!-- yoroi:comment ${n} -->`));
   assert.ok(joined.indexOf('<!-- yoroi:comment 1 -->') < joined.indexOf('<!-- yoroi:comment 2 -->'));
 });
+
+test('#230 U3b: 2역할 댓글은 3개 그대로이고 Free 섹션 문자열을 별도로 노출한다', () => {
+  const { comments, freeSection } = parts();
+  assert.equal(comments.length, 3, '2역할 댓글 3개 계약 유지');
+  assert.equal(freeSection, comments[2], 'Free 섹션 = comments[2] 와 동일 문자열');
+  assert.ok(freeSection!.includes('## 🆓 Free 티어'), 'Free 섹션 본문');
+});

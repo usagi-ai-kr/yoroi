@@ -19,7 +19,8 @@ const near = (actual: number | undefined, expected: number) => assert.ok(actual 
 
 test('role weights, per-role sources, worker floor and bonus cap are exported constants', () => {
   assert.deepEqual(ROLE_DIMENSION_WEIGHTS, { orchestrator: { performance: 0.75, usage: 0, speed: 0.10, price: 0.15 },
-    worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 } });
+    worker: { performance: 0.30, usage: 0.20, speed: 0.10, price: 0.40 },
+    messenger: { performance: 0.20, usage: 0.10, speed: 0.30, price: 0.40 } });
   assert.deepEqual([ROLE_SOURCES.worker.speed, ROLE_SOURCES.worker.price, ROLE_SOURCES.worker.usage, ROLE_SOURCES.orchestrator.speed, ROLE_SOURCES.orchestrator.price,
     ROLE_SOURCES.orchestrator.usage], [['aa'], ['aa'], ['openrouter', 'opencode'], ['aa', 'cognition'], ['aa', 'cognition'], ['openrouter', 'opencode']]);
   assert.deepEqual([ROLE_DIMENSIONS.orchestrator, ROLE_DIMENSIONS.worker.map(d => DIMENSION_LABELS[d]).at(-1)], [['performance', 'usage', 'speed', 'price'], '가격']);

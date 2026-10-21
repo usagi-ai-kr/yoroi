@@ -3,7 +3,8 @@
 ## 현재 상태
 
 - 현재 작업 브랜치는 `dev`이며 `dev → main` PR로 게시한다.
-- 원격: `origin` → `https://github.com/qus0in/yoroi.git`.
+- 원격: `origin` → `https://github.com/usagi-ai-kr/yoroi.git`(canonical).
+  이전 주소 `qus0in/yoroi`는 리다이렉트로만 남기고 새 주소로 읽기·쓰기한다.
 - 관리 라벨: `.github/labels.json` 9개를 원격에 적용 완료했다(기존 기본 라벨 10개는 사용자 지시로 삭제).
 - 2026-10-08 main 보호 적용: PR 필수, 승인 0명, `ci` 필수·strict, 관리자 포함,
   force push·삭제 금지. 기존 성공 workflow의 실제 job 이름 `ci`를 확인했다.
